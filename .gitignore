@@ -1,0 +1,19 @@
+# Build results
+bin/
+obj/
+
+# Rider
+.idea/
+
+# User-specific files
+*.user
+*.suo
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
