@@ -27,8 +27,12 @@ public class FfmpegEncoderBlockCreator
         var streamingTarget = new StreamingPipeTarget();
         encodedOutput = streamingTarget.Reader;
 
-        // Input: Create Pipe for frames -> FFmpeg stdin
-        var inputPipe = new Pipe();
+        // Input: Create Pipe for frames -> FFmpeg stdin with same thresholds as StreamingPipeTarget
+        var pipeOptions = new PipeOptions(
+            pauseWriterThreshold: 1024,    // Pause when 1KB in buffer
+            resumeWriterThreshold: 512     // Resume when below 512 bytes
+        );
+        var inputPipe = new Pipe(pipeOptions);
         var streamingSource = new StreamingPipeSource(inputPipe.Reader.AsStream());
 
         // ActionBlock processes frames and writes to inputPipe.Writer

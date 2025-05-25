@@ -94,6 +94,75 @@ public class FFMpegDecoderBlockTests
     }
 
     [Fact]
+    public async Task BackpressureRespondsToFrameConsumption()
+    {
+        var videoStream = await CreateTestVideo(3200); // Target ~80% backpressure engagement for safety margin
+        var totalVideoSize = videoStream.Length;
+
+        try
+        {
+            var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+            var sourceBlock = decoder.CreateFfmpegDecoderBlock(videoStream, 1, default);
+
+            // Wait for backpressure to engage
+            await Task.Delay(300);
+            var backpressurePosition = videoStream.Position;
+
+            _logger.LogInformation("Backpressure engaged at {position} bytes ({percentage:F1}%)", 
+                backpressurePosition, (backpressurePosition * 100.0) / totalVideoSize);
+
+            // Verify backpressure holds when no frames are consumed
+            await Task.Delay(200);
+            var stablePosition = videoStream.Position;
+
+            stablePosition.Should().Be(backpressurePosition, 
+                "stream position should remain stable when no frames are consumed (backpressure holding)");
+
+            var framesConsumed = 0;
+            var backpressureReleased = false;
+
+            // Consume all available frames
+            while (await sourceBlock.OutputAvailableAsync())
+            {
+                var frame = await sourceBlock.ReceiveAsync();
+                frame.Dispose();
+                framesConsumed++;
+
+                // Check for backpressure release periodically
+                if (framesConsumed % 200 == 0 && !backpressureReleased)
+                {
+                    var currentPosition = videoStream.Position;
+                    
+                    // Log only the first time backpressure is released
+                    if (currentPosition > backpressurePosition)
+                    {
+                        _logger.LogInformation("Backpressure released at {frames} frames - stream advanced to {position} bytes", framesConsumed, currentPosition);
+                        backpressureReleased = true;
+                    }
+                }
+            }
+
+            // Wait for source block to complete
+            await sourceBlock.Completion;
+            var finalPosition = videoStream.Position;
+
+            // Verify backpressure was eventually released and flow resumed
+            finalPosition.Should().BeGreaterThan(backpressurePosition,
+                "stream should eventually advance beyond backpressure point when all frames are consumed");
+
+            finalPosition.Should().Be(totalVideoSize,
+                "stream should advance to full file size when pipeline completes");
+
+            framesConsumed.Should().BeGreaterThan(300,
+                "should have consumed substantial number of frames from test video");
+        }
+        finally
+        {
+            videoStream.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task HandlesCancellationGracefully()
     {
         var videoStream = await CreateTestVideo(50);

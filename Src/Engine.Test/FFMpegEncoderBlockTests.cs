@@ -76,99 +76,109 @@ public class FFMpegEncoderBlockTests
     }
 
     [Fact]
-    public async Task BackpressureStopsOutputConsumption()
+    public async Task BackpressureStopsFrameAcceptance()
     {
-        // Create encoder block with no consumer reading the output
+        // Create encoder block but don't consume output to trigger backpressure
         var encoder = new FfmpegEncoderBlockCreator("ffmpeg");
         var encoderBlock = encoder.CreateFfmpegEncoderBlock(
-            Width, Height, frameRate: 30.0, // Higher framerate for faster encoding
+            Width, Height, frameRate: 30.0,
             out var encodedOutput, 
             default);
 
-        _outputHelper.WriteLine("Starting backpressure test - feeding frames without consuming output");
-
         var framesSent = 0;
-        var sendTimes = new List<TimeSpan>();
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var backpressureDetected = false;
+        Task<bool>? blockedSendAsyncTask = null;
+        
+        _logger.LogInformation("Started feeding frames without consuming output");
 
-        // Feed frames and monitor send times to detect when backpressure kicks in
-        var feedingTask = Task.Run(async () =>
+        // Phase 1: Feed frames until SendAsync blocks (no output consumption)
+        // Target ~1200 frames (80% of observed 1059 blocking point + safety margin)
+        for (int i = 0; i < 1500; i++)
         {
-            try
+            var frame = CreateImage(i % 2 == 0 ? Color.Red : Color.Blue);
+            
+            // Start SendAsync but don't await it
+            var sendAsyncTask = encoderBlock.SendAsync(frame);
+            var delayTask = Task.Delay(300); // Fast 300ms timeout like decoder test
+            
+            var completedTask = await Task.WhenAny(sendAsyncTask, delayTask);
+            
+            if (completedTask == delayTask)
             {
-                for (int i = 0; i < 1200; i++) // Optimized frame count
+                // SendAsync didn't complete in 300ms = backpressure detected!
+                _logger.LogInformation("Backpressure detected at {frames} frames - SendAsync blocked", framesSent);
+                backpressureDetected = true;
+                blockedSendAsyncTask = sendAsyncTask;
+                
+                // Verify backpressure is sustained by testing another SendAsync call
+                _logger.LogInformation("Verifying sustained backpressure with second SendAsync test");
+                var secondFrame = CreateImage(Color.Green); // Different color for verification
+                var secondSendAsyncTask = encoderBlock.SendAsync(secondFrame);
+                var secondDelayTask = Task.Delay(200); // Fast 200ms verification timeout
+                
+                var secondCompletedTask = await Task.WhenAny(secondSendAsyncTask, secondDelayTask);
+                
+                if (secondCompletedTask == secondDelayTask)
                 {
-                    var frame = CreateImage(i % 2 == 0 ? Color.Red : Color.Blue);
-                    
-                    var sendStart = stopwatch.Elapsed;
-                    await encoderBlock.SendAsync(frame);
-                    var sendEnd = stopwatch.Elapsed;
-                    
-                    sendTimes.Add(sendEnd - sendStart);
-                    framesSent++;
-
-                    // Log progress every 100 frames
-                    if (framesSent % 100 == 0)
-                    {
-                        var avgSendTime = sendTimes.Skip(Math.Max(0, sendTimes.Count - 10)).Average(t => t.TotalMilliseconds);
-                        _outputHelper.WriteLine($"Sent {framesSent} frames, avg send time (last 10): {avgSendTime:F2}ms");
-                    }
-
-                    // Stop early if sending becomes very slow (indicates backpressure)
-                    if (sendTimes.Count > 50)
-                    {
-                        var recentAvg = sendTimes.Skip(sendTimes.Count - 10).Average(t => t.TotalMilliseconds);
-                        var initialAvg = sendTimes.Take(10).Average(t => t.TotalMilliseconds);
-                        
-                        if (recentAvg > initialAvg * 10) // 10x slower indicates backpressure
-                        {
-                            _outputHelper.WriteLine($"Backpressure detected: send time increased from {initialAvg:F2}ms to {recentAvg:F2}ms");
-                            break;
-                        }
-                    }
+                    _logger.LogInformation("Sustained backpressure confirmed - second SendAsync also blocked");
+                    // Keep the second blocked task to await later
+                    blockedSendAsyncTask = secondSendAsyncTask; // Replace first with second blocked task
+                }
+                else
+                {
+                    _logger.LogWarning("Unexpected: second SendAsync completed quickly during backpressure");
+                    await secondSendAsyncTask;
                 }
                 
-                encoderBlock.Complete();
+                // Don't dispose frames here - ActionBlock will handle them
+                break;
             }
-            catch (Exception ex)
-            {
-                _outputHelper.WriteLine($"Frame feeding failed: {ex.Message}");
-                throw;
-            }
-        });
-
-        // Wait for feeding to complete or timeout
-        var timeout = Task.Delay(2000); // Fast timeout like decoder test
-        var completedTask = await Task.WhenAny(feedingTask, timeout);
-
-        if (completedTask == timeout)
-        {
-            _outputHelper.WriteLine($"Test timed out after sending {framesSent} frames - this indicates backpressure is working");
-        }
-        else
-        {
-            await feedingTask; // Re-throw any exceptions
-        }
-
-        // Verify that we didn't send all frames (backpressure should have stopped us)
-        framesSent.Should().BeLessThan(1200, "backpressure should prevent all frames from being sent");
-        framesSent.Should().BeGreaterThan(100, "should send substantial frames before backpressure kicks in");
-
-        // Log timing analysis for debugging
-        if (sendTimes.Count > 20)
-        {
-            var initialAvg = sendTimes.Take(10).Average(t => t.TotalMilliseconds);
-            var finalAvg = sendTimes.Skip(Math.Max(0, sendTimes.Count - 10)).Average(t => t.TotalMilliseconds);
             
-            _outputHelper.WriteLine($"Send time analysis: {initialAvg:F2}ms → {finalAvg:F2}ms");
-            
-            // Don't assert on timing - backpressure may work differently than expected
-            // The key evidence is that we stopped before sending all frames
+            // SendAsync completed quickly, continue
+            await sendAsyncTask; // Ensure it actually completed
+            framesSent++;
+            // Don't dispose frame here - ActionBlock handles disposal
         }
 
-        _outputHelper.WriteLine($"Backpressure test completed - sent {framesSent} frames before blocking");
+        // Verify backpressure was detected
+        backpressureDetected.Should().BeTrue("SendAsync should block when output is not consumed");
+        framesSent.Should().BeLessThan(1500, "not all frames should be sent due to backpressure");
+        
+        _logger.LogInformation("Backpressure engaged after {frames} frames", framesSent);
 
-        // Output captured logs
+        // Phase 2: Start consuming output to release backpressure
+        var outputTask = ReadEncodedStreamAsync(encodedOutput);
+        
+        // Phase 3: Complete the blocked SendAsync and continue with remaining frames
+        if (blockedSendAsyncTask != null)
+        {
+            _logger.LogInformation("Waiting for blocked SendAsync to complete after output consumption started");
+            await blockedSendAsyncTask; // This should now complete quickly
+            framesSent++;
+        }
+
+        // Continue sending remaining frames (should be fast now)  
+        for (int i = framesSent; i < 1500; i++)
+        {
+            var frame = CreateImage(i % 2 == 0 ? Color.Red : Color.Blue);
+            await encoderBlock.SendAsync(frame);
+            framesSent++;
+            // Don't dispose frame here - ActionBlock handles disposal
+        }
+        
+        encoderBlock.Complete();
+        var videoStream = await outputTask;
+
+        _logger.LogInformation("Encoding completed: {totalFrames} frames → {bytes} bytes", framesSent, videoStream.Length);
+
+        // Save test output
+        await _publisher.PublishAsync(videoStream, "video/webm", "Encoder backpressure test video");
+
+        // Final assertions - verify full cycle completed
+        framesSent.Should().Be(1500, "all frames should eventually be sent after backpressure release");
+        videoStream.Length.Should().BeGreaterThan(1000, "should produce substantial encoded output");
+
+        // Output captured logs to test console  
         foreach (var logEntry in _logger.LogEntries)
         {
             _outputHelper.WriteLine($"[{logEntry.LogLevel}] {logEntry.Message}");
