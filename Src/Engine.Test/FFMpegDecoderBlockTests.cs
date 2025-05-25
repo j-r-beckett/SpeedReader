@@ -1,0 +1,125 @@
+using System.Threading.Tasks.Dataflow;
+using Engine;
+using Microsoft.Extensions.Logging;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using Xunit.Abstractions;
+
+namespace Engine.Test;
+
+public class FFMpegDecoderBlockTests
+{
+    private const int Width = 100;
+    private const int Height = 75;
+    private readonly ILogger _logger;
+
+    public FFMpegDecoderBlockTests(ITestOutputHelper outputHelper)
+    {
+        _logger = new TestLogger(outputHelper);
+    }
+    
+    [Fact]
+    public async Task CanDecodeRedBlueFrames()
+    {
+        // Create test video with red then blue frames
+        var videoStream = await FrameWriter.ToCompressedVideo(Width, Height, 5, RedBlueFrames().ToAsyncEnumerable(), default);
+        videoStream.Position = 0;
+        
+        // Create decoder and decode frames
+        var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+        var sourceBlock = decoder.CreateFfmpegDecoderBlock(videoStream, 1, default);
+        
+        // Collect all frames
+        var frames = new List<Image<Rgb24>>();
+        while (await sourceBlock.OutputAvailableAsync())
+        {
+            var frame = await sourceBlock.ReceiveAsync();
+            frames.Add(frame);
+        }
+        
+        // Verify we got correct frames
+        Assert.Equal(10, frames.Count);
+        
+        // Check first 5 frames are red
+        for (int i = 0; i < 5; i++)
+        {
+            Assert.True(IsColorMatch(frames[i], Color.Red), $"Frame {i} should be red");
+        }
+        
+        // Check last 5 frames are blue
+        for (int i = 5; i < 10; i++)
+        {
+            Assert.True(IsColorMatch(frames[i], Color.Blue), $"Frame {i} should be blue");
+        }
+        
+        // Cleanup
+        foreach (var frame in frames)
+        {
+            frame.Dispose();
+        }
+        
+        videoStream.Dispose();
+    }
+
+    private IEnumerable<Image<Rgb24>> RedBlueFrames()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            yield return CreateImage(Color.Red);
+        }
+        for (var i = 0; i < 5; i++)
+        {
+            yield return CreateImage(Color.Blue);
+        }
+    }
+
+    private Image<Rgb24> CreateImage(Color color, int width = Width, int height = Height)
+    {
+        var result = new Image<Rgb24>(width, height);
+        
+        result.ProcessPixelRows(accessor =>
+        {
+            for (var y = 0; y < accessor.Height; y++)
+            {
+                var pixelRow = accessor.GetRowSpan(y);
+                for (var x = 0; x < pixelRow.Length; x++)
+                {
+
+                    pixelRow[x] = color;
+                }
+            }
+        });
+
+        return result;
+    }
+
+    private bool IsColorMatch(Image<Rgb24> image, Color expectedColor)
+    {
+        var expected = expectedColor.ToPixel<Rgb24>();
+        
+        // Sample 5 points: center + 4 quadrants
+        var samplePoints = new[]
+        {
+            (Width / 2, Height / 2), // Center
+            (Width / 4, Height / 4), // Top-left quadrant
+            (3 * Width / 4, Height / 4), // Top-right quadrant
+            (Width / 4, 3 * Height / 4), // Bottom-left quadrant
+            (3 * Width / 4, 3 * Height / 4) // Bottom-right quadrant
+        };
+        
+        foreach (var (x, y) in samplePoints)
+        {
+            var actual = image[x, y];
+            var error = Math.Abs(expected.R - actual.R) + 
+                       Math.Abs(expected.G - actual.G) + 
+                       Math.Abs(expected.B - actual.B);
+            
+            if (error >= 10)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+}

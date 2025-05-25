@@ -22,20 +22,7 @@ public class FrameReaderTests
     public async Task CanRoundTripRedBlueFrames()
     {
         // Create test video with red then blue frames
-        var writeChannel = Channel.CreateUnbounded<Image<Rgb24>>();
-        var writer = writeChannel.Writer;
-        
-        for (var i = 0; i < 5; i++)
-        {
-            await writer.WriteAsync(CreateImage(Color.Red, Width, Height));
-        }
-        for (var i = 0; i < 5; i++)
-        {
-            await writer.WriteAsync(CreateImage(Color.Blue, Width, Height));
-        }
-        writer.Complete();
-        
-        var videoStream = await FrameWriter.ToCompressedVideo(Width, Height, 5, writeChannel, default);
+        var videoStream = await FrameWriter.ToCompressedVideo(Width, Height, 5, RedBlueFrames().ToAsyncEnumerable(), default);
         videoStream.Position = 0;
         
         // Read frames back from video
@@ -72,6 +59,18 @@ public class FrameReaderTests
         foreach (var frame in frames)
         {
             frame.Dispose();
+        }
+    }
+
+    private IEnumerable<Image<Rgb24>> RedBlueFrames()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            yield return CreateImage(Color.Red);
+        }
+        for (var i = 0; i < 5; i++)
+        {
+            yield return CreateImage(Color.Blue);
         }
     }
 

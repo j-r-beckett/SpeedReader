@@ -7,9 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CLIwrap" />
     <PackageReference Include="FFMpegcore" />
+    <PackageReference Include="FluentAssertions" />
     <PackageReference Include="microsoft.extensions.logging" />
     <PackageReference Include="Sixlabors.Imagesharp" />
+    <PackageReference Include="System.Linq.Async" />
   </ItemGroup>
 
 </Project>

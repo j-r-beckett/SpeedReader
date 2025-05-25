@@ -20,7 +20,7 @@ dotnet build
 dotnet test
 
 # Run specific test with detailed output
-dotnet test --logger "console;verbosity=detailed" --filter "Test1"
+dotnet test --logger "console;verbosity=detailed" --filter "CanRoundTripRedBlueFrames"
 
 # Run single test project
 dotnet test Src/Engine.Test/
@@ -46,7 +46,9 @@ The core video processing uses a channel-based architecture:
 **Important**: FFmpeg runs as a separate process and does not respond to backpressure. The frame streaming must complete before FFmpeg finishes processing, or the pipeline may hang.
 
 ### Key Components
+- **FrameReader**: Extracts video frames using FFmpeg with backpressure control via `SwitchableStreamPipeSource`
 - **FrameWriter**: Handles video encoding with configurable quality settings (`-crf 10 -b:v 1M` for balanced quality/speed)
+- **FFProbe**: Video metadata extraction with proper error handling
 - **MediaSaver**: Utility for saving test outputs to `out/debug/` with WSL file URLs for easy access
 - **TestLogger**: Bridges xUnit `ITestOutputHelper` with `ILogger` for consistent logging
 

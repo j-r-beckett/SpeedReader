@@ -14,7 +14,7 @@ public class FrameWriter
         int width,
         int height,
         double frameRate,
-        Channel<Image<Rgb24>> frames,
+        IAsyncEnumerable<Image<Rgb24>> frames,
         CancellationToken cancellationToken)
     {
         var tempFile = Path.GetTempFileName() + ".webm";
@@ -36,13 +36,13 @@ public class FrameWriter
         return new FileStream(tempFile, FileMode.Open, FileAccess.Read);
     }
     
-    private static async Task FramesToStream<T>(Channel<Image<T>> channel, PipeWriter writer, CancellationToken cancellationToken) where T : unmanaged, IPixel<T>
+    private static async Task FramesToStream<T>(IAsyncEnumerable<Image<T>> channel, PipeWriter writer, CancellationToken cancellationToken) where T : unmanaged, IPixel<T>
     {
         var bytesPerPixel = Marshal.SizeOf<T>();
         var frameSizeInBytes = -1;
         try
         {
-            await foreach (var frame in channel.Reader.ReadAllAsync(cancellationToken))
+            await foreach (var frame in channel.WithCancellation(cancellationToken))
             {
                 if (frameSizeInBytes == -1)
                 {

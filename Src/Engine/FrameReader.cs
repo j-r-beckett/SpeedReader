@@ -142,28 +142,29 @@ public class FrameReader
     // Extract video metadata while preserving stream position
     private static async Task<VideoInfo> GetVideoInfoAsync(Stream videoStream, CancellationToken cancellationToken)
     {
-        const int timeoutSeconds = 2;  // long enough for a network request
-        var position = videoStream.Position;
-        IMediaAnalysis analysis;
-        try
-        {
-            // FFProbe cancellation is bugged, so do a manual timeout instead of passing a cancellation token
-            analysis = await FFProbe.AnalyseAsync(videoStream, cancellationToken: default)
-                .WaitAsync(TimeSpan.FromSeconds(timeoutSeconds), cancellationToken);
-        }
-        catch (TimeoutException exception)
-        {
-            throw new FrameReaderException($"FFProbe analysis timed out after {timeoutSeconds} seconds", exception);
-        }
-        catch (FFMpegException exception)
-        {
-            throw new FrameReaderException("Unable to analyze video stream with FFProbe", exception);
-        }
-        finally
-        {
-            videoStream.Seek(position, SeekOrigin.Begin);  // Restore stream position after analysis
-        }
-        return analysis.PrimaryVideoStream ?? throw new FrameReaderException("Null value returned by FFProbe");
+        throw new NotImplementedException();
+        // const int timeoutSeconds = 2;  // long enough for a network request
+        // var position = videoStream.Position;
+        // IMediaAnalysis analysis;
+        // try
+        // {
+        //     // FFProbe cancellation is bugged, so do a manual timeout instead of passing a cancellation token
+        //     analysis = await VideoUtils.AnalyseAsync(videoStream, cancellationToken: default)
+        //         .WaitAsync(TimeSpan.FromSeconds(timeoutSeconds), cancellationToken);
+        // }
+        // catch (TimeoutException exception)
+        // {
+        //     throw new FrameReaderException($"FFProbe analysis timed out after {timeoutSeconds} seconds", exception);
+        // }
+        // catch (FFMpegException exception)
+        // {
+        //     throw new FrameReaderException("Unable to analyze video stream with FFProbe", exception);
+        // }
+        // finally
+        // {
+        //     videoStream.Seek(position, SeekOrigin.Begin);  // Restore stream position after analysis
+        // }
+        // return analysis.PrimaryVideoStream ?? throw new FrameReaderException("Null value returned by FFProbe");
     }
 
     // Custom exception for FrameReader-specific errors
