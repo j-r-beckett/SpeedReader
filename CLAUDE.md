@@ -35,34 +35,45 @@ dotnet restore
 
 ## Architecture Notes
 
-### Streaming Video Processing with Natural Backpressure
+# Backpressure Implementation in OpusFlow
 
-The core architecture uses **System.IO.Pipelines** and **CliWrap** to create a true streaming video processing pipeline with automatic backpressure control:
+## Core Principle
+**FFmpeg + Unix pipes provide natural backpressure coordination** - when stdout blocks, FFmpeg automatically pauses stdin. No manual throttling needed.
 
-1. **Video Encoding**: `FrameWriter` converts image frames to compressed video (WebM/VP8) via System.IO.Pipelines
-2. **Video Decoding**: `FfmpegDecoderBlockCreator` streams video frames using custom `StreamingPipeSource` and `StreamingPipeTarget` implementations
-3. **Natural Backpressure**: When downstream consumers are slow, the entire pipeline automatically pauses FFmpeg without manual intervention
+## Backpressure Chains
 
-**Key Innovation**: FFmpeg naturally responds to backpressure. When output pipes fill up, FFmpeg automatically pauses input consumption, creating perfect end-to-end flow control.
+### Decoder
+`Stream` → `StreamingPipeSource` → `FFmpeg` → `StreamingPipeTarget` → `BufferBlock<Image<Rgb24>>(capacity=2)` → Consumer
+
+**Slow consumer** → BufferBlock fills → `SendAsync()` blocks → PipeReader stops → StreamingPipeTarget pipe fills → **Unix pipe blocks** → FFmpeg stdout blocks → **FFmpeg pauses stdin** → input stream stops
+
+### Encoder  
+Producer → `ActionBlock<Image<Rgb24>>(capacity=2)` → `Pipe.Writer` → `StreamingPipeSource` → `FFmpeg` → `StreamingPipeTarget` → Consumer
+
+**Slow consumer** → StreamingPipeTarget pipe fills → **Unix pipe blocks** → FFmpeg stdout blocks → **FFmpeg pauses stdin** → `FlushAsync()` blocks → ActionBlock fills → `SendAsync()` blocks → producer pauses
+
+## Architecture Components
+- **Unix pipes**: OS-level blocking provides instant backpressure signal
+- **FFmpeg coordination**: Process automatically pauses stdin when stdout blocks
+- **TPL Dataflow**: Bounded blocks propagate backpressure to application layer
+- **System.IO.Pipelines**: Memory-efficient streaming with configurable thresholds, responds to backpressure
+
+## Completion Coordination
+- **Decoder**: `await Task.WhenAll(ffmpegTask, frameProcessingTask)`
+- **Encoder**: Wait for `targetBlock.Completion` then `inputPipe.Writer.CompleteAsync()`
+
+## Verification
+`BackpressureStopsInputConsumption` test: Large stream stops at exactly 131,072 bytes with no consumer, proving perfect flow control.
+
+**Key insight**: Unix pipes + FFmpeg = automatic coordination. Don't reinvent this with polling or manual throttling.
 
 ### Streaming Architecture Components
 
 - **StreamingPipeSource**: Custom `PipeSource` implementation that feeds video data to FFmpeg stdin with natural backpressure
 - **StreamingPipeTarget**: Custom `PipeTarget` implementation that receives FFmpeg stdout via `System.IO.Pipelines.Pipe` with configurable buffer thresholds
 - **FfmpegDecoderBlockCreator**: Creates `ISourceBlock<Image<Rgb24>>` that streams decoded frames with bounded capacity for backpressure
-- **Concurrent Processing**: Frame decoding happens concurrently with FFmpeg processing using `Task.WhenAll()`
-
-### Backpressure Flow Control
-
-The backpressure chain works as follows:
-1. Consumer can't keep up → `BufferBlock<Image<Rgb24>>` fills up (bounded capacity)
-2. `SendAsync()` blocks in frame processing
-3. `PipeReader` stops consuming → Pipe buffer fills to `pauseWriterThreshold`
-4. `FlushAsync()` blocks → FFmpeg stdout blocks
-5. FFmpeg automatically pauses and stops reading from stdin
-6. Input stream consumption stops until downstream pressure is relieved
-
-**Verified by test**: `BackpressureStopsInputConsumption` proves that with no consumer, a large video stream stops at exactly 131,072 bytes and remains stable, demonstrating perfect backpressure control.
+- **FfmpegEncoderBlockCreator**: Creates `ITargetBlock<Image<Rgb24>>` that accepts frames and produces streaming encoded video output
+- **Concurrent Processing**: Frame processing happens concurrently with FFmpeg processing using `Task.WhenAll()`
 
 ### Key Components
 
@@ -89,3 +100,19 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **Responsive**: Sub-millisecond backpressure response (vs. 500ms polling in previous implementations)
 - **Scalable**: Natural flow control prevents memory bloat regardless of video size
 - **Deterministic**: Stops at exact buffer limits, verified by automated tests
+
+## Reference Materials
+
+### Source Code Consultation
+**DIRECTIVE**: These repositories are authoritative sources for API behavior and implementation details. Consult them when additional context would be helpful for completing a task effectively.
+
+**Available References:**
+- **System.IO.Pipelines**: `/home/jimmy/.claude/repos/runtime/src/libraries/System.IO.Pipelines/`
+- **CliWrap**: `/home/jimmy/.claude/repos/CliWrap/CliWrap/`
+- **ImageSharp**: `/home/jimmy/.claude/repos/ImageSharp/src/ImageSharp/`
+- **FFmpeg Documentation**: `/home/jimmy/.claude/repos/FFmpeg/doc/`
+- **System.Threading.Tasks.Dataflow**: `/home/jimmy/.claude/repos/runtime/src/libraries/System.Threading.Tasks.Dataflow/`
+- **CliWrap Tests**: `/home/jimmy/.claude/repos/CliWrap/CliWrap.Tests/`
+
+### Knowledge Base
+<!-- Claude: Record specific files and insights you discover for future reference -->

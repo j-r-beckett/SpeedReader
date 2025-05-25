@@ -117,7 +117,7 @@ public class FfmpegDecoderBenchmark
     {
         // TODO: Optimize performance - 500 frames takes 12.1s generation + 27.2s compression
         var frames = GenerateBlackFrames(frameCount).ToList();
-        var result = await FrameWriter.ToCompressedVideo(Width, Height, FrameRate, 
+        var result = await Engine.Test.FrameWriter.ToCompressedVideo(Width, Height, FrameRate, 
             frames.ToAsyncEnumerable(), default);
         
         // Dispose frames to free memory
