@@ -28,7 +28,7 @@ public class FrameWriter
             .FromPipeInput(new StreamPipeSource(readStream), options => options
                 .WithCustomArgument($"-f rawvideo -pixel_format rgb24 -video_size {width}x{height} -framerate {frameRate}"))
             .OutputToFile(tempFile, addArguments: options => options
-                .WithCustomArgument("-vcodec libvpx -crf 10 -b:v 1M"))
+                .WithCustomArgument("-vcodec libvpx -crf 30 -b:v 100k -speed 16 -threads 1"))
             .ProcessAsynchronously();
 
         await Task.WhenAll(ffmpegTask, streamTask);

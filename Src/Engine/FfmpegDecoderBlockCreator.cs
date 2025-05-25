@@ -18,7 +18,6 @@ public class FfmpegDecoderBlockCreator
 
     public ISourceBlock<Image<Rgb24>> CreateFfmpegDecoderBlock(Stream videoData, int sampleRate, CancellationToken cancellationToken)
     {
-        // Create BufferBlock with very limited capacity to enable backpressure
         var source = new BufferBlock<Image<Rgb24>>(new DataflowBlockOptions
         {
             BoundedCapacity = 2 // Very small capacity to trigger backpressure immediately
@@ -40,24 +39,20 @@ public class FfmpegDecoderBlockCreator
                     .WithStandardOutputPipe(streamingTarget)
                     .ExecuteAsync();
 
-                // Start concurrent frame processing while FFmpeg runs
                 var frameProcessingTask = ProcessFramesAsync(streamingTarget.Reader, source, width, height, cancellationToken);
 
-                // Wait for both FFmpeg and frame processing to complete
                 await Task.WhenAll(ffmpegTask, frameProcessingTask);
+                
+                source.Complete();
             }
             catch (TaskCanceledException)
             {
                 source.Complete();
-                return;
             }
             catch (Exception ex)
             {
                 ((IDataflowBlock)source).Fault(ex);
-                return;
             }
-
-            source.Complete();
         }, cancellationToken);
 
         return source;
