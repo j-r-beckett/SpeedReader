@@ -137,9 +137,9 @@ public class FFProbeTests
 
     public class MockFFProbe : FFProbe
     {
-        private readonly Func<int, BufferedCommandResult> _func;
-        private readonly Func<Task<BufferedCommandResult>> _asyncFunc;
-        private readonly Func<CancellationToken, Task<BufferedCommandResult>> _asyncFuncWithToken;
+        private readonly Func<int, BufferedCommandResult>? _func;
+        private readonly Func<Task<BufferedCommandResult>>? _asyncFunc;
+        private readonly Func<CancellationToken, Task<BufferedCommandResult>>? _asyncFuncWithToken;
         private int _counter = -1;
 
         public MockFFProbe(Func<int, BufferedCommandResult> func) => _func = func;
@@ -158,7 +158,7 @@ public class FFProbeTests
             if (_asyncFunc != null)
                 return await _asyncFunc();
 
-            return _func(Interlocked.Increment(ref _counter));
+            return _func!(Interlocked.Increment(ref _counter));
         }
     }
 }

@@ -46,7 +46,7 @@ public class FFMpegDecoderBlockTests
                     var blockIndex = i % 10;
                     var expectedColor = blockIndex < 5 ? Color.Red : Color.Blue;
                     var colorName = blockIndex < 5 ? "red" : "blue";
-                    
+
                     Assert.True(IsColorMatch(frameList[i], expectedColor), $"Frame {i} should be {colorName}");
                 }
                 return Task.CompletedTask;

@@ -42,7 +42,7 @@ public class FfmpegDecoderBlockCreator
                 var frameProcessingTask = ProcessFramesAsync(streamingTarget.Reader, source, width, height, cancellationToken);
 
                 await Task.WhenAll(ffmpegTask, frameProcessingTask);
-                
+
                 source.Complete();
             }
             catch (TaskCanceledException)
