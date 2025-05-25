@@ -16,17 +16,17 @@ OpusFlow is a .NET 8 video processing solution with three main components:
 # Build entire solution
 dotnet build
 
-# Run all tests  
-dotnet test
+# Run all tests with timeout protection (ALWAYS use timeout to prevent hanging)
+timeout 30s dotnet test
 
 # Run specific test with detailed output
-dotnet test --logger "console;verbosity=detailed" --filter "CanDecodeRedBlueFrames"
+timeout 30s dotnet test --logger "console;verbosity=detailed" --filter "CanDecodeRedBlueFrames"
 
 # Run backpressure test
-dotnet test --logger "console;verbosity=detailed" --filter "BackpressureStopsInputConsumption"
+timeout 30s dotnet test --logger "console;verbosity=detailed" --filter "BackpressureStopsInputConsumption"
 
 # Run single test project
-dotnet test Src/Engine.Test/
+timeout 30s dotnet test Src/Engine.Test/
 
 # Clean and restore
 dotnet clean
@@ -115,4 +115,5 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **CliWrap Tests**: `/home/jimmy/.claude/repos/CliWrap/CliWrap.Tests/`
 
 ### Knowledge Base
+- The unit test suite is fast (< 5 seconds), so run tests early and often
 <!-- Claude: Record specific files and insights you discover for future reference -->
