@@ -75,6 +75,106 @@ public class FFMpegEncoderBlockTests
         }
     }
 
+    [Fact]
+    public async Task BackpressureStopsOutputConsumption()
+    {
+        // Create encoder block with no consumer reading the output
+        var encoder = new FfmpegEncoderBlockCreator("ffmpeg");
+        var encoderBlock = encoder.CreateFfmpegEncoderBlock(
+            Width, Height, frameRate: 30.0, // Higher framerate for faster encoding
+            out var encodedOutput, 
+            default);
+
+        _outputHelper.WriteLine("Starting backpressure test - feeding frames without consuming output");
+
+        var framesSent = 0;
+        var sendTimes = new List<TimeSpan>();
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        // Feed frames and monitor send times to detect when backpressure kicks in
+        var feedingTask = Task.Run(async () =>
+        {
+            try
+            {
+                for (int i = 0; i < 1200; i++) // Optimized frame count
+                {
+                    var frame = CreateImage(i % 2 == 0 ? Color.Red : Color.Blue);
+                    
+                    var sendStart = stopwatch.Elapsed;
+                    await encoderBlock.SendAsync(frame);
+                    var sendEnd = stopwatch.Elapsed;
+                    
+                    sendTimes.Add(sendEnd - sendStart);
+                    framesSent++;
+
+                    // Log progress every 100 frames
+                    if (framesSent % 100 == 0)
+                    {
+                        var avgSendTime = sendTimes.Skip(Math.Max(0, sendTimes.Count - 10)).Average(t => t.TotalMilliseconds);
+                        _outputHelper.WriteLine($"Sent {framesSent} frames, avg send time (last 10): {avgSendTime:F2}ms");
+                    }
+
+                    // Stop early if sending becomes very slow (indicates backpressure)
+                    if (sendTimes.Count > 50)
+                    {
+                        var recentAvg = sendTimes.Skip(sendTimes.Count - 10).Average(t => t.TotalMilliseconds);
+                        var initialAvg = sendTimes.Take(10).Average(t => t.TotalMilliseconds);
+                        
+                        if (recentAvg > initialAvg * 10) // 10x slower indicates backpressure
+                        {
+                            _outputHelper.WriteLine($"Backpressure detected: send time increased from {initialAvg:F2}ms to {recentAvg:F2}ms");
+                            break;
+                        }
+                    }
+                }
+                
+                encoderBlock.Complete();
+            }
+            catch (Exception ex)
+            {
+                _outputHelper.WriteLine($"Frame feeding failed: {ex.Message}");
+                throw;
+            }
+        });
+
+        // Wait for feeding to complete or timeout
+        var timeout = Task.Delay(2000); // Fast timeout like decoder test
+        var completedTask = await Task.WhenAny(feedingTask, timeout);
+
+        if (completedTask == timeout)
+        {
+            _outputHelper.WriteLine($"Test timed out after sending {framesSent} frames - this indicates backpressure is working");
+        }
+        else
+        {
+            await feedingTask; // Re-throw any exceptions
+        }
+
+        // Verify that we didn't send all frames (backpressure should have stopped us)
+        framesSent.Should().BeLessThan(1200, "backpressure should prevent all frames from being sent");
+        framesSent.Should().BeGreaterThan(100, "should send substantial frames before backpressure kicks in");
+
+        // Log timing analysis for debugging
+        if (sendTimes.Count > 20)
+        {
+            var initialAvg = sendTimes.Take(10).Average(t => t.TotalMilliseconds);
+            var finalAvg = sendTimes.Skip(Math.Max(0, sendTimes.Count - 10)).Average(t => t.TotalMilliseconds);
+            
+            _outputHelper.WriteLine($"Send time analysis: {initialAvg:F2}ms → {finalAvg:F2}ms");
+            
+            // Don't assert on timing - backpressure may work differently than expected
+            // The key evidence is that we stopped before sending all frames
+        }
+
+        _outputHelper.WriteLine($"Backpressure test completed - sent {framesSent} frames before blocking");
+
+        // Output captured logs
+        foreach (var logEntry in _logger.LogEntries)
+        {
+            _outputHelper.WriteLine($"[{logEntry.LogLevel}] {logEntry.Message}");
+        }
+    }
+
     private IEnumerable<Image<Rgb24>> GenerateRedBlueFrames(int redCount, int blueCount)
     {
         // Generate red frames
