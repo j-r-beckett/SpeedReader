@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OpusFlow is a .NET 8 video processing solution with three main components:
 - **Engine**: Core video processing library using FFMpegCore, CliWrap, and SixLabors.ImageSharp
-- **Engine.Runner**: Console application entry point
 - **Engine.Test**: Test project with video generation and processing tests
+- **Engine.Benchmark**: Performance benchmarking with Chart.js visualization
 
 ## Common Commands
 
@@ -27,15 +27,10 @@ dotnet test --logger "console;verbosity=detailed" --filter "BackpressureStopsInp
 
 # Run single test project
 dotnet test Src/Engine.Test/
-```
 
-### Development
-```bash
-# Restore packages
-dotnet restore
-
-# Clean build artifacts
+# Clean and restore
 dotnet clean
+dotnet restore
 ```
 
 ## Architecture Notes
@@ -44,7 +39,7 @@ dotnet clean
 
 The core architecture uses **System.IO.Pipelines** and **CliWrap** to create a true streaming video processing pipeline with automatic backpressure control:
 
-1. **Video Encoding**: `FrameWriter.ToCompressedVideo()` converts image frames to compressed video (WebM/VP8) via System.IO.Pipelines
+1. **Video Encoding**: `FrameWriter` converts image frames to compressed video (WebM/VP8) via System.IO.Pipelines
 2. **Video Decoding**: `FfmpegDecoderBlockCreator` streams video frames using custom `StreamingPipeSource` and `StreamingPipeTarget` implementations
 3. **Natural Backpressure**: When downstream consumers are slow, the entire pipeline automatically pauses FFmpeg without manual intervention
 
@@ -71,9 +66,9 @@ The backpressure chain works as follows:
 
 ### Key Components
 
-- **FrameWriter**: Handles video encoding with configurable quality settings (`-crf 10 -b:v 1M` for balanced quality/speed)
+- **FrameWriter**: Handles video encoding with configurable quality settings (`-crf 30 -b:v 100k` for balanced quality/speed)
 - **FFProbe**: Video metadata extraction with proper error handling
-- **MediaSaver**: Utility for saving test outputs to `out/debug/` with WSL file URLs for easy access
+- **IUrlPublisher**: Generic interface for output publishing with `FileSystemUrlPublisher` implementation
 - **TestLogger**: Bridges xUnit `ITestOutputHelper` with `ILogger` for consistent logging
 
 ### Central Package Management
