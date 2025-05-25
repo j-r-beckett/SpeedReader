@@ -1,3 +1,4 @@
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading.Tasks.Dataflow;
 using CliWrap;
@@ -5,6 +6,49 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Engine;
+
+public class StreamingPipeSource : PipeSource
+{
+    private readonly Stream _sourceStream;
+    
+    public StreamingPipeSource(Stream sourceStream)
+    {
+        _sourceStream = sourceStream;
+    }
+    
+    public override async Task CopyToAsync(Stream destination, CancellationToken cancellationToken)
+    {
+        await _sourceStream.CopyToAsync(destination, cancellationToken);
+    }
+}
+
+public class StreamingPipeTarget : PipeTarget
+{
+    private readonly Pipe _pipe;
+    public PipeReader Reader => _pipe.Reader;
+    
+    public StreamingPipeTarget(PipeOptions? options = null)
+    {
+        // Use very small buffers to trigger backpressure quickly
+        var pipeOptions = options ?? new PipeOptions(
+            pauseWriterThreshold: 1024,    // Pause when 1KB in buffer
+            resumeWriterThreshold: 512     // Resume when below 512 bytes
+        );
+        _pipe = new Pipe(pipeOptions);
+    }
+    
+    public override async Task CopyFromAsync(Stream origin, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await origin.CopyToAsync(_pipe.Writer.AsStream(), cancellationToken);
+        }
+        finally
+        {
+            await _pipe.Writer.CompleteAsync();
+        }
+    }
+}
 
 public class FfmpegDecoderBlockCreator
 {
@@ -17,7 +61,11 @@ public class FfmpegDecoderBlockCreator
     
     public ISourceBlock<Image<Rgb24>> CreateFfmpegDecoderBlock(Stream videoData, int sampleRate, CancellationToken cancellationToken)
     {
-        var source = new BufferBlock<Image<Rgb24>>();
+        // Create BufferBlock with very limited capacity to enable backpressure
+        var source = new BufferBlock<Image<Rgb24>>(new DataflowBlockOptions 
+        { 
+            BoundedCapacity = 2 // Very small capacity to trigger backpressure immediately
+        });
 
         Task.Run(async () =>
         {
@@ -26,53 +74,20 @@ public class FfmpegDecoderBlockCreator
                 var (width, height) = await new FFProbe().GetVideoDimensions(videoData, cancellationToken);
                 videoData.Seek(0, SeekOrigin.Begin);
 
-                var stdout = new MemoryStream();
-                var stderr = new MemoryStream();
+                var streamingTarget = new StreamingPipeTarget();
 
                 var ffmpegTask = Cli.Wrap(_binaryPath)
                     .WithArguments(
                         $"-i pipe:0 -vf select=not(mod(n\\,{sampleRate})) -vsync vfr -f rawvideo -pix_fmt rgb24 pipe:1")
-                    .WithStandardInputPipe(PipeSource.FromStream(videoData))
-                    .WithStandardOutputPipe(PipeTarget.ToStream(stdout))
-                    .WithStandardErrorPipe(PipeTarget.ToStream(stderr))
+                    .WithStandardInputPipe(new StreamingPipeSource(videoData))
+                    .WithStandardOutputPipe(streamingTarget)
                     .ExecuteAsync();
-                
-                await ffmpegTask;
 
-                // await Task.Delay(5000);
-                //
-                // var stderrTxt = Encoding.ASCII.GetString(stderr.ToArray());
-                // var stdoutTxt = Encoding.ASCII.GetString(stdout.ToArray());
-                
-                var frameBuffer = new Memory<byte>(new byte[width * height * 3]);
+                // Start concurrent frame processing while FFmpeg runs
+                var frameProcessingTask = ProcessFramesAsync(streamingTarget.Reader, source, width, height, cancellationToken);
 
-                stdout.Position = 0;
-                
-                while (stdout.Position < stdout.Length)
-                {
-                    // Read an entire frame from the stream
-                    var bytesRead = 0;
-                    while (!cancellationToken.IsCancellationRequested && bytesRead < frameBuffer.Length)
-                    {                
-                        bytesRead += await stdout.ReadAsync(frameBuffer[bytesRead..], cancellationToken);
-                    }
-                    
-                    if (!cancellationToken.IsCancellationRequested)
-                    {
-                        if (bytesRead != frameBuffer.Length)
-                        {
-                            throw new Exception(
-                                $"Corrupted frame, only read {bytesRead} bytes out of needed {frameBuffer.Length} bytes");
-                        }
-                        
-                        // Load frame data into an ImageSharp image (creates a copy)
-                        var frame = Image.LoadPixelData<Rgb24>(frameBuffer.Span, width, height);
-                        while (!await source.SendAsync(frame, cancellationToken))
-                        {
-                            await Task.Delay(10, cancellationToken);
-                        }
-                    }
-                }
+                // Wait for both FFmpeg and frame processing to complete
+                await Task.WhenAll(ffmpegTask, frameProcessingTask);
             }
             catch (TaskCanceledException)
             {
@@ -89,5 +104,66 @@ public class FfmpegDecoderBlockCreator
         }, cancellationToken);
 
         return source;
+    }
+
+    private async Task ProcessFramesAsync(PipeReader reader, BufferBlock<Image<Rgb24>> source, int width, int height, CancellationToken cancellationToken)
+    {
+        var frameSize = width * height * 3;
+        var frameBuffer = new byte[frameSize];
+
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var result = await reader.ReadAsync(cancellationToken);
+                var buffer = result.Buffer;
+
+                if (buffer.Length >= frameSize)
+                {
+                    // Extract one frame
+                    var frameData = buffer.Slice(0, frameSize);
+                    
+                    // Copy to our frame buffer - handle single or multiple segments
+                    if (frameData.IsSingleSegment)
+                    {
+                        frameData.FirstSpan.CopyTo(frameBuffer);
+                    }
+                    else
+                    {
+                        var position = 0;
+                        foreach (var segment in frameData)
+                        {
+                            segment.Span.CopyTo(frameBuffer.AsSpan(position));
+                            position += segment.Length;
+                        }
+                    }
+                    
+                    // Create image and send to output
+                    var frame = Image.LoadPixelData<Rgb24>(frameBuffer, width, height);
+                    await source.SendAsync(frame, cancellationToken);
+                    
+                    // Advance the reader past this frame
+                    reader.AdvanceTo(frameData.End);
+                }
+                else if (result.IsCompleted)
+                {
+                    // No more data and insufficient bytes for a complete frame
+                    if (buffer.Length > 0)
+                    {
+                        throw new InvalidDataException($"Incomplete frame: {buffer.Length} bytes remaining, expected {frameSize}");
+                    }
+                    break;
+                }
+                else
+                {
+                    // Need more data, examine the full buffer again next time
+                    reader.AdvanceTo(buffer.Start, buffer.End);
+                }
+            }
+        }
+        finally
+        {
+            await reader.CompleteAsync();
+        }
     }
 }

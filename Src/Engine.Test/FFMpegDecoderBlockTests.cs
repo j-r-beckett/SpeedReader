@@ -1,5 +1,6 @@
 using System.Threading.Tasks.Dataflow;
 using Engine;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -59,6 +60,75 @@ public class FFMpegDecoderBlockTests
         }
         
         videoStream.Dispose();
+    }
+
+    [Fact]
+    public async Task BackpressureStopsInputConsumption()
+    {
+        // Create a very large video - much larger than pipeline buffers can hold
+        var largeVideoStream = await CreateVeryLargeVideo();
+        var totalVideoSize = largeVideoStream.Length;
+        
+        _logger.LogInformation("Created large video: {totalSize} bytes", totalVideoSize);
+        
+        // Create decoder but don't consume any frames (no consumer)
+        var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+        var sourceBlock = decoder.CreateFfmpegDecoderBlock(largeVideoStream, 1, default);
+        
+        // Wait for pipeline to fill up and stabilize
+        await Task.Delay(3000);
+        var consumedBytes1 = largeVideoStream.Position;
+        
+        _logger.LogInformation("After 3s: consumed {consumed} bytes out of {total} total bytes ({percentage:F1}%)", 
+            consumedBytes1, totalVideoSize, (consumedBytes1 * 100.0) / totalVideoSize);
+        
+        // Wait more to verify consumption has stopped (backpressure is holding)
+        await Task.Delay(5000);
+        var consumedBytes2 = largeVideoStream.Position;
+        
+        _logger.LogInformation("After 8s total: consumed {consumed} bytes out of {total} total bytes ({percentage:F1}%)", 
+            consumedBytes2, totalVideoSize, (consumedBytes2 * 100.0) / totalVideoSize);
+        
+        // Key assertions for backpressure:
+        // 1. Some data was consumed (pipeline started)
+        Assert.True(consumedBytes1 > 0, "Expected some initial data consumption");
+        
+        // 2. NOT all data was consumed (backpressure stopped FFmpeg)
+        Assert.True(consumedBytes1 < totalVideoSize, 
+            $"Expected backpressure to stop consumption, but entire video was consumed ({consumedBytes1}/{totalVideoSize} bytes)");
+        
+        // 3. Consumption should have STOPPED (this is the key backpressure test)
+        consumedBytes2.Should().Be(consumedBytes1, 
+            $"consumption should stop due to backpressure, but it increased from {consumedBytes1} to {consumedBytes2} bytes");
+        
+        // 4. Should have consumed significantly less than the total
+        var consumptionPercentage = (consumedBytes1 * 100.0) / totalVideoSize;
+        Assert.True(consumptionPercentage < 50, 
+            $"Expected backpressure to limit consumption to <50%, but consumed {consumptionPercentage:F1}%");
+        
+        _logger.LogInformation("Backpressure test passed - consumption stopped at {consumed} bytes ({percentage:F1}%) and stayed stable", 
+            consumedBytes1, consumptionPercentage);
+        
+        largeVideoStream.Dispose();
+    }
+
+    private async Task<Stream> CreateVeryLargeVideo()
+    {
+        // Create a video with many frames - much larger than pipeline buffers
+        const int frameCount = 10000; // Much larger video
+        
+        // Use larger frame size to increase data volume
+        return await FrameWriter.ToCompressedVideo(Width * 2, Height * 2, 30, LargeVideoFrames(frameCount).ToAsyncEnumerable(), default);
+    }
+    
+    private IEnumerable<Image<Rgb24>> LargeVideoFrames(int frameCount)
+    {
+        for (var i = 0; i < frameCount; i++)
+        {
+            // Alternate between red and blue frames
+            var color = i % 2 == 0 ? Color.Red : Color.Blue;
+            yield return CreateImage(color, Width * 2, Height * 2);
+        }
     }
 
     private IEnumerable<Image<Rgb24>> RedBlueFrames()
