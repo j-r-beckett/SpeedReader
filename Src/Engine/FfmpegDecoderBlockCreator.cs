@@ -7,63 +7,20 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Engine;
 
-public class StreamingPipeSource : PipeSource
-{
-    private readonly Stream _sourceStream;
-    
-    public StreamingPipeSource(Stream sourceStream)
-    {
-        _sourceStream = sourceStream;
-    }
-    
-    public override async Task CopyToAsync(Stream destination, CancellationToken cancellationToken)
-    {
-        await _sourceStream.CopyToAsync(destination, cancellationToken);
-    }
-}
-
-public class StreamingPipeTarget : PipeTarget
-{
-    private readonly Pipe _pipe;
-    public PipeReader Reader => _pipe.Reader;
-    
-    public StreamingPipeTarget(PipeOptions? options = null)
-    {
-        // Use very small buffers to trigger backpressure quickly
-        var pipeOptions = options ?? new PipeOptions(
-            pauseWriterThreshold: 1024,    // Pause when 1KB in buffer
-            resumeWriterThreshold: 512     // Resume when below 512 bytes
-        );
-        _pipe = new Pipe(pipeOptions);
-    }
-    
-    public override async Task CopyFromAsync(Stream origin, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await origin.CopyToAsync(_pipe.Writer.AsStream(), cancellationToken);
-        }
-        finally
-        {
-            await _pipe.Writer.CompleteAsync();
-        }
-    }
-}
-
 public class FfmpegDecoderBlockCreator
 {
     private readonly string _binaryPath;
-    
+
     public FfmpegDecoderBlockCreator(string binaryPath)
     {
         _binaryPath = binaryPath;
     }
-    
+
     public ISourceBlock<Image<Rgb24>> CreateFfmpegDecoderBlock(Stream videoData, int sampleRate, CancellationToken cancellationToken)
     {
         // Create BufferBlock with very limited capacity to enable backpressure
-        var source = new BufferBlock<Image<Rgb24>>(new DataflowBlockOptions 
-        { 
+        var source = new BufferBlock<Image<Rgb24>>(new DataflowBlockOptions
+        {
             BoundedCapacity = 2 // Very small capacity to trigger backpressure immediately
         });
 
@@ -96,7 +53,7 @@ public class FfmpegDecoderBlockCreator
             }
             catch (Exception ex)
             {
-                ((IDataflowBlock) source).Fault(ex);
+                ((IDataflowBlock)source).Fault(ex);
                 return;
             }
 
@@ -122,7 +79,7 @@ public class FfmpegDecoderBlockCreator
                 {
                     // Extract one frame
                     var frameData = buffer.Slice(0, frameSize);
-                    
+
                     // Copy to our frame buffer - handle single or multiple segments
                     if (frameData.IsSingleSegment)
                     {
@@ -137,11 +94,11 @@ public class FfmpegDecoderBlockCreator
                             position += segment.Length;
                         }
                     }
-                    
+
                     // Create image and send to output
                     var frame = Image.LoadPixelData<Rgb24>(frameBuffer, width, height);
                     await source.SendAsync(frame, cancellationToken);
-                    
+
                     // Advance the reader past this frame
                     reader.AdvanceTo(frameData.End);
                 }

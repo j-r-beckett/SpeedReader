@@ -14,7 +14,7 @@ public class FFProbeTests
     public async Task Returns_CorrectWidthAndHeight()
     {
         var (expectedWidth, expectedHeight) = (100, 75);
-        
+
         var video = await CreateVideo(expectedWidth, expectedHeight);
 
         var (actualWidth, actualHeight) = await new FFProbe().GetVideoDimensions(video, default);
@@ -35,7 +35,7 @@ public class FFProbeTests
 
         await act.Should().ThrowAsync<FFPRobeException>();
     }
-    
+
     [Theory]
     [InlineData(" 1920,1080 ", 1920, 1080)]
     [InlineData("1920,1080", 1920, 1080)]
@@ -106,7 +106,7 @@ public class FFProbeTests
 
         video.Position.Should().NotBe(0);
     }
-    
+
     private async Task<Stream> CreateVideo(int width, int height)
     {
         const int numFrames = 12;
@@ -116,7 +116,7 @@ public class FFProbeTests
         for (var i = 0; i < numFrames; i++)
         {
             var frame = new Image<Rgb24>(width, height);
-            
+
             frame.ProcessPixelRows(accessor =>
             {
                 for (var y = 0; y < accessor.Height; y++)
@@ -128,10 +128,10 @@ public class FFProbeTests
                     }
                 }
             });
-            
+
             frames.Add(frame);
         }
-        
+
         return await FrameWriter.ToCompressedVideo(width, height, frameRate, frames.ToAsyncEnumerable(), default);
     }
 
@@ -141,23 +141,23 @@ public class FFProbeTests
         private readonly Func<Task<BufferedCommandResult>> _asyncFunc;
         private readonly Func<CancellationToken, Task<BufferedCommandResult>> _asyncFuncWithToken;
         private int _counter = -1;
-        
+
         public MockFFProbe(Func<int, BufferedCommandResult> func) => _func = func;
 
         public MockFFProbe(Func<BufferedCommandResult> func) => _func = _ => func();
-        
+
         public MockFFProbe(Func<Task<BufferedCommandResult>> asyncFunc) => _asyncFunc = asyncFunc;
-        
+
         public MockFFProbe(Func<CancellationToken, Task<BufferedCommandResult>> asyncFuncWithToken) => _asyncFuncWithToken = asyncFuncWithToken;
-        
+
         protected override async Task<BufferedCommandResult> RunFFProbeCommand(Stream video, CancellationToken cancellationToken)
         {
             if (_asyncFuncWithToken != null)
                 return await _asyncFuncWithToken(cancellationToken);
-                
+
             if (_asyncFunc != null)
                 return await _asyncFunc();
-            
+
             return _func(Interlocked.Increment(ref _counter));
         }
     }

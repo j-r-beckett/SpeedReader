@@ -18,12 +18,12 @@ public class FrameWriter
         CancellationToken cancellationToken)
     {
         var tempFile = Path.GetTempFileName() + ".webm";
-        
+
         var pipe = new Pipe();
         var readStream = pipe.Reader.AsStream();
 
         var streamTask = FramesToStream(frames, pipe.Writer, cancellationToken);
-        
+
         var ffmpegTask = FFMpegArguments
             .FromPipeInput(new StreamPipeSource(readStream), options => options
                 .WithCustomArgument($"-f rawvideo -pixel_format rgb24 -video_size {width}x{height} -framerate {frameRate}"))
@@ -35,7 +35,7 @@ public class FrameWriter
 
         return new FileStream(tempFile, FileMode.Open, FileAccess.Read);
     }
-    
+
     private static async Task FramesToStream<T>(IAsyncEnumerable<Image<T>> channel, PipeWriter writer, CancellationToken cancellationToken) where T : unmanaged, IPixel<T>
     {
         var bytesPerPixel = Marshal.SizeOf<T>();
@@ -53,9 +53,9 @@ public class FrameWriter
                 {
                     throw new InvalidOperationException("All frames must be the same size");
                 }
-                
+
                 var destination = writer.GetMemory(frameSizeInBytes);
-                
+
                 frame.ProcessPixelRows(rowAccessor =>
                 {
                     for (var y = 0; y < rowAccessor.Height; y++)
