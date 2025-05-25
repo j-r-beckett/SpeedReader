@@ -1,22 +1,30 @@
 using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 using Engine;
+using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Engine.Benchmark;
+
+public record BenchmarkResult(string TestName, int FrameCount, double CreateTimeSeconds, double DecodeTimeMs, double Fps);
+public record FpsTimePoint(double ElapsedSeconds, double Fps);
 
 public class FfmpegDecoderBenchmark
 {
     private const int Width = 1440;
     private const int Height = 1080;
     private const int FrameRate = 30;
+    private const int FrameCount = 300;
+    
+    private readonly List<BenchmarkResult> _results = new();
+    private readonly List<FpsTimePoint> _fpsOverTime = new();
+    private readonly IUrlPublisher<FfmpegDecoderBenchmark> _urlPublisher;
 
-    private readonly (int frames, string name)[] _testCases = {
-        (25, "Small"),
-        (100, "Medium"), 
-        (500, "Large")
-    };
+    public FfmpegDecoderBenchmark(IUrlPublisher<FfmpegDecoderBenchmark> urlPublisher)
+    {
+        _urlPublisher = urlPublisher;
+    }
 
     public async Task RunAsync()
     {
@@ -25,20 +33,13 @@ public class FfmpegDecoderBenchmark
         Console.WriteLine($"Video: {Width}x{Height}, {FrameRate}fps, All Black Frames");
         Console.WriteLine();
 
-        // Warm up run
-        Console.WriteLine("Warming up...");
-        await RunWarmup();
+        // Run benchmark
+        await RunBenchmark();
+        
+        // Generate and publish chart
         Console.WriteLine();
-
-        // Table header
-        Console.WriteLine("Test Case | Frames | Create (s) | Decode (ms) | FPS   ");
-        Console.WriteLine("----------|--------|------------|-------------|-------");
-
-        // Run benchmarks
-        foreach (var (frames, name) in _testCases)
-        {
-            await RunBenchmark(name, frames);
-        }
+        Console.WriteLine("Generating performance chart...");
+        await PublishPerformanceChart();
     }
 
     private async Task RunWarmup()
@@ -59,11 +60,14 @@ public class FfmpegDecoderBenchmark
         videoStream.Dispose();
     }
 
-    private async Task RunBenchmark(string testName, int frameCount)
+    private async Task RunBenchmark()
     {
+        // Clear previous FPS data
+        _fpsOverTime.Clear();
+        
         // Time video creation
         var createStopwatch = Stopwatch.StartNew();
-        var videoStream = await CreateTestVideo(frameCount);
+        var videoStream = await CreateTestVideo(FrameCount);
         createStopwatch.Stop();
         var createTime = createStopwatch.Elapsed.TotalSeconds;
 
@@ -71,25 +75,42 @@ public class FfmpegDecoderBenchmark
         videoStream.Position = 0;
         var decodeStopwatch = Stopwatch.StartNew();
         
+        // Add initial data point at time 0
+        _fpsOverTime.Add(new FpsTimePoint(0.0, 0.0));
+        
         var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
         var sourceBlock = decoder.CreateFfmpegDecoderBlock(videoStream, 1, default);
 
         var extractedFrames = 0;
+        var frameTimestamps = new List<DateTime>();
+        
         while (await sourceBlock.OutputAvailableAsync())
         {
             var frame = await sourceBlock.ReceiveAsync();
+            var timestamp = DateTime.UtcNow;
+            frameTimestamps.Add(timestamp);
+            
             frame.Dispose();
             extractedFrames++;
+            
+            // Calculate rolling FPS immediately for every frame
+            CalculateAndStoreRollingFps(frameTimestamps, decodeStopwatch.Elapsed);
         }
 
         decodeStopwatch.Stop();
         var decodeTimeMs = decodeStopwatch.Elapsed.TotalMilliseconds;
-        var fps = extractedFrames / decodeStopwatch.Elapsed.TotalSeconds;
+
+        // Calculate average FPS after 500ms warmup (this is our main FPS metric)
+        var warmupFpsPoints = _fpsOverTime.Where(p => p.ElapsedSeconds >= 0.5).ToList();
+        var fps = warmupFpsPoints.Any() ? warmupFpsPoints.Average(p => p.Fps) : extractedFrames / decodeStopwatch.Elapsed.TotalSeconds;
 
         videoStream.Dispose();
 
+        // Store result for chart generation
+        _results.Add(new BenchmarkResult("Benchmark", FrameCount, createTime, decodeTimeMs, fps));
+        
         // Output results
-        Console.WriteLine($"{testName,-9} | {frameCount,6} | {createTime,10:F2} | {decodeTimeMs,11:F0} | {fps,5:F1}");
+        Console.WriteLine($"Frames: {FrameCount} | Create: {createTime:F2}s | Decode: {decodeTimeMs:F0}ms | FPS: {fps:F1}");
     }
 
     private async Task<Stream> CreateTestVideo(int frameCount)
@@ -112,5 +133,60 @@ public class FfmpegDecoderBenchmark
         {
             yield return new Image<Rgb24>(Width, Height); // Default constructor creates black image
         }
+    }
+    
+    private void CalculateAndStoreRollingFps(List<DateTime> frameTimestamps, TimeSpan elapsedTime)
+    {
+        // For the first frame, we can't calculate FPS yet
+        if (frameTimestamps.Count < 2) return;
+        
+        const double windowMs = 250.0;
+        var now = frameTimestamps.Last();
+        var windowStart = now.AddMilliseconds(-windowMs);
+        
+        // Get frames within the 250ms window
+        var framesInWindow = frameTimestamps.Where(t => t >= windowStart).ToList();
+        
+        if (framesInWindow.Count >= 2)
+        {
+            var windowDuration = (framesInWindow.Last() - framesInWindow.First()).TotalSeconds;
+            if (windowDuration > 0)
+            {
+                var rollingFps = (framesInWindow.Count - 1) / windowDuration;
+                var elapsedSeconds = elapsedTime.TotalSeconds;
+                
+                _fpsOverTime.Add(new FpsTimePoint(elapsedSeconds, rollingFps));
+            }
+        }
+        else if (frameTimestamps.Count >= 2)
+        {
+            // If window is smaller than 250ms, use all available frames
+            var totalDuration = (frameTimestamps.Last() - frameTimestamps.First()).TotalSeconds;
+            if (totalDuration > 0)
+            {
+                var rollingFps = (frameTimestamps.Count - 1) / totalDuration;
+                var elapsedSeconds = elapsedTime.TotalSeconds;
+                
+                _fpsOverTime.Add(new FpsTimePoint(elapsedSeconds, rollingFps));
+            }
+        }
+    }
+
+    private async Task PublishPerformanceChart()
+    {
+        var chartData = new ChartData(
+            Labels: _fpsOverTime.Select(p => p.ElapsedSeconds.ToString("F2")).ToArray(),
+            Datasets: new[]
+            {
+                new ChartDataset(
+                    Label: "FPS Over Time (250ms rolling avg)",
+                    Data: _fpsOverTime.Select(p => p.Fps).ToArray(),
+                    BackgroundColor: "#36A2EB")
+            });
+            
+        await _urlPublisher.PublishChartAsync(
+            "FFmpeg Decoder FPS Over Time", 
+            chartData, 
+            "Real-time FPS progression chart");
     }
 }
