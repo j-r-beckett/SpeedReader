@@ -107,12 +107,11 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 **DIRECTIVE**: These repositories are authoritative sources for API behavior and implementation details. Consult them when additional context would be helpful for completing a task effectively.
 
 **Available References:**
-- **System.IO.Pipelines**: `/home/jimmy/.claude/repos/runtime/src/libraries/System.IO.Pipelines/`
-- **CliWrap**: `/home/jimmy/.claude/repos/CliWrap/CliWrap/`
-- **ImageSharp**: `/home/jimmy/.claude/repos/ImageSharp/src/ImageSharp/`
-- **FFmpeg Documentation**: `/home/jimmy/.claude/repos/FFmpeg/doc/`
-- **System.Threading.Tasks.Dataflow**: `/home/jimmy/.claude/repos/runtime/src/libraries/System.Threading.Tasks.Dataflow/`
-- **CliWrap Tests**: `/home/jimmy/.claude/repos/CliWrap/CliWrap.Tests/`
+- **System.IO.Pipelines**: `./claude/repos/runtime/src/libraries/System.IO.Pipelines/`
+- **CliWrap**: `./claude/repos/CliWrap/CliWrap/`
+- **ImageSharp**: `./claude/repos/ImageSharp/src/ImageSharp/`
+- **FFmpeg Documentation**: `./claude/repos/FFmpeg/doc/`
+- **System.Threading.Tasks.Dataflow**: `./claude/repos/runtime/src/libraries/System.Threading.Tasks.Dataflow/`
 
 ### Knowledge Base
 - The unit test suite is fast (< 5 seconds), so run tests early and often
