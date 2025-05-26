@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace Engine.Test;
@@ -24,7 +27,7 @@ public class CapturingLogger<T> : ILogger<T>
     public void Clear() => _logEntries.Clear();
 
     public bool HasLoggedMessageContaining(string text, LogLevel? logLevel = null) =>
-        _logEntries.Any(entry => 
+        _logEntries.Any(entry =>
             entry.Message.Contains(text, StringComparison.OrdinalIgnoreCase) &&
             (logLevel == null || entry.LogLevel == logLevel));
 

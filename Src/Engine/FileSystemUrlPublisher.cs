@@ -1,4 +1,9 @@
+using System;
+using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -16,7 +21,7 @@ public class FileSystemUrlPublisher<T> : IUrlPublisher<T>
         _baseDirectory = baseDirectory;
         _urlPrefix = urlPrefix ?? "file://wsl$/Ubuntu";
         _logger = logger;
-        
+
         if (!Directory.Exists(_baseDirectory))
         {
             Directory.CreateDirectory(_baseDirectory);
@@ -34,7 +39,7 @@ public class FileSystemUrlPublisher<T> : IUrlPublisher<T>
         await data.CopyToAsync(fileStream, cancellationToken);
 
         var url = CreateUrl(filePath);
-        
+
         if (!string.IsNullOrEmpty(description))
         {
             _logger.LogInformation("Published {ContentType} data ({Description}) to {Url}", contentType, description, url);
@@ -73,7 +78,7 @@ public class FileSystemUrlPublisher<T> : IUrlPublisher<T>
 
     private static string GenerateChartHtml(string title, ChartData data)
     {
-        var datasets = string.Join(",\n", data.Datasets.Select((ds, i) => 
+        var datasets = string.Join(",\n", data.Datasets.Select((ds, i) =>
             $@"{{
                 label: '{ds.Label}',
                 data: [{string.Join(", ", ds.Data)}],

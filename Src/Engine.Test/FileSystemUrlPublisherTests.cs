@@ -1,9 +1,7 @@
-using System.Text;
-using Engine;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace Engine.Test;
 
@@ -31,7 +29,7 @@ public class FileSystemUrlPublisherTests : IDisposable
         // Verify file was created
         var createdFiles = Directory.GetFiles(_testDirectory, "*.txt");
         createdFiles.Should().HaveCount(1);
-        
+
         var savedData = await File.ReadAllBytesAsync(createdFiles[0]);
         savedData.Should().Equal(testData);
 
@@ -66,7 +64,7 @@ public class FileSystemUrlPublisherTests : IDisposable
         // Verify file was created
         var createdFiles = Directory.GetFiles(_testDirectory, "*.json");
         createdFiles.Should().HaveCount(1);
-        
+
         var savedJson = await File.ReadAllTextAsync(createdFiles[0]);
         savedJson.Should().Be(jsonData);
 
@@ -87,7 +85,7 @@ public class FileSystemUrlPublisherTests : IDisposable
         // Verify file was created
         var createdFiles = Directory.GetFiles(_testDirectory, "*.txt");
         createdFiles.Should().HaveCount(1);
-        
+
         var savedText = await File.ReadAllTextAsync(createdFiles[0]);
         savedText.Should().Be(textData);
 

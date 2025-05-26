@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.IO.Pipelines;
 using System.Runtime.InteropServices;
-using System.Threading.Channels;
+using System.Threading;
+using System.Threading.Tasks;
 using FFMpegCore;
 using FFMpegCore.Pipes;
 using SixLabors.ImageSharp;

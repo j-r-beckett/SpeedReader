@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -28,14 +32,14 @@ public class FFMpegEncoderBlockTests
     {
         // Generate test frames: 10 red + 10 blue
         var frames = GenerateRedBlueFrames(10, 10).ToList();
-        
+
         _outputHelper.WriteLine($"Generated {frames.Count} test frames");
 
         // Create encoder block
         var encoder = new FfmpegEncoderBlockCreator("ffmpeg");
         var encoderBlock = encoder.CreateFfmpegEncoderBlock(
-            Width, Height, frameRate: 5.0, 
-            out var encodedOutput, 
+            Width, Height, frameRate: 5.0,
+            out var encodedOutput,
             default);
 
         // Start reading encoded output concurrently
@@ -46,14 +50,14 @@ public class FFMpegEncoderBlockTests
         {
             await encoderBlock.SendAsync(frame);
         }
-        
+
         // Signal completion
         encoderBlock.Complete();
         await encoderBlock.Completion;
 
         // Get the encoded video stream
         var videoStream = await outputTask;
-        
+
         _outputHelper.WriteLine($"Encoded video size: {videoStream.Length} bytes");
 
         // Save to file and log URL
@@ -67,7 +71,7 @@ public class FFMpegEncoderBlockTests
 
         // Basic verification
         videoStream.Length.Should().BeGreaterThan(1000, "encoded video should have reasonable size");
-        
+
         // Dispose frames
         foreach (var frame in frames)
         {
@@ -82,13 +86,13 @@ public class FFMpegEncoderBlockTests
         var encoder = new FfmpegEncoderBlockCreator("ffmpeg");
         var encoderBlock = encoder.CreateFfmpegEncoderBlock(
             Width, Height, frameRate: 30.0,
-            out var encodedOutput, 
+            out var encodedOutput,
             default);
 
         var framesSent = 0;
         var backpressureDetected = false;
         Task<bool>? blockedSendAsyncTask = null;
-        
+
         _logger.LogInformation("Started feeding frames without consuming output");
 
         // Phase 1: Feed frames until SendAsync blocks (no output consumption)
@@ -96,28 +100,28 @@ public class FFMpegEncoderBlockTests
         for (int i = 0; i < 1500; i++)
         {
             var frame = CreateImage(i % 2 == 0 ? Color.Red : Color.Blue);
-            
+
             // Start SendAsync but don't await it
             var sendAsyncTask = encoderBlock.SendAsync(frame);
             var delayTask = Task.Delay(300); // Fast 300ms timeout like decoder test
-            
+
             var completedTask = await Task.WhenAny(sendAsyncTask, delayTask);
-            
+
             if (completedTask == delayTask)
             {
                 // SendAsync didn't complete in 300ms = backpressure detected!
                 _logger.LogInformation("Backpressure detected at {frames} frames - SendAsync blocked", framesSent);
                 backpressureDetected = true;
                 blockedSendAsyncTask = sendAsyncTask;
-                
+
                 // Verify backpressure is sustained by testing another SendAsync call
                 _logger.LogInformation("Verifying sustained backpressure with second SendAsync test");
                 var secondFrame = CreateImage(Color.Green); // Different color for verification
                 var secondSendAsyncTask = encoderBlock.SendAsync(secondFrame);
                 var secondDelayTask = Task.Delay(200); // Fast 200ms verification timeout
-                
+
                 var secondCompletedTask = await Task.WhenAny(secondSendAsyncTask, secondDelayTask);
-                
+
                 if (secondCompletedTask == secondDelayTask)
                 {
                     _logger.LogInformation("Sustained backpressure confirmed - second SendAsync also blocked");
@@ -129,11 +133,11 @@ public class FFMpegEncoderBlockTests
                     _logger.LogWarning("Unexpected: second SendAsync completed quickly during backpressure");
                     await secondSendAsyncTask;
                 }
-                
+
                 // Don't dispose frames here - ActionBlock will handle them
                 break;
             }
-            
+
             // SendAsync completed quickly, continue
             await sendAsyncTask; // Ensure it actually completed
             framesSent++;
@@ -143,12 +147,12 @@ public class FFMpegEncoderBlockTests
         // Verify backpressure was detected
         backpressureDetected.Should().BeTrue("SendAsync should block when output is not consumed");
         framesSent.Should().BeLessThan(1500, "not all frames should be sent due to backpressure");
-        
+
         _logger.LogInformation("Backpressure engaged after {frames} frames", framesSent);
 
         // Phase 2: Start consuming output to release backpressure
         var outputTask = ReadEncodedStreamAsync(encodedOutput);
-        
+
         // Phase 3: Complete the blocked SendAsync and continue with remaining frames
         if (blockedSendAsyncTask != null)
         {
@@ -165,7 +169,7 @@ public class FFMpegEncoderBlockTests
             framesSent++;
             // Don't dispose frame here - ActionBlock handles disposal
         }
-        
+
         encoderBlock.Complete();
         var videoStream = await outputTask;
 
@@ -192,7 +196,7 @@ public class FFMpegEncoderBlockTests
         {
             yield return CreateImage(Color.Red);
         }
-        
+
         // Generate blue frames
         for (int i = 0; i < blueCount; i++)
         {
@@ -220,7 +224,7 @@ public class FFMpegEncoderBlockTests
     private async Task<MemoryStream> ReadEncodedStreamAsync(System.IO.Pipelines.PipeReader reader)
     {
         var outputStream = new MemoryStream();
-        
+
         try
         {
             while (true)

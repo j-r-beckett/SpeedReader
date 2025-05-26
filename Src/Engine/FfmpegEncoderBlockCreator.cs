@@ -1,5 +1,8 @@
+using System;
 using System.IO.Pipelines;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CliWrap;
 using SixLabors.ImageSharp;
@@ -85,7 +88,7 @@ public class FfmpegEncoderBlockCreator
     private static async Task WriteFrameToPipeAsync(Image<Rgb24> frame, PipeWriter writer, int width, int height, CancellationToken cancellationToken)
     {
         var frameSize = width * height * 3; // RGB24 = 3 bytes per pixel
-        
+
         // Validate frame dimensions
         if (frame.Width != width || frame.Height != height)
         {
@@ -106,13 +109,13 @@ public class FfmpegEncoderBlockCreator
 
         writer.Advance(frameSize);
         var result = await writer.FlushAsync(cancellationToken);
-        
+
         // This is where backpressure happens - FlushAsync blocks when FFmpeg can't keep up
         if (result.IsCompleted)
         {
             throw new InvalidOperationException("Pipe writer completed unexpectedly");
         }
-        
+
         // Dispose frame immediately to free memory
         frame.Dispose();
     }

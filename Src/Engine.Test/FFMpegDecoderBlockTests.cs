@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -108,14 +114,14 @@ public class FFMpegDecoderBlockTests
             await Task.Delay(300);
             var backpressurePosition = videoStream.Position;
 
-            _logger.LogInformation("Backpressure engaged at {position} bytes ({percentage:F1}%)", 
+            _logger.LogInformation("Backpressure engaged at {position} bytes ({percentage:F1}%)",
                 backpressurePosition, (backpressurePosition * 100.0) / totalVideoSize);
 
             // Verify backpressure holds when no frames are consumed
             await Task.Delay(200);
             var stablePosition = videoStream.Position;
 
-            stablePosition.Should().Be(backpressurePosition, 
+            stablePosition.Should().Be(backpressurePosition,
                 "stream position should remain stable when no frames are consumed (backpressure holding)");
 
             var framesConsumed = 0;
@@ -132,7 +138,7 @@ public class FFMpegDecoderBlockTests
                 if (framesConsumed % 200 == 0 && !backpressureReleased)
                 {
                     var currentPosition = videoStream.Position;
-                    
+
                     // Log only the first time backpressure is released
                     if (currentPosition > backpressurePosition)
                     {
