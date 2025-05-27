@@ -60,8 +60,4 @@ RUN python3 mmdeploy/tools/deploy.py \
     --log-level   INFO \
     --dump-info
 
-COPY *.py .
-RUN python3 /replace_padToWidth_with_pad.py /models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/pipeline.json
-RUN python3 /remove_dictionary_post_processing.py /models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/pipeline.json
-
 ENTRYPOINT ["/bin/bash"]
