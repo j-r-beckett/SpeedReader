@@ -190,13 +190,40 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **./.claude/references/onnxruntime/csharp/src/Microsoft.ML.OnnxRuntime/OrtValue.shared.cs** - Memory-efficient tensor handling and native buffer management
 - **./.claude/references/onnxruntime/csharp/test/Microsoft.ML.OnnxRuntime.Tests.Common/InferenceTest.cs** - Real-world inference patterns and error handling
 - **./.claude/references/mmdeploy/** - Model deployment and optimization tools
-- **./Src/Models/bin/Debug/net8.0/models/dbnet_resnet18_fpnc_1200e_icdar2015/** - DBNet text detection model with preprocessing pipeline and deployment config
-- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/** - RobustScanner text recognition model with character dictionary
+
+### DBNet Text Detection Model
+- **./Src/Models/bin/Debug/net8.0/models/dbnet_resnet18_fpnc_1200e_icdar2015/deploy.json** - Model configuration: FP32, batch_size=1, dynamic_shape=true, task=TextDetector
+- **./Src/Models/bin/Debug/net8.0/models/dbnet_resnet18_fpnc_1200e_icdar2015/pipeline.json** - Complete preprocessing pipeline: resize to [1333,736] with keep_ratio, normalize with ImageNet stats [123.675,116.28,103.53]/[58.395,57.12,57.375], pad to 32-divisible, input tensor name="input"
+- **./Src/Models/bin/Debug/net8.0/models/dbnet_resnet18_fpnc_1200e_icdar2015/end2end.onnx** - ONNX model file for inference
+
+### RobustScanner Text Recognition Model  
+- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/deploy.json** - Model configuration: FP32, batch_size=1, dynamic_shape=true, task=TextRecognizer, uses dict_file.txt
+- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/pipeline.json** - Preprocessing pipeline: RescaleToHeight=48, PadToWidth=160, normalize with [127,127,127]/[127,127,127], input tensor name="input"
+- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/dict_file.txt** - Character dictionary: 0-9, a-z, A-Z, plus symbols !"#$%&'()*+,-./:;<=>?@[\]_`~
+- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/end2end.onnx** - ONNX model file for inference
 
 ## Image Processing
 - **./.claude/references/ImageSharp/src/ImageSharp/Image{TPixel}.cs** - Core image manipulation and pixel access patterns
 - **./.claude/references/ImageSharp/src/ImageSharp/Memory/MemoryAllocatorExtensions.cs** - Memory-efficient image processing patterns
 - **./.claude/references/ImageSharp/src/ImageSharp/PixelFormats/PixelOperations{TPixel}.cs** - High-performance pixel manipulation and conversion patterns
+
+### ImageSharp Documentation
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/gettingstarted.md** - Basic ImageSharp usage and common operations
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/processing.md** - Image processing operations (resize, crop, filters, etc.)
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/resize.md** - Detailed resizing operations and resampling algorithms
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/pixelformats.md** - Working with different pixel formats and color spaces
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/pixelbuffers.md** - Direct pixel buffer access and manipulation
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/memorymanagement.md** - Memory allocation strategies and performance optimization
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/configuration.md** - Global configuration options and custom settings
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/imageformats.md** - Supported image formats and encoding/decoding options
+- **./.claude/references/sixlaborsdocs/articles/imagesharp/animatedgif.md** - Working with animated GIF files
+
+### ImageSharp.Drawing Documentation
+- **./.claude/references/sixlaborsdocs/articles/imagesharp.drawing/gettingstarted.md** - Vector drawing, shapes, paths, and 2D graphics operations
+
+### Fonts Documentation  
+- **./.claude/references/sixlaborsdocs/articles/fonts/gettingstarted.md** - Font loading, text measurement, and basic text rendering
+- **./.claude/references/sixlaborsdocs/articles/fonts/customrendering.md** - Advanced text rendering and custom font handling
 
 ## Polygon Operations
 - **./.claude/references/Clipper2Notes.md** - Polygon clipping and offsetting library overview
