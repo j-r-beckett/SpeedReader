@@ -10,21 +10,17 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="models\**\*">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <Target Name="BuildModels" BeforeTargets="BeforeBuild;BeforeRebuild;Restore;BeforeCompile;PrepareForBuild;VSTest">
+  <Target Name="BuildModels" BeforeTargets="BeforeBuild;BeforeRebuild;Restore;BeforeCompile;PrepareForBuild;VSTest;Build">
     <Exec Command="bash buildModel.sh" WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
 
-  <Target Name="CopyModelsToOutput" AfterTargets="BuildModels" Condition="Exists('models')">
-    <ItemGroup>
-      <ModelsFiles Include="models\**\*" />
+  <!-- Add models to None items after they're generated so they get copied -->
+  <Target Name="AddModelsToProject" AfterTargets="BuildModels">
+    <ItemGroup Condition="Exists('models')">
+      <None Include="models\**\*">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
-    <Copy SourceFiles="@(ModelsFiles)" DestinationFiles="@(ModelsFiles->'$(OutputPath)%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
   <Target Name="CleanModels" BeforeTargets="BeforeClean">
