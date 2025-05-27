@@ -52,7 +52,7 @@ dotnet restore
 
 **Slow consumer** → BufferBlock fills → `SendAsync()` blocks → PipeReader stops → StreamingPipeTarget pipe fills → **Unix pipe blocks** → FFmpeg stdout blocks → **FFmpeg pauses stdin** → input stream stops
 
-### Encoder  
+### Encoder
 Producer → `ActionBlock<Image<Rgb24>>(capacity=2)` → `Pipe.Writer` → `StreamingPipeSource` → `FFmpeg` → `StreamingPipeTarget` → Consumer
 
 **Slow consumer** → StreamingPipeTarget pipe fills → **Unix pipe blocks** → FFmpeg stdout blocks → **FFmpeg pauses stdin** → `FlushAsync()` blocks → ActionBlock fills → `SendAsync()` blocks → producer pauses
@@ -76,7 +76,7 @@ Producer → `ActionBlock<Image<Rgb24>>(capacity=2)` → `Pipe.Writer` → `Stre
 
 ### Model Build Process
 The Models project uses a Docker-based build system to generate ONNX models:
-- **buildModel.sh**: Builds a Docker container and extracts generated models to the `models/` directory
+- **buildModels.sh**: Builds a Docker container and extracts generated models to the `models/` directory
 - **MSBuild Integration**: Models are automatically built before compilation via `BuildModels` target
 - **Auto-copy**: Generated models are included as `None` items and copied to output directory
 - **Clean Integration**: `CleanModels` target removes generated models during clean operations
@@ -185,7 +185,7 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **./.claude/references/dotnetruntime/src/libraries/System.IO.Pipelines/tests/BackpressureTests.cs** - Critical test patterns for flow control verification
 
 ## ONNX Machine Learning
-- **./.claude/references/dotnetONNXTutorial.md** - C# ONNX Runtime usage guide  
+- **./.claude/references/dotnetONNXTutorial.md** - C# ONNX Runtime usage guide
 - **./.claude/references/onnxruntime/csharp/src/Microsoft.ML.OnnxRuntime/InferenceSession.shared.cs** - Session lifecycle and model loading patterns
 - **./.claude/references/onnxruntime/csharp/src/Microsoft.ML.OnnxRuntime/OrtValue.shared.cs** - Memory-efficient tensor handling and native buffer management
 - **./.claude/references/onnxruntime/csharp/test/Microsoft.ML.OnnxRuntime.Tests.Common/InferenceTest.cs** - Real-world inference patterns and error handling
@@ -196,7 +196,7 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **./.claude/references/ImageSharp/src/ImageSharp/Memory/MemoryAllocatorExtensions.cs** - Memory-efficient image processing patterns
 - **./.claude/references/ImageSharp/src/ImageSharp/PixelFormats/PixelOperations{TPixel}.cs** - High-performance pixel manipulation and conversion patterns
 
-## Polygon Operations  
+## Polygon Operations
 - **./.claude/references/Clipper2Notes.md** - Polygon clipping and offsetting library overview
 - **./.claude/references/Clipper2/CSharp/Clipper2Lib/Clipper.Engine.cs** - Core clipping algorithm implementation
 - **./.claude/references/Clipper2/CSharp/Clipper2Lib/Clipper.Offset.cs** - Polygon offsetting (dilation/erosion) algorithms essential for DBNet
@@ -213,10 +213,9 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 
 ## .NET Platform
 - **./.claude/references/dotnetruntime/** - Core .NET runtime implementation
-- **./.claude/references/dotnetdocs/** - Official .NET documentation  
+- **./.claude/references/dotnetdocs/** - Official .NET documentation
 - **./.claude/references/dotnet-api-docs/** - API reference documentation
 - **./.claude/references/AspNetCore.Docs/** - ASP.NET Core documentation
 
 ### Knowledge Base
-- The unit test suite is fast (< 5 seconds), so run tests early and often
 <!-- Claude: Record specific files and insights you discover for future reference -->

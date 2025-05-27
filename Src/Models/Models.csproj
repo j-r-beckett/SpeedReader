@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <Target Name="BuildModels" BeforeTargets="BeforeBuild;BeforeRebuild;Restore;BeforeCompile;PrepareForBuild;VSTest;Build">
-    <Exec Command="bash buildModel.sh" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="bash buildModels.sh" WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
 
   <!-- Add models to None items after they're generated so they get copied -->
