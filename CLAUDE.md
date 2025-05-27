@@ -4,10 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-OpusFlow is a .NET 8 video processing solution with three main components:
+OpusFlow is a .NET 8 video processing solution with five main components:
 - **Engine**: Core video processing library using FFMpegCore, CliWrap, and SixLabors.ImageSharp
 - **Engine.Test**: Test project with video generation and processing tests
 - **Engine.Benchmark**: Performance benchmarking with Chart.js visualization
+- **Models**: ONNX machine learning model management and inference using Microsoft.ML.OnnxRuntime
+- **Models.Test**: Test project that verifies the Models build process correctly generated the models
 
 ## Common Commands
 
@@ -27,6 +29,9 @@ timeout 30s dotnet test --logger "console;verbosity=detailed" --filter "Backpres
 
 # Run single test project
 timeout 30s dotnet test Src/Engine.Test/
+
+# Run Models tests (verifies build process generated valid models)
+timeout 30s dotnet test Src/Models.Test/
 
 # Clean and restore
 dotnet clean
@@ -67,6 +72,28 @@ Producer → `ActionBlock<Image<Rgb24>>(capacity=2)` → `Pipe.Writer` → `Stre
 
 **Key insight**: Unix pipes + FFmpeg = automatic coordination. Don't reinvent this with polling or manual throttling.
 
+## Models Project Architecture
+
+### Model Build Process
+The Models project uses a Docker-based build system to generate ONNX models:
+- **buildModel.sh**: Builds a Docker container and extracts generated models to the `models/` directory
+- **MSBuild Integration**: Models are automatically built before compilation via `BuildModels` target
+- **Auto-copy**: Generated models are included as `None` items and copied to output directory
+- **Clean Integration**: `CleanModels` target removes generated models during clean operations
+
+### ModelZoo Class
+- **GetInferenceSession()**: Factory method for creating ONNX inference sessions from model enums
+- **Model Enum**: Defines available models (DbNet18, Robust31) with corresponding directory names
+- **Assembly-relative Paths**: Models are located relative to assembly location for deployment flexibility
+- **Standard Structure**: Each model follows `models/{model_name}/end2end.onnx` pattern
+
+### Models.Test Verification
+The test suite verifies that the model build process works correctly:
+- **CanRetrieveSession**: Parameterized test ensuring all models in the enum can be loaded as valid ONNX sessions
+- **Build Verification**: Tests fail if the Docker build process didn't generate valid ONNX files
+- **Error Handling**: Validates proper exceptions for missing or invalid model files
+- **Enum Coverage**: Uses `MemberData` to automatically test all models defined in the Model enum
+
 ### Streaming Architecture Components
 
 - **StreamingPipeSource**: Custom `PipeSource` implementation that feeds video data to FFmpeg stdin with natural backpressure
@@ -81,6 +108,7 @@ Producer → `ActionBlock<Image<Rgb24>>(capacity=2)` → `Pipe.Writer` → `Stre
 - **FFProbe**: Video metadata extraction with proper error handling
 - **IUrlPublisher**: Generic interface for output publishing with `FileSystemUrlPublisher` implementation
 - **TestLogger**: Bridges xUnit `ITestOutputHelper` with `ILogger` for consistent logging
+- **ModelZoo**: ONNX model management with enum-based model selection and InferenceSession factory methods
 
 ### Central Package Management
 All package versions are managed in `Directory.Packages.props`. Project files reference packages without version attributes.
