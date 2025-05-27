@@ -190,6 +190,8 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **./.claude/references/onnxruntime/csharp/src/Microsoft.ML.OnnxRuntime/OrtValue.shared.cs** - Memory-efficient tensor handling and native buffer management
 - **./.claude/references/onnxruntime/csharp/test/Microsoft.ML.OnnxRuntime.Tests.Common/InferenceTest.cs** - Real-world inference patterns and error handling
 - **./.claude/references/mmdeploy/** - Model deployment and optimization tools
+- **./Src/Models/bin/Debug/net8.0/models/dbnet_resnet18_fpnc_1200e_icdar2015/** - DBNet text detection model with preprocessing pipeline and deployment config
+- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/** - RobustScanner text recognition model with character dictionary
 
 ## Image Processing
 - **./.claude/references/ImageSharp/src/ImageSharp/Image{TPixel}.cs** - Core image manipulation and pixel access patterns
