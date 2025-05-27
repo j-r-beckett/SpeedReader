@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="models\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="BuildModels" BeforeTargets="BeforeBuild;BeforeRebuild;Restore;BeforeCompile;PrepareForBuild;VSTest">
+    <Exec Command="bash buildModel.sh" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
+  <Target Name="CopyModelsToOutput" AfterTargets="BuildModels" Condition="Exists('models')">
+    <ItemGroup>
+      <ModelsFiles Include="models\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModelsFiles)" DestinationFiles="@(ModelsFiles->'$(OutputPath)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <Target Name="CleanModels" BeforeTargets="BeforeClean">
+    <RemoveDir Directories="models" Condition="Exists('models')" />
+  </Target>
+
+</Project>
