@@ -9,6 +9,7 @@ namespace TextDetection;
 
 public class TextDetectorInput : IDisposable
 {
+    public OrtValue Tensor => _tensor;
     private readonly OrtValue _tensor;
     private readonly int _maxBatchSize;
     private readonly int _height;
