@@ -11,20 +11,20 @@
   </ItemGroup>
 
   <Target Name="BuildModels" BeforeTargets="BeforeBuild;BeforeRebuild;Restore;BeforeCompile;PrepareForBuild;VSTest;Build">
-    <Exec Command="bash buildModels.sh" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="bash buildModels.sh &quot;$(OutputPath)models&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
 
   <!-- Add models to None items after they're generated so they get copied -->
   <Target Name="AddModelsToProject" AfterTargets="BuildModels">
-    <ItemGroup Condition="Exists('models')">
-      <None Include="models\**\*">
+    <ItemGroup Condition="Exists('$(OutputPath)models')">
+      <None Include="$(OutputPath)models\**\*">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
   </Target>
 
   <Target Name="CleanModels" BeforeTargets="BeforeClean">
-    <RemoveDir Directories="models" Condition="Exists('models')" />
+    <RemoveDir Directories="$(OutputPath)models" Condition="Exists('$(OutputPath)models')" />
   </Target>
 
 </Project>
