@@ -13,7 +13,9 @@
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="SixLabors.Fonts" />
     <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
@@ -24,6 +26,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../TextDetection/TextDetection.csproj" />
+    <ProjectReference Include="../Engine/Engine.csproj" />
+    <ProjectReference Include="../Engine.Test/Engine.Test.csproj" />
+    <ProjectReference Include="../Models/Models.csproj" />
   </ItemGroup>
 
 </Project>
