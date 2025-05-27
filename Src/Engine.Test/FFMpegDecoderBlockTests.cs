@@ -57,6 +57,11 @@ public class FFMpegDecoderBlockTests
                 }
                 return Task.CompletedTask;
             });
+
+            foreach (var frame in frames)
+            {
+                frame.Dispose();
+            }
         });
     }
 

@@ -132,9 +132,11 @@ public class FFMpegEncoderBlockTests
                 {
                     _logger.LogWarning("Unexpected: second SendAsync completed quickly during backpressure");
                     await secondSendAsyncTask;
+                    secondFrame.Dispose(); // Dispose second frame if completed quickly
                 }
 
-                // Don't dispose frames here - ActionBlock will handle them
+                // Dispose the original frame since we're breaking the loop
+                frame.Dispose();
                 break;
             }
 
