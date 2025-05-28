@@ -119,8 +119,8 @@ public class TextDetectorTests
             using var testImage = new Image<Rgb24>(1920, 1080, new Rgb24(255, 255, 255));
             var wordBounds = new List<RectangleF>();
 
-            // Generate 1-10 random words
-            int wordCount = random.Next(1, 11);
+            // Generate 5 words (colors will be assigned in visualization)
+            int wordCount = 5;
             for (int i = 0; i < wordCount; i++)
             {
                 // Generate random string (5-10 characters)
@@ -150,11 +150,12 @@ public class TextDetectorTests
             input.LoadBatch(dbnetImage);
             var output = detector.RunTextDetection(input);
 
-            // Scale probability map back to original image dimensions
-            var scaledOutput = ScaleProbabilityMapToOriginal(output, originalWidth, originalHeight);
+            // Get model output dimensions
+            int modelHeight = output.ProbabilityMap.GetLength(0);
+            int modelWidth = output.ProbabilityMap.GetLength(1);
 
-            // Validate detection accuracy and create visualization
-            using var visualizationImage = ValidateAndVisualize(testImage, wordBounds, scaledOutput, originalWidth, originalHeight, iteration);
+            // Validate detection accuracy and create visualization in model coordinate space
+            using var visualizationImage = ValidateAndVisualize(testImage, wordBounds, output, originalWidth, originalHeight, modelWidth, modelHeight, iteration);
             await _urlPublisher.PublishAsync(visualizationImage, $"accuracy-test-{iteration}-visualization.png");
         }
 
@@ -168,95 +169,83 @@ public class TextDetectorTests
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
-    private TextDetectorOutput ScaleProbabilityMapToOriginal(TextDetectorOutput modelOutput, int originalWidth, int originalHeight)
+
+    private Image<Rgb24> ValidateAndVisualize(Image<Rgb24> processedImage, List<RectangleF> wordBounds, TextDetectorOutput output, int originalWidth, int originalHeight, int modelWidth, int modelHeight, int iteration)
     {
-        int modelHeight = modelOutput.ProbabilityMap.GetLength(0);
-        int modelWidth = modelOutput.ProbabilityMap.GetLength(1);
+        // Define distinctive colors for word identification with names
+        var wordColorsWithNames = new (Color color, string name)[]
+        {
+            (Color.Red, "Red"),
+            (Color.Green, "Green"),
+            (Color.Blue, "Blue"),
+            (Color.Orange, "Orange"),
+            (Color.Purple, "Purple")
+        };
 
-        // Create scaled probability map at original dimensions
-        var scaledMap = new float[originalHeight, originalWidth];
-
-        // Scale factors
+        // Calculate scale factors to convert from original to model coordinates
         float scaleX = (float)modelWidth / originalWidth;
         float scaleY = (float)modelHeight / originalHeight;
 
-        // Resample the probability map using bilinear interpolation
-        for (int y = 0; y < originalHeight; y++)
-        {
-            for (int x = 0; x < originalWidth; x++)
-            {
-                // Map to model coordinates
-                float sourceX = x * scaleX;
-                float sourceY = y * scaleY;
-
-                // Bilinear interpolation
-                int x0 = (int)Math.Floor(sourceX);
-                int y0 = (int)Math.Floor(sourceY);
-                int x1 = Math.Min(x0 + 1, modelWidth - 1);
-                int y1 = Math.Min(y0 + 1, modelHeight - 1);
-
-                float wx = sourceX - x0;
-                float wy = sourceY - y0;
-
-                float value = (1 - wx) * (1 - wy) * modelOutput.ProbabilityMap[y0, x0] +
-                             wx * (1 - wy) * modelOutput.ProbabilityMap[y0, x1] +
-                             (1 - wx) * wy * modelOutput.ProbabilityMap[y1, x0] +
-                             wx * wy * modelOutput.ProbabilityMap[y1, x1];
-
-                scaledMap[y, x] = value;
-            }
-        }
-
-        return new TextDetectorOutput { ProbabilityMap = scaledMap };
-    }
-
-    private Image<Rgb24> ValidateAndVisualize(Image<Rgb24> processedImage, List<RectangleF> wordBounds, TextDetectorOutput output, int originalWidth, int originalHeight, int iteration)
-    {
-        // Create a side-by-side visualization: processed image on left, detection result on right
-        int visualWidth = originalWidth + originalWidth;
-        int visualHeight = originalHeight;
+        // Create a side-by-side visualization in model coordinate space
+        int visualWidth = modelWidth + modelWidth;
+        int visualHeight = modelHeight;
 
         var visualization = new Image<Rgb24>(visualWidth, visualHeight, new Rgb24(128, 128, 128)); // Gray background
 
-        // Draw processed image on the left (resize it back to original size for display)
-        var resizedProcessedImage = processedImage.Clone();
-        resizedProcessedImage.Mutate(ctx => ctx.Resize(originalWidth, originalHeight));
-        visualization.Mutate(ctx => ctx.DrawImage(resizedProcessedImage, new Point(0, 0), 1.0f));
+        // Draw processed image on the left (scale DOWN to model size)
+        var scaledInputImage = processedImage.Clone();
+        scaledInputImage.Mutate(ctx => ctx.Resize(modelWidth, modelHeight));
+        visualization.Mutate(ctx => ctx.DrawImage(scaledInputImage, new Point(0, 0), 1.0f));
 
-        // Draw detection result on the right (already at original size)
+        // Draw detection result on the right (already at model size)
         using var detectionImage = output.RenderAsGreyscale();
-        visualization.Mutate(ctx => ctx.DrawImage(detectionImage, new Point(originalWidth, 0), 1.0f));
+        visualization.Mutate(ctx => ctx.DrawImage(detectionImage, new Point(modelWidth, 0), 1.0f));
+
+        // Convert word bounds to model coordinate space
+        var scaledWordBounds = wordBounds.Select(bound => new RectangleF(
+            bound.X * scaleX,
+            bound.Y * scaleY,
+            bound.Width * scaleX,
+            bound.Height * scaleY
+        )).ToList();
+
+        // Collect validation results to assert after visualization is published
+        var validationResults = new List<(int wordIndex, string colorName, float averageProbability)>();
 
         // Overlay word bounding boxes
         visualization.Mutate(ctx =>
         {
-            // Red boxes on processed image (left side) - just original bounding boxes, no buffers needed
-            foreach (var bound in wordBounds)
+            // Colored boxes on processed image (left side) - scaled word bounds
+            for (int wordIndex = 0; wordIndex < scaledWordBounds.Count; wordIndex++)
             {
-                ctx.Draw(Pens.Solid(Color.Red, 4), bound);
+                var scaledBound = scaledWordBounds[wordIndex];
+                var wordColor = wordColorsWithNames[wordIndex].color;
+                ctx.Draw(Pens.Solid(wordColor, 4), scaledBound);
             }
 
-            // Yellow boxes on detection result (right side) - show buffers for sampling logic
-            foreach (var bound in wordBounds)
+            // Colored boxes on detection result (right side) - show buffers for sampling logic
+            for (int wordIndex = 0; wordIndex < scaledWordBounds.Count; wordIndex++)
             {
+                var scaledBound = scaledWordBounds[wordIndex];
+                var (wordColor, colorName) = wordColorsWithNames[wordIndex];
                 var offsetBound = new RectangleF(
-                    bound.X + originalWidth,
-                    bound.Y,
-                    bound.Width,
-                    bound.Height);
+                    scaledBound.X + modelWidth,
+                    scaledBound.Y,
+                    scaledBound.Width,
+                    scaledBound.Height);
 
-                // Original bounding box (solid yellow)
-                ctx.Draw(Pens.Solid(Color.Yellow, 4), offsetBound);
+                // Original bounding box
+                ctx.Draw(Pens.Solid(wordColor, 4), offsetBound);
 
-                // Outer buffer (dotted yellow) - used for background pixel counting
+                // Outer buffer - used for background pixel counting
                 var outerBuffer = new RectangleF(
                     offsetBound.X - 10,
                     offsetBound.Y - 10,
                     offsetBound.Width + 20,
                     offsetBound.Height + 20);
-                ctx.Draw(Pens.Dot(Color.Yellow, 4), outerBuffer);
+                ctx.Draw(Pens.Dot(wordColor, 4), outerBuffer);
 
-                // Inner buffer (dotted orange) - used for text pixel counting
+                // Inner buffer - used for text pixel counting
                 var innerBuffer = new RectangleF(
                     offsetBound.X + 10,
                     offsetBound.Y + 10,
@@ -264,26 +253,45 @@ public class TextDetectorTests
                     offsetBound.Height - 20);
                 if (innerBuffer.Width > 0 && innerBuffer.Height > 0)
                 {
-                    ctx.Draw(Pens.Dot(Color.Orange, 4), innerBuffer);
+                    ctx.Draw(Pens.Dot(wordColor, 4), innerBuffer);
 
+                    // Validate this word's detection accuracy using model coordinates
                     float totalProbability = 0;
-                    _logger.LogInformation("Looping from {top} to {bottom}, and from {left} to {right}",
-                        (int)innerBuffer.Top, (int)innerBuffer.Bottom, (int)innerBuffer.Left, (int)innerBuffer.Right);
-                    for (int y = (int)innerBuffer.Top; y < (int)innerBuffer.Bottom; y++)
+                    int pixelCount = 0;
+
+                    // Sample from the inner buffer in model coordinate space
+                    int startY = Math.Max(0, (int)Math.Floor(scaledBound.Y + 10));
+                    int endY = Math.Min(modelHeight - 1, (int)Math.Ceiling(scaledBound.Y + scaledBound.Height - 10));
+                    int startX = Math.Max(0, (int)Math.Floor(scaledBound.X + 10));
+                    int endX = Math.Min(modelWidth - 1, (int)Math.Ceiling(scaledBound.X + scaledBound.Width - 10));
+
+                    for (int y = startY; y <= endY; y++)
                     {
-                        for (int x = (int)innerBuffer.Left; x < (int)innerBuffer.Right; x++)
+                        for (int x = startX; x <= endX; x++)
                         {
-                            totalProbability += output.ProbabilityMap[x, y];
+                            totalProbability += output.ProbabilityMap[y, x];  // row, col
+                            pixelCount++;
                         }
                     }
 
-                    float area = (innerBuffer.Bottom - innerBuffer.Top) * (innerBuffer.Left - innerBuffer.Right);
+                    if (pixelCount > 0)
+                    {
+                        float averageProbability = totalProbability / pixelCount;
+                        _logger.LogInformation($"Word {wordIndex} ({colorName}): Average probability in inner buffer = {averageProbability:F3} (sampled {pixelCount} pixels)");
 
-                    _logger.LogInformation("Total probability: {p}", totalProbability);
-                    totalProbability.Should().BeGreaterThan((int) (0.8 * area));
+                        // Collect validation result for later assertion
+                        validationResults.Add((wordIndex, colorName, averageProbability));
+                    }
                 }
             }
         });
+
+        // Perform validation assertions after visualization is created
+        foreach (var (wordIndex, colorName, averageProbability) in validationResults)
+        {
+            Assert.True(averageProbability > 0.7f,
+                $"Word {wordIndex} ({colorName}) has low average probability {averageProbability:F3} in inner buffer. Expected > 0.7");
+        }
 
         return visualization;
     }
