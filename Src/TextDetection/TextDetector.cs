@@ -23,17 +23,17 @@ public class TextDetector : IDisposable
 
         using var runOptions = new RunOptions();
         using var outputs = _session.Run(runOptions, inputs, _session.OutputNames);
-        
+
         var outputTensor = outputs[0];
         var outputSpan = outputTensor.GetTensorDataAsSpan<float>();
         var shape = outputTensor.GetTensorTypeAndShape().Shape;
-        
+
         // Output shape is [batch_size, height, width]
         int height = (int)shape[1];
         int width = (int)shape[2];
-        
+
         var probabilityMap = new float[height, width];
-        
+
         for (int h = 0; h < height; h++)
         {
             for (int w = 0; w < width; w++)
@@ -41,7 +41,7 @@ public class TextDetector : IDisposable
                 probabilityMap[h, w] = outputSpan[h * width + w];
             }
         }
-        
+
         return new TextDetectorOutput { ProbabilityMap = probabilityMap };
     }
 

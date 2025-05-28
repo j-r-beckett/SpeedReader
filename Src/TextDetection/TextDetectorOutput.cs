@@ -11,9 +11,9 @@ public class TextDetectorOutput
     {
         int height = ProbabilityMap.GetLength(0);
         int width = ProbabilityMap.GetLength(1);
-        
+
         var image = new Image<Rgb24>(width, height);
-        
+
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
@@ -23,7 +23,7 @@ public class TextDetectorOutput
                 image[x, y] = new Rgb24(greyValue, greyValue, greyValue);
             }
         }
-        
+
         return image;
     }
 }

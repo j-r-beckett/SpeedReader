@@ -57,8 +57,8 @@ public readonly struct DbNetImage
 
         // Step 4: Convert HWC → CHW with normalization
         float[] normalizedData = new float[3 * image.Width * image.Height];
-        float[] means = [ 123.675f, 116.28f, 103.53f ];
-        float[] stds = [ 58.395f, 57.12f, 57.375f ];
+        float[] means = [123.675f, 116.28f, 103.53f];
+        float[] stds = [58.395f, 57.12f, 57.375f];
 
         int channelSize = image.Width * image.Height;
 

@@ -1,5 +1,3 @@
-using System.IO;
-using System.Net.Mime;
 using Engine;
 using Engine.Test;
 using FluentAssertions;
@@ -10,7 +8,6 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace TextDetection.Test;
