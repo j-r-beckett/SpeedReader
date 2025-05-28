@@ -18,6 +18,7 @@ public class TextDetectorTests
     private readonly TestLogger<TextDetectorTests> _logger;
     private readonly FileSystemUrlPublisher<TextDetectorTests> _urlPublisher;
     private readonly Font _font;
+    private readonly int _bufferSize = 10;
 
     public TextDetectorTests(ITestOutputHelper outputHelper)
     {
@@ -237,33 +238,25 @@ public class TextDetectorTests
                 // Original bounding box
                 ctx.Draw(Pens.Solid(wordColor, 4), offsetBound);
 
-                // Outer buffer - used for background pixel counting
-                var outerBuffer = new RectangleF(
-                    offsetBound.X - 10,
-                    offsetBound.Y - 10,
-                    offsetBound.Width + 20,
-                    offsetBound.Height + 20);
-                ctx.Draw(Pens.Dot(wordColor, 4), outerBuffer);
-
-                // Inner buffer - used for text pixel counting
-                var innerBuffer = new RectangleF(
-                    offsetBound.X + 10,
-                    offsetBound.Y + 10,
-                    offsetBound.Width - 20,
-                    offsetBound.Height - 20);
-                if (innerBuffer.Width > 0 && innerBuffer.Height > 0)
+                // Buffer - used for text pixel counting
+                var buffer = new RectangleF(
+                    offsetBound.X + _bufferSize,
+                    offsetBound.Y + _bufferSize,
+                    offsetBound.Width - 2 * _bufferSize,
+                    offsetBound.Height - 2 * _bufferSize);
+                if (buffer.Width > 0 && buffer.Height > 0)
                 {
-                    ctx.Draw(Pens.Dot(wordColor, 4), innerBuffer);
+                    ctx.Draw(Pens.Dot(wordColor, 4), buffer);
 
                     // Validate this word's detection accuracy using model coordinates
                     float totalProbability = 0;
                     int pixelCount = 0;
 
-                    // Sample from the inner buffer in model coordinate space
-                    int startY = Math.Max(0, (int)Math.Floor(scaledBound.Y + 10));
-                    int endY = Math.Min(modelHeight - 1, (int)Math.Ceiling(scaledBound.Y + scaledBound.Height - 10));
-                    int startX = Math.Max(0, (int)Math.Floor(scaledBound.X + 10));
-                    int endX = Math.Min(modelWidth - 1, (int)Math.Ceiling(scaledBound.X + scaledBound.Width - 10));
+                    // Sample from the buffer in model coordinate space
+                    int startY = Math.Max(0, (int)Math.Floor(scaledBound.Y + _bufferSize));
+                    int endY = Math.Min(modelHeight - 1, (int)Math.Ceiling(scaledBound.Y + scaledBound.Height - _bufferSize));
+                    int startX = Math.Max(0, (int)Math.Floor(scaledBound.X + _bufferSize));
+                    int endX = Math.Min(modelWidth - 1, (int)Math.Ceiling(scaledBound.X + scaledBound.Width - _bufferSize));
 
                     for (int y = startY; y <= endY; y++)
                     {
@@ -277,7 +270,7 @@ public class TextDetectorTests
                     if (pixelCount > 0)
                     {
                         float averageProbability = totalProbability / pixelCount;
-                        _logger.LogInformation($"Word {wordIndex} ({colorName}): Average probability in inner buffer = {averageProbability:F3} (sampled {pixelCount} pixels)");
+                        _logger.LogInformation($"Word {wordIndex} ({colorName}): Average probability in buffer = {averageProbability:F3} (sampled {pixelCount} pixels)");
 
                         // Collect validation result for later assertion
                         validationResults.Add((wordIndex, colorName, averageProbability));
@@ -286,11 +279,57 @@ public class TextDetectorTests
             }
         });
 
+        // Validate background areas (outside all word buffers) have low probability
+        float backgroundProbabilityTotal = 0f;
+        int backgroundPixelCount = 0;
+
+        // Create buffer regions for all words in model coordinate space
+        var buffers = scaledWordBounds.Select(bound => new RectangleF(
+            bound.X + _bufferSize,
+            bound.Y + _bufferSize,
+            bound.Width - 2 * _bufferSize,
+            bound.Height - 2 * _bufferSize
+        )).Where(buffer => buffer.Width > 0 && buffer.Height > 0).ToList();
+
+        // Scan entire probability map
+        for (int y = 0; y < modelHeight; y++)
+        {
+            for (int x = 0; x < modelWidth; x++)
+            {
+                // Check if this pixel is inside any word's buffer
+                bool insideAnyBuffer = false;
+                foreach (var buffer in buffers)
+                {
+                    if (x >= buffer.Left && x < buffer.Right && y >= buffer.Top && y < buffer.Bottom)
+                    {
+                        insideAnyBuffer = true;
+                        break;
+                    }
+                }
+
+                // If outside all buffers, it's background
+                if (!insideAnyBuffer)
+                {
+                    backgroundProbabilityTotal += output.ProbabilityMap[y, x];
+                    backgroundPixelCount++;
+                }
+            }
+        }
+
+        if (backgroundPixelCount > 0)
+        {
+            float averageBackgroundProbability = backgroundProbabilityTotal / backgroundPixelCount;
+            _logger.LogInformation($"Background average probability = {averageBackgroundProbability:F3} (sampled {backgroundPixelCount} pixels outside all word buffers)");
+
+            Assert.True(averageBackgroundProbability < 0.2f,
+                $"Background has high average probability {averageBackgroundProbability:F3}. Expected < 0.2 to ensure model isn't just outputting high probability everywhere");
+        }
+
         // Perform validation assertions after visualization is created
         foreach (var (wordIndex, colorName, averageProbability) in validationResults)
         {
             Assert.True(averageProbability > 0.7f,
-                $"Word {wordIndex} ({colorName}) has low average probability {averageProbability:F3} in inner buffer. Expected > 0.7");
+                $"Word {wordIndex} ({colorName}) has low average probability {averageProbability:F3} in buffer. Expected > 0.7");
         }
 
         return visualization;
