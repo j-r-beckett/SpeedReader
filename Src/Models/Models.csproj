@@ -14,6 +14,7 @@
           BeforeTargets="BeforeBuild"
           Inputs="modelBuilder/Dockerfile;modelBuilder/buildModels.sh"
           Outputs="models/.built">
+    <RemoveDir Directories="models" Condition="Exists('models')" />
     <Exec Command="bash buildModels.sh ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
     <Touch Files="models/.built" AlwaysCreate="true" />
   </Target>
