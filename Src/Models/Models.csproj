@@ -12,9 +12,10 @@
 
   <Target Name="BuildModels"
           BeforeTargets="BeforeBuild"
-          Inputs="modelBuilder/**/*"
-          Outputs="models/**/*">
+          Inputs="modelBuilder/Dockerfile;modelBuilder/buildModels.sh"
+          Outputs="models/.built">
     <Exec Command="bash buildModels.sh ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
+    <Touch Files="models/.built" AlwaysCreate="true" />
   </Target>
 
   <ItemGroup>
