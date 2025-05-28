@@ -153,8 +153,8 @@ public class TextDetectorTests
             // Scale probability map back to original image dimensions
             var scaledOutput = ScaleProbabilityMapToOriginal(output, originalWidth, originalHeight);
 
-            // Create visualization to understand the buffers
-            using var visualizationImage = CreateVisualization(testImage, wordBounds, scaledOutput, originalWidth, originalHeight);
+            // Validate detection accuracy and create visualization
+            using var visualizationImage = ValidateAndVisualize(testImage, wordBounds, scaledOutput, originalWidth, originalHeight, iteration);
             await _urlPublisher.PublishAsync(visualizationImage, $"accuracy-test-{iteration}-visualization.png");
         }
 
@@ -210,12 +210,12 @@ public class TextDetectorTests
         return new TextDetectorOutput { ProbabilityMap = scaledMap };
     }
 
-    private Image<Rgb24> CreateVisualization(Image<Rgb24> processedImage, List<RectangleF> wordBounds, TextDetectorOutput output, int originalWidth, int originalHeight)
+    private Image<Rgb24> ValidateAndVisualize(Image<Rgb24> processedImage, List<RectangleF> wordBounds, TextDetectorOutput output, int originalWidth, int originalHeight, int iteration)
     {
         // Create a side-by-side visualization: processed image on left, detection result on right
         int visualWidth = originalWidth + originalWidth;
         int visualHeight = originalHeight;
-        
+
         var visualization = new Image<Rgb24>(visualWidth, visualHeight, new Rgb24(128, 128, 128)); // Gray background
 
         // Draw processed image on the left (resize it back to original size for display)
@@ -244,10 +244,10 @@ public class TextDetectorTests
                     bound.Y,
                     bound.Width,
                     bound.Height);
-                
+
                 // Original bounding box (solid yellow)
                 ctx.Draw(Pens.Solid(Color.Yellow, 4), offsetBound);
-                
+
                 // Outer buffer (dotted yellow) - used for background pixel counting
                 var outerBuffer = new RectangleF(
                     offsetBound.X - 10,
@@ -255,7 +255,7 @@ public class TextDetectorTests
                     offsetBound.Width + 20,
                     offsetBound.Height + 20);
                 ctx.Draw(Pens.Dot(Color.Yellow, 4), outerBuffer);
-                
+
                 // Inner buffer (dotted orange) - used for text pixel counting
                 var innerBuffer = new RectangleF(
                     offsetBound.X + 10,
@@ -265,6 +265,22 @@ public class TextDetectorTests
                 if (innerBuffer.Width > 0 && innerBuffer.Height > 0)
                 {
                     ctx.Draw(Pens.Dot(Color.Orange, 4), innerBuffer);
+
+                    float totalProbability = 0;
+                    _logger.LogInformation("Looping from {top} to {bottom}, and from {left} to {right}",
+                        (int)innerBuffer.Top, (int)innerBuffer.Bottom, (int)innerBuffer.Left, (int)innerBuffer.Right);
+                    for (int y = (int)innerBuffer.Top; y < (int)innerBuffer.Bottom; y++)
+                    {
+                        for (int x = (int)innerBuffer.Left; x < (int)innerBuffer.Right; x++)
+                        {
+                            totalProbability += output.ProbabilityMap[x, y];
+                        }
+                    }
+
+                    float area = (innerBuffer.Bottom - innerBuffer.Top) * (innerBuffer.Left - innerBuffer.Right);
+
+                    _logger.LogInformation("Total probability: {p}", totalProbability);
+                    totalProbability.Should().BeGreaterThan((int) (0.8 * area));
                 }
             }
         });
