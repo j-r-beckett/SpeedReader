@@ -10,12 +10,15 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime" />
   </ItemGroup>
 
-  <Target Name="BuildModels" BeforeTargets="BeforeBuild">
-    <Exec Command="bash buildModels.sh" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  <Target Name="BuildModels"
+          BeforeTargets="BeforeBuild"
+          Inputs="modelBuilder/**/*"
+          Outputs="models/**/*">
+    <Exec Command="bash buildModels.sh ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
   </Target>
 
   <ItemGroup>
-    <None Include="models\**\*" CopyToOutputDirectory="Always" />
+    <None Include="models/**/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <Target Name="CleanModels" BeforeTargets="BeforeClean">

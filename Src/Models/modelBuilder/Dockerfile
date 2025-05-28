@@ -47,7 +47,7 @@ RUN python3 mmdeploy/tools/deploy.py \
     https://download.openmmlab.com/mmocr/textdet/dbnet/dbnet_resnet18_fpnc_1200e_icdar2015/dbnet_resnet18_fpnc_1200e_icdar2015_20220825_221614-7c0e94f2.pth \
     mmocr/demo/demo_text_det.jpg \
     --work-dir /models/dbnet_resnet18_fpnc_1200e_icdar2015 \
-    --log-level   INFO \
+    --log-level INFO \
     --dump-info
 
 # Robust Scanner
@@ -57,7 +57,7 @@ RUN python3 mmdeploy/tools/deploy.py \
     https://download.openmmlab.com/mmocr/textrecog/robust_scanner/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real_20220915_152447-7fc35929.pth \
     mmocr/demo/demo_text_ocr.jpg \
     --work-dir /models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real \
-    --log-level   INFO \
+    --log-level INFO \
     --dump-info
 
 ENTRYPOINT ["/bin/bash"]
