@@ -1,9 +1,27 @@
 #!/bin/bash
 # Copy all tracked files in a git repository to clipboard, respecting .gitignore
-# Usage: copy-repo.sh [directory]
+# Usage: copy-repo.sh [directory] [--include-claude]
 
-# Set default directory to current directory if none provided
-DIR="${1:-.}"
+# Parse arguments
+INCLUDE_CLAUDE=false
+DIR="."
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --include-claude)
+      INCLUDE_CLAUDE=true
+      shift
+      ;;
+    -*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      DIR="$1"
+      shift
+      ;;
+  esac
+done
 
 # Check if the directory exists
 if [ ! -d "$DIR" ]; then
@@ -28,6 +46,18 @@ TEMP_FILE=$(mktemp)
 git -C "$DIR" ls-files | while read -r FILE; do
   # Skip if file doesn't exist (shouldn't happen with ls-files, but safety check)
   if [ ! -f "$DIR/$FILE" ]; then
+    continue
+  fi
+  
+  # Skip excluded files
+  if [[ "$FILE" == "copy-repo.sh" || "$FILE" == ".editorconfig" ]]; then
+    echo "Skipping excluded file: $FILE"
+    continue
+  fi
+  
+  # Skip CLAUDE.md unless --include-claude is specified
+  if [[ "$FILE" == "CLAUDE.md" && "$INCLUDE_CLAUDE" == false ]]; then
+    echo "Skipping CLAUDE.md (use --include-claude to include)"
     continue
   fi
   
