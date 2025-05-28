@@ -28,4 +28,8 @@
     <ProjectReference Include="..\Models\Models.csproj" />
   </ItemGroup>
 
+  <Target Name="CleanModelsBeforeBuild" BeforeTargets="BeforeBuild">
+    <RemoveDir Directories="$(OutputPath)models" Condition="Exists('$(OutputPath)models')" />
+  </Target>
+
 </Project>

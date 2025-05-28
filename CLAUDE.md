@@ -87,12 +87,21 @@ The Models project uses a Docker-based build system to generate ONNX models:
 - **Assembly-relative Paths**: Models are located relative to assembly location for deployment flexibility
 - **Standard Structure**: Each model follows `models/{model_name}/end2end.onnx` pattern
 
-### Models.Test Verification
-The test suite verifies that the model build process works correctly:
-- **CanRetrieveSession**: Parameterized test ensuring all models in the enum can be loaded as valid ONNX sessions
-- **Build Verification**: Tests fail if the Docker build process didn't generate valid ONNX files
-- **Error Handling**: Validates proper exceptions for missing or invalid model files
-- **Enum Coverage**: Uses `MemberData` to automatically test all models defined in the Model enum
+### Models and Models.Test: Stale File Prevention
+
+**Models Project:**
+- **Generated files**: `models/` directory contains Docker-generated ONNX models and metadata
+- **Incremental builds**: Uses `models/.built` marker file - only rebuilds when `modelBuilder/` files change
+- **Clean behavior**: `dotnet clean` removes `models/` directory and `.built` marker
+
+**Models.Test Project:**
+- **Clean generated models**: `CleanModelsBeforeBuild` target removes copied models directory before every build
+- **Canary function**: Tests validate models load correctly, detecting stale model issues in other projects
+
+**Build Flow:**
+1. Models checks if rebuild needed → updates `.built` marker if rebuilt
+2. Models.Test cleans copied models → gets fresh models → validates they work
+3. Other projects get models via `CopyToOutputDirectory` - Models.Test catches any issues
 
 ### Streaming Architecture Components
 

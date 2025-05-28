@@ -10,9 +10,13 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ModelBuilderFiles Include="$(MSBuildProjectDirectory)/modelBuilder/**/*" />
+  </ItemGroup>
+
   <Target Name="BuildModels"
           BeforeTargets="BeforeBuild"
-          Inputs="modelBuilder/Dockerfile;modelBuilder/buildModels.sh"
+          Inputs="@(ModelBuilderFiles)"
           Outputs="models/.built">
     <RemoveDir Directories="models" Condition="Exists('models')" />
     <Exec Command="bash buildModels.sh ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
