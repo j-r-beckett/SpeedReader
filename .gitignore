@@ -2,6 +2,9 @@
 bin/
 obj/
 
+# Generated models
+Src/Models/models/
+
 # Rider
 .idea/
 
