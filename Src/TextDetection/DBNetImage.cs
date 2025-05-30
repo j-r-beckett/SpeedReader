@@ -75,7 +75,3 @@ public readonly struct DbNetImage
     }
 }
 
-public class NonContiguousImageException : InvalidOperationException
-{
-    public NonContiguousImageException(string message) : base(message) { }
-}
