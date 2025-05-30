@@ -75,19 +75,18 @@ public class TextDetectorTests
             int originalWidth = testImage.Width;
             int originalHeight = testImage.Height;
 
-            // Convert to DBNetImage and run detection
-            var dbnetImage = DbNetImage.Create(testImage);
-            using var input = new TextDetectorInput(1, dbnetImage.Height, dbnetImage.Width);
-            input.LoadBatch(dbnetImage);
-            var outputs = detector.RunTextDetection(input);
-            var output = outputs[0];
+            // Use new 3-class flow: Preprocessor → TextDetector → PostProcessor
+            using var preprocessedTensor = Preprocessor.Preprocess([testImage]);
+            using var modelOutput = detector.RunTextDetection(preprocessedTensor);
+            var probabilityMaps = PostProcessor.PostProcess(modelOutput.First());
+            var probabilityMap = probabilityMaps[0];
 
             // Get model output dimensions
-            int modelHeight = output.ProbabilityMap.GetLength(0);
-            int modelWidth = output.ProbabilityMap.GetLength(1);
+            int modelHeight = probabilityMap.GetLength(0);
+            int modelWidth = probabilityMap.GetLength(1);
 
             // Validate detection accuracy and create visualization in model coordinate space
-            using var visualizationImage = ValidateAndVisualize(testImage, wordBounds, output, originalWidth, originalHeight, modelWidth, modelHeight, iteration);
+            using var visualizationImage = ValidateAndVisualize(testImage, wordBounds, probabilityMap, originalWidth, originalHeight, modelWidth, modelHeight, iteration);
             await _urlPublisher.PublishAsync(visualizationImage, $"accuracy-test-{iteration}-visualization.png");
         }
 
@@ -102,7 +101,7 @@ public class TextDetectorTests
     }
 
 
-    private Image<Rgb24> ValidateAndVisualize(Image<Rgb24> processedImage, List<RectangleF> wordBounds, TextDetectorOutput output, int originalWidth, int originalHeight, int modelWidth, int modelHeight, int iteration)
+    private Image<Rgb24> ValidateAndVisualize(Image<Rgb24> processedImage, List<RectangleF> wordBounds, float[,] probabilityMap, int originalWidth, int originalHeight, int modelWidth, int modelHeight, int iteration)
     {
         // Define distinctive colors for word identification with names
         var wordColorsWithNames = new (Color color, string name)[]
@@ -130,7 +129,7 @@ public class TextDetectorTests
         visualization.Mutate(ctx => ctx.DrawImage(scaledInputImage, new Point(0, 0), 1.0f));
 
         // Draw detection result on the right (already at model size)
-        using var detectionImage = output.RenderAsGreyscale();
+        using var detectionImage = RenderAsGreyscale(probabilityMap);
         visualization.Mutate(ctx => ctx.DrawImage(detectionImage, new Point(modelWidth, 0), 1.0f));
 
         // Convert word bounds to model coordinate space
@@ -193,7 +192,7 @@ public class TextDetectorTests
                     {
                         for (int x = startX; x <= endX; x++)
                         {
-                            totalProbability += output.ProbabilityMap[y, x];  // row, col
+                            totalProbability += probabilityMap[y, x];  // row, col
                             pixelCount++;
                         }
                     }
@@ -241,7 +240,7 @@ public class TextDetectorTests
                 // If outside all buffers, it's background
                 if (!insideAnyBuffer)
                 {
-                    backgroundProbabilityTotal += output.ProbabilityMap[y, x];
+                    backgroundProbabilityTotal += probabilityMap[y, x];
                     backgroundPixelCount++;
                 }
             }
@@ -304,5 +303,25 @@ public class TextDetectorTests
 
         double denominator = Math.Sqrt(sumSq1 * sumSq2);
         return denominator == 0 ? 0 : numerator / denominator;
+    }
+
+    private static Image<Rgb24> RenderAsGreyscale(float[,] probabilityMap)
+    {
+        int height = probabilityMap.GetLength(0);
+        int width = probabilityMap.GetLength(1);
+
+        var image = new Image<Rgb24>(width, height);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float probability = probabilityMap[y, x];
+                byte greyValue = (byte)(probability * 255f);
+                image[x, y] = new Rgb24(greyValue, greyValue, greyValue);
+            }
+        }
+
+        return image;
     }
 }

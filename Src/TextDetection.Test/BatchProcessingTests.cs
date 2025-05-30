@@ -50,22 +50,16 @@ public class BatchProcessingTests
         await _urlPublisher.PublishAsync(image3, "batch-original-botlft.png");
         await _urlPublisher.PublishAsync(image4, "batch-original-botrgt.png");
 
-        // Convert to DBNetImages
-        var dbnetImage1 = DbNetImage.Create(image1);
-        var dbnetImage2 = DbNetImage.Create(image2);
-        var dbnetImage3 = DbNetImage.Create(image3);
-        var dbnetImage4 = DbNetImage.Create(image4);
-
-        // Process as batch
-        using var batchInput = new TextDetectorInput(4, dbnetImage1.Height, dbnetImage1.Width);
-        batchInput.LoadBatch(dbnetImage1, dbnetImage2, dbnetImage3, dbnetImage4);
-        var batchOutputs = detector.RunTextDetection(batchInput);
+        // Use new 3-class flow: Preprocessor → TextDetector → PostProcessor
+        using var preprocessedTensor = Preprocessor.Preprocess([image1, image2, image3, image4]);
+        using var modelOutput = detector.RunTextDetection(preprocessedTensor);
+        var probabilityMaps = PostProcessor.PostProcess(modelOutput.First());
 
         // Save detection results for inspection
-        using var result1 = batchOutputs[0].RenderAsGreyscale();
-        using var result2 = batchOutputs[1].RenderAsGreyscale();
-        using var result3 = batchOutputs[2].RenderAsGreyscale();
-        using var result4 = batchOutputs[3].RenderAsGreyscale();
+        using var result1 = RenderAsGreyscale(probabilityMaps[0]);
+        using var result2 = RenderAsGreyscale(probabilityMaps[1]);
+        using var result3 = RenderAsGreyscale(probabilityMaps[2]);
+        using var result4 = RenderAsGreyscale(probabilityMaps[3]);
 
         await _urlPublisher.PublishAsync(result1, "batch-result-toplft.png");
         await _urlPublisher.PublishAsync(result2, "batch-result-toprgt.png");
@@ -73,13 +67,13 @@ public class BatchProcessingTests
         await _urlPublisher.PublishAsync(result4, "batch-result-botrgt.png");
 
         // Validate that we get results for all images
-        Assert.Equal(4, batchOutputs.Length);
+        Assert.Equal(4, probabilityMaps.Length);
 
         // Validate each image detects text in the correct quadrant
-        ValidateQuadrantDetection(batchOutputs[0], "TOP", expectedQuadrant: 0);     // Top-left
-        ValidateQuadrantDetection(batchOutputs[1], "RGT", expectedQuadrant: 1);     // Top-right
-        ValidateQuadrantDetection(batchOutputs[2], "BOT", expectedQuadrant: 2);     // Bottom-left
-        ValidateQuadrantDetection(batchOutputs[3], "LFT", expectedQuadrant: 3);     // Bottom-right
+        ValidateQuadrantDetection(probabilityMaps[0], "TOP", expectedQuadrant: 0);     // Top-left
+        ValidateQuadrantDetection(probabilityMaps[1], "RGT", expectedQuadrant: 1);     // Top-right
+        ValidateQuadrantDetection(probabilityMaps[2], "BOT", expectedQuadrant: 2);     // Bottom-left
+        ValidateQuadrantDetection(probabilityMaps[3], "LFT", expectedQuadrant: 3);     // Bottom-right
     }
 
     private Image<Rgb24> CreateImageWithText(string text, (int row, int col) position)
@@ -89,25 +83,25 @@ public class BatchProcessingTests
         return image;
     }
 
-    private void ValidateQuadrantDetection(TextDetectorOutput output, string expectedText, int expectedQuadrant)
+    private void ValidateQuadrantDetection(float[,] probabilityMap, string expectedText, int expectedQuadrant)
     {
-        int height = output.ProbabilityMap.GetLength(0);
-        int width = output.ProbabilityMap.GetLength(1);
+        int height = probabilityMap.GetLength(0);
+        int width = probabilityMap.GetLength(1);
 
         // Calculate total probability in each quadrant
         var quadrantTotals = new double[4];
         
         // Quadrant 0: Top-left
-        quadrantTotals[0] = CalculateQuadrantTotal(output.ProbabilityMap, 0, height/2, 0, width/2);
+        quadrantTotals[0] = CalculateQuadrantTotal(probabilityMap, 0, height/2, 0, width/2);
         
         // Quadrant 1: Top-right  
-        quadrantTotals[1] = CalculateQuadrantTotal(output.ProbabilityMap, 0, height/2, width/2, width);
+        quadrantTotals[1] = CalculateQuadrantTotal(probabilityMap, 0, height/2, width/2, width);
         
         // Quadrant 2: Bottom-left
-        quadrantTotals[2] = CalculateQuadrantTotal(output.ProbabilityMap, height/2, height, 0, width/2);
+        quadrantTotals[2] = CalculateQuadrantTotal(probabilityMap, height/2, height, 0, width/2);
         
         // Quadrant 3: Bottom-right
-        quadrantTotals[3] = CalculateQuadrantTotal(output.ProbabilityMap, height/2, height, width/2, width);
+        quadrantTotals[3] = CalculateQuadrantTotal(probabilityMap, height/2, height, width/2, width);
 
         var logger = new TestLogger<BatchProcessingTests>(_outputHelper);
         logger.LogInformation($"Text '{expectedText}' quadrant totals: TL={quadrantTotals[0]:F1}, TR={quadrantTotals[1]:F1}, BL={quadrantTotals[2]:F1}, BR={quadrantTotals[3]:F1}");
@@ -142,5 +136,25 @@ public class BatchProcessingTests
         }
         
         return sum;
+    }
+
+    private static Image<Rgb24> RenderAsGreyscale(float[,] probabilityMap)
+    {
+        int height = probabilityMap.GetLength(0);
+        int width = probabilityMap.GetLength(1);
+
+        var image = new Image<Rgb24>(width, height);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float probability = probabilityMap[y, x];
+                byte greyValue = (byte)(probability * 255f);
+                image[x, y] = new Rgb24(greyValue, greyValue, greyValue);
+            }
+        }
+
+        return image;
     }
 }
