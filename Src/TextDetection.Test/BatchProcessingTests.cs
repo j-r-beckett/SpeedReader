@@ -1,6 +1,5 @@
 using Engine;
 using Engine.Test;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Models;
 using SixLabors.Fonts;
@@ -74,7 +73,7 @@ public class BatchProcessingTests
         await _urlPublisher.PublishAsync(result4, "batch-result-botrgt.png");
 
         // Validate that we get results for all images
-        batchOutputs.Length.Should().Be(4, "batch processing should return results for all images");
+        Assert.Equal(4, batchOutputs.Length);
 
         // Validate each image detects text in the correct quadrant
         ValidateQuadrantDetection(batchOutputs[0], "TOP", expectedQuadrant: 0);     // Top-left
@@ -117,14 +116,14 @@ public class BatchProcessingTests
         double expectedTotal = quadrantTotals[expectedQuadrant];
         
         // First ensure the expected quadrant has reasonable detection
-        expectedTotal.Should().BeGreaterThan(1.0, $"text '{expectedText}' should be detected in quadrant {expectedQuadrant}");
+        Assert.True(expectedTotal > 1.0, $"text '{expectedText}' should be detected in quadrant {expectedQuadrant}");
         
         // Then ensure it's at least 100x higher than any other quadrant
         for (int i = 0; i < 4; i++)
         {
             if (i != expectedQuadrant)
             {
-                (expectedTotal / Math.Max(quadrantTotals[i], 0.1)).Should().BeGreaterThan(100.0, 
+                Assert.True((expectedTotal / Math.Max(quadrantTotals[i], 0.1)) > 100.0, 
                     $"text '{expectedText}' should be detected primarily in quadrant {expectedQuadrant}, but quadrant {i} has similar probability");
             }
         }

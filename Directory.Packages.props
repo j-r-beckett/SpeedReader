@@ -6,7 +6,6 @@
     <PackageVersion Include="CLIwrap" Version="3.8.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
     <PackageVersion Include="FFMPegCore" Version="5.2.0" />
-    <PackageVersion Include="FluentAssertions" Version="8.2.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />

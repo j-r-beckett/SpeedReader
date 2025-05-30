@@ -1,5 +1,4 @@
 
-using FluentAssertions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -27,9 +26,9 @@ public class DBNetImageTests
         var data = dbnetImage.Data;
         int channelSize = dbnetImage.Width * dbnetImage.Height;
 
-        data[0].Should().BeApproximately(expectedR, 0.001f);                    // First R value
-        data[channelSize].Should().BeApproximately(expectedG, 0.001f);          // First G value
-        data[2 * channelSize].Should().BeApproximately(expectedB, 0.001f);      // First B value
+        Assert.Equal(expectedR, data[0], 0.001f);                    // First R value
+        Assert.Equal(expectedG, data[channelSize], 0.001f);          // First G value
+        Assert.Equal(expectedB, data[2 * channelSize], 0.001f);      // First B value
     }
 
     [Fact]
@@ -57,8 +56,8 @@ public class DBNetImageTests
         // The original 2x2 pixels should be in the top-left of the padded image
 
         // Verify the pattern exists (exact values depend on padding, but layout should be CHW)
-        channelSize.Should().BeGreaterThanOrEqualTo(4); // At least our 4 pixels after padding
-        data.Length.Should().Be(3 * channelSize); // 3 channels
+        Assert.True(channelSize >= 4); // At least our 4 pixels after padding
+        Assert.Equal(3 * channelSize, data.Length); // 3 channels
     }
 
     [Fact]
@@ -71,16 +70,16 @@ public class DBNetImageTests
         var dbnetImage = DbNetImage.Create(image);
 
         // Assert: Verify dimensions are multiples of 32
-        (dbnetImage.Width % 32).Should().Be(0);
-        (dbnetImage.Height % 32).Should().Be(0);
+        Assert.Equal(0, dbnetImage.Width % 32);
+        Assert.Equal(0, dbnetImage.Height % 32);
 
         // Verify dimensions don't exceed maximums (1333x736 → padded to 1344x768)
-        dbnetImage.Width.Should().BeLessThanOrEqualTo(1344);
-        dbnetImage.Height.Should().BeLessThanOrEqualTo(768);
+        Assert.True(dbnetImage.Width <= 1344);
+        Assert.True(dbnetImage.Height <= 768);
 
         // For 100x50 input with aspect ratio 2:1, should fit within bounds while preserving ratio
         double aspectRatio = (double)dbnetImage.Width / dbnetImage.Height;
-        aspectRatio.Should().BeGreaterThanOrEqualTo(1.5); // Should maintain roughly 2:1 aspect ratio
+        Assert.True(aspectRatio >= 1.5); // Should maintain roughly 2:1 aspect ratio
     }
 
     [Fact]
@@ -104,8 +103,8 @@ public class DBNetImageTests
         int channelSize = dbnetImage.Width * dbnetImage.Height;
 
         // Check a sample of values from each channel
-        data[0].Should().BeApproximately(expectedR, 0.001f);                    // First R value
-        data[channelSize].Should().BeApproximately(expectedG, 0.001f);          // First G value  
-        data[2 * channelSize].Should().BeApproximately(expectedB, 0.001f);      // First B value
+        Assert.Equal(expectedR, data[0], 0.001f);                    // First R value
+        Assert.Equal(expectedG, data[channelSize], 0.001f);          // First G value  
+        Assert.Equal(expectedB, data[2 * channelSize], 0.001f);      // First B value
     }
 }

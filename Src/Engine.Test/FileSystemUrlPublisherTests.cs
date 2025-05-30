@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using FluentAssertions;
 
 namespace Engine.Test;
 
@@ -28,16 +27,16 @@ public class FileSystemUrlPublisherTests : IDisposable
 
         // Verify file was created
         var createdFiles = Directory.GetFiles(_testDirectory, "*.txt");
-        createdFiles.Should().HaveCount(1);
+        Assert.Single(createdFiles);
 
         var savedData = await File.ReadAllBytesAsync(createdFiles[0]);
-        savedData.Should().Equal(testData);
+        Assert.Equal(testData, savedData);
 
         // Verify logging
         var logEntry = _logger.GetLastLogEntry();
-        logEntry.Should().NotBeNull();
-        logEntry!.Message.Should().Contain("text/plain");
-        logEntry.Message.Should().Contain("file://wsl$/Ubuntu");
+        Assert.NotNull(logEntry);
+        Assert.Contains("text/plain", logEntry!.Message);
+        Assert.Contains("file://wsl$/Ubuntu", logEntry.Message);
     }
 
     [Fact]
@@ -49,9 +48,9 @@ public class FileSystemUrlPublisherTests : IDisposable
         await _publisher.PublishAsync(stream, "text/plain", "test file for debugging");
 
         var logEntry = _logger.GetLastLogEntry();
-        logEntry.Should().NotBeNull();
-        logEntry!.Message.Should().Contain("test file for debugging");
-        logEntry.Message.Should().Contain("text/plain");
+        Assert.NotNull(logEntry);
+        Assert.Contains("test file for debugging", logEntry!.Message);
+        Assert.Contains("text/plain", logEntry.Message);
     }
 
     [Fact]
@@ -63,16 +62,16 @@ public class FileSystemUrlPublisherTests : IDisposable
 
         // Verify file was created
         var createdFiles = Directory.GetFiles(_testDirectory, "*.json");
-        createdFiles.Should().HaveCount(1);
+        Assert.Single(createdFiles);
 
         var savedJson = await File.ReadAllTextAsync(createdFiles[0]);
-        savedJson.Should().Be(jsonData);
+        Assert.Equal(jsonData, savedJson);
 
         // Verify logging includes description
         var logEntry = _logger.GetLastLogEntry();
-        logEntry.Should().NotBeNull();
-        logEntry!.Message.Should().Contain("test config");
-        logEntry.Message.Should().Contain("application/json");
+        Assert.NotNull(logEntry);
+        Assert.Contains("test config", logEntry!.Message);
+        Assert.Contains("application/json", logEntry.Message);
     }
 
     [Fact]
@@ -84,15 +83,15 @@ public class FileSystemUrlPublisherTests : IDisposable
 
         // Verify file was created
         var createdFiles = Directory.GetFiles(_testDirectory, "*.txt");
-        createdFiles.Should().HaveCount(1);
+        Assert.Single(createdFiles);
 
         var savedText = await File.ReadAllTextAsync(createdFiles[0]);
-        savedText.Should().Be(textData);
+        Assert.Equal(textData, savedText);
 
         // Verify logging
         var logEntry = _logger.GetLastLogEntry();
-        logEntry.Should().NotBeNull();
-        logEntry!.Message.Should().Contain("text/plain");
+        Assert.NotNull(logEntry);
+        Assert.Contains("text/plain", logEntry!.Message);
     }
 
     public void Dispose()

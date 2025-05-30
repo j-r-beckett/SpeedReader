@@ -14,7 +14,7 @@ public class ModelZooTests
     {
         // Constructing an InferenceSession will throw an exception if the model file doesn't exist or isn't in ONNX format
         using var session = ModelZoo.GetInferenceSession(model);
-        session.Should().NotBeNull();
+        Assert.NotNull(session);
     }
 
     public static IEnumerable<object[]> GetAllModels()
@@ -27,7 +27,7 @@ public class ModelZooTests
     {
         // Verify that if the model file does not exist, constructing an InferenceSession throws an exception
         var action = () => new InferenceSession("/path/that/does/not/exist/model.onnx");
-        action.Should().Throw<OnnxRuntimeException>();
+        Assert.Throws<OnnxRuntimeException>(action);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class ModelZooTests
         try
         {
             var action = () => new InferenceSession(tempFile);
-            action.Should().Throw<OnnxRuntimeException>();
+            Assert.Throws<OnnxRuntimeException>(action);
         }
         finally
         {

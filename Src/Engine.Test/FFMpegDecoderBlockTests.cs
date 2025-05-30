@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -84,7 +83,7 @@ public class FFMpegDecoderBlockTests
             await Task.Delay(10);
         }
 
-        timeout.IsCompleted.Should().Be(false);
+        Assert.False(timeout.IsCompleted);
 
         var consumedBytes1 = largeVideoStream.Position;
         await Task.Delay(500);
@@ -93,8 +92,7 @@ public class FFMpegDecoderBlockTests
         Assert.True(consumedBytes1 > 0, "Expected some initial data consumption");
         Assert.True(consumedBytes1 < totalVideoSize,
             $"Expected backpressure to stop consumption, but entire video was consumed ({consumedBytes1}/{totalVideoSize} bytes)");
-        consumedBytes2.Should().Be(consumedBytes1,
-            $"consumption should stop due to backpressure, but it increased from {consumedBytes1} to {consumedBytes2} bytes");
+        Assert.Equal(consumedBytes1, consumedBytes2);
 
         var consumptionPercentage = (consumedBytes1 * 100.0) / totalVideoSize;
 
@@ -126,8 +124,7 @@ public class FFMpegDecoderBlockTests
             await Task.Delay(200);
             var stablePosition = videoStream.Position;
 
-            stablePosition.Should().Be(backpressurePosition,
-                "stream position should remain stable when no frames are consumed (backpressure holding)");
+            Assert.Equal(backpressurePosition, stablePosition);
 
             var framesConsumed = 0;
             var backpressureReleased = false;
@@ -158,14 +155,11 @@ public class FFMpegDecoderBlockTests
             var finalPosition = videoStream.Position;
 
             // Verify backpressure was eventually released and flow resumed
-            finalPosition.Should().BeGreaterThan(backpressurePosition,
-                "stream should eventually advance beyond backpressure point when all frames are consumed");
+            Assert.True(finalPosition > backpressurePosition);
 
-            finalPosition.Should().Be(totalVideoSize,
-                "stream should advance to full file size when pipeline completes");
+            Assert.Equal(totalVideoSize, finalPosition);
 
-            framesConsumed.Should().BeGreaterThan(300,
-                "should have consumed substantial number of frames from test video");
+            Assert.True(framesConsumed > 300);
         }
         finally
         {
@@ -210,7 +204,7 @@ public class FFMpegDecoderBlockTests
 
         await consumptionTask;
 
-        frameCount.Should().Be(3, "should have processed exactly 3 frames before cancellation");
+        Assert.Equal(3, frameCount);
 
         await Task.Delay(100);
 
@@ -232,12 +226,12 @@ public class FFMpegDecoderBlockTests
 
             await WithFrames(frames, frameList =>
             {
-                frameList.Should().NotBeEmpty("should receive at least some sampled frames");
+                Assert.True(frameList.Count > 0);
 
                 for (int i = 0; i < frameList.Count; i++)
                 {
                     var isRed = IsColorMatch(frameList[i], Color.Red);
-                    isRed.Should().BeTrue($"frame {i} should be red (sampled from position {i * 2} in original sequence)");
+                    Assert.True(isRed, $"frame {i} should be red (sampled from position {i * 2} in original sequence)");
                 }
 
                 _logger.LogInformation("Frame sampling test passed - all {count} sampled frames were red as expected", frameList.Count);

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CliWrap.Buffered;
-using FluentAssertions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -22,8 +21,8 @@ public class FFProbeTests
 
         var (actualWidth, actualHeight) = await new FFProbe().GetVideoDimensions(video, default);
 
-        actualWidth.Should().Be(expectedWidth);
-        actualHeight.Should().Be(expectedHeight);
+        Assert.Equal(expectedWidth, actualWidth);
+        Assert.Equal(expectedHeight, actualHeight);
     }
 
     [Fact]
@@ -36,7 +35,7 @@ public class FFProbeTests
 
         var act = () => new FFProbe().GetVideoDimensions(video, default);
 
-        await act.Should().ThrowAsync<FFPRobeException>();
+        await Assert.ThrowsAsync<FFPRobeException>(act);
     }
 
     [Theory]
@@ -52,8 +51,8 @@ public class FFProbeTests
 
         var (actualWidth, actualHeight) = await new MockFFProbe(() => result).GetVideoDimensions(video, default);
 
-        actualWidth.Should().Be(expectedWidth);
-        actualHeight.Should().Be(expectedHeight);
+        Assert.Equal(expectedWidth, actualWidth);
+        Assert.Equal(expectedHeight, actualHeight);
     }
 
     [Theory]
@@ -74,8 +73,8 @@ public class FFProbeTests
 
         var act = () => new MockFFProbe(() => result).GetVideoDimensions(video, default);
 
-        await act.Should().ThrowAsync<FFPRobeException>()
-            .WithMessage($"Unable to parse output {invalidOutput}");
+        var exception = await Assert.ThrowsAsync<FFPRobeException>(act);
+        Assert.Equal($"Unable to parse output {invalidOutput}", exception.Message);
     }
 
     [Fact]
@@ -87,7 +86,7 @@ public class FFProbeTests
 
         var act = () => new FFProbe().GetVideoDimensions(video, cts.Token);
 
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(act);
     }
 
     [Fact]
@@ -97,7 +96,7 @@ public class FFProbeTests
 
         var act = () => new FFProbe().GetVideoDimensions(video, default);
 
-        await act.Should().ThrowAsync<FFPRobeException>();
+        await Assert.ThrowsAsync<FFPRobeException>(act);
     }
 
     [Fact]
@@ -107,7 +106,7 @@ public class FFProbeTests
 
         await new FFProbe().GetVideoDimensions(video, default);
 
-        video.Position.Should().NotBe(0);
+        Assert.NotEqual(0, video.Position);
     }
 
     private async Task<Stream> CreateVideo(int width, int height)

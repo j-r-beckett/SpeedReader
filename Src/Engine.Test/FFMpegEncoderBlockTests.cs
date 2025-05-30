@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -70,7 +69,7 @@ public class FFMpegEncoderBlockTests
         }
 
         // Basic verification
-        videoStream.Length.Should().BeGreaterThan(1000, "encoded video should have reasonable size");
+        Assert.True(videoStream.Length > 1000);
 
         // Dispose frames
         foreach (var frame in frames)
@@ -147,8 +146,8 @@ public class FFMpegEncoderBlockTests
         }
 
         // Verify backpressure was detected
-        backpressureDetected.Should().BeTrue("SendAsync should block when output is not consumed");
-        framesSent.Should().BeLessThan(1500, "not all frames should be sent due to backpressure");
+        Assert.True(backpressureDetected);
+        Assert.True(framesSent < 1500);
 
         _logger.LogInformation("Backpressure engaged after {frames} frames", framesSent);
 
@@ -181,8 +180,8 @@ public class FFMpegEncoderBlockTests
         await _publisher.PublishAsync(videoStream, "video/webm", "Encoder backpressure test video");
 
         // Final assertions - verify full cycle completed
-        framesSent.Should().Be(1500, "all frames should eventually be sent after backpressure release");
-        videoStream.Length.Should().BeGreaterThan(1000, "should produce substantial encoded output");
+        Assert.Equal(1500, framesSent);
+        Assert.True(videoStream.Length > 1000);
 
         // Output captured logs to test console  
         foreach (var logEntry in _logger.LogEntries)
