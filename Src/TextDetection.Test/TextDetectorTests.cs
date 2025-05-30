@@ -80,7 +80,8 @@ public class TextDetectorTests
             var dbnetImage = DbNetImage.Create(testImage);
             using var input = new TextDetectorInput(1, dbnetImage.Height, dbnetImage.Width);
             input.LoadBatch(dbnetImage);
-            var output = detector.RunTextDetection(input);
+            var outputs = detector.RunTextDetection(input);
+            var output = outputs[0];
 
             // Get model output dimensions
             int modelHeight = output.ProbabilityMap.GetLength(0);
@@ -264,5 +265,45 @@ public class TextDetectorTests
         }
 
         return visualization;
+    }
+
+
+    private static double CalculateCorrelation(float[,] map1, float[,] map2)
+    {
+        int height = map1.GetLength(0);
+        int width = map1.GetLength(1);
+
+        // Calculate means
+        double mean1 = 0, mean2 = 0;
+        int count = height * width;
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                mean1 += map1[y, x];
+                mean2 += map2[y, x];
+            }
+        }
+        mean1 /= count;
+        mean2 /= count;
+
+        // Calculate correlation coefficient
+        double numerator = 0, sumSq1 = 0, sumSq2 = 0;
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                double diff1 = map1[y, x] - mean1;
+                double diff2 = map2[y, x] - mean2;
+                numerator += diff1 * diff2;
+                sumSq1 += diff1 * diff1;
+                sumSq2 += diff2 * diff2;
+            }
+        }
+
+        double denominator = Math.Sqrt(sumSq1 * sumSq2);
+        return denominator == 0 ? 0 : numerator / denominator;
     }
 }

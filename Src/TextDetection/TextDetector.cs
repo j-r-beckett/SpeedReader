@@ -14,7 +14,7 @@ public class TextDetector : IDisposable
         _logger = logger;
     }
 
-    public TextDetectorOutput RunTextDetection(TextDetectorInput input)
+    public TextDetectorOutput[] RunTextDetection(TextDetectorInput input)
     {
         var inputs = new Dictionary<string, OrtValue>
         {
@@ -29,20 +29,30 @@ public class TextDetector : IDisposable
         var shape = outputTensor.GetTensorTypeAndShape().Shape;
 
         // Output shape is [batch_size, height, width]
+        int batchSize = (int)shape[0];
         int height = (int)shape[1];
         int width = (int)shape[2];
 
-        var probabilityMap = new float[height, width];
+        var results = new TextDetectorOutput[batchSize];
+        int imageSize = height * width;
 
-        for (int h = 0; h < height; h++)
+        for (int batchIndex = 0; batchIndex < batchSize; batchIndex++)
         {
-            for (int w = 0; w < width; w++)
+            var probabilityMap = new float[height, width];
+            int batchOffset = batchIndex * imageSize;
+
+            for (int h = 0; h < height; h++)
             {
-                probabilityMap[h, w] = outputSpan[h * width + w];
+                for (int w = 0; w < width; w++)
+                {
+                    probabilityMap[h, w] = outputSpan[batchOffset + h * width + w];
+                }
             }
+
+            results[batchIndex] = new TextDetectorOutput { ProbabilityMap = probabilityMap };
         }
 
-        return new TextDetectorOutput { ProbabilityMap = probabilityMap };
+        return results;
     }
 
     public void Dispose()
