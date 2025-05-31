@@ -255,7 +255,6 @@ public class TextDetectorTests
                 $"Background has high average probability {averageBackgroundProbability:F3}. Expected < 0.01 to ensure model isn't just outputting high probability everywhere");
         }
 
-        // Perform validation assertions after visualization is created
         foreach (var (wordIndex, colorName, averageProbability) in validationResults)
         {
             Assert.True(averageProbability > 0.7f,

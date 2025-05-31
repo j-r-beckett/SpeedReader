@@ -1,4 +1,3 @@
-using Microsoft.ML.OnnxRuntime;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -25,7 +24,7 @@ public class PreprocessorTests
 
         var tensorSpan = tensor.GetTensorDataAsSpan<float>();
         var shape = tensor.GetTensorTypeAndShape().Shape;
-        
+
         int channelSize = (int)(shape[2] * shape[3]); // height * width
 
         Assert.Equal(expectedR, tensorSpan[0], 0.001f);                    // First R value
@@ -49,7 +48,7 @@ public class PreprocessorTests
         // Assert: Verify CHW layout - all R values, then all G values, then all B values
         var tensorSpan = tensor.GetTensorDataAsSpan<float>();
         var shape = tensor.GetTensorTypeAndShape().Shape;
-        
+
         int channelSize = (int)(shape[2] * shape[3]); // height * width
 
         // Red channel should be in first channelSize elements
@@ -77,7 +76,7 @@ public class PreprocessorTests
         var shape = tensor.GetTensorTypeAndShape().Shape;
         int width = (int)shape[3];
         int height = (int)shape[2];
-        
+
         Assert.Equal(0, width % 32);
         Assert.Equal(0, height % 32);
 
@@ -109,7 +108,7 @@ public class PreprocessorTests
 
         var tensorSpan = tensor.GetTensorDataAsSpan<float>();
         var shape = tensor.GetTensorTypeAndShape().Shape;
-        
+
         int channelSize = (int)(shape[2] * shape[3]); // height * width
 
         // Check a sample of values from each channel
@@ -131,10 +130,10 @@ public class PreprocessorTests
 
         // Assert: Verify batch dimensions
         var shape = tensor.GetTensorTypeAndShape().Shape;
-        
+
         Assert.Equal(3, shape[0]); // Batch size
         Assert.Equal(3, shape[1]); // Channels
-        
+
         // All images should result in same height/width after processing
         int height = (int)shape[2];
         int width = (int)shape[3];

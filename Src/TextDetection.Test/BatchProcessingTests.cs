@@ -90,34 +90,34 @@ public class BatchProcessingTests
 
         // Calculate total probability in each quadrant
         var quadrantTotals = new double[4];
-        
+
         // Quadrant 0: Top-left
-        quadrantTotals[0] = CalculateQuadrantTotal(probabilityMap, 0, height/2, 0, width/2);
-        
+        quadrantTotals[0] = CalculateQuadrantTotal(probabilityMap, 0, height / 2, 0, width / 2);
+
         // Quadrant 1: Top-right  
-        quadrantTotals[1] = CalculateQuadrantTotal(probabilityMap, 0, height/2, width/2, width);
-        
+        quadrantTotals[1] = CalculateQuadrantTotal(probabilityMap, 0, height / 2, width / 2, width);
+
         // Quadrant 2: Bottom-left
-        quadrantTotals[2] = CalculateQuadrantTotal(probabilityMap, height/2, height, 0, width/2);
-        
+        quadrantTotals[2] = CalculateQuadrantTotal(probabilityMap, height / 2, height, 0, width / 2);
+
         // Quadrant 3: Bottom-right
-        quadrantTotals[3] = CalculateQuadrantTotal(probabilityMap, height/2, height, width/2, width);
+        quadrantTotals[3] = CalculateQuadrantTotal(probabilityMap, height / 2, height, width / 2, width);
 
         var logger = new TestLogger<BatchProcessingTests>(_outputHelper);
         logger.LogInformation($"Text '{expectedText}' quadrant totals: TL={quadrantTotals[0]:F1}, TR={quadrantTotals[1]:F1}, BL={quadrantTotals[2]:F1}, BR={quadrantTotals[3]:F1}");
 
         // The expected quadrant should have significantly higher total probability than any other quadrant
         double expectedTotal = quadrantTotals[expectedQuadrant];
-        
+
         // First ensure the expected quadrant has reasonable detection
         Assert.True(expectedTotal > 1.0, $"text '{expectedText}' should be detected in quadrant {expectedQuadrant}");
-        
+
         // Then ensure it's at least 100x higher than any other quadrant
         for (int i = 0; i < 4; i++)
         {
             if (i != expectedQuadrant)
             {
-                Assert.True((expectedTotal / Math.Max(quadrantTotals[i], 0.1)) > 100.0, 
+                Assert.True((expectedTotal / Math.Max(quadrantTotals[i], 0.1)) > 100.0,
                     $"text '{expectedText}' should be detected primarily in quadrant {expectedQuadrant}, but quadrant {i} has similar probability");
             }
         }
@@ -126,7 +126,7 @@ public class BatchProcessingTests
     private static double CalculateQuadrantTotal(float[,] probabilityMap, int startRow, int endRow, int startCol, int endCol)
     {
         double sum = 0;
-        
+
         for (int row = startRow; row < endRow; row++)
         {
             for (int col = startCol; col < endCol; col++)
@@ -134,7 +134,7 @@ public class BatchProcessingTests
                 sum += probabilityMap[row, col];
             }
         }
-        
+
         return sum;
     }
 
