@@ -35,4 +35,21 @@ public class PostProcessor
 
         return results;
     }
+
+    public static bool[,] BinarizeProbabilityMap(float[,] probabilityMap)
+    {
+        int height = probabilityMap.GetLength(0);
+        int width = probabilityMap.GetLength(1);
+        var binaryMap = new bool[height, width];
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                binaryMap[y, x] = probabilityMap[y, x] > 0.2f;
+            }
+        }
+
+        return binaryMap;
+    }
 }
