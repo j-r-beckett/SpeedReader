@@ -1,3 +1,4 @@
+using System.Buffers;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
@@ -15,7 +16,6 @@ public class Preprocessor
             throw new ArgumentException("Batch cannot be empty", nameof(batch));
         }
 
-        // Calculate target dimensions from first image
         (int width, int height) = CalculateDimensions(batch);
 
         // Create tensor for the batch
@@ -23,29 +23,36 @@ public class Preprocessor
         var tensor = OrtValue.CreateAllocatedTensorValue(OrtAllocator.DefaultInstance, TensorElementType.Float, shape);
         var tensorSpan = tensor.GetTensorMutableDataAsSpan<float>();
 
-        // TODO: use a memory pool
-        Memory<Rgb24> memory = new (new Rgb24[width * height]);
-
-        for (int i = 0; i < batch.Length; i++)
+        var pixelBuffer = ArrayPool<Rgb24>.Shared.Rent(width * height);
+        try
         {
-            AspectResizeInto(batch[i], memory, width, height);
+            var memory = pixelBuffer.AsMemory(0, width * height);
 
-            // Convert HWC -> CHW with normalization and copy directly to tensor
-            int batchOffset = i * width * height * 3;
-            int channelOffset = width * height;
-
-            // Model-specific normalization parameters from pipeline.json
-            float[] means = [123.675f, 116.28f, 103.53f];
-            float[] stds = [58.395f, 57.12f, 57.375f];
-
-            for (int j = 0; j < memory.Span.Length; j++)
+            for (int i = 0; i < batch.Length; i++)
             {
-                var pixel = memory.Span[j];
+                AspectResizeInto(batch[i], memory, width, height);
 
-                tensorSpan[batchOffset + j] = (pixel.R - means[0]) / stds[0];
-                tensorSpan[batchOffset + channelOffset + j] = (pixel.G - means[1]) / stds[1];
-                tensorSpan[batchOffset + 2 * channelOffset + j] = (pixel.B - means[2]) / stds[2];
+                // Model-specific normalization parameters from pipeline.json
+                float[] means = [123.675f, 116.28f, 103.53f];
+                float[] stds = [58.395f, 57.12f, 57.375f];
+
+                // Normalize and convert HWC -> CHW
+                int batchOffset = i * width * height * 3;
+                int channelOffset = width * height;
+
+                for (int j = 0; j < memory.Span.Length; j++)
+                {
+                    var pixel = memory.Span[j];
+
+                    tensorSpan[batchOffset + j] = (pixel.R - means[0]) / stds[0];
+                    tensorSpan[batchOffset + channelOffset + j] = (pixel.G - means[1]) / stds[1];
+                    tensorSpan[batchOffset + 2 * channelOffset + j] = (pixel.B - means[2]) / stds[2];
+                }
             }
+        }
+        finally
+        {
+            ArrayPool<Rgb24>.Shared.Return(pixelBuffer);
         }
 
         return tensor;
@@ -89,10 +96,11 @@ public class Preprocessor
             .Resize(new ResizeOptions
             {
                 Size = new Size(destWidth, destHeight),
-                Mode = ResizeMode.Max,
+                Mode = ResizeMode.Pad,
+                Position = AnchorPositionMode.TopLeft,
+                PadColor = Color.Black,
                 Sampler = KnownResamplers.Bicubic
-            })
-            .Pad(destWidth, destHeight, Color.Black));
+            }));
 
         if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> resizedMemory))
         {
