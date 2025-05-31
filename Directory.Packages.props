@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="CLIwrap" Version="3.8.2" />
+    <PackageVersion Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
     <PackageVersion Include="FFMPegCore" Version="5.2.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
