@@ -1,11 +1,19 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Xunit.Abstractions;
 
 namespace TextDetection.Test;
 
 public class ResizeCalculationTests
 {
+    private readonly ITestOutputHelper _output;
+
+    public ResizeCalculationTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     [Theory]
     [InlineData(100, 50)]    // Landscape
     [InlineData(50, 100)]    // Portrait
@@ -23,27 +31,24 @@ public class ResizeCalculationTests
         var calculatedDimensions = CalculateDimensions(testImage);
         var actualDimensions = ExpectedDimensions(testImage);
 
+        // Log dimensions
+        _output.WriteLine($"Start dimensions: {width}x{height}");
+        _output.WriteLine($"End dimensions: {calculatedDimensions.width}x{calculatedDimensions.height}");
+
         // Assert
         Assert.Equal(actualDimensions.width, calculatedDimensions.width);
         Assert.Equal(actualDimensions.height, calculatedDimensions.height);
     }
 
-    private static (int width, int height) CalculateDimensions(Image<Rgb24> sampleImage)
+    private static (int width, int height) CalculateDimensions(Image image)
     {
-        using var cloned = sampleImage.Clone();
-
-        // Step 1: Resize with aspect ratio preservation to fit within [1333, 736]
-        cloned.Mutate(x => x.Resize(new ResizeOptions
-        {
-            Size = new Size(1333, 736),
-            Mode = ResizeMode.Max,
-            Sampler = KnownResamplers.Bicubic
-        }));
-
-        // Step 2: Calculate final padded dimensions
-        int paddedWidth = (cloned.Width + 31) / 32 * 32;
-        int paddedHeight = (cloned.Height + 31) / 32 * 32;
-
+        int width = image.Width;
+        int height = image.Height;
+        double scale = Math.Min((double)1333 / width, (double)736 / height);
+        int fittedWidth = (int)Math.Round(width * scale);
+        int fittedHeight = (int)Math.Round(height * scale);
+        int paddedWidth = (fittedWidth + 31) / 32 * 32;
+        int paddedHeight = (fittedHeight + 31) / 32 * 32;
         return (paddedWidth, paddedHeight);
     }
 

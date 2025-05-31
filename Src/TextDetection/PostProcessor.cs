@@ -6,7 +6,7 @@ public class PostProcessor
 {
     public static float[][,] PostProcess(OrtValue tensor)
     {
-        var outputSpan = tensor.GetTensorDataAsSpan<float>();
+        var outputSpan = tensor.GetTensorMutableDataAsSpan<float>();
         var shape = tensor.GetTensorTypeAndShape().Shape;
 
         // Output shape is [batch_size, height, width]

@@ -34,7 +34,7 @@ public class Preprocessor
         {
             // Clone and preprocess each image
             using var processed = batch[i].Clone();
-            
+
             // Step 1: Resize with aspect ratio preservation
             processed.Mutate(x => x.Resize(new ResizeOptions
             {
@@ -47,7 +47,7 @@ public class Preprocessor
             int paddedWidth = (processed.Width + 31) / 32 * 32;
             int paddedHeight = (processed.Height + 31) / 32 * 32;
             processed.Mutate(x => x.Pad(paddedWidth, paddedHeight, Color.Black));
-            
+
             // Validate dimensions match across batch
             if (processed.Width != width || processed.Height != height)
             {
@@ -61,9 +61,9 @@ public class Preprocessor
                 throw new NonContiguousImageException("Image memory is not contiguous after resize/pad operations");
             }
 
-            // Convert HWC → CHW with normalization and copy directly to tensor
+            // Convert HWC -> CHW with normalization and copy directly to tensor
             int batchOffset = i * imageSizeBytes;
-            
+
             for (int j = 0; j < pixelMemory.Span.Length; j++)
             {
                 var pixel = pixelMemory.Span[j];
@@ -77,23 +77,21 @@ public class Preprocessor
         return tensor;
     }
 
-    private static (int width, int height) CalculateDimensions(Image<Rgb24> sampleImage)
+    public static (int width, int height) CalculateDimensions(Image image)
     {
-        using var cloned = sampleImage.Clone();
-        
-        // Step 1: Resize with aspect ratio preservation to fit within [1333, 736]
-        cloned.Mutate(x => x.Resize(new ResizeOptions
-        {
-            Size = new Size(1333, 736),
-            Mode = ResizeMode.Max,
-            Sampler = KnownResamplers.Bicubic
-        }));
-
-        // Step 2: Calculate final padded dimensions
-        int paddedWidth = (cloned.Width + 31) / 32 * 32;
-        int paddedHeight = (cloned.Height + 31) / 32 * 32;
-
+        int width = image.Width;
+        int height = image.Height;
+        double scale = Math.Min((double)1333 / width, (double)736 / height);
+        int fittedWidth = (int)Math.Round(width * scale);
+        int fittedHeight = (int)Math.Round(height * scale);
+        int paddedWidth = (fittedWidth + 31) / 32 * 32;
+        int paddedHeight = (fittedHeight + 31) / 32 * 32;
         return (paddedWidth, paddedHeight);
+    }
+
+    internal static class Functions
+    {
+        // internal static (int width, int height) CalculateDimensions(Image<Rgb24> sampleImage) {}
     }
 }
 
