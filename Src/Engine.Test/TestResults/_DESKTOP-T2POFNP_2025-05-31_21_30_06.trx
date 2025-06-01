@@ -1,0 +1,267 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ff37a72d-5d3f-4979-b01b-f8f461b41c34" name="@DESKTOP-T2POFNP 2025-05-31 21:30:06" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-05-31T21:30:06.1825359-07:00" queuing="2025-05-31T21:30:06.1825360-07:00" start="2025-05-31T21:30:04.9873738-07:00" finish="2025-05-31T21:30:12.3421445-07:00" />
+  <TestSettings name="default" id="56e671f3-b5bb-42e5-9f9a-ad90118fa012">
+    <Deployment runDeploymentRoot="_DESKTOP-T2POFNP_2025-05-31_21_30_06" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="d8d24a94-3cef-49a1-ab76-cafda1718077" testId="676e495c-cf0c-731c-d5c5-ae2587f4c645" testName="Engine.Test.FFProbeTests.ThrowsException_OnRandomData" computerName="DESKTOP-T2POFNP" duration="00:00:00.0606036" startTime="2025-05-31T21:30:06.5308507-07:00" endTime="2025-05-31T21:30:06.5308508-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d8d24a94-3cef-49a1-ab76-cafda1718077" />
+    <UnitTestResult executionId="23bb8c13-2258-4b28-8359-4c44d3bf3502" testId="0cd030ba-b9f6-8227-9943-8d7199796083" testName="Engine.Test.FileSystemUrlPublisherTests.PublishTextAsync_CreatesFileAndLogs" computerName="DESKTOP-T2POFNP" duration="00:00:00.0081285" startTime="2025-05-31T21:30:06.1745768-07:00" endTime="2025-05-31T21:30:06.1745769-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="23bb8c13-2258-4b28-8359-4c44d3bf3502" />
+    <UnitTestResult executionId="970da9b7-b83a-425c-ad51-df92658858a8" testId="30eafd97-7be0-6e22-759d-a5ab19351e3f" testName="Engine.Test.FFMpegDecoderBlockTests.FrameSamplingIsAccurate" computerName="DESKTOP-T2POFNP" duration="00:00:00.2005680" startTime="2025-05-31T21:30:06.9968861-07:00" endTime="2025-05-31T21:30:06.9968872-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="970da9b7-b83a-425c-ad51-df92658858a8">
+      <Output>
+        <StdOut>Created test video: 18 frames, 1628 bytes
+Frame sampling test passed - all 9 sampled frames were red as expected</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="3e1dc84e-91d1-4489-bacf-604f659436d2" testId="46707514-edb1-c1d0-127f-9b121f79a325" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920x1080&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0046362" startTime="2025-05-31T21:30:06.0893022-07:00" endTime="2025-05-31T21:30:06.0893023-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3e1dc84e-91d1-4489-bacf-604f659436d2" />
+    <UnitTestResult executionId="cf735629-a322-482b-9ed4-bc381de27cdf" testId="e00af351-089a-e027-8b42-70ef5d866325" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000297" startTime="2025-05-31T21:30:06.1637953-07:00" endTime="2025-05-31T21:30:06.1637954-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cf735629-a322-482b-9ed4-bc381de27cdf" />
+    <UnitTestResult executionId="3c324c25-5467-477c-89c8-27d04a825665" testId="d59dcf93-745a-d622-6f9a-04b21b3c1087" testName="Engine.Test.FFMpegDecoderBlockTests.CanDecodeRedBlueFrames(totalFrames: 10000)" computerName="DESKTOP-T2POFNP" duration="00:00:02.9997006" startTime="2025-05-31T21:30:09.9970173-07:00" endTime="2025-05-31T21:30:09.9970175-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3c324c25-5467-477c-89c8-27d04a825665">
+      <Output>
+        <StdOut>Created test video: 10000 frames, 533199 bytes</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="bc5db583-489a-48a3-9fd6-cca4bbbc55a9" testId="05dcd6fa-1d9e-e911-6030-dfc340c58289" testName="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;1920,1080&quot;, expectedWidth: 1920, expectedHeight: 1080)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000195" startTime="2025-05-31T21:30:06.0795313-07:00" endTime="2025-05-31T21:30:06.0795315-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bc5db583-489a-48a3-9fd6-cca4bbbc55a9" />
+    <UnitTestResult executionId="303f3c3f-b75a-4d9e-9fff-a15580d62b00" testId="ef425937-5b4d-03e6-deb2-555c1d22c965" testName="Engine.Test.FFMpegEncoderBlockTests.CanEncodeRedBlueFramesToVideo" computerName="DESKTOP-T2POFNP" duration="00:00:00.3371826" startTime="2025-05-31T21:30:06.3548191-07:00" endTime="2025-05-31T21:30:06.3548192-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="303f3c3f-b75a-4d9e-9fff-a15580d62b00">
+      <Output>
+        <StdOut>Generated 20 test frames
+Encoded video size: 1675 bytes
+[Information] Published video/webm data (Red/Blue test video) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/out/debug/184b64ca-2962-4cff-abdd-eb23645497a7.webm</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e9de3379-1859-412e-afa1-f0189d247c75" testId="eb467940-401c-b1e1-88de-621e986d0847" testName="Engine.Test.FileSystemUrlPublisherTests.PublishJsonAsync_CreatesFileAndLogs" computerName="DESKTOP-T2POFNP" duration="00:00:00.0350520" startTime="2025-05-31T21:30:06.1701910-07:00" endTime="2025-05-31T21:30:06.1701911-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e9de3379-1859-412e-afa1-f0189d247c75" />
+    <UnitTestResult executionId="19896515-456e-46dc-a8b1-99d827bd05b2" testId="3d7d0f1c-3086-0e5d-7ae0-d37cbe6b60f1" testName="Engine.Test.FFProbeTests.Returns_CorrectWidthAndHeight" computerName="DESKTOP-T2POFNP" duration="00:00:00.1850401" startTime="2025-05-31T21:30:06.7782295-07:00" endTime="2025-05-31T21:30:06.7782299-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="19896515-456e-46dc-a8b1-99d827bd05b2" />
+    <UnitTestResult executionId="4e6af2de-d8f2-4311-bc7b-6082d479a0db" testId="8bd63317-3d46-b5d0-4254-c43514f56f71" testName="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot; 1920,1080 &quot;, expectedWidth: 1920, expectedHeight: 1080)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0016953" startTime="2025-05-31T21:30:06.0730955-07:00" endTime="2025-05-31T21:30:06.0730956-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4e6af2de-d8f2-4311-bc7b-6082d479a0db" />
+    <UnitTestResult executionId="1b66b464-73f1-4731-a443-99d6e2c799c1" testId="94f9227d-7e3d-d2a9-b0d1-ae229cd64ad8" testName="Engine.Test.FFMpegEncoderBlockTests.BackpressureStopsFrameAcceptance" computerName="DESKTOP-T2POFNP" duration="00:00:00.9901170" startTime="2025-05-31T21:30:07.3447944-07:00" endTime="2025-05-31T21:30:07.3447945-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1b66b464-73f1-4731-a443-99d6e2c799c1">
+      <Output>
+        <StdOut>[Information] Started feeding frames without consuming output
+[Information] Backpressure detected at 1060 frames - SendAsync blocked
+[Information] Verifying sustained backpressure with second SendAsync test
+[Information] Sustained backpressure confirmed - second SendAsync also blocked
+[Information] Backpressure engaged after 1060 frames
+[Information] Waiting for blocked SendAsync to complete after output consumption started
+[Information] Encoding completed: 1500 frames → 56974 bytes
+[Information] Published video/webm data (Encoder backpressure test video) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/out/debug/7c2096db-d67f-47aa-ab9a-d486ad2d5d6f.webm</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="42ab8a2f-76e9-4bc0-be64-dc9163036e69" testId="c790c4e0-c9e3-cf62-185e-d334c0e16e8c" testName="Engine.Test.FFMpegDecoderBlockTests.BackpressureRespondsToFrameConsumption" computerName="DESKTOP-T2POFNP" duration="00:00:01.2858097" startTime="2025-05-31T21:30:12.2674426-07:00" endTime="2025-05-31T21:30:12.2674436-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="42ab8a2f-76e9-4bc0-be64-dc9163036e69">
+      <Output>
+        <StdOut>Created test video: 3200 frames, 170799 bytes
+Backpressure engaged at 131072 bytes (76.7%)
+Backpressure released at 600 frames - stream advanced to 170799 bytes</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="12aa22db-67fa-4efa-aa13-07896e0549b1" testId="49940f54-ae94-26c4-6804-554668acf7c4" testName="Engine.Test.FFMpegDecoderBlockTests.CanDecodeRedBlueFrames(totalFrames: 10)" computerName="DESKTOP-T2POFNP" duration="00:00:00.1030084" startTime="2025-05-31T21:30:10.1002384-07:00" endTime="2025-05-31T21:30:10.1002385-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="12aa22db-67fa-4efa-aa13-07896e0549b1">
+      <Output>
+        <StdOut>Created test video: 10 frames, 1192 bytes</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="3effea7b-38f8-4672-b4ed-09dbdadaf2e2" testId="d2a27ab6-eb42-3f17-4fbc-f43ffb8f181c" testName="Engine.Test.FFMpegDecoderBlockTests.BackpressureStopsInputConsumption" computerName="DESKTOP-T2POFNP" duration="00:00:00.8807140" startTime="2025-05-31T21:30:10.9813542-07:00" endTime="2025-05-31T21:30:10.9813543-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3effea7b-38f8-4672-b4ed-09dbdadaf2e2">
+      <Output>
+        <StdOut>Created test video: 2500 frames, 133700 bytes
+Created large video: 133700 bytes
+Backpressure test passed - consumption stopped at 131072 bytes (98.0%) and stayed stable</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="c66cd5f4-2908-4d6c-afff-0c35adefe28f" testId="1f1e9a02-0f16-1992-99ad-1d8bacecb955" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;not-numbers&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000343" startTime="2025-05-31T21:30:06.1618766-07:00" endTime="2025-05-31T21:30:06.1618767-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c66cd5f4-2908-4d6c-afff-0c35adefe28f" />
+    <UnitTestResult executionId="9b1da298-3f94-4d08-89d9-e7b655439ba7" testId="96cd7c11-84a6-dfce-6874-2214f684b322" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,1080\n1280,720&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000376" startTime="2025-05-31T21:30:06.1660079-07:00" endTime="2025-05-31T21:30:06.1660079-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9b1da298-3f94-4d08-89d9-e7b655439ba7" />
+    <UnitTestResult executionId="3a373dda-0ff6-4574-8946-e00157f3ffde" testId="fdff007d-7572-285b-deac-8e09a88040b7" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000267" startTime="2025-05-31T21:30:06.1597890-07:00" endTime="2025-05-31T21:30:06.1597891-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a373dda-0ff6-4574-8946-e00157f3ffde" />
+    <UnitTestResult executionId="013d3f18-1580-42ab-ab4c-fba8b3a50c41" testId="76e462b8-7fbf-9e96-7542-db4eddc80a2a" testName="Engine.Test.FFMpegDecoderBlockTests.HandlesCancellationGracefully" computerName="DESKTOP-T2POFNP" duration="00:00:00.7776990" startTime="2025-05-31T21:30:06.7954906-07:00" endTime="2025-05-31T21:30:06.7954908-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="013d3f18-1580-42ab-ab4c-fba8b3a50c41">
+      <Output>
+        <StdOut>Created test video: 50 frames, 3372 bytes
+Cancellation test completed - processed 3 frames before clean shutdown</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="f2dc49f7-c444-41b5-881e-57adc2b1cb31" testId="c24f42fb-3b6c-dab4-cd6a-6a11c80a7277" testName="Engine.Test.FileSystemUrlPublisherTests.PublishAsync_WithDescription_IncludesDescriptionInLog" computerName="DESKTOP-T2POFNP" duration="00:00:00.0032468" startTime="2025-05-31T21:30:06.1724351-07:00" endTime="2025-05-31T21:30:06.1724352-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f2dc49f7-c444-41b5-881e-57adc2b1cb31" />
+    <UnitTestResult executionId="37079c74-5115-40c9-9a50-04594af49835" testId="b8cbbaf6-cecd-b64a-77ee-ef0523943cfd" testName="Engine.Test.FileSystemUrlPublisherTests.PublishAsync_Stream_CreatesFileAndLogs" computerName="DESKTOP-T2POFNP" duration="00:00:00.0128967" startTime="2025-05-31T21:30:06.1769970-07:00" endTime="2025-05-31T21:30:06.1769971-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="37079c74-5115-40c9-9a50-04594af49835" />
+    <UnitTestResult executionId="d56e4104-0b9d-44fe-b5c8-0927c852aa0e" testId="9633a571-2f96-baf5-24a7-9e68031c8e3e" testName="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;640,0002&quot;, expectedWidth: 640, expectedHeight: 2)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0202254" startTime="2025-05-31T21:30:06.0477588-07:00" endTime="2025-05-31T21:30:06.0478527-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d56e4104-0b9d-44fe-b5c8-0927c852aa0e" />
+    <UnitTestResult executionId="e6d8cc03-f0fc-4e0e-8c8d-374ee8b9a5bc" testId="dad3aff2-b959-2342-071e-a1e1e9a89270" testName="Engine.Test.FFProbeTests.ThrowsOperationCanceledException_OnCancellation" computerName="DESKTOP-T2POFNP" duration="00:00:00.0612947" startTime="2025-05-31T21:30:06.5923778-07:00" endTime="2025-05-31T21:30:06.5923779-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e6d8cc03-f0fc-4e0e-8c8d-374ee8b9a5bc" />
+    <UnitTestResult executionId="88dfc814-285d-4b35-86dc-8c9f5acaa003" testId="82c5215e-4239-2983-8c5c-2d12d6c6e8f6" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;,1080&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000388" startTime="2025-05-31T21:30:06.1440176-07:00" endTime="2025-05-31T21:30:06.1440177-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="88dfc814-285d-4b35-86dc-8c9f5acaa003" />
+    <UnitTestResult executionId="5a060432-ca54-4e39-9bd5-5b2d6b44e137" testId="a0351a8d-65f9-0a8f-7c91-891dbe56d55d" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,-1&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000545" startTime="2025-05-31T21:30:06.1376497-07:00" endTime="2025-05-31T21:30:06.1376498-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5a060432-ca54-4e39-9bd5-5b2d6b44e137" />
+    <UnitTestResult executionId="29780f2a-4913-4a17-b72a-ee330912e3cf" testId="f87cfdd2-3417-c388-2df5-17d6b6bedd1b" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;0,1080&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000541" startTime="2025-05-31T21:30:06.1399996-07:00" endTime="2025-05-31T21:30:06.1399997-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="29780f2a-4913-4a17-b72a-ee330912e3cf" />
+    <UnitTestResult executionId="8003e192-bbaf-4552-9f5e-9bdeb652941b" testId="788c0ec4-0a98-e195-5352-9c8d63f2e506" testName="Engine.Test.FFProbeTests.ThrowsException_OnEmptyStream" computerName="DESKTOP-T2POFNP" duration="00:00:00.2893356" startTime="2025-05-31T21:30:06.3411753-07:00" endTime="2025-05-31T21:30:06.3411756-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8003e192-bbaf-4552-9f5e-9bdeb652941b" />
+    <UnitTestResult executionId="1ade55c1-5a2e-470f-910e-29c5109291b3" testId="4614d350-0118-a6c9-e382-0d05cd66fd19" testName="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;\t640,480\n&quot;, expectedWidth: 640, expectedHeight: 480)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000070" startTime="2025-05-31T21:30:06.0860572-07:00" endTime="2025-05-31T21:30:06.0860574-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1ade55c1-5a2e-470f-910e-29c5109291b3" />
+    <UnitTestResult executionId="ab16972f-c57a-49de-b340-a260361826cb" testId="b9e74374-9d00-2fb4-89d7-e865c380b378" testName="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;0001,480&quot;, expectedWidth: 1, expectedHeight: 480)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000611" startTime="2025-05-31T21:30:06.0772686-07:00" endTime="2025-05-31T21:30:06.0772687-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ab16972f-c57a-49de-b340-a260361826cb" />
+    <UnitTestResult executionId="d53875ae-6714-42f9-ac01-274cc439aa1b" testId="67661bf1-1dd4-c835-ff22-5b280b56a551" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;-1,1080&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000315" startTime="2025-05-31T21:30:06.1421921-07:00" endTime="2025-05-31T21:30:06.1421923-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d53875ae-6714-42f9-ac01-274cc439aa1b" />
+    <UnitTestResult executionId="2e2def49-02a8-4e25-a61c-4c23252ac914" testId="d7118507-da45-cc8d-490d-40374f487607" testName="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,0&quot;)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0003156" startTime="2025-05-31T21:30:06.1341067-07:00" endTime="2025-05-31T21:30:06.1341068-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2e2def49-02a8-4e25-a61c-4c23252ac914" />
+    <UnitTestResult executionId="8674ed60-070e-402c-a795-6a6f657587a0" testId="f067e6f3-e8a3-2c8a-2eed-bc84d747ba0b" testName="Engine.Test.FFProbeTests.DoesNotResetStreamPosition" computerName="DESKTOP-T2POFNP" duration="00:00:00.1285642" startTime="2025-05-31T21:30:06.4698516-07:00" endTime="2025-05-31T21:30:06.4698518-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8674ed60-070e-402c-a795-6a6f657587a0" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Engine.Test.FFMpegDecoderBlockTests.FrameSamplingIsAccurate" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="30eafd97-7be0-6e22-759d-a5ab19351e3f">
+      <Execution id="970da9b7-b83a-425c-ad51-df92658858a8" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegDecoderBlockTests" name="FrameSamplingIsAccurate" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FileSystemUrlPublisherTests.PublishAsync_Stream_CreatesFileAndLogs" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="b8cbbaf6-cecd-b64a-77ee-ef0523943cfd">
+      <Execution id="37079c74-5115-40c9-9a50-04594af49835" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FileSystemUrlPublisherTests" name="PublishAsync_Stream_CreatesFileAndLogs" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;-1,1080&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="67661bf1-1dd4-c835-ff22-5b280b56a551">
+      <Execution id="d53875ae-6714-42f9-ac01-274cc439aa1b" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFMpegEncoderBlockTests.BackpressureStopsFrameAcceptance" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="94f9227d-7e3d-d2a9-b0d1-ae229cd64ad8">
+      <Execution id="1b66b464-73f1-4731-a443-99d6e2c799c1" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegEncoderBlockTests" name="BackpressureStopsFrameAcceptance" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot; 1920,1080 &quot;, expectedWidth: 1920, expectedHeight: 1080)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="8bd63317-3d46-b5d0-4254-c43514f56f71">
+      <Execution id="4e6af2de-d8f2-4311-bc7b-6082d479a0db" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ParsesValidOutput_WithWhitespace" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFMpegDecoderBlockTests.HandlesCancellationGracefully" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="76e462b8-7fbf-9e96-7542-db4eddc80a2a">
+      <Execution id="013d3f18-1580-42ab-ab4c-fba8b3a50c41" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegDecoderBlockTests" name="HandlesCancellationGracefully" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.Returns_CorrectWidthAndHeight" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="3d7d0f1c-3086-0e5d-7ae0-d37cbe6b60f1">
+      <Execution id="19896515-456e-46dc-a8b1-99d827bd05b2" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="Returns_CorrectWidthAndHeight" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;not-numbers&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="1f1e9a02-0f16-1992-99ad-1d8bacecb955">
+      <Execution id="c66cd5f4-2908-4d6c-afff-0c35adefe28f" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnEmptyStream" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="788c0ec4-0a98-e195-5352-9c8d63f2e506">
+      <Execution id="8003e192-bbaf-4552-9f5e-9bdeb652941b" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnEmptyStream" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="fdff007d-7572-285b-deac-8e09a88040b7">
+      <Execution id="3a373dda-0ff6-4574-8946-e00157f3ffde" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;1920,1080&quot;, expectedWidth: 1920, expectedHeight: 1080)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="05dcd6fa-1d9e-e911-6030-dfc340c58289">
+      <Execution id="bc5db583-489a-48a3-9fd6-cca4bbbc55a9" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ParsesValidOutput_WithWhitespace" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;0,1080&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="f87cfdd2-3417-c388-2df5-17d6b6bedd1b">
+      <Execution id="29780f2a-4913-4a17-b72a-ee330912e3cf" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFMpegDecoderBlockTests.CanDecodeRedBlueFrames(totalFrames: 10000)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="d59dcf93-745a-d622-6f9a-04b21b3c1087">
+      <Execution id="3c324c25-5467-477c-89c8-27d04a825665" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegDecoderBlockTests" name="CanDecodeRedBlueFrames" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,-1&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="a0351a8d-65f9-0a8f-7c91-891dbe56d55d">
+      <Execution id="5a060432-ca54-4e39-9bd5-5b2d6b44e137" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;640,0002&quot;, expectedWidth: 640, expectedHeight: 2)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="9633a571-2f96-baf5-24a7-9e68031c8e3e">
+      <Execution id="d56e4104-0b9d-44fe-b5c8-0927c852aa0e" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ParsesValidOutput_WithWhitespace" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;,1080&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="82c5215e-4239-2983-8c5c-2d12d6c6e8f6">
+      <Execution id="88dfc814-285d-4b35-86dc-8c9f5acaa003" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,0&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="d7118507-da45-cc8d-490d-40374f487607">
+      <Execution id="2e2def49-02a8-4e25-a61c-4c23252ac914" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FileSystemUrlPublisherTests.PublishJsonAsync_CreatesFileAndLogs" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="eb467940-401c-b1e1-88de-621e986d0847">
+      <Execution id="e9de3379-1859-412e-afa1-f0189d247c75" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FileSystemUrlPublisherTests" name="PublishJsonAsync_CreatesFileAndLogs" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FileSystemUrlPublisherTests.PublishTextAsync_CreatesFileAndLogs" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="0cd030ba-b9f6-8227-9943-8d7199796083">
+      <Execution id="23bb8c13-2258-4b28-8359-4c44d3bf3502" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FileSystemUrlPublisherTests" name="PublishTextAsync_CreatesFileAndLogs" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920,1080\n1280,720&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="96cd7c11-84a6-dfce-6874-2214f684b322">
+      <Execution id="9b1da298-3f94-4d08-89d9-e7b655439ba7" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFMpegDecoderBlockTests.CanDecodeRedBlueFrames(totalFrames: 10)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="49940f54-ae94-26c4-6804-554668acf7c4">
+      <Execution id="12aa22db-67fa-4efa-aa13-07896e0549b1" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegDecoderBlockTests" name="CanDecodeRedBlueFrames" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFMpegEncoderBlockTests.CanEncodeRedBlueFramesToVideo" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="ef425937-5b4d-03e6-deb2-555c1d22c965">
+      <Execution id="303f3c3f-b75a-4d9e-9fff-a15580d62b00" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegEncoderBlockTests" name="CanEncodeRedBlueFramesToVideo" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFMpegDecoderBlockTests.BackpressureRespondsToFrameConsumption" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="c790c4e0-c9e3-cf62-185e-d334c0e16e8c">
+      <Execution id="42ab8a2f-76e9-4bc0-be64-dc9163036e69" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegDecoderBlockTests" name="BackpressureRespondsToFrameConsumption" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FileSystemUrlPublisherTests.PublishAsync_WithDescription_IncludesDescriptionInLog" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="c24f42fb-3b6c-dab4-cd6a-6a11c80a7277">
+      <Execution id="f2dc49f7-c444-41b5-881e-57adc2b1cb31" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FileSystemUrlPublisherTests" name="PublishAsync_WithDescription_IncludesDescriptionInLog" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.DoesNotResetStreamPosition" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="f067e6f3-e8a3-2c8a-2eed-bc84d747ba0b">
+      <Execution id="8674ed60-070e-402c-a795-6a6f657587a0" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="DoesNotResetStreamPosition" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;0001,480&quot;, expectedWidth: 1, expectedHeight: 480)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="b9e74374-9d00-2fb4-89d7-e865c380b378">
+      <Execution id="ab16972f-c57a-49de-b340-a260361826cb" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ParsesValidOutput_WithWhitespace" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="e00af351-089a-e027-8b42-70ef5d866325">
+      <Execution id="cf735629-a322-482b-9ed4-bc381de27cdf" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsOperationCanceledException_OnCancellation" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="dad3aff2-b959-2342-071e-a1e1e9a89270">
+      <Execution id="e6d8cc03-f0fc-4e0e-8c8d-374ee8b9a5bc" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsOperationCanceledException_OnCancellation" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnInvalidOutput(invalidOutput: &quot;1920x1080&quot;)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="46707514-edb1-c1d0-127f-9b121f79a325">
+      <Execution id="3e1dc84e-91d1-4489-bacf-604f659436d2" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnInvalidOutput" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFMpegDecoderBlockTests.BackpressureStopsInputConsumption" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="d2a27ab6-eb42-3f17-4fbc-f43ffb8f181c">
+      <Execution id="3effea7b-38f8-4672-b4ed-09dbdadaf2e2" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFMpegDecoderBlockTests" name="BackpressureStopsInputConsumption" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ThrowsException_OnRandomData" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="676e495c-cf0c-731c-d5c5-ae2587f4c645">
+      <Execution id="d8d24a94-3cef-49a1-ab76-cafda1718077" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ThrowsException_OnRandomData" />
+    </UnitTest>
+    <UnitTest name="Engine.Test.FFProbeTests.ParsesValidOutput_WithWhitespace(output: &quot;\t640,480\n&quot;, expectedWidth: 640, expectedHeight: 480)" storage="/home/jimmy/opusflow/src/engine.test/bin/debug/net8.0/engine.test.dll" id="4614d350-0118-a6c9-e382-0d05cd66fd19">
+      <Execution id="1ade55c1-5a2e-470f-910e-29c5109291b3" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/Engine.Test/bin/Debug/net8.0/Engine.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Engine.Test.FFProbeTests" name="ParsesValidOutput_WithWhitespace" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="676e495c-cf0c-731c-d5c5-ae2587f4c645" executionId="d8d24a94-3cef-49a1-ab76-cafda1718077" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0cd030ba-b9f6-8227-9943-8d7199796083" executionId="23bb8c13-2258-4b28-8359-4c44d3bf3502" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="30eafd97-7be0-6e22-759d-a5ab19351e3f" executionId="970da9b7-b83a-425c-ad51-df92658858a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="46707514-edb1-c1d0-127f-9b121f79a325" executionId="3e1dc84e-91d1-4489-bacf-604f659436d2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e00af351-089a-e027-8b42-70ef5d866325" executionId="cf735629-a322-482b-9ed4-bc381de27cdf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d59dcf93-745a-d622-6f9a-04b21b3c1087" executionId="3c324c25-5467-477c-89c8-27d04a825665" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="05dcd6fa-1d9e-e911-6030-dfc340c58289" executionId="bc5db583-489a-48a3-9fd6-cca4bbbc55a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ef425937-5b4d-03e6-deb2-555c1d22c965" executionId="303f3c3f-b75a-4d9e-9fff-a15580d62b00" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="eb467940-401c-b1e1-88de-621e986d0847" executionId="e9de3379-1859-412e-afa1-f0189d247c75" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3d7d0f1c-3086-0e5d-7ae0-d37cbe6b60f1" executionId="19896515-456e-46dc-a8b1-99d827bd05b2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8bd63317-3d46-b5d0-4254-c43514f56f71" executionId="4e6af2de-d8f2-4311-bc7b-6082d479a0db" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="94f9227d-7e3d-d2a9-b0d1-ae229cd64ad8" executionId="1b66b464-73f1-4731-a443-99d6e2c799c1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c790c4e0-c9e3-cf62-185e-d334c0e16e8c" executionId="42ab8a2f-76e9-4bc0-be64-dc9163036e69" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="49940f54-ae94-26c4-6804-554668acf7c4" executionId="12aa22db-67fa-4efa-aa13-07896e0549b1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d2a27ab6-eb42-3f17-4fbc-f43ffb8f181c" executionId="3effea7b-38f8-4672-b4ed-09dbdadaf2e2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f1e9a02-0f16-1992-99ad-1d8bacecb955" executionId="c66cd5f4-2908-4d6c-afff-0c35adefe28f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="96cd7c11-84a6-dfce-6874-2214f684b322" executionId="9b1da298-3f94-4d08-89d9-e7b655439ba7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fdff007d-7572-285b-deac-8e09a88040b7" executionId="3a373dda-0ff6-4574-8946-e00157f3ffde" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="76e462b8-7fbf-9e96-7542-db4eddc80a2a" executionId="013d3f18-1580-42ab-ab4c-fba8b3a50c41" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c24f42fb-3b6c-dab4-cd6a-6a11c80a7277" executionId="f2dc49f7-c444-41b5-881e-57adc2b1cb31" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b8cbbaf6-cecd-b64a-77ee-ef0523943cfd" executionId="37079c74-5115-40c9-9a50-04594af49835" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9633a571-2f96-baf5-24a7-9e68031c8e3e" executionId="d56e4104-0b9d-44fe-b5c8-0927c852aa0e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dad3aff2-b959-2342-071e-a1e1e9a89270" executionId="e6d8cc03-f0fc-4e0e-8c8d-374ee8b9a5bc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="82c5215e-4239-2983-8c5c-2d12d6c6e8f6" executionId="88dfc814-285d-4b35-86dc-8c9f5acaa003" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a0351a8d-65f9-0a8f-7c91-891dbe56d55d" executionId="5a060432-ca54-4e39-9bd5-5b2d6b44e137" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f87cfdd2-3417-c388-2df5-17d6b6bedd1b" executionId="29780f2a-4913-4a17-b72a-ee330912e3cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="788c0ec4-0a98-e195-5352-9c8d63f2e506" executionId="8003e192-bbaf-4552-9f5e-9bdeb652941b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4614d350-0118-a6c9-e382-0d05cd66fd19" executionId="1ade55c1-5a2e-470f-910e-29c5109291b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b9e74374-9d00-2fb4-89d7-e865c380b378" executionId="ab16972f-c57a-49de-b340-a260361826cb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="67661bf1-1dd4-c835-ff22-5b280b56a551" executionId="d53875ae-6714-42f9-ac01-274cc439aa1b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d7118507-da45-cc8d-490d-40374f487607" executionId="2e2def49-02a8-4e25-a61c-4c23252ac914" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f067e6f3-e8a3-2c8a-2eed-bc84d747ba0b" executionId="8674ed60-070e-402c-a795-6a6f657587a0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="32" executed="32" passed="32" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.3.1+6b60a9e56a (64-bit .NET 8.0.14)
+[xUnit.net 00:00:00.13]   Discovering: Engine.Test
+[xUnit.net 00:00:00.20]   Discovered:  Engine.Test
+[xUnit.net 00:00:00.20]   Starting:    Engine.Test
+[xUnit.net 00:00:06.51]   Finished:    Engine.Test
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

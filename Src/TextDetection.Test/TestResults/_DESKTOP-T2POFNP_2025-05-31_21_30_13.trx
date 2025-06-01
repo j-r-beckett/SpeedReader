@@ -1,0 +1,484 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="6fffadcf-7bee-4a0c-b3a3-d5438163ad25" name="@DESKTOP-T2POFNP 2025-05-31 21:30:13" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-05-31T21:30:13.4576890-07:00" queuing="2025-05-31T21:30:13.4576890-07:00" start="2025-05-31T21:30:12.7280439-07:00" finish="2025-05-31T21:30:23.8555911-07:00" />
+  <TestSettings name="default" id="53959301-380a-4a91-a152-1e7fef6eff4c">
+    <Deployment runDeploymentRoot="_DESKTOP-T2POFNP_2025-05-31_21_30_13" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="3e9fd7ab-38dc-4836-9c06-1ba163582276" testId="9f54ae57-f9cd-86c1-d77b-a8c94ceca913" testName="TextDetection.Test.PreprocessorTests.Preprocess_ProducesCorrectDimensions" computerName="DESKTOP-T2POFNP" duration="00:00:00.0370889" startTime="2025-05-31T21:30:19.4342184-07:00" endTime="2025-05-31T21:30:19.4342184-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3e9fd7ab-38dc-4836-9c06-1ba163582276" />
+    <UnitTestResult executionId="fd61ee08-3dfd-4f4d-859a-57f8202e54e5" testId="7bee1f57-a77a-402f-5c99-65a64eed57e6" testName="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_PreservesMapDimensions" computerName="DESKTOP-T2POFNP" duration="00:00:00.0024856" startTime="2025-05-31T21:30:13.4339573-07:00" endTime="2025-05-31T21:30:13.4339574-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fd61ee08-3dfd-4f4d-859a-57f8202e54e5" />
+    <UnitTestResult executionId="6e671827-2375-45c9-adc4-1cb9870f0e5a" testId="54f21cd7-1184-717a-9d72-9dcf349fb7a0" testName="TextDetection.Test.ConvexHullTests.ConvexHull_SquareWithInteriorPoints_ReturnsOnlyCorners" computerName="DESKTOP-T2POFNP" duration="00:00:00.0011682" startTime="2025-05-31T21:30:13.4378949-07:00" endTime="2025-05-31T21:30:13.4378950-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6e671827-2375-45c9-adc4-1cb9870f0e5a" />
+    <UnitTestResult executionId="4b32576d-a99f-460d-8ab3-0c9991746b26" testId="7736af17-cd9d-cd50-3973-67bcb4f3f4f7" testName="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 100, height: 50)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0104376" startTime="2025-05-31T21:30:13.6048484-07:00" endTime="2025-05-31T21:30:13.6048485-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4b32576d-a99f-460d-8ab3-0c9991746b26">
+      <Output>
+        <StdOut>Start dimensions: 100x50
+End dimensions: 1344x672</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="14903df1-22ba-4a9d-811f-f73a72adbbf6" testId="99034414-8d38-17ad-8aef-b1497c2cce51" testName="TextDetection.Test.ConvexHullTests.ConvexHull_CollinearPoints_ReturnsMinimalSet" computerName="DESKTOP-T2POFNP" duration="00:00:00.0135463" startTime="2025-05-31T21:30:13.3991447-07:00" endTime="2025-05-31T21:30:13.3991448-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="14903df1-22ba-4a9d-811f-f73a72adbbf6" />
+    <UnitTestResult executionId="1c1af0e3-c03f-4f5a-92d9-311be4d5afe0" testId="235ae802-dc09-d391-a0cb-96d3b8e03eb3" testName="TextDetection.Test.ConvexHullTests.ConvexHull_ResultIsCounterClockwise" computerName="DESKTOP-T2POFNP" duration="00:00:00.0009733" startTime="2025-05-31T21:30:13.4478035-07:00" endTime="2025-05-31T21:30:13.4478036-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1c1af0e3-c03f-4f5a-92d9-311be4d5afe0" />
+    <UnitTestResult executionId="b436e412-6523-47bb-b28e-86fd9f0cf989" testId="9944a1d3-6d9a-f4e1-4630-1d9dfd9be4bf" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_EdgePixels_HandlesEdgeCases" computerName="DESKTOP-T2POFNP" duration="00:00:00.0070082" startTime="2025-05-31T21:30:13.4462406-07:00" endTime="2025-05-31T21:30:13.4462407-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b436e412-6523-47bb-b28e-86fd9f0cf989" />
+    <UnitTestResult executionId="a45b65f7-c6cd-4685-9d14-f195743c145c" testId="412d7685-eda1-86de-1d2a-e0552a792a0b" testName="TextDetection.Test.ConvexHullTests.ConvexHull_DuplicatePoints_HandlesCorrectly" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002874" startTime="2025-05-31T21:30:13.4575229-07:00" endTime="2025-05-31T21:30:13.4575230-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a45b65f7-c6cd-4685-9d14-f195743c145c" />
+    <UnitTestResult executionId="e52acab4-887a-4f88-a944-e8914198779a" testId="fb1a5ad6-5e8d-3ad1-81e9-d62a0cc5ae57" testName="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 1, height: 1)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0047246" startTime="2025-05-31T21:30:13.5892509-07:00" endTime="2025-05-31T21:30:13.5892510-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e52acab4-887a-4f88-a944-e8914198779a">
+      <Output>
+        <StdOut>Start dimensions: 1x1
+End dimensions: 736x736</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d721c1e1-8556-4927-958f-8fbe1e10c8a1" testId="8bf15efa-0b92-2fe2-5f94-e46da09a7d05" testName="TextDetection.Test.ConvexHullTests.ConvexHull_Square_ReturnsAllFourCorners" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002051" startTime="2025-05-31T21:30:13.4552654-07:00" endTime="2025-05-31T21:30:13.4552655-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d721c1e1-8556-4927-958f-8fbe1e10c8a1" />
+    <UnitTestResult executionId="64fe8e81-78b6-4c56-9b03-9719c86f349c" testId="04c43c45-1c29-c6a7-2fd9-439bd8acc6a6" testName="TextDetection.Test.TensorOpsTests.ExtractProbabilityMaps_LargerTensor_MaintainsRowColumnOrder" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002961" startTime="2025-05-31T21:30:13.4635424-07:00" endTime="2025-05-31T21:30:13.4635425-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="64fe8e81-78b6-4c56-9b03-9719c86f349c" />
+    <UnitTestResult executionId="89344db3-0583-44ed-b187-b7239816725d" testId="0aee78f7-27e8-126a-a4d8-fc03de27ce58" testName="TextDetection.Test.PreprocessorTests.Preprocess_BlackImageNormalizesToExpectedValues" computerName="DESKTOP-T2POFNP" duration="00:00:00.0255408" startTime="2025-05-31T21:30:19.0232357-07:00" endTime="2025-05-31T21:30:19.0232359-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="89344db3-0583-44ed-b187-b7239816725d" />
+    <UnitTestResult executionId="787fb478-f1f7-4bea-b351-901c108f4f0f" testId="7b0abfcd-7ade-f7b0-b6b6-097a68049697" testName="TextDetection.Test.ConvexHullTests.ConvexHull_NegativeCoordinates_WorksCorrectly" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002999" startTime="2025-05-31T21:30:13.4400530-07:00" endTime="2025-05-31T21:30:13.4400531-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="787fb478-f1f7-4bea-b351-901c108f4f0f" />
+    <UnitTestResult executionId="48838f49-41fd-471d-87e9-78592a05af47" testId="04947102-cc30-c1bb-c03e-c102452a0ace" testName="TextDetection.Test.ConvexHullTests.ConvexHull_Pentagon_ReturnsAllVertices" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002189" startTime="2025-05-31T21:30:13.4514230-07:00" endTime="2025-05-31T21:30:13.4514231-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="48838f49-41fd-471d-87e9-78592a05af47" />
+    <UnitTestResult executionId="877b4ef7-2922-492c-b077-c95b978ae9f7" testId="f0ccdd62-7d61-46de-e57e-a60b16514339" testName="TextDetection.Test.TextDetectorTests.DetectionAccuracy_ValidatesPixelLevelAccuracy" computerName="DESKTOP-T2POFNP" duration="00:00:10.4067364" startTime="2025-05-31T21:30:23.7645499-07:00" endTime="2025-05-31T21:30:23.7645502-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="877b4ef7-2922-492c-b077-c95b978ae9f7">
+      <Output>
+        <StdOut>Hello world
+Starting accuracy test iteration 1
+Word 0 (Red): Average probability in buffer = 0.942 (sampled 2364 pixels)
+Word 1 (Green): Average probability in buffer = 0.834 (sampled 2086 pixels)
+Word 2 (Blue): Average probability in buffer = 0.993 (sampled 1287 pixels)
+Word 3 (Orange): Average probability in buffer = 0.912 (sampled 1716 pixels)
+Word 4 (Purple): Average probability in buffer = 0.840 (sampled 2114 pixels)
+Background average probability = 0.002 (sampled 957633 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-0-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/d90e9c32-72f4-4d41-ae0f-eea8a2b3cfd6.jpg
+Starting accuracy test iteration 2
+Word 0 (Red): Average probability in buffer = 0.912 (sampled 1988 pixels)
+Word 1 (Green): Average probability in buffer = 0.934 (sampled 2292 pixels)
+Word 2 (Blue): Average probability in buffer = 0.938 (sampled 1989 pixels)
+Word 3 (Orange): Average probability in buffer = 0.832 (sampled 2408 pixels)
+Word 4 (Purple): Average probability in buffer = 0.858 (sampled 2352 pixels)
+Background average probability = 0.002 (sampled 956369 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-1-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/e4cdf566-6c3c-4726-82b6-6bb6d790a052.jpg
+Starting accuracy test iteration 3
+Word 0 (Red): Average probability in buffer = 0.953 (sampled 1001 pixels)
+Word 1 (Green): Average probability in buffer = 0.949 (sampled 1200 pixels)
+Word 2 (Blue): Average probability in buffer = 0.931 (sampled 735 pixels)
+Word 3 (Orange): Average probability in buffer = 0.910 (sampled 2534 pixels)
+Word 4 (Purple): Average probability in buffer = 0.983 (sampled 840 pixels)
+Background average probability = 0.004 (sampled 960654 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-2-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/6dff1b9a-b843-4c17-aa92-eeb921b24222.jpg
+Starting accuracy test iteration 4
+Word 0 (Red): Average probability in buffer = 0.910 (sampled 2548 pixels)
+Word 1 (Green): Average probability in buffer = 0.995 (sampled 700 pixels)
+Word 2 (Blue): Average probability in buffer = 0.961 (sampled 784 pixels)
+Word 3 (Orange): Average probability in buffer = 0.873 (sampled 2940 pixels)
+Word 4 (Purple): Average probability in buffer = 0.915 (sampled 2044 pixels)
+Background average probability = 0.004 (sampled 958234 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-3-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/c5cdb7cb-10dd-4063-ab2a-912f0f52f6d0.jpg
+Starting accuracy test iteration 5
+Word 0 (Red): Average probability in buffer = 0.875 (sampled 1792 pixels)
+Word 1 (Green): Average probability in buffer = 0.997 (sampled 644 pixels)
+Word 2 (Blue): Average probability in buffer = 0.871 (sampled 1807 pixels)
+Word 3 (Orange): Average probability in buffer = 0.976 (sampled 560 pixels)
+Word 4 (Purple): Average probability in buffer = 0.995 (sampled 721 pixels)
+Background average probability = 0.004 (sampled 961263 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-4-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/cc1807ef-be84-490d-87cb-c0ddc6d2d3df.jpg
+Starting accuracy test iteration 6
+Word 0 (Red): Average probability in buffer = 0.823 (sampled 1449 pixels)
+Word 1 (Green): Average probability in buffer = 0.915 (sampled 2444 pixels)
+Word 2 (Blue): Average probability in buffer = 0.938 (sampled 2054 pixels)
+Word 3 (Orange): Average probability in buffer = 0.988 (sampled 756 pixels)
+Word 4 (Purple): Average probability in buffer = 0.802 (sampled 1924 pixels)
+Background average probability = 0.004 (sampled 958698 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-5-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/e9a24f17-9f02-4a12-a521-d4df98e24c7d.jpg
+Starting accuracy test iteration 7
+Word 0 (Red): Average probability in buffer = 0.807 (sampled 1260 pixels)
+Word 1 (Green): Average probability in buffer = 0.877 (sampled 2016 pixels)
+Word 2 (Blue): Average probability in buffer = 0.874 (sampled 1638 pixels)
+Word 3 (Orange): Average probability in buffer = 0.882 (sampled 2450 pixels)
+Word 4 (Purple): Average probability in buffer = 0.890 (sampled 1638 pixels)
+Background average probability = 0.002 (sampled 958052 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-6-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/cec392a9-ed30-4dec-b896-78eee1dd6842.jpg
+Starting accuracy test iteration 8
+Word 0 (Red): Average probability in buffer = 0.888 (sampled 1140 pixels)
+Word 1 (Green): Average probability in buffer = 0.870 (sampled 1568 pixels)
+Word 2 (Blue): Average probability in buffer = 0.869 (sampled 2492 pixels)
+Word 3 (Orange): Average probability in buffer = 0.884 (sampled 1274 pixels)
+Word 4 (Purple): Average probability in buffer = 0.821 (sampled 532 pixels)
+Background average probability = 0.003 (sampled 959844 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-7-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/b94b4dd1-e3ab-42df-a5c9-b1999210179c.jpg
+Starting accuracy test iteration 9
+Word 0 (Red): Average probability in buffer = 0.929 (sampled 712 pixels)
+Word 1 (Green): Average probability in buffer = 0.926 (sampled 2067 pixels)
+Word 2 (Blue): Average probability in buffer = 0.936 (sampled 2040 pixels)
+Word 3 (Orange): Average probability in buffer = 0.929 (sampled 707 pixels)
+Word 4 (Purple): Average probability in buffer = 0.908 (sampled 2184 pixels)
+Background average probability = 0.003 (sampled 959382 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-8-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/f6d41514-3b62-46d3-9964-798d59619025.jpg
+Starting accuracy test iteration 10
+Word 0 (Red): Average probability in buffer = 0.934 (sampled 1781 pixels)
+Word 1 (Green): Average probability in buffer = 0.994 (sampled 1015 pixels)
+Word 2 (Blue): Average probability in buffer = 0.863 (sampled 2604 pixels)
+Word 3 (Orange): Average probability in buffer = 0.903 (sampled 1113 pixels)
+Word 4 (Purple): Average probability in buffer = 0.989 (sampled 786 pixels)
+Background average probability = 0.005 (sampled 959923 pixels outside all word buffers)
+Published image/jpeg data (accuracy-test-9-visualization.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/5cf9319f-b3cc-4dcb-853b-af0a35cb0b7d.jpg
+All accuracy test iterations completed successfully</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="fff57921-8aa2-41ff-95ee-9c9a98ce5901" testId="2bb49c76-39c6-ce47-b329-195c449ca188" testName="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 1333, height: 736)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0049042" startTime="2025-05-31T21:30:13.5942640-07:00" endTime="2025-05-31T21:30:13.5942641-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fff57921-8aa2-41ff-95ee-9c9a98ce5901">
+      <Output>
+        <StdOut>Start dimensions: 1333x736
+End dimensions: 1344x736</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="753825fd-99de-4e0f-aa47-a1422e098e32" testId="015f1c69-02d3-b19e-7186-ec9c178cb7f7" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_SingleComponent_ReturnsSingleComponent" computerName="DESKTOP-T2POFNP" duration="00:00:00.0003373" startTime="2025-05-31T21:30:13.4587075-07:00" endTime="2025-05-31T21:30:13.4587075-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="753825fd-99de-4e0f-aa47-a1422e098e32" />
+    <UnitTestResult executionId="28769218-8da8-4c96-a983-9808600c48c4" testId="b6087155-4f15-3957-d523-af7073f9da84" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_MinimumSize_HandlesSinglePixelArray" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002554" startTime="2025-05-31T21:30:13.4564719-07:00" endTime="2025-05-31T21:30:13.4564720-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="28769218-8da8-4c96-a983-9808600c48c4" />
+    <UnitTestResult executionId="a7b2733b-8307-464d-9d0c-0f49c40ce79a" testId="0fa3bf42-56e8-9bc9-6c27-df713cb32e78" testName="TextDetection.Test.PreprocessorTests.Preprocess_NormalizesPixelsCorrectly" computerName="DESKTOP-T2POFNP" duration="00:00:00.0247412" startTime="2025-05-31T21:30:19.0485962-07:00" endTime="2025-05-31T21:30:19.0485964-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a7b2733b-8307-464d-9d0c-0f49c40ce79a" />
+    <UnitTestResult executionId="57873833-7644-4404-8719-809a12a47c6b" testId="78cc8277-6278-2ffe-743d-0639ebb6f3a2" testName="TextDetection.Test.BatchProcessingTests.BatchProcessing_ProcessesAllImagesInBatch" computerName="DESKTOP-T2POFNP" duration="00:00:04.2243899" startTime="2025-05-31T21:30:17.5873716-07:00" endTime="2025-05-31T21:30:17.5873719-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="57873833-7644-4404-8719-809a12a47c6b">
+      <Output>
+        <StdOut>Published image/jpeg data (batch-original-toplft.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/152ad90a-20ad-41d3-911a-f78c0c8da5cc.jpg
+Published image/jpeg data (batch-original-toprgt.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/5ddb85c4-02ff-4b39-b17c-d4a00cba08e5.jpg
+Published image/jpeg data (batch-original-botlft.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/2f3f4c78-25c4-4245-9fbd-00b8c81ffb7d.jpg
+Published image/jpeg data (batch-original-botrgt.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/4a4dd4f8-a471-4965-ae95-0208a29693e4.jpg
+Published image/jpeg data (batch-result-toplft.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/9009ab5d-aa26-48a0-a91b-c08fdb899278.jpg
+Published image/jpeg data (batch-result-toprgt.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/cec48f85-a14d-4a10-abaf-a7dfb5c5d3bd.jpg
+Published image/jpeg data (batch-result-botlft.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/8d1859ef-21af-4fb4-8902-2d97646e6747.jpg
+Published image/jpeg data (batch-result-botrgt.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/2054e8db-d9c9-4ad9-8428-2f1ee88aee4b.jpg
+Text 'TOP' quadrant totals: TL=9455.3, TR=17.4, BL=24.1, BR=18.8
+Text 'RGT' quadrant totals: TL=21.3, TR=9661.7, BL=24.4, BR=18.5
+Text 'BOT' quadrant totals: TL=21.3, TR=18.1, BL=10013.9, BR=17.0
+Text 'LFT' quadrant totals: TL=21.3, TR=18.1, BL=24.4, BR=7987.9</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4e108d98-d981-458f-8133-c6b4bdd72c03" testId="6f3903ff-f390-4358-36d2-33bfac345923" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_TwoSeparateComponents_ReturnsTwoComponents" computerName="DESKTOP-T2POFNP" duration="00:00:00.0003995" startTime="2025-05-31T21:30:13.4503375-07:00" endTime="2025-05-31T21:30:13.4503375-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4e108d98-d981-458f-8133-c6b4bdd72c03" />
+    <UnitTestResult executionId="2cd30ef6-8318-4e5d-8f20-a2645bb66f64" testId="04a5347e-c3bb-ad07-2bbc-d97cbb9690ba" testName="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 50, height: 100)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0038203" startTime="2025-05-31T21:30:13.6153349-07:00" endTime="2025-05-31T21:30:13.6153349-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2cd30ef6-8318-4e5d-8f20-a2645bb66f64">
+      <Output>
+        <StdOut>Start dimensions: 50x100
+End dimensions: 384x736</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="008286a3-d7f8-4c5c-aea0-15cd6b887b36" testId="683a4f2c-3776-9f6b-0335-f108624f5f14" testName="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 1920, height: 1080)" computerName="DESKTOP-T2POFNP" duration="00:00:00.2048783" startTime="2025-05-31T21:30:13.5672709-07:00" endTime="2025-05-31T21:30:13.5672709-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="008286a3-d7f8-4c5c-aea0-15cd6b887b36">
+      <Output>
+        <StdOut>Start dimensions: 1920x1080
+End dimensions: 1312x736</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="5c47b6d5-c24b-4e3e-9f14-5366c5d3e9db" testId="5d925ecd-f232-d395-126f-b40eb33639f9" testName="TextDetection.Test.ConvexHullTests.ConvexHull_EmptyArray_ReturnsEmpty" computerName="DESKTOP-T2POFNP" duration="00:00:00.0000877" startTime="2025-05-31T21:30:13.4613358-07:00" endTime="2025-05-31T21:30:13.4613358-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5c47b6d5-c24b-4e3e-9f14-5366c5d3e9db" />
+    <UnitTestResult executionId="606be2bf-0d74-4f0a-b95a-425b36f632a9" testId="d4bc191a-8067-4cf2-a84f-c1d2ac477670" testName="TextDetection.Test.ConvexHullTests.ConvexHull_RandomPointCloud_ProducesValidHull" computerName="DESKTOP-T2POFNP" duration="00:00:00.0023896" startTime="2025-05-31T21:30:13.4355633-07:00" endTime="2025-05-31T21:30:13.4355633-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="606be2bf-0d74-4f0a-b95a-425b36f632a9" />
+    <UnitTestResult executionId="5c329704-d0b7-457f-bce0-bbe6d9d9c49b" testId="9d1657b1-2b2e-9751-6e64-f05f8fcba837" testName="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_HandlesEdgeCases" computerName="DESKTOP-T2POFNP" duration="00:00:00.0006860" startTime="2025-05-31T21:30:13.4349860-07:00" endTime="2025-05-31T21:30:13.4349860-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5c329704-d0b7-457f-bce0-bbe6d9d9c49b" />
+    <UnitTestResult executionId="87738713-d9ee-4e04-b4e2-854876bda46e" testId="1cca33ef-5249-d3d2-4e9b-e251d54fd489" testName="TextDetection.Test.PreprocessorTests.Preprocess_HandlesBatch" computerName="DESKTOP-T2POFNP" duration="00:00:00.1313469" startTime="2025-05-31T21:30:19.5657639-07:00" endTime="2025-05-31T21:30:19.5657640-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="87738713-d9ee-4e04-b4e2-854876bda46e" />
+    <UnitTestResult executionId="cb113e72-fd53-4766-aaa4-2aa96dba0563" testId="44075720-4196-b6a8-9000-e8833a88bf0c" testName="TextDetection.Test.TensorOpsTests.ExtractProbabilityMaps_MultipleBatch_ExtractsAllBatches" computerName="DESKTOP-T2POFNP" duration="00:00:00.0003170" startTime="2025-05-31T21:30:13.4650845-07:00" endTime="2025-05-31T21:30:13.4650845-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cb113e72-fd53-4766-aaa4-2aa96dba0563" />
+    <UnitTestResult executionId="0084647a-5314-43e4-85d6-064703bde655" testId="20bd597a-722b-7882-0807-be8b903c56fc" testName="TextDetection.Test.ConvexHullTests.ConvexHull_LargeCoordinates_WorksCorrectly" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002375" startTime="2025-05-31T21:30:13.4600785-07:00" endTime="2025-05-31T21:30:13.4600786-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0084647a-5314-43e4-85d6-064703bde655" />
+    <UnitTestResult executionId="d4d94912-bcff-4bd6-be63-ef557997c0cd" testId="07a8fd27-5a70-031d-c3d2-9630887a65c6" testName="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_HandlesSinglePixel" computerName="DESKTOP-T2POFNP" duration="00:00:00.0095268" startTime="2025-05-31T21:30:13.3866866-07:00" endTime="2025-05-31T21:30:13.3867034-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d4d94912-bcff-4bd6-be63-ef557997c0cd" />
+    <UnitTestResult executionId="aa7a38a0-fd83-4cbd-98a5-4ce84ef8f31e" testId="86568c27-3d48-0613-5f31-4035592bbcd2" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_LShapeComponent_HandlesComplexShape" computerName="DESKTOP-T2POFNP" duration="00:00:00.0005012" startTime="2025-05-31T21:30:13.4536397-07:00" endTime="2025-05-31T21:30:13.4536398-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aa7a38a0-fd83-4cbd-98a5-4ce84ef8f31e" />
+    <UnitTestResult executionId="c773416e-db73-4ee7-8764-7561e6f8524a" testId="7076f96f-0c51-df97-fd5a-33f89ef1e86c" testName="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_AppliesThresholdCorrectly" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002937" startTime="2025-05-31T21:30:13.4301708-07:00" endTime="2025-05-31T21:30:13.4301709-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c773416e-db73-4ee7-8764-7561e6f8524a" />
+    <UnitTestResult executionId="f78776f7-42da-4d10-be39-684112cd4127" testId="0146b9f1-6155-e2cc-39a7-0f02caf205ce" testName="TextDetection.Test.PreprocessorTests.Preprocess_StoresDataInChwLayout" computerName="DESKTOP-T2POFNP" duration="00:00:00.0297123" startTime="2025-05-31T21:30:18.9975220-07:00" endTime="2025-05-31T21:30:18.9975221-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f78776f7-42da-4d10-be39-684112cd4127" />
+    <UnitTestResult executionId="8e02abdf-e7d9-40eb-abb4-deedb6ffe15d" testId="9def447a-0a8b-5d66-6fe9-e4fa7c8db048" testName="TextDetection.Test.TensorOpsTests.ExtractProbabilityMaps_SingleBatch_ExtractsCorrectly" computerName="DESKTOP-T2POFNP" duration="00:00:00.0337698" startTime="2025-05-31T21:30:13.4625570-07:00" endTime="2025-05-31T21:30:13.4625570-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8e02abdf-e7d9-40eb-abb4-deedb6ffe15d" />
+    <UnitTestResult executionId="d593fb88-ff74-4968-9ac2-be36c6b45588" testId="cc244e66-3b74-ecfb-4f31-8415148e472f" testName="TextDetection.Test.ConvexHullTests.ConvexHull_Triangle_ReturnsAllThreePoints" computerName="DESKTOP-T2POFNP" duration="00:00:00.0024633" startTime="2025-05-31T21:30:13.4328677-07:00" endTime="2025-05-31T21:30:13.4328678-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d593fb88-ff74-4968-9ac2-be36c6b45588" />
+    <UnitTestResult executionId="6a7ef528-16e5-4503-b813-c339507b40a6" testId="c65abf65-8a15-188a-9329-7c68595f6954" testName="TextDetection.Test.PreprocessorTests.Preprocess_BatchCorrectness" computerName="DESKTOP-T2POFNP" duration="00:00:00.3480168" startTime="2025-05-31T21:30:19.3969270-07:00" endTime="2025-05-31T21:30:19.3969271-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6a7ef528-16e5-4503-b813-c339507b40a6" />
+    <UnitTestResult executionId="1fa62610-1110-4f96-b17c-05756e4fbdc5" testId="e1496bdb-5671-13da-001d-5ae432e78582" testName="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 32, height: 32)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0063663" startTime="2025-05-31T21:30:13.6114175-07:00" endTime="2025-05-31T21:30:13.6114176-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1fa62610-1110-4f96-b17c-05756e4fbdc5">
+      <Output>
+        <StdOut>Start dimensions: 32x32
+End dimensions: 736x736</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="066f6a2e-7cf4-4ebf-9aec-6f3a11392579" testId="bb6d5e33-adca-5ff2-55e9-4f19782420c0" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_SinglePixel_ReturnsSinglePointComponent" computerName="DESKTOP-T2POFNP" duration="00:00:00.0135870" startTime="2025-05-31T21:30:13.4060813-07:00" endTime="2025-05-31T21:30:13.4060814-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="066f6a2e-7cf4-4ebf-9aec-6f3a11392579" />
+    <UnitTestResult executionId="d1696581-d46b-49c4-ad20-e907e1113309" testId="38b23d25-b24a-412c-51fd-3ec66b624dd4" testName="TextDetection.Test.ConvexHullTests.ConvexHull_StarShape_ReturnsOuterPoints" computerName="DESKTOP-T2POFNP" duration="00:00:00.0002552" startTime="2025-05-31T21:30:13.4490944-07:00" endTime="2025-05-31T21:30:13.4490945-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d1696581-d46b-49c4-ad20-e907e1113309" />
+    <UnitTestResult executionId="0bd21d38-b913-4928-87ab-7f75fa7f11ce" testId="d219bbc1-c846-e8dc-b034-f57e5663df6a" testName="TextDetection.Test.ConvexHullTests.ConvexHull_SinglePoint_ReturnsEmpty" computerName="DESKTOP-T2POFNP" duration="00:00:00.0004186" startTime="2025-05-31T21:30:13.4367628-07:00" endTime="2025-05-31T21:30:13.4367629-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0bd21d38-b913-4928-87ab-7f75fa7f11ce" />
+    <UnitTestResult executionId="a42e1388-d62a-4f0d-a7bc-aad39ca7d7d0" testId="0c63ad15-ff7b-9be6-b158-d2859f1f0717" testName="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 480, height: 640)" computerName="DESKTOP-T2POFNP" duration="00:00:00.0173598" startTime="2025-05-31T21:30:13.5845233-07:00" endTime="2025-05-31T21:30:13.5845234-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a42e1388-d62a-4f0d-a7bc-aad39ca7d7d0">
+      <Output>
+        <StdOut>Start dimensions: 480x640
+End dimensions: 576x736</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="a626b0c5-d076-43b6-9222-b8bfe05816ad" testId="7188ed09-36c6-ee85-52ea-71c4786e1fe9" testName="TextDetection.Test.PreprocessorTests.Preprocess_HandlesJaggedBatchWithTextDetection" computerName="DESKTOP-T2POFNP" duration="00:00:05.6099490" startTime="2025-05-31T21:30:18.9675683-07:00" endTime="2025-05-31T21:30:18.9675684-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a626b0c5-d076-43b6-9222-b8bfe05816ad">
+      <Output>
+        <StdOut>Model output dimensions: 1344x736
+Published image/jpeg data (jagged-original-0-SMALL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/931c89dd-df15-4a06-9b37-094e550a13e0.jpg
+Published image/jpeg data (jagged-original-1-MEDIUM.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/ec3f2f90-736e-40b5-945d-d365242e9360.jpg
+Published image/jpeg data (jagged-original-2-VERTICAL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/951ec189-18e5-4bf0-b400-34551e712a6a.jpg
+Published image/jpeg data (jagged-original-3-LARGE.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/8394a121-425e-485c-984f-019e917eb9d4.jpg
+Published image/jpeg data (jagged-result-0-SMALL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/a12a50a2-4731-4bd8-be1d-a72262891aa6.jpg
+Published image/jpeg data (jagged-result-1-MEDIUM.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/8c044d78-9455-4f0b-a77d-d77fe7015378.jpg
+Published image/jpeg data (jagged-result-2-VERTICAL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/b10b8187-7074-46ad-8e75-f440b36d2432.jpg
+Published image/jpeg data (jagged-result-3-LARGE.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/212501f8-c831-49b8-a6e0-ce9b40d3e933.jpg
+Calculated tensor dimensions: 1344x736
+Published image/jpeg data (jagged-actual-scaled-0-SMALL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/57743b86-6d34-43c0-9dc8-16523e6ed28c.jpg
+Published image/jpeg data (jagged-tensor-fit-0-SMALL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/49ac4280-7c76-4943-b476-4d6c446c3c43.jpg
+Published image/jpeg data (jagged-actual-scaled-1-MEDIUM.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/7541bdf1-ccb8-4a43-b2cb-a1bb62046bc4.jpg
+Published image/jpeg data (jagged-tensor-fit-1-MEDIUM.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/4247930f-bf84-44fa-b448-bea0f76483f4.jpg
+Published image/jpeg data (jagged-actual-scaled-2-VERTICAL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/05b57dba-c8d4-4edf-83ef-cf76b2f70ae3.jpg
+Published image/jpeg data (jagged-tensor-fit-2-VERTICAL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/9a91398c-2d59-4af7-88c2-8b8a8b3c7479.jpg
+Published image/jpeg data (jagged-actual-scaled-3-LARGE.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/58a6d9a5-9c6a-40d9-9bc4-b73347199829.jpg
+Published image/jpeg data (jagged-tensor-fit-3-LARGE.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/4c3fa41c-cbdf-4aed-a7d7-87223c548c46.jpg
+Original: 800x600 -&gt; Fitted: 981x736 -&gt; Padded: 992x736 -&gt; Model: 1344x736
+Scale factors: X=1.226, Y=1.227
+Published image/jpeg data (jagged-analysis-0-SMALL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/528ae622-53c3-4329-a93f-8da233ab5473.jpg
+Original: 1000x500 -&gt; Fitted: 1333x666 -&gt; Padded: 1344x672 -&gt; Model: 1344x736
+Scale factors: X=1.333, Y=1.332
+Published image/jpeg data (jagged-analysis-1-MEDIUM.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/7d7e25b6-a100-41d9-9c1f-4494d971e195.jpg
+Original: 600x900 -&gt; Fitted: 491x736 -&gt; Padded: 512x736 -&gt; Model: 1344x736
+Scale factors: X=0.818, Y=0.818
+Published image/jpeg data (jagged-analysis-2-VERTICAL.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/0d41bfa4-967c-4216-9618-a70bf23031da.jpg
+Original: 1600x1000 -&gt; Fitted: 1178x736 -&gt; Padded: 1184x736 -&gt; Model: 1344x736
+Scale factors: X=0.736, Y=0.736
+Published image/jpeg data (jagged-analysis-3-LARGE.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/d70efa27-9cba-431c-a5de-3f49c518cb8e.jpg
+Published image/jpeg data (jagged-grid-original.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/1665ba8f-1ea4-426c-9ed2-f74b2978dbe3.jpg
+Published image/jpeg data (jagged-grid-results.png) to file://wsl$/Ubuntu/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/out/debug/0798c29f-ad62-4627-ac6c-10f719ac1760.jpg
+Image 0: SMALL - Original: 800x600, Expected quadrant: 0
+Original: 800x600 -&gt; Fitted: 981x736 -&gt; Padded: 992x736 -&gt; Model: 1344x736
+Scale factors: X=1.226, Y=1.227
+Text 'SMALL' quadrant totals: TL=3280.6, TR=16.9, BL=24.1, BR=18.3
+Image 1: MEDIUM - Original: 1000x500, Expected quadrant: 1
+Original: 1000x500 -&gt; Fitted: 1333x666 -&gt; Padded: 1344x672 -&gt; Model: 1344x736
+Scale factors: X=1.333, Y=1.332
+Text 'MEDIUM' quadrant totals: TL=25.4, TR=5453.5, BL=21.4, BR=19.9
+Image 2: VERTICAL - Original: 600x900, Expected quadrant: 2
+Original: 600x900 -&gt; Fitted: 491x736 -&gt; Padded: 512x736 -&gt; Model: 1344x736
+Scale factors: X=0.818, Y=0.818
+Text 'VERTICAL' quadrant totals: TL=11.2, TR=6.0, BL=2363.8, BR=30.2
+Image 3: LARGE - Original: 1600x1000, Expected quadrant: 3
+Original: 1600x1000 -&gt; Fitted: 1178x736 -&gt; Padded: 1184x736 -&gt; Model: 1344x736
+Scale factors: X=0.736, Y=0.736
+Text 'LARGE' quadrant totals: TL=25.0, TR=21.3, BL=28.5, BR=1522.0</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e83d0638-536e-4738-8baa-2bcb87c8f42f" testId="21bd997c-5713-6ec5-d5da-de1a0b7a9461" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_EmptyData_ReturnsNoComponents" computerName="DESKTOP-T2POFNP" duration="00:00:00.0009880" startTime="2025-05-31T21:30:13.4317338-07:00" endTime="2025-05-31T21:30:13.4317339-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e83d0638-536e-4738-8baa-2bcb87c8f42f" />
+    <UnitTestResult executionId="fc34f5dd-02fa-48a2-87c1-d88f064c1861" testId="a7fed5f2-ff8c-7cca-aeac-cfd750fbae8f" testName="TextDetection.Test.ConvexHullTests.ConvexHull_TwoPoints_ReturnsEmpty" computerName="DESKTOP-T2POFNP" duration="00:00:00.0001342" startTime="2025-05-31T21:30:13.4525314-07:00" endTime="2025-05-31T21:30:13.4525315-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fc34f5dd-02fa-48a2-87c1-d88f064c1861" />
+    <UnitTestResult executionId="d8c66851-95d2-4bd2-b948-97fb2fa64a24" testId="c193974b-3433-97d5-1316-30796c4ad08d" testName="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_DiagonalConnection_ConnectsDiagonalPixels" computerName="DESKTOP-T2POFNP" duration="00:00:00.0003066" startTime="2025-05-31T21:30:13.4618987-07:00" endTime="2025-05-31T21:30:13.4618988-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d8c66851-95d2-4bd2-b948-97fb2fa64a24" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_TwoSeparateComponents_ReturnsTwoComponents" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="6f3903ff-f390-4358-36d2-33bfac345923">
+      <Execution id="4e108d98-d981-458f-8133-c6b4bdd72c03" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_TwoSeparateComponents_ReturnsTwoComponents" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 1920, height: 1080)" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="683a4f2c-3776-9f6b-0335-f108624f5f14">
+      <Execution id="008286a3-d7f8-4c5c-aea0-15cd6b887b36" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ResizeCalculationTests" name="CalculateDimensions_MatchesActualProcessing" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_SingleComponent_ReturnsSingleComponent" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="015f1c69-02d3-b19e-7186-ec9c178cb7f7">
+      <Execution id="753825fd-99de-4e0f-aa47-a1422e098e32" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_SingleComponent_ReturnsSingleComponent" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_StarShape_ReturnsOuterPoints" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="38b23d25-b24a-412c-51fd-3ec66b624dd4">
+      <Execution id="d1696581-d46b-49c4-ad20-e907e1113309" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_StarShape_ReturnsOuterPoints" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_EmptyData_ReturnsNoComponents" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="21bd997c-5713-6ec5-d5da-de1a0b7a9461">
+      <Execution id="e83d0638-536e-4738-8baa-2bcb87c8f42f" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_EmptyData_ReturnsNoComponents" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PreprocessorTests.Preprocess_BlackImageNormalizesToExpectedValues" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="0aee78f7-27e8-126a-a4d8-fc03de27ce58">
+      <Execution id="89344db3-0583-44ed-b187-b7239816725d" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PreprocessorTests" name="Preprocess_BlackImageNormalizesToExpectedValues" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_CollinearPoints_ReturnsMinimalSet" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="99034414-8d38-17ad-8aef-b1497c2cce51">
+      <Execution id="14903df1-22ba-4a9d-811f-f73a72adbbf6" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_CollinearPoints_ReturnsMinimalSet" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_Pentagon_ReturnsAllVertices" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="04947102-cc30-c1bb-c03e-c102452a0ace">
+      <Execution id="48838f49-41fd-471d-87e9-78592a05af47" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_Pentagon_ReturnsAllVertices" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_MinimumSize_HandlesSinglePixelArray" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="b6087155-4f15-3957-d523-af7073f9da84">
+      <Execution id="28769218-8da8-4c96-a983-9808600c48c4" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_MinimumSize_HandlesSinglePixelArray" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_NegativeCoordinates_WorksCorrectly" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="7b0abfcd-7ade-f7b0-b6b6-097a68049697">
+      <Execution id="787fb478-f1f7-4bea-b351-901c108f4f0f" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_NegativeCoordinates_WorksCorrectly" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 32, height: 32)" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="e1496bdb-5671-13da-001d-5ae432e78582">
+      <Execution id="1fa62610-1110-4f96-b17c-05756e4fbdc5" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ResizeCalculationTests" name="CalculateDimensions_MatchesActualProcessing" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 1, height: 1)" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="fb1a5ad6-5e8d-3ad1-81e9-d62a0cc5ae57">
+      <Execution id="e52acab4-887a-4f88-a944-e8914198779a" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ResizeCalculationTests" name="CalculateDimensions_MatchesActualProcessing" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_Square_ReturnsAllFourCorners" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="8bf15efa-0b92-2fe2-5f94-e46da09a7d05">
+      <Execution id="d721c1e1-8556-4927-958f-8fbe1e10c8a1" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_Square_ReturnsAllFourCorners" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PreprocessorTests.Preprocess_NormalizesPixelsCorrectly" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="0fa3bf42-56e8-9bc9-6c27-df713cb32e78">
+      <Execution id="a7b2733b-8307-464d-9d0c-0f49c40ce79a" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PreprocessorTests" name="Preprocess_NormalizesPixelsCorrectly" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 50, height: 100)" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="04a5347e-c3bb-ad07-2bbc-d97cbb9690ba">
+      <Execution id="2cd30ef6-8318-4e5d-8f20-a2645bb66f64" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ResizeCalculationTests" name="CalculateDimensions_MatchesActualProcessing" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.TensorOpsTests.ExtractProbabilityMaps_MultipleBatch_ExtractsAllBatches" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="44075720-4196-b6a8-9000-e8833a88bf0c">
+      <Execution id="cb113e72-fd53-4766-aaa4-2aa96dba0563" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.TensorOpsTests" name="ExtractProbabilityMaps_MultipleBatch_ExtractsAllBatches" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.TensorOpsTests.ExtractProbabilityMaps_LargerTensor_MaintainsRowColumnOrder" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="04c43c45-1c29-c6a7-2fd9-439bd8acc6a6">
+      <Execution id="64fe8e81-78b6-4c56-9b03-9719c86f349c" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.TensorOpsTests" name="ExtractProbabilityMaps_LargerTensor_MaintainsRowColumnOrder" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 100, height: 50)" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="7736af17-cd9d-cd50-3973-67bcb4f3f4f7">
+      <Execution id="4b32576d-a99f-460d-8ab3-0c9991746b26" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ResizeCalculationTests" name="CalculateDimensions_MatchesActualProcessing" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_SquareWithInteriorPoints_ReturnsOnlyCorners" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="54f21cd7-1184-717a-9d72-9dcf349fb7a0">
+      <Execution id="6e671827-2375-45c9-adc4-1cb9870f0e5a" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_SquareWithInteriorPoints_ReturnsOnlyCorners" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PreprocessorTests.Preprocess_BatchCorrectness" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="c65abf65-8a15-188a-9329-7c68595f6954">
+      <Execution id="6a7ef528-16e5-4503-b813-c339507b40a6" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PreprocessorTests" name="Preprocess_BatchCorrectness" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_ResultIsCounterClockwise" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="235ae802-dc09-d391-a0cb-96d3b8e03eb3">
+      <Execution id="1c1af0e3-c03f-4f5a-92d9-311be4d5afe0" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_ResultIsCounterClockwise" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PreprocessorTests.Preprocess_StoresDataInChwLayout" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="0146b9f1-6155-e2cc-39a7-0f02caf205ce">
+      <Execution id="f78776f7-42da-4d10-be39-684112cd4127" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PreprocessorTests" name="Preprocess_StoresDataInChwLayout" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_Triangle_ReturnsAllThreePoints" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="cc244e66-3b74-ecfb-4f31-8415148e472f">
+      <Execution id="d593fb88-ff74-4968-9ac2-be36c6b45588" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_Triangle_ReturnsAllThreePoints" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 1333, height: 736)" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="2bb49c76-39c6-ce47-b329-195c449ca188">
+      <Execution id="fff57921-8aa2-41ff-95ee-9c9a98ce5901" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ResizeCalculationTests" name="CalculateDimensions_MatchesActualProcessing" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_HandlesSinglePixel" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="07a8fd27-5a70-031d-c3d2-9630887a65c6">
+      <Execution id="d4d94912-bcff-4bd6-be63-ef557997c0cd" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PostProcessorTests" name="BinarizeProbabilityMap_HandlesSinglePixel" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.TensorOpsTests.ExtractProbabilityMaps_SingleBatch_ExtractsCorrectly" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="9def447a-0a8b-5d66-6fe9-e4fa7c8db048">
+      <Execution id="8e02abdf-e7d9-40eb-abb4-deedb6ffe15d" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.TensorOpsTests" name="ExtractProbabilityMaps_SingleBatch_ExtractsCorrectly" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PreprocessorTests.Preprocess_HandlesBatch" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="1cca33ef-5249-d3d2-4e9b-e251d54fd489">
+      <Execution id="87738713-d9ee-4e04-b4e2-854876bda46e" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PreprocessorTests" name="Preprocess_HandlesBatch" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_LShapeComponent_HandlesComplexShape" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="86568c27-3d48-0613-5f31-4035592bbcd2">
+      <Execution id="aa7a38a0-fd83-4cbd-98a5-4ce84ef8f31e" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_LShapeComponent_HandlesComplexShape" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PreprocessorTests.Preprocess_ProducesCorrectDimensions" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="9f54ae57-f9cd-86c1-d77b-a8c94ceca913">
+      <Execution id="3e9fd7ab-38dc-4836-9c06-1ba163582276" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PreprocessorTests" name="Preprocess_ProducesCorrectDimensions" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_DuplicatePoints_HandlesCorrectly" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="412d7685-eda1-86de-1d2a-e0552a792a0b">
+      <Execution id="a45b65f7-c6cd-4685-9d14-f195743c145c" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_DuplicatePoints_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_RandomPointCloud_ProducesValidHull" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="d4bc191a-8067-4cf2-a84f-c1d2ac477670">
+      <Execution id="606be2bf-0d74-4f0a-b95a-425b36f632a9" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_RandomPointCloud_ProducesValidHull" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_PreservesMapDimensions" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="7bee1f57-a77a-402f-5c99-65a64eed57e6">
+      <Execution id="fd61ee08-3dfd-4f4d-859a-57f8202e54e5" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PostProcessorTests" name="BinarizeProbabilityMap_PreservesMapDimensions" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_EmptyArray_ReturnsEmpty" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="5d925ecd-f232-d395-126f-b40eb33639f9">
+      <Execution id="5c47b6d5-c24b-4e3e-9f14-5366c5d3e9db" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_EmptyArray_ReturnsEmpty" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PreprocessorTests.Preprocess_HandlesJaggedBatchWithTextDetection" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="7188ed09-36c6-ee85-52ea-71c4786e1fe9">
+      <Execution id="a626b0c5-d076-43b6-9222-b8bfe05816ad" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PreprocessorTests" name="Preprocess_HandlesJaggedBatchWithTextDetection" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_EdgePixels_HandlesEdgeCases" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="9944a1d3-6d9a-f4e1-4630-1d9dfd9be4bf">
+      <Execution id="b436e412-6523-47bb-b28e-86fd9f0cf989" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_EdgePixels_HandlesEdgeCases" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_HandlesEdgeCases" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="9d1657b1-2b2e-9751-6e64-f05f8fcba837">
+      <Execution id="5c329704-d0b7-457f-bce0-bbe6d9d9c49b" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PostProcessorTests" name="BinarizeProbabilityMap_HandlesEdgeCases" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.BatchProcessingTests.BatchProcessing_ProcessesAllImagesInBatch" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="78cc8277-6278-2ffe-743d-0639ebb6f3a2">
+      <Execution id="57873833-7644-4404-8719-809a12a47c6b" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.BatchProcessingTests" name="BatchProcessing_ProcessesAllImagesInBatch" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_TwoPoints_ReturnsEmpty" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="a7fed5f2-ff8c-7cca-aeac-cfd750fbae8f">
+      <Execution id="fc34f5dd-02fa-48a2-87c1-d88f064c1861" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_TwoPoints_ReturnsEmpty" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ResizeCalculationTests.CalculateDimensions_MatchesActualProcessing(width: 480, height: 640)" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="0c63ad15-ff7b-9be6-b158-d2859f1f0717">
+      <Execution id="a42e1388-d62a-4f0d-a7bc-aad39ca7d7d0" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ResizeCalculationTests" name="CalculateDimensions_MatchesActualProcessing" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.TextDetectorTests.DetectionAccuracy_ValidatesPixelLevelAccuracy" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="f0ccdd62-7d61-46de-e57e-a60b16514339">
+      <Execution id="877b4ef7-2922-492c-b077-c95b978ae9f7" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.TextDetectorTests" name="DetectionAccuracy_ValidatesPixelLevelAccuracy" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_LargeCoordinates_WorksCorrectly" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="20bd597a-722b-7882-0807-be8b903c56fc">
+      <Execution id="0084647a-5314-43e4-85d6-064703bde655" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_LargeCoordinates_WorksCorrectly" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.PostProcessorTests.BinarizeProbabilityMap_AppliesThresholdCorrectly" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="7076f96f-0c51-df97-fd5a-33f89ef1e86c">
+      <Execution id="c773416e-db73-4ee7-8764-7561e6f8524a" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.PostProcessorTests" name="BinarizeProbabilityMap_AppliesThresholdCorrectly" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConvexHullTests.ConvexHull_SinglePoint_ReturnsEmpty" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="d219bbc1-c846-e8dc-b034-f57e5663df6a">
+      <Execution id="0bd21d38-b913-4928-87ab-7f75fa7f11ce" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConvexHullTests" name="ConvexHull_SinglePoint_ReturnsEmpty" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_SinglePixel_ReturnsSinglePointComponent" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="bb6d5e33-adca-5ff2-55e9-4f19782420c0">
+      <Execution id="066f6a2e-7cf4-4ebf-9aec-6f3a11392579" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_SinglePixel_ReturnsSinglePointComponent" />
+    </UnitTest>
+    <UnitTest name="TextDetection.Test.ConnectedComponentsTests.ConnectedComponents_DiagonalConnection_ConnectsDiagonalPixels" storage="/home/jimmy/opusflow/src/textdetection.test/bin/debug/net8.0/textdetection.test.dll" id="c193974b-3433-97d5-1316-30796c4ad08d">
+      <Execution id="d8c66851-95d2-4bd2-b948-97fb2fa64a24" />
+      <TestMethod codeBase="/home/jimmy/OpusFlow/Src/TextDetection.Test/bin/Debug/net8.0/TextDetection.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="TextDetection.Test.ConnectedComponentsTests" name="ConnectedComponents_DiagonalConnection_ConnectsDiagonalPixels" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="9f54ae57-f9cd-86c1-d77b-a8c94ceca913" executionId="3e9fd7ab-38dc-4836-9c06-1ba163582276" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7bee1f57-a77a-402f-5c99-65a64eed57e6" executionId="fd61ee08-3dfd-4f4d-859a-57f8202e54e5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="54f21cd7-1184-717a-9d72-9dcf349fb7a0" executionId="6e671827-2375-45c9-adc4-1cb9870f0e5a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7736af17-cd9d-cd50-3973-67bcb4f3f4f7" executionId="4b32576d-a99f-460d-8ab3-0c9991746b26" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="99034414-8d38-17ad-8aef-b1497c2cce51" executionId="14903df1-22ba-4a9d-811f-f73a72adbbf6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="235ae802-dc09-d391-a0cb-96d3b8e03eb3" executionId="1c1af0e3-c03f-4f5a-92d9-311be4d5afe0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9944a1d3-6d9a-f4e1-4630-1d9dfd9be4bf" executionId="b436e412-6523-47bb-b28e-86fd9f0cf989" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="412d7685-eda1-86de-1d2a-e0552a792a0b" executionId="a45b65f7-c6cd-4685-9d14-f195743c145c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fb1a5ad6-5e8d-3ad1-81e9-d62a0cc5ae57" executionId="e52acab4-887a-4f88-a944-e8914198779a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8bf15efa-0b92-2fe2-5f94-e46da09a7d05" executionId="d721c1e1-8556-4927-958f-8fbe1e10c8a1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="04c43c45-1c29-c6a7-2fd9-439bd8acc6a6" executionId="64fe8e81-78b6-4c56-9b03-9719c86f349c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0aee78f7-27e8-126a-a4d8-fc03de27ce58" executionId="89344db3-0583-44ed-b187-b7239816725d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7b0abfcd-7ade-f7b0-b6b6-097a68049697" executionId="787fb478-f1f7-4bea-b351-901c108f4f0f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="04947102-cc30-c1bb-c03e-c102452a0ace" executionId="48838f49-41fd-471d-87e9-78592a05af47" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f0ccdd62-7d61-46de-e57e-a60b16514339" executionId="877b4ef7-2922-492c-b077-c95b978ae9f7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2bb49c76-39c6-ce47-b329-195c449ca188" executionId="fff57921-8aa2-41ff-95ee-9c9a98ce5901" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="015f1c69-02d3-b19e-7186-ec9c178cb7f7" executionId="753825fd-99de-4e0f-aa47-a1422e098e32" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b6087155-4f15-3957-d523-af7073f9da84" executionId="28769218-8da8-4c96-a983-9808600c48c4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0fa3bf42-56e8-9bc9-6c27-df713cb32e78" executionId="a7b2733b-8307-464d-9d0c-0f49c40ce79a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="78cc8277-6278-2ffe-743d-0639ebb6f3a2" executionId="57873833-7644-4404-8719-809a12a47c6b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6f3903ff-f390-4358-36d2-33bfac345923" executionId="4e108d98-d981-458f-8133-c6b4bdd72c03" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="04a5347e-c3bb-ad07-2bbc-d97cbb9690ba" executionId="2cd30ef6-8318-4e5d-8f20-a2645bb66f64" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="683a4f2c-3776-9f6b-0335-f108624f5f14" executionId="008286a3-d7f8-4c5c-aea0-15cd6b887b36" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5d925ecd-f232-d395-126f-b40eb33639f9" executionId="5c47b6d5-c24b-4e3e-9f14-5366c5d3e9db" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d4bc191a-8067-4cf2-a84f-c1d2ac477670" executionId="606be2bf-0d74-4f0a-b95a-425b36f632a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9d1657b1-2b2e-9751-6e64-f05f8fcba837" executionId="5c329704-d0b7-457f-bce0-bbe6d9d9c49b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1cca33ef-5249-d3d2-4e9b-e251d54fd489" executionId="87738713-d9ee-4e04-b4e2-854876bda46e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="44075720-4196-b6a8-9000-e8833a88bf0c" executionId="cb113e72-fd53-4766-aaa4-2aa96dba0563" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="20bd597a-722b-7882-0807-be8b903c56fc" executionId="0084647a-5314-43e4-85d6-064703bde655" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="07a8fd27-5a70-031d-c3d2-9630887a65c6" executionId="d4d94912-bcff-4bd6-be63-ef557997c0cd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="86568c27-3d48-0613-5f31-4035592bbcd2" executionId="aa7a38a0-fd83-4cbd-98a5-4ce84ef8f31e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7076f96f-0c51-df97-fd5a-33f89ef1e86c" executionId="c773416e-db73-4ee7-8764-7561e6f8524a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0146b9f1-6155-e2cc-39a7-0f02caf205ce" executionId="f78776f7-42da-4d10-be39-684112cd4127" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9def447a-0a8b-5d66-6fe9-e4fa7c8db048" executionId="8e02abdf-e7d9-40eb-abb4-deedb6ffe15d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cc244e66-3b74-ecfb-4f31-8415148e472f" executionId="d593fb88-ff74-4968-9ac2-be36c6b45588" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c65abf65-8a15-188a-9329-7c68595f6954" executionId="6a7ef528-16e5-4503-b813-c339507b40a6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e1496bdb-5671-13da-001d-5ae432e78582" executionId="1fa62610-1110-4f96-b17c-05756e4fbdc5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bb6d5e33-adca-5ff2-55e9-4f19782420c0" executionId="066f6a2e-7cf4-4ebf-9aec-6f3a11392579" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="38b23d25-b24a-412c-51fd-3ec66b624dd4" executionId="d1696581-d46b-49c4-ad20-e907e1113309" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d219bbc1-c846-e8dc-b034-f57e5663df6a" executionId="0bd21d38-b913-4928-87ab-7f75fa7f11ce" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0c63ad15-ff7b-9be6-b158-d2859f1f0717" executionId="a42e1388-d62a-4f0d-a7bc-aad39ca7d7d0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7188ed09-36c6-ee85-52ea-71c4786e1fe9" executionId="a626b0c5-d076-43b6-9222-b8bfe05816ad" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="21bd997c-5713-6ec5-d5da-de1a0b7a9461" executionId="e83d0638-536e-4738-8baa-2bcb87c8f42f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a7fed5f2-ff8c-7cca-aeac-cfd750fbae8f" executionId="fc34f5dd-02fa-48a2-87c1-d88f064c1861" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c193974b-3433-97d5-1316-30796c4ad08d" executionId="d8c66851-95d2-4bd2-b948-97fb2fa64a24" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="45" executed="45" passed="45" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.3.1+6b60a9e56a (64-bit .NET 8.0.14)
+[xUnit.net 00:00:00.05]   Discovering: TextDetection.Test
+[xUnit.net 00:00:00.09]   Discovered:  TextDetection.Test
+[xUnit.net 00:00:00.09]   Starting:    TextDetection.Test
+[xUnit.net 00:00:10.54]   Finished:    TextDetection.Test
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

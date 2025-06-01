@@ -19,7 +19,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Single(components);
@@ -46,7 +46,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Equal(4, components.Length);
@@ -76,7 +76,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Empty(components);
@@ -95,7 +95,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Single(components);
@@ -120,7 +120,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Single(components);
@@ -147,7 +147,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Single(components);
@@ -168,7 +168,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Equal(4, components.Length);
@@ -193,7 +193,7 @@ public class ConnectedComponentsTests
         var span2D = new Span2D<float>(data);
 
         // Act
-        var components = PostProcessor.ConnectedComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(span2D);
 
         // Assert
         Assert.Single(components);

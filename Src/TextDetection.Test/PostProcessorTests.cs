@@ -18,7 +18,7 @@ public class PostProcessorTests
         var span2D = new Span2D<float>(probabilityMap);
 
         // Act
-        PostProcessor.BinarizeProbabilityMap(span2D);
+        Binarization.BinarizeInPlace(span2D, 0.2f);
 
         // Assert: Values > 0.2 should be 1.0f, <= 0.2 should be 0.0f
         Assert.Equal(0.0f, probabilityMap[0, 0]); // 0.1 <= 0.2
@@ -46,7 +46,7 @@ public class PostProcessorTests
         var span2D = new Span2D<float>(probabilityMap);
 
         // Act
-        PostProcessor.BinarizeProbabilityMap(span2D);
+        Binarization.BinarizeInPlace(span2D, 0.2f);
 
         // Assert: Test exact threshold boundary and negative values
         Assert.Equal(0.0f, probabilityMap[0, 0]); // Exactly 0.2 should be 0.0f
@@ -65,8 +65,8 @@ public class PostProcessorTests
         var largeSpan = new Span2D<float>(largeMap);
 
         // Act
-        PostProcessor.BinarizeProbabilityMap(smallSpan);
-        PostProcessor.BinarizeProbabilityMap(largeSpan);
+        Binarization.BinarizeInPlace(smallSpan, 0.2f);
+        Binarization.BinarizeInPlace(largeSpan, 0.2f);
 
         // Assert: Dimensions should be preserved
         Assert.Equal(2, smallMap.GetLength(0));
@@ -86,8 +86,8 @@ public class PostProcessorTests
         var lowSpan = new Span2D<float>(lowProb);
 
         // Act
-        PostProcessor.BinarizeProbabilityMap(highSpan);
-        PostProcessor.BinarizeProbabilityMap(lowSpan);
+        Binarization.BinarizeInPlace(highSpan, 0.2f);
+        Binarization.BinarizeInPlace(lowSpan, 0.2f);
 
         // Assert
         Assert.Equal(1.0f, highProb[0, 0]);
