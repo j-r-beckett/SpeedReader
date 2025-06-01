@@ -5,6 +5,7 @@ namespace TextDetection.Test;
 
 public class PostProcessorTests
 {
+
     [Fact]
     public void BinarizeProbabilityMap_AppliesThresholdCorrectly()
     {
