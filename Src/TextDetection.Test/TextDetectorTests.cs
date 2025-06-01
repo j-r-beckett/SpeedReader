@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 
 namespace TextDetection.Test;
 
+[Collection("ONNX")]
 public class TextDetectorTests
 {
     private readonly ITestOutputHelper _outputHelper;
