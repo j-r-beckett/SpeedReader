@@ -1,6 +1,5 @@
 using System.Buffers;
-using Microsoft.ML.OnnxRuntime;
-using Microsoft.ML.OnnxRuntime.Tensors;
+using System.Numerics.Tensors;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -9,7 +8,7 @@ namespace TextDetection;
 
 public class Preprocessor
 {
-    public static OrtValue Preprocess(Image<Rgb24>[] batch)
+    public static Tensor<float> Preprocess(Image<Rgb24>[] batch)
     {
         if (batch.Length == 0)
         {
@@ -19,9 +18,10 @@ public class Preprocessor
         (int width, int height) = CalculateDimensions(batch);
 
         // Create tensor for the batch
-        long[] shape = [batch.Length, 3, height, width];
-        var tensor = OrtValue.CreateAllocatedTensorValue(OrtAllocator.DefaultInstance, TensorElementType.Float, shape);
-        var tensorSpan = tensor.GetTensorMutableDataAsSpan<float>();
+        ReadOnlySpan<nint> shape = [(nint)batch.Length, 3, (nint)height, (nint)width];
+        var data = new float[batch.Length * 3 * height * width];
+        var tensor = Tensor.Create(data, shape);
+        var tensorSpan = data.AsSpan();
 
         var pixelBuffer = ArrayPool<Rgb24>.Shared.Rent(width * height);
         try

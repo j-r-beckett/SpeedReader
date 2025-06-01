@@ -59,13 +59,13 @@ public class EndToEndTests
         var postProcessor = new PostProcessor();
 
         // Step 1: Preprocessing
-        using var preprocessedTensor = Preprocessor.Preprocess([testImage]);
+        var preprocessedTensor = Preprocessor.Preprocess([testImage]);
         
         // Step 2: Inference
-        using var modelOutput = detector.RunTextDetection(preprocessedTensor);
+        var modelOutput = detector.RunTextDetection(preprocessedTensor);
         
         // Step 3: Post-processing  
-        var detectedPolygons = postProcessor.PostProcess(modelOutput.First(), originalWidth, originalHeight);
+        var detectedPolygons = postProcessor.PostProcess(modelOutput, originalWidth, originalHeight);
 
         // Assert: Verify we detected at least one polygon
         Assert.NotEmpty(detectedPolygons);

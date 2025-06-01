@@ -39,7 +39,7 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(1, 1, new Rgb24(255, 128, 0));
 
         // Act
-        using var tensor = Preprocessor.Preprocess([image]);
+        var tensor = Preprocessor.Preprocess([image]);
 
         // Assert: Verify exact normalized values using DBNet's normalization parameters
         var means = new[] { 123.675f, 116.28f, 103.53f };
@@ -49,14 +49,15 @@ public class PreprocessorTests
         float expectedG = (128f - means[1]) / stds[1];  // ~0.205
         float expectedB = (0f - means[2]) / stds[2];    // ~-1.804
 
-        var tensorSpan = tensor.GetTensorDataAsSpan<float>();
-        var shape = tensor.GetTensorTypeAndShape().Shape;
+        var shape = tensor.Lengths;
+        var tensorData = new float[tensor.FlattenedLength];
+        tensor.FlattenTo(tensorData);
 
         int channelSize = (int)(shape[2] * shape[3]); // height * width
 
-        Assert.Equal(expectedR, tensorSpan[0], 0.001f);                    // First R value
-        Assert.Equal(expectedG, tensorSpan[channelSize], 0.001f);          // First G value
-        Assert.Equal(expectedB, tensorSpan[2 * channelSize], 0.001f);      // First B value
+        Assert.Equal(expectedR, tensorData[0], 0.001f);                    // First R value
+        Assert.Equal(expectedG, tensorData[channelSize], 0.001f);          // First G value
+        Assert.Equal(expectedB, tensorData[2 * channelSize], 0.001f);      // First B value
     }
 
     [Fact]
@@ -70,11 +71,12 @@ public class PreprocessorTests
         image[1, 1] = new Rgb24(103, 153, 203); // Bottom-right
 
         // Act
-        using var tensor = Preprocessor.Preprocess([image]);
+        var tensor = Preprocessor.Preprocess([image]);
 
         // Assert: Verify CHW layout - all R values, then all G values, then all B values
-        var tensorSpan = tensor.GetTensorDataAsSpan<float>();
-        var shape = tensor.GetTensorTypeAndShape().Shape;
+        var shape = tensor.Lengths;
+        var tensorData = new float[tensor.FlattenedLength];
+        tensor.FlattenTo(tensorData);
 
         int channelSize = (int)(shape[2] * shape[3]); // height * width
 
@@ -87,7 +89,7 @@ public class PreprocessorTests
 
         // Verify the pattern exists (exact values depend on padding, but layout should be CHW)
         Assert.True(channelSize >= 4); // At least our 4 pixels after padding
-        Assert.Equal(3 * channelSize, tensorSpan.Length); // 3 channels
+        Assert.Equal(3 * channelSize, tensorData.Length); // 3 channels
     }
 
     [Fact]
@@ -97,10 +99,10 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(100, 50);
 
         // Act
-        using var tensor = Preprocessor.Preprocess([image]);
+        var tensor = Preprocessor.Preprocess([image]);
 
         // Assert: Verify dimensions are multiples of 32
-        var shape = tensor.GetTensorTypeAndShape().Shape;
+        var shape = tensor.Lengths;
         int width = (int)shape[3];
         int height = (int)shape[2];
 
@@ -123,7 +125,7 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(32, 32, new Rgb24(0, 0, 0));
 
         // Act
-        using var tensor = Preprocessor.Preprocess([image]);
+        var tensor = Preprocessor.Preprocess([image]);
 
         // Assert: Black pixels should normalize to specific negative values
         var means = new[] { 123.675f, 116.28f, 103.53f };
@@ -133,15 +135,16 @@ public class PreprocessorTests
         float expectedG = (0f - means[1]) / stds[1];  // ~-2.035
         float expectedB = (0f - means[2]) / stds[2];  // ~-1.804
 
-        var tensorSpan = tensor.GetTensorDataAsSpan<float>();
-        var shape = tensor.GetTensorTypeAndShape().Shape;
+        var shape = tensor.Lengths;
+        var tensorData = new float[tensor.FlattenedLength];
+        tensor.FlattenTo(tensorData);
 
         int channelSize = (int)(shape[2] * shape[3]); // height * width
 
         // Check a sample of values from each channel
-        Assert.Equal(expectedR, tensorSpan[0], 0.001f);                    // First R value
-        Assert.Equal(expectedG, tensorSpan[channelSize], 0.001f);          // First G value
-        Assert.Equal(expectedB, tensorSpan[2 * channelSize], 0.001f);      // First B value
+        Assert.Equal(expectedR, tensorData[0], 0.001f);                    // First R value
+        Assert.Equal(expectedG, tensorData[channelSize], 0.001f);          // First G value
+        Assert.Equal(expectedB, tensorData[2 * channelSize], 0.001f);      // First B value
     }
 
     [Fact]
@@ -153,10 +156,10 @@ public class PreprocessorTests
         using var image3 = new Image<Rgb24>(100, 50, new Rgb24(0, 0, 255));
 
         // Act
-        using var tensor = Preprocessor.Preprocess([image1, image2, image3]);
+        var tensor = Preprocessor.Preprocess([image1, image2, image3]);
 
         // Assert: Verify batch dimensions
-        var shape = tensor.GetTensorTypeAndShape().Shape;
+        var shape = tensor.Lengths;
 
         Assert.Equal(3, shape[0]); // Batch size
         Assert.Equal(3, shape[1]); // Channels
@@ -177,37 +180,41 @@ public class PreprocessorTests
         using var blueImage = new Image<Rgb24>(32, 32, new Rgb24(0, 0, 255));   // All blue
 
         // Act
-        using var batchTensor = Preprocessor.Preprocess([redImage, greenImage, blueImage]);
-        using var redTensor = Preprocessor.Preprocess([redImage]);
-        using var greenTensor = Preprocessor.Preprocess([greenImage]);
-        using var blueTensor = Preprocessor.Preprocess([blueImage]);
+        var batchTensor = Preprocessor.Preprocess([redImage, greenImage, blueImage]);
+        var redTensor = Preprocessor.Preprocess([redImage]);
+        var greenTensor = Preprocessor.Preprocess([greenImage]);
+        var blueTensor = Preprocessor.Preprocess([blueImage]);
 
         // Assert: Verify each image in batch matches individual processing
-        var batchSpan = batchTensor.GetTensorDataAsSpan<float>();
-        var redSpan = redTensor.GetTensorDataAsSpan<float>();
-        var greenSpan = greenTensor.GetTensorDataAsSpan<float>();
-        var blueSpan = blueTensor.GetTensorDataAsSpan<float>();
+        var batchData = new float[batchTensor.FlattenedLength];
+        var redData = new float[redTensor.FlattenedLength];
+        var greenData = new float[greenTensor.FlattenedLength];
+        var blueData = new float[blueTensor.FlattenedLength];
+        batchTensor.FlattenTo(batchData);
+        redTensor.FlattenTo(redData);
+        greenTensor.FlattenTo(greenData);
+        blueTensor.FlattenTo(blueData);
 
-        var shape = batchTensor.GetTensorTypeAndShape().Shape;
+        var shape = batchTensor.Lengths;
         int channelSize = (int)(shape[2] * shape[3]); // height * width
         int imageSize = 3 * channelSize; // 3 channels per image
 
         // Verify red image (batch index 0) matches individual red processing
         for (int i = 0; i < imageSize; i++)
         {
-            Assert.Equal(redSpan[i], batchSpan[i], 0.001f);
+            Assert.Equal(redData[i], batchData[i], 0.001f);
         }
 
         // Verify green image (batch index 1) matches individual green processing
         for (int i = 0; i < imageSize; i++)
         {
-            Assert.Equal(greenSpan[i], batchSpan[imageSize + i], 0.001f);
+            Assert.Equal(greenData[i], batchData[imageSize + i], 0.001f);
         }
 
         // Verify blue image (batch index 2) matches individual blue processing
         for (int i = 0; i < imageSize; i++)
         {
-            Assert.Equal(blueSpan[i], batchSpan[2 * imageSize + i], 0.001f);
+            Assert.Equal(blueData[i], batchData[2 * imageSize + i], 0.001f);
         }
 
         // Verify expected color channel dominance
@@ -219,9 +226,9 @@ public class PreprocessorTests
         float expectedGreenZero = (0f - means[1]) / stds[1];
         float expectedBlueZero = (0f - means[2]) / stds[2];
 
-        Assert.Equal(expectedRed, batchSpan[0], 0.001f);      // First pixel R channel
-        Assert.Equal(expectedGreenZero, batchSpan[channelSize], 0.001f);  // First pixel G channel
-        Assert.Equal(expectedBlueZero, batchSpan[2 * channelSize], 0.001f); // First pixel B channel
+        Assert.Equal(expectedRed, batchData[0], 0.001f);      // First pixel R channel
+        Assert.Equal(expectedGreenZero, batchData[channelSize], 0.001f);  // First pixel G channel
+        Assert.Equal(expectedBlueZero, batchData[2 * channelSize], 0.001f); // First pixel B channel
     }
 
     [Fact]
@@ -252,9 +259,9 @@ public class PreprocessorTests
             using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
             using var detector = new TextDetector(session, new TestLogger<TextDetector>(_outputHelper));
 
-            using var preprocessedTensor = Preprocessor.Preprocess(images);
-            using var modelOutput = detector.RunTextDetection(preprocessedTensor);
-            var probabilityMaps = TensorOps.ExtractProbabilityMaps(modelOutput.First());
+            var preprocessedTensor = Preprocessor.Preprocess(images);
+            var modelOutput = detector.RunTextDetection(preprocessedTensor);
+            var probabilityMaps = TensorOps.ExtractProbabilityMaps(modelOutput);
 
             // Assert: Verify pipeline worked correctly
             Assert.Equal(imageInfo.Length, probabilityMaps.Length);

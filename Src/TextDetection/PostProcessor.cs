@@ -1,5 +1,5 @@
 using CommunityToolkit.HighPerformance;
-using Microsoft.ML.OnnxRuntime;
+using System.Numerics.Tensors;
 
 namespace TextDetection;
 
@@ -7,9 +7,9 @@ public class PostProcessor
 {
     private const float BinarizationThreshold = 0.2f;
 
-    public List<List<(int X, int Y)>> PostProcess(OrtValue ortValue, int originalWidth, int originalHeight)
+    public List<List<(int X, int Y)>> PostProcess(Tensor<float> tensor, int originalWidth, int originalHeight)
     {
-        var probabilityMaps = TensorOps.ExtractProbabilityMaps(ortValue);
+        var probabilityMaps = TensorOps.ExtractProbabilityMaps(tensor);
         var probabilityMap = probabilityMaps[0];
 
         int modelHeight = probabilityMap.GetLength(0);

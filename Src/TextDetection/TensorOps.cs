@@ -1,17 +1,19 @@
-using Microsoft.ML.OnnxRuntime;
+using System.Numerics.Tensors;
 
 namespace TextDetection;
 
 public static class TensorOps
 {
-    public static float[][,] ExtractProbabilityMaps(OrtValue tensor)
+    public static float[][,] ExtractProbabilityMaps(Tensor<float> tensor)
     {
-        var outputSpan = tensor.GetTensorMutableDataAsSpan<float>();
-        var shape = tensor.GetTensorTypeAndShape().Shape;
-
+        var shape = tensor.Lengths;
+        
         int batchSize = (int)shape[0];
         int height = (int)shape[1];
         int width = (int)shape[2];
+
+        var tensorData = new float[tensor.FlattenedLength];
+        tensor.FlattenTo(tensorData);
 
         var results = new float[batchSize][,];
         int imageSize = height * width;
@@ -25,7 +27,7 @@ public static class TensorOps
             {
                 for (int w = 0; w < width; w++)
                 {
-                    probabilityMap[h, w] = outputSpan[batchOffset + h * width + w];
+                    probabilityMap[h, w] = tensorData[batchOffset + h * width + w];
                 }
             }
 

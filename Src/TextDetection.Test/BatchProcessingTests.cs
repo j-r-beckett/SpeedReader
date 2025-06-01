@@ -52,9 +52,9 @@ public class BatchProcessingTests
         await _urlPublisher.PublishAsync(image4, "batch-original-botrgt.png");
 
         // Use new 3-class flow: Preprocessor → TextDetector → PostProcessor
-        using var preprocessedTensor = Preprocessor.Preprocess([image1, image2, image3, image4]);
-        using var modelOutput = detector.RunTextDetection(preprocessedTensor);
-        var probabilityMaps = TensorOps.ExtractProbabilityMaps(modelOutput.First());
+        var preprocessedTensor = Preprocessor.Preprocess([image1, image2, image3, image4]);
+        var modelOutput = detector.RunTextDetection(preprocessedTensor);
+        var probabilityMaps = TensorOps.ExtractProbabilityMaps(modelOutput);
 
         // Save detection results for inspection
         using var result1 = RenderAsGreyscale(probabilityMaps[0]);
