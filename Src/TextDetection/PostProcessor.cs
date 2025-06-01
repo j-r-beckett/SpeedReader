@@ -37,21 +37,18 @@ public class PostProcessor
         return results;
     }
 
-    public static bool[,] BinarizeProbabilityMap(float[,] probabilityMap)
+    public static void BinarizeProbabilityMap(Span2D<float> probabilityMap)
     {
-        int height = probabilityMap.GetLength(0);
-        int width = probabilityMap.GetLength(1);
-        var binaryMap = new bool[height, width];
+        int height = probabilityMap.Height;
+        int width = probabilityMap.Width;
 
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
-                binaryMap[y, x] = probabilityMap[y, x] > 0.2f;
+                probabilityMap[y, x] = probabilityMap[y, x] > 0.2f ? 1.0f : 0.0f;
             }
         }
-
-        return binaryMap;
     }
 
     public static (int X, int Y)[][] ConnectedComponents(Span2D<float> data)
