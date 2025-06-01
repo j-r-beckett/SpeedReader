@@ -106,4 +106,78 @@ public class PostProcessor
 
         return component.ToArray();
     }
+
+    public static (int X, int Y)[] ConvexHull((int X, int Y)[] points)
+    {
+        if (points.Length < 3)
+        {
+            return points.Length < 3 ? [] : points.ToArray();
+        }
+
+        var stack = new Stack<(int, int)>();
+        var minYPoint = GetStartPoint();
+        Array.Sort(points, (p1, p2) => ComparePolarAngle(minYPoint, p1, p2));
+        stack.Push(points[0]);  // this is minYPoint, guaranteed to be on the hull
+        stack.Push(points[1]);  // not guaranteed to be on the hull, may get popped
+
+        for (int i = 2; i < points.Length; i++)
+        {
+            var next = points[i];
+            var p = stack.Pop();
+            while (stack.Count > 0 && CrossProductZ(stack.Peek(), p, next) <= 0)
+            {
+                p = stack.Pop();  // delete points that create a clockwise turn
+            }
+            stack.Push(p);
+            stack.Push(next);
+        }
+
+        var lastPoint = stack.Pop();  // Last point pushed could have been collinear
+        if (CrossProductZ(stack.Peek(), lastPoint, minYPoint) > 0)
+        {
+            stack.Push(lastPoint);  // It wasn't, put it back
+        }
+
+        var result = stack.ToArray();
+        Array.Reverse(result);
+        return result;
+
+        // Returns the point with the smallest y coordinate
+        (int X, int Y) GetStartPoint()
+        {
+            (int bestX, int bestY) = points[0];
+
+            for (int i = 1; i < points.Length; i++)
+            {
+                if (points[i].Y < bestY || points[i].Y == bestY && points[i].X < bestX)
+                {
+                    (bestX, bestY) = points[i];
+                }
+            }
+
+            return (bestX, bestY);
+        }
+
+        int CrossProductZ((int X, int Y) a, (int X, int Y) b, (int X, int Y) c)
+        {
+            return (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+        }
+
+        // Return true if the polar angle from anchor -> p1 is less than the polar angle from anchor -> p2.
+        // If you swung the x unit vector up and around, return true if you'd hit p1 first.
+        int ComparePolarAngle((int X, int Y) anchor, (int X, int Y) p1, (int X, int Y) p2)
+        {
+            int crossZ = CrossProductZ(anchor, p1, p2);
+
+            if (crossZ < 0) return 1;
+            if (crossZ > 0) return -1;
+
+            // Points are collinear, sort by squared Euclidean distance
+            (int X, int Y) v1 = (p1.X - anchor.X, p1.Y - anchor.Y);
+            (int X, int Y) v2 = (p2.X - anchor.X, p2.Y - anchor.Y);
+            int dist1 = v1.X * v1.X + v1.Y * v1.Y;
+            int dist2 = v2.X * v2.X + v2.Y * v2.Y;
+            return dist1.CompareTo(dist2);
+        }
+    }
 }

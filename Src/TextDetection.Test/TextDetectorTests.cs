@@ -26,13 +26,24 @@ public class TextDetectorTests
         var outputDirectory = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "out", "debug");
         _urlPublisher = new FileSystemUrlPublisher<TextDetectorTests>(outputDirectory, _logger);
 
+        _logger.LogError("Hello world");
+
         // Load font for text rendering
-        FontFamily fontFamily;
-        if (!SystemFonts.TryGet("Arial", out fontFamily))
+        try
         {
-            fontFamily = SystemFonts.Collection.Families.First();
+            FontFamily fontFamily;
+            if (!SystemFonts.TryGet("Arial", out fontFamily))
+            {
+                fontFamily = SystemFonts.Collection.Families.First();
+            }
+
+            _font = fontFamily.CreateFont(48, FontStyle.Regular);
         }
-        _font = fontFamily.CreateFont(48, FontStyle.Regular);
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Font loading failed: {ex}");
+            throw;
+        }
     }
 
     [Fact]
