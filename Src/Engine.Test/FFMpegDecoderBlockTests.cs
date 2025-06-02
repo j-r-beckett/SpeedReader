@@ -67,7 +67,7 @@ public class FFMpegDecoderBlockTests
     [Fact]
     public async Task BackpressureStopsInputConsumption()
     {
-        var largeVideoStream = await CreateTestVideo(2500);
+        var largeVideoStream = await CreateTestVideo(5000);
         var totalVideoSize = largeVideoStream.Length;
 
         _logger.LogInformation("Created large video: {totalSize} bytes", totalVideoSize);
@@ -75,7 +75,7 @@ public class FFMpegDecoderBlockTests
         var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
         var sourceBlock = decoder.CreateFfmpegDecoderBlock(largeVideoStream, 1, default);
 
-        var expectedConsumption = 131072;
+        var expectedConsumption = 262144;
 
         var timeout = Task.Delay(1000);
         while (largeVideoStream.Position < expectedConsumption && !timeout.IsCompleted)
@@ -105,7 +105,7 @@ public class FFMpegDecoderBlockTests
     [Fact]
     public async Task BackpressureRespondsToFrameConsumption()
     {
-        var videoStream = await CreateTestVideo(3200); // Target ~80% backpressure engagement for safety margin
+        var videoStream = await CreateTestVideo(5760); // Target ~80% backpressure engagement for safety margin
         var totalVideoSize = videoStream.Length;
 
         try

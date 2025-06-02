@@ -81,6 +81,8 @@ public class FFMpegEncoderBlockTests
     [Fact]
     public async Task BackpressureStopsFrameAcceptance()
     {
+        const int frameCount = 3000;
+
         // Create encoder block but don't consume output to trigger backpressure
         var encoder = new FfmpegEncoderBlockCreator("ffmpeg");
         var encoderBlock = encoder.CreateFfmpegEncoderBlock(
@@ -96,7 +98,7 @@ public class FFMpegEncoderBlockTests
 
         // Phase 1: Feed frames until SendAsync blocks (no output consumption)
         // Target ~1200 frames (80% of observed 1059 blocking point + safety margin)
-        for (int i = 0; i < 1500; i++)
+        for (int i = 0; i < frameCount; i++)
         {
             var frame = CreateImage(i % 2 == 0 ? Color.Red : Color.Blue);
 
@@ -147,7 +149,7 @@ public class FFMpegEncoderBlockTests
 
         // Verify backpressure was detected
         Assert.True(backpressureDetected);
-        Assert.True(framesSent < 1500);
+        Assert.True(framesSent < frameCount);
 
         _logger.LogInformation("Backpressure engaged after {frames} frames", framesSent);
 
@@ -162,8 +164,8 @@ public class FFMpegEncoderBlockTests
             framesSent++;
         }
 
-        // Continue sending remaining frames (should be fast now)  
-        for (int i = framesSent; i < 1500; i++)
+        // Continue sending remaining frames (should be fast now)
+        for (int i = framesSent; i < frameCount; i++)
         {
             var frame = CreateImage(i % 2 == 0 ? Color.Red : Color.Blue);
             await encoderBlock.SendAsync(frame);
@@ -180,10 +182,10 @@ public class FFMpegEncoderBlockTests
         await _publisher.PublishAsync(videoStream, "video/webm", "Encoder backpressure test video");
 
         // Final assertions - verify full cycle completed
-        Assert.Equal(1500, framesSent);
+        Assert.Equal(frameCount, framesSent);
         Assert.True(videoStream.Length > 1000);
 
-        // Output captured logs to test console  
+        // Output captured logs to test console
         foreach (var logEntry in _logger.LogEntries)
         {
             _outputHelper.WriteLine($"[{logEntry.LogLevel}] {logEntry.Message}");

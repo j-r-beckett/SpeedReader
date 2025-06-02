@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -11,7 +11,6 @@
     <PackageReference Include="FFMpegcore" />
     <PackageReference Include="microsoft.extensions.logging" />
     <PackageReference Include="Sixlabors.Imagesharp" />
-    <PackageReference Include="System.Linq.Async" />
   </ItemGroup>
 
 </Project>
