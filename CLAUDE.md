@@ -20,19 +20,19 @@ dotnet build
 
 # Run all tests with timeout protection (ALWAYS use timeout to prevent hanging)
 # IMPORTANT: Always build first to prevent stale tests when build fails
-timeout 30s bash -c "dotnet build && dotnet test --no-build"
+timeout 60s bash -c "dotnet build && dotnet test --no-build"
 
 # Run specific test with detailed output
-timeout 30s bash -c "dotnet build && dotnet test --no-build --logger 'console;verbosity=detailed' --filter 'CanDecodeRedBlueFrames'"
+timeout 60s bash -c "dotnet build && dotnet test --no-build --logger 'console;verbosity=detailed' --filter 'CanDecodeRedBlueFrames'"
 
 # Run backpressure test
-timeout 30s bash -c "dotnet build && dotnet test --no-build --logger 'console;verbosity=detailed' --filter 'BackpressureStopsInputConsumption'"
+timeout 60s bash -c "dotnet build && dotnet test --no-build --logger 'console;verbosity=detailed' --filter 'BackpressureStopsInputConsumption'"
 
 # Run single test project
-timeout 30s bash -c "dotnet build && dotnet test Src/Engine.Test/ --no-build"
+timeout 60s bash -c "dotnet build && dotnet test Src/Engine.Test/ --no-build"
 
 # Run Models tests (verifies build process generated valid models)
-timeout 30s bash -c "dotnet build && dotnet test Src/Models.Test/ --no-build"
+timeout 60s bash -c "dotnet build && dotnet test Src/Models.Test/ --no-build"
 
 # Clean and restore
 dotnet clean

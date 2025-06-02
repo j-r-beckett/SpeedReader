@@ -9,23 +9,32 @@ public class PostProcessor
 
     public List<List<(int X, int Y)>> PostProcess(Tensor<float> tensor, int originalWidth, int originalHeight)
     {
-        var probabilityMaps = TensorOps.ExtractProbabilityMaps(tensor);
-        var probabilityMap = probabilityMaps[0];
-
-        int modelHeight = probabilityMap.GetLength(0);
-        int modelWidth = probabilityMap.GetLength(1);
+        var shape = tensor.Lengths;
+        int batchSize = (int)shape[0];
+        int modelHeight = (int)shape[1];
+        int modelWidth = (int)shape[2];
 
         float scaleX = (float)originalWidth / modelWidth;
         float scaleY = (float)originalHeight / modelHeight;
 
-        var probabilitySpan = new Span2D<float>(probabilityMap);
+        Binarization.BinarizeInPlace(tensor, BinarizationThreshold);
 
-        Binarization.BinarizeInPlace(probabilitySpan, BinarizationThreshold);
+        // Extract probability maps after binarization
+        var probabilityMaps = TensorOps.ExtractProbabilityMaps(tensor);
+        
+        var allComponents = new List<(int X, int Y)[]>();
 
-        var components = ConnectedComponentAnalysis.FindComponents(probabilitySpan);
+        // Process each batch item
+        for (int batchIndex = 0; batchIndex < batchSize; batchIndex++)
+        {
+            var probabilityMap = probabilityMaps[batchIndex];
+            var probabilitySpan = new Span2D<float>(probabilityMap);
+            var components = ConnectedComponentAnalysis.FindComponents(probabilitySpan);
+            allComponents.AddRange(components);
+        }
 
         var contours = new List<(int X, int Y)[]>();
-        foreach (var component in components)
+        foreach (var component in allComponents)
         {
             if (component.Length >= 3)
             {
