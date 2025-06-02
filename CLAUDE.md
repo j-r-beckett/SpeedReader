@@ -104,6 +104,17 @@ The Models project uses a Docker-based build system to generate ONNX models:
 2. Models.Test cleans copied models → gets fresh models → validates they work
 3. Other projects get models via `CopyToOutputDirectory` - Models.Test catches any issues
 
+### Text Detection Data Flow
+
+DBNet text detection follows this tensor format progression:
+
+1. **Images**: NHWC format (N batches, H height, W width, C=3 RGB channels)
+2. **Preprocessor**: Converts NHWC → NCHW for DBNet input (N, C=3, H, W)
+3. **DBNet Model**: Takes NCHW input → outputs NHW (N, H, W)
+   - Model collapses 3 RGB channels into 1 probability value per pixel
+   - Output: single float per pixel indicating text detection probability
+   - No channel dimension needed in output (probability maps are single-channel)
+
 ### Streaming Architecture Components
 
 - **StreamingPipeSource**: Custom `PipeSource` implementation that feeds video data to FFmpeg stdin with natural backpressure

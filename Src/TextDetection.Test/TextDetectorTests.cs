@@ -90,7 +90,7 @@ public class TextDetectorTests
             // Use new 3-class flow: Preprocessor → TextDetector → PostProcessor
             var preprocessedTensor = Preprocessor.Preprocess([testImage]);
             var modelOutput = detector.RunTextDetection(preprocessedTensor);
-            var probabilityMaps = TensorOps.ExtractProbabilityMaps(modelOutput);
+            var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
             var probabilityMap = probabilityMaps[0];
 
             // Get model output dimensions

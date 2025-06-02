@@ -19,16 +19,20 @@ public class PostProcessor
 
         Binarization.BinarizeInPlace(tensor, BinarizationThreshold);
 
-        // Extract probability maps after binarization
-        var probabilityMaps = TensorOps.ExtractProbabilityMaps(tensor);
-        
+        // Process each batch item directly using spans
         var allComponents = new List<(int X, int Y)[]>();
-
-        // Process each batch item
+        
+        var tensorData = new float[tensor.FlattenedLength];
+        tensor.FlattenTo(tensorData);
+        
+        int imageSize = modelHeight * modelWidth;
+        
         for (int batchIndex = 0; batchIndex < batchSize; batchIndex++)
         {
-            var probabilityMap = probabilityMaps[batchIndex];
-            var probabilitySpan = new Span2D<float>(probabilityMap);
+            int batchOffset = batchIndex * imageSize;
+            var hwSpan = tensorData.AsSpan(batchOffset, imageSize);
+            var probabilitySpan = hwSpan.AsSpan2D(modelHeight, modelWidth);
+            
             var components = ConnectedComponentAnalysis.FindComponents(probabilitySpan);
             allComponents.AddRange(components);
         }

@@ -8,13 +8,13 @@ public class TensorOpsTests
     [Fact]
     public void ExtractProbabilityMaps_SingleBatch_ExtractsCorrectly()
     {
-        // Arrange: Create a Tensor<float> with known values
+        // Arrange: Create a 3D NHW Tensor<float> with known values
         var tensorData = new float[] { 0.1f, 0.2f, 0.3f, 0.4f };
-        ReadOnlySpan<nint> shape = [1, 2, 2];
+        ReadOnlySpan<nint> shape = [1, 2, 2]; // NHW: batch=1, height=2, width=2
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorOps.ExtractProbabilityMaps(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Single(result);
@@ -30,7 +30,7 @@ public class TensorOpsTests
     [Fact]
     public void ExtractProbabilityMaps_MultipleBatch_ExtractsAllBatches()
     {
-        // Arrange: Create a Tensor<float> with 2 batches
+        // Arrange: Create a 3D NHW Tensor<float> with 2 batches
         var tensorData = new float[] 
         {
             // Batch 0
@@ -38,11 +38,11 @@ public class TensorOpsTests
             // Batch 1  
             0.5f, 0.6f, 0.7f, 0.8f
         };
-        ReadOnlySpan<nint> shape = [2, 2, 2];
+        ReadOnlySpan<nint> shape = [2, 2, 2]; // NHW: batch=2, height=2, width=2
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorOps.ExtractProbabilityMaps(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Equal(2, result.Length);
@@ -63,7 +63,7 @@ public class TensorOpsTests
     [Fact]
     public void ExtractProbabilityMaps_LargerTensor_MaintainsRowColumnOrder()
     {
-        // Arrange: Create a Tensor<float> to test row/column ordering
+        // Arrange: Create a 3D NHW Tensor<float> to test row/column ordering
         var tensorData = new float[] 
         {
             // Row 0
@@ -73,11 +73,11 @@ public class TensorOpsTests
             // Row 2
             9.0f, 10.0f, 11.0f, 12.0f
         };
-        ReadOnlySpan<nint> shape = [1, 3, 4]; // batch=1, height=3, width=4
+        ReadOnlySpan<nint> shape = [1, 3, 4]; // NHW: batch=1, height=3, width=4
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorOps.ExtractProbabilityMaps(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Single(result);
@@ -94,7 +94,7 @@ public class TensorOpsTests
     [Fact]
     public void ExtractProbabilityMaps_BatchSizes_HandlesDifferentDimensions()
     {
-        // Arrange: Create a Tensor<float> with larger batch/dimensions
+        // Arrange: Create a 3D NHW Tensor<float> with larger batch/dimensions
         var tensorData = new float[] 
         {
             // Batch 0: 2x3 image
@@ -107,11 +107,11 @@ public class TensorOpsTests
             13.0f, 14.0f, 15.0f,
             16.0f, 17.0f, 18.0f
         };
-        ReadOnlySpan<nint> shape = [3, 2, 3]; // batch=3, height=2, width=3
+        ReadOnlySpan<nint> shape = [3, 2, 3]; // NHW: batch=3, height=2, width=3
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorOps.ExtractProbabilityMaps(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Equal(3, result.Length); // 3 batches
