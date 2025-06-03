@@ -23,6 +23,8 @@ public class Preprocessor
         var tensor = Tensor.Create(data, shape);
         var tensorSpan = data.AsSpan();
 
+        Tensor.Add(tensor.AsReadOnlyTensorSpan(), 1);
+
         var pixelBuffer = ArrayPool<Rgb24>.Shared.Rent(width * height);
         try
         {

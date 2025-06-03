@@ -1,5 +1,6 @@
 using CommunityToolkit.HighPerformance;
 using System.Numerics.Tensors;
+using System.Buffers;
 
 namespace TextDetection;
 
@@ -19,21 +20,22 @@ public class PostProcessor
 
         Binarization.BinarizeInPlace(tensor, BinarizationThreshold);
 
-        // Process each batch item directly using spans
+        // Process each batch item directly using tensor slicing - no flattening needed!
         var allComponents = new List<(int X, int Y)[]>();
-        
-        var tensorData = new float[tensor.FlattenedLength];
-        tensor.FlattenTo(tensorData);
-        
-        int imageSize = modelHeight * modelWidth;
-        
+        var tensorSpan = tensor.AsTensorSpan();
+
         for (int batchIndex = 0; batchIndex < batchSize; batchIndex++)
         {
-            int batchOffset = batchIndex * imageSize;
-            var hwSpan = tensorData.AsSpan(batchOffset, imageSize);
-            var probabilitySpan = hwSpan.AsSpan2D(modelHeight, modelWidth);
-            
-            var components = ConnectedComponentAnalysis.FindComponents(probabilitySpan);
+            // Extract single batch using NRange slicing
+            ReadOnlySpan<NRange> batchRange = [
+                new NRange(batchIndex, batchIndex + 1), // Single batch
+                NRange.All,                             // All heights
+                NRange.All                              // All widths
+            ];
+
+            var batchSlice = tensorSpan[batchRange]; // Shape: [1, H, W]
+
+            var components = ConnectedComponentAnalysis.FindComponents(batchSlice);
             allComponents.AddRange(components);
         }
 

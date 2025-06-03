@@ -1,10 +1,32 @@
-using CommunityToolkit.HighPerformance;
+using System.Numerics.Tensors;
+using System.Buffers;
 using Xunit;
 
 namespace TextDetection.Test;
 
 public class ConnectedComponentsTests
 {
+    /// <summary>
+    /// Helper method to convert a 2D array to a [1, H, W] tensor for testing
+    /// </summary>
+    private static TensorSpan<float> CreateBatchTensor(float[,] data)
+    {
+        int height = data.GetLength(0);
+        int width = data.GetLength(1);
+        
+        var flatData = new float[height * width];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                flatData[y * width + x] = data[y, x];
+            }
+        }
+        
+        ReadOnlySpan<nint> shape = [1, height, width];
+        var tensor = Tensor.Create(flatData, shape);
+        return tensor.AsTensorSpan();
+    }
     [Fact]
     public void ConnectedComponents_SingleComponent_ReturnsSingleComponent()
     {
@@ -16,10 +38,10 @@ public class ConnectedComponentsTests
             { 0f, 1f, 1f, 0f },
             { 0f, 0f, 0f, 0f }
         };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Single(components);
@@ -43,10 +65,10 @@ public class ConnectedComponentsTests
             { 0f, 0f, 0f, 0f },
             { 1f, 0f, 0f, 1f }
         };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Equal(4, components.Length);
@@ -73,10 +95,10 @@ public class ConnectedComponentsTests
             { 0f, 0f, 0f },
             { 0f, 0f, 0f }
         };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Empty(components);
@@ -92,10 +114,10 @@ public class ConnectedComponentsTests
             { 0f, 1f, 0f },
             { 0f, 0f, 1f }
         };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Single(components);
@@ -117,10 +139,10 @@ public class ConnectedComponentsTests
             { 1f, 0f, 0f },
             { 1f, 0f, 0f }
         };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Single(components);
@@ -144,10 +166,10 @@ public class ConnectedComponentsTests
             { 0f, 1f, 0f },
             { 0f, 0f, 0f }
         };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Single(components);
@@ -165,10 +187,10 @@ public class ConnectedComponentsTests
             { 0f, 0f, 0f },
             { 1f, 0f, 1f }
         };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Equal(4, components.Length);
@@ -190,10 +212,10 @@ public class ConnectedComponentsTests
     {
         // Arrange
         var data = new float[,] { { 1f } };
-        var span2D = new Span2D<float>(data);
+        var batchTensor = CreateBatchTensor(data);
 
         // Act
-        var components = ConnectedComponentAnalysis.FindComponents(span2D);
+        var components = ConnectedComponentAnalysis.FindComponents(batchTensor);
 
         // Assert
         Assert.Single(components);

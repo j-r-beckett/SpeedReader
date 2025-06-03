@@ -1,20 +1,29 @@
-using CommunityToolkit.HighPerformance;
+using System.Numerics.Tensors;
 
 namespace TextDetection;
 
 public static class ConnectedComponentAnalysis
 {
-    public static (int X, int Y)[][] FindComponents(Span2D<float> data)
+    public static (int X, int Y)[][] FindComponents(TensorSpan<float> batchSlice)
     {
+        if (batchSlice.Rank != 3)
+        {
+            throw new ArgumentException($"Expected 3D [1,H,W] tensor, got {batchSlice.Rank}D tensor");
+        }
+
+        int height = (int)batchSlice.Lengths[1];
+        int width = (int)batchSlice.Lengths[2];
+        
         List<(int X, int Y)[]> components = [];
 
-        for (int y = 0; y < data.Height; y++)
+        for (int y = 0; y < height; y++)
         {
-            for (int x = 0; x < data.Width; x++)
+            for (int x = 0; x < width; x++)
             {
-                if (data[y, x] > 0)
+                ReadOnlySpan<nint> indices = [0, y, x];
+                if (batchSlice[indices] > 0)
                 {
-                    var component = ExploreComponent(x, y, data);
+                    var component = ExploreComponent(x, y, batchSlice, height, width);
                     components.Add(component);
                 }
             }
@@ -24,7 +33,7 @@ public static class ConnectedComponentAnalysis
     }
 
     // TODO: replace with scanline flood fill
-    private static (int X, int Y)[] ExploreComponent(int x, int y, Span2D<float> data)
+    private static (int X, int Y)[] ExploreComponent(int x, int y, TensorSpan<float> batchSlice, int height, int width)
     {
         List<(int X, int Y)> component = [];
         Stack<(int X, int Y)> stack = [];
@@ -35,10 +44,11 @@ public static class ConnectedComponentAnalysis
         {
             (x, y) = stack.Pop();
 
-            if (data[y, x] <= 0) continue;
+            ReadOnlySpan<nint> indices = [0, y, x];
+            if (batchSlice[indices] <= 0) continue;
 
             component.Add((x, y));
-            data[y, x] = 0;
+            batchSlice[indices] = 0;
 
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -49,9 +59,13 @@ public static class ConnectedComponentAnalysis
                     int nx = x + dx;
                     int ny = y + dy;
 
-                    if (nx >= 0 && nx < data.Width && ny >= 0 && ny < data.Height && data[ny, nx] > 0)
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height)
                     {
-                        stack.Push((nx, ny));
+                        ReadOnlySpan<nint> neighborIndices = [0, ny, nx];
+                        if (batchSlice[neighborIndices] > 0)
+                        {
+                            stack.Push((nx, ny));
+                        }
                     }
                 }
             }
