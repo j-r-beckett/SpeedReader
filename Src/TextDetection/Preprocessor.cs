@@ -1,5 +1,5 @@
-using System.Buffers;
 using System.Numerics.Tensors;
+using System.Buffers;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -17,14 +17,13 @@ public class Preprocessor
 
         (int width, int height) = CalculateDimensions(batch);
 
-        // Create tensor for the batch
+        // Create NCHW tensor for the batch
         ReadOnlySpan<nint> shape = [(nint)batch.Length, 3, (nint)height, (nint)width];
         var data = new float[batch.Length * 3 * height * width];
         var tensor = Tensor.Create(data, shape);
-        var tensorSpan = data.AsSpan();
+        var tensorSpan = tensor.AsTensorSpan();
 
-        Tensor.Add(tensor.AsReadOnlyTensorSpan(), 1);
-
+        // Create temporary pixel buffer for each image using ArrayPool
         var pixelBuffer = ArrayPool<Rgb24>.Shared.Rent(width * height);
         try
         {
@@ -34,27 +33,50 @@ public class Preprocessor
             {
                 AspectResizeInto(batch[i], memory, width, height);
 
-                // Model-specific normalization parameters from pipeline.json
-                float[] means = [123.675f, 116.28f, 103.53f];
-                float[] stds = [58.395f, 57.12f, 57.375f];
-
-                // Normalize and convert HWC -> CHW
-                int batchOffset = i * width * height * 3;
-                int channelOffset = width * height;
-
-                for (int j = 0; j < memory.Span.Length; j++)
+                // Copy pixels from HWC to CHW layout in tensor
+                for (int y = 0; y < height; y++)
                 {
-                    var pixel = memory.Span[j];
+                    for (int x = 0; x < width; x++)
+                    {
+                        var pixel = memory.Span[y * width + x];
 
-                    tensorSpan[batchOffset + j] = (pixel.R - means[0]) / stds[0];
-                    tensorSpan[batchOffset + channelOffset + j] = (pixel.G - means[1]) / stds[1];
-                    tensorSpan[batchOffset + 2 * channelOffset + j] = (pixel.B - means[2]) / stds[2];
+                        // Convert HWC to CHW: batch, channel, height, width
+                        ReadOnlySpan<nint> rIndices = [i, 0, y, x]; // Red channel
+                        ReadOnlySpan<nint> gIndices = [i, 1, y, x]; // Green channel
+                        ReadOnlySpan<nint> bIndices = [i, 2, y, x]; // Blue channel
+
+                        tensorSpan[rIndices] = pixel.R;
+                        tensorSpan[gIndices] = pixel.G;
+                        tensorSpan[bIndices] = pixel.B;
+                    }
                 }
             }
         }
         finally
         {
             ArrayPool<Rgb24>.Shared.Return(pixelBuffer);
+        }
+
+        // Apply normalization per channel using tensor operations
+        // Model-specific normalization parameters from pipeline.json
+        float[] means = [123.675f, 116.28f, 103.53f];
+        float[] stds = [58.395f, 57.12f, 57.375f];
+
+        for (int channel = 0; channel < 3; channel++)
+        {
+            // Slice all batches, single channel, all spatial dimensions
+            ReadOnlySpan<NRange> channelRange = [
+                NRange.All,                           // All batches
+                new NRange(channel, channel + 1),     // Single channel
+                NRange.All,                           // All heights
+                NRange.All                            // All widths
+            ];
+
+            var channelSlice = tensorSpan[channelRange];
+
+            // Subtract mean and divide by std in-place
+            Tensor.Subtract(channelSlice, means[channel], channelSlice);
+            Tensor.Divide(channelSlice, stds[channel], channelSlice);
         }
 
         return tensor;
