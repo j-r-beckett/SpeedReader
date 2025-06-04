@@ -50,14 +50,14 @@ RUN python3 mmdeploy/tools/deploy.py \
     --log-level INFO \
     --dump-info
 
-## SVTRv2 Text Recognition
-#RUN git clone https://github.com/Topdu/OpenOCR.git && \
-#    cd OpenOCR && \
-#    pip3 install -r requirements.txt && \
-#    pip3 install onnx && \
-#    wget https://github.com/Topdu/OpenOCR/releases/download/develop0.0.1/openocr_repsvtr_ch.pth && \
-#    python tools/toonnx.py --c configs/rec/svtrv2/repsvtr_ch.yml --o Global.device=cpu Global.pretrained_model=./openocr_repsvtr_ch.pth && \
-#    mkdir -p /models/svtrv2_base_ctc && \
-#    cp output/rec/repsvtr_ch/export_rec/rec_model.onnx /models/svtrv2_base_ctc/end2end.onnx
+# SVTRv2 Text Recognition
+RUN git clone https://github.com/Topdu/OpenOCR.git && \
+    cd OpenOCR && \
+    pip3 install -r requirements.txt && \
+    pip3 install onnx && \
+    wget https://github.com/Topdu/OpenOCR/releases/download/develop0.0.1/openocr_repsvtr_ch.pth && \
+    python3 tools/toonnx.py --c configs/rec/svtrv2/repsvtr_ch.yml --o Global.device=cpu Global.pretrained_model=./openocr_repsvtr_ch.pth && \
+    mkdir -p /models/svtrv2_base_ctc && \
+    cp output/rec/ch/repsvtr_ch/export_rec/rec_model.onnx /models/svtrv2_base_ctc/end2end.onnx
 
 ENTRYPOINT ["/bin/bash"]

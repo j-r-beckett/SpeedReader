@@ -37,6 +37,13 @@ timeout 60s bash -c "dotnet build && dotnet test Src/Models.Test/ --no-build"
 # Clean and restore
 dotnet clean
 dotnet restore
+
+# Run standalone C# files directly (.NET 10+)
+dotnet run script.cs
+
+# With NuGet packages (no version needed due to central package management)
+# Add to top of .cs file: #:package Microsoft.ML.OnnxRuntime
+dotnet run analyze.cs
 ```
 
 ## Architecture Notes
@@ -219,10 +226,20 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 
 ### SVTRv2 Text Recognition Model  
 - **./Src/Models/bin/Debug/net8.0/models/svtrv2_base_ctc/end2end.onnx** - ONNX model file for CTC-based text recognition with multilingual support
+
+**Model Specifications:**
+- **Input Tensor**: `input` (float32) - Dimensions: `[-1, 3, 48, -1]`
+  - Batch size: dynamic (-1)
+  - Channels: 3 (RGB)
+  - Height: 48 pixels (fixed)
+  - Width: dynamic (-1, variable width with aspect ratio preservation)
+- **Output Tensor**: `output` (float32) - Dimensions: `[-1, -1, 6625]`
+  - Batch size: dynamic (-1)
+  - Sequence length: dynamic (-1, CTC output sequence)
+  - Vocabulary size: 6625 characters (multilingual Chinese+English)
 - **Model Type**: CTC-based text recognition with Multi-Scale Resizing (MSR) preprocessing
-- **Input**: Dynamic width images (height=32, variable width with aspect ratio preservation)
-- **Output**: CTC logits for character sequence decoding
-- **Character Set**: Multilingual (Chinese + English) with 6625 vocabulary size
+- **Format**: NCHW (batch, channels, height, width) input format
+- **Decoding**: Output requires CTC decoding to extract text sequences
 
 ### SVTRv2 Text Recognition Model
 - **./.claude/references/SVTRv2.html** - Research paper on SVTRv2 text recognition architecture and performance improvements

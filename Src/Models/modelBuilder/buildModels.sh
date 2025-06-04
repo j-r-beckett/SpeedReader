@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
 fi
 
 # Check if Docker daemon is running with timeout
-if ! timeout 1s docker info >/dev/null 2>&1; then
+if ! timeout 5s docker info >/dev/null 2>&1; then
   echo "Error: Docker daemon is not running or not responding"
   exit 1
 fi
