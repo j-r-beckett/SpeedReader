@@ -6,6 +6,12 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+# Check if Docker daemon is running with timeout
+if ! timeout 1s docker info >/dev/null 2>&1; then
+  echo "Error: Docker daemon is not running or not responding"
+  exit 1
+fi
+
 OUT_DIR="$1"
 
 docker build -t modelbuilder:latest --progress plain .

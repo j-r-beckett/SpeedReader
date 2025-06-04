@@ -19,7 +19,7 @@ public class ModelZoo
         string modelName = model switch
         {
             Model.DbNet18 => "dbnet_resnet18_fpnc_1200e_icdar2015",
-            Model.Robust31 => "robustscanner_resnet31_5e_st-sub_mj-sub_sa_real",
+            Model.SVTRv2 => "svtrv2_base_ctc",
             _ => throw new ArgumentException($"Unknown model {model}")
         };
         // Example: my/assembly/location/models/dbnet_resnet18_fpnc_1200e_icdar2015/end2end.onnx
@@ -30,5 +30,5 @@ public class ModelZoo
 public enum Model
 {
     DbNet18,
-    Robust31
+    SVTRv2
 }

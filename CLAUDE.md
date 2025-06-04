@@ -84,7 +84,7 @@ The Models project uses a Docker-based build system to generate ONNX models:
 
 ### ModelZoo Class
 - **GetInferenceSession()**: Factory method for creating ONNX inference sessions from model enums
-- **Model Enum**: Defines available models (DbNet18, Robust31) with corresponding directory names
+- **Model Enum**: Defines available models (DbNet18, SVTRv2) with corresponding directory names
 - **Assembly-relative Paths**: Models are located relative to assembly location for deployment flexibility
 - **Standard Structure**: Each model follows `models/{model_name}/end2end.onnx` pattern
 
@@ -217,11 +217,12 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **./Src/Models/bin/Debug/net8.0/models/dbnet_resnet18_fpnc_1200e_icdar2015/pipeline.json** - Complete preprocessing pipeline: resize to [1333,736] with keep_ratio, normalize with ImageNet stats [123.675,116.28,103.53]/[58.395,57.12,57.375], pad to 32-divisible, input tensor name="input"
 - **./Src/Models/bin/Debug/net8.0/models/dbnet_resnet18_fpnc_1200e_icdar2015/end2end.onnx** - ONNX model file for inference
 
-### RobustScanner Text Recognition Model  
-- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/deploy.json** - Model configuration: FP32, batch_size=1, dynamic_shape=true, task=TextRecognizer, uses dict_file.txt
-- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/pipeline.json** - Preprocessing pipeline: RescaleToHeight=48, PadToWidth=160, normalize with [127,127,127]/[127,127,127], input tensor name="input"
-- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/dict_file.txt** - Character dictionary: 0-9, a-z, A-Z, plus symbols !"#$%&'()*+,-./:;<=>?@[\]_`~
-- **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/end2end.onnx** - ONNX model file for inference
+### SVTRv2 Text Recognition Model  
+- **./Src/Models/bin/Debug/net8.0/models/svtrv2_base_ctc/end2end.onnx** - ONNX model file for CTC-based text recognition with multilingual support
+- **Model Type**: CTC-based text recognition with Multi-Scale Resizing (MSR) preprocessing
+- **Input**: Dynamic width images (height=32, variable width with aspect ratio preservation)
+- **Output**: CTC logits for character sequence decoding
+- **Character Set**: Multilingual (Chinese + English) with 6625 vocabulary size
 
 ### SVTRv2 Text Recognition Model
 - **./.claude/references/SVTRv2.html** - Research paper on SVTRv2 text recognition architecture and performance improvements
