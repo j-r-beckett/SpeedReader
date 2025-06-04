@@ -223,6 +223,10 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/dict_file.txt** - Character dictionary: 0-9, a-z, A-Z, plus symbols !"#$%&'()*+,-./:;<=>?@[\]_`~
 - **./Src/Models/bin/Debug/net8.0/models/robustscanner_resnet31_5e_st-sub_mj-sub_sa_real/end2end.onnx** - ONNX model file for inference
 
+### SVTRv2 Text Recognition Model
+- **./.claude/references/SVTRv2.html** - Research paper on SVTRv2 text recognition architecture and performance improvements
+- **./.claude/references/OpenOCR/** - Implementation repository for SVTRv2 and other modern text recognition models
+
 ## Image Processing
 - **./.claude/references/ImageSharp/src/ImageSharp/Image{TPixel}.cs** - Core image manipulation and pixel access patterns
 - **./.claude/references/ImageSharp/src/ImageSharp/Memory/MemoryAllocatorExtensions.cs** - Memory-efficient image processing patterns
