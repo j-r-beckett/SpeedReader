@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
@@ -19,6 +18,7 @@
     <PackageReference Include="sixlabors.fonts" />
     <PackageReference Include="Sixlabors.Imagesharp" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />
+    <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>

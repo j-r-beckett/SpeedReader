@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
     <NoWarn>$(NoWarn);SYSLIB5001</NoWarn>
   </PropertyGroup>
 </Project>

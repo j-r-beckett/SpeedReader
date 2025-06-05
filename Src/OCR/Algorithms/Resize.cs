@@ -1,3 +1,4 @@
+using System.Numerics.Tensors;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -36,6 +37,50 @@ public static class Resize
         }
 
         resizedMemory.CopyTo(dest);
+    }
+
+    /// <summary>
+    /// Resizes image to exact dimensions with padding and copies directly into tensor slice (DBNet approach).
+    /// Scales image to fit within bounds and pads with black to reach exact dimensions.
+    /// </summary>
+    public static void AspectResizeInto(Image<Rgb24> src, TensorSpan<float> tensorSlice, int destWidth, int destHeight)
+    {
+        var config = Configuration.Default.Clone();
+        config.PreferContiguousImageBuffers = true;
+        using var resized = src.Clone(config, x => x
+            .Resize(new ResizeOptions
+            {
+                Size = new Size(destWidth, destHeight),
+                Mode = ResizeMode.Pad,
+                Position = AnchorPositionMode.TopLeft,
+                PadColor = Color.Black,
+                Sampler = KnownResamplers.Bicubic
+            }));
+
+        if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> resizedMemory))
+        {
+            throw new NonContiguousImageException("Image memory is not contiguous after resize/pad operations");
+        }
+
+        var pixels = resizedMemory.Span;
+
+        // Copy directly into tensor slice in HWC layout
+        for (int y = 0; y < destHeight; y++)
+        {
+            for (int x = 0; x < destWidth; x++)
+            {
+                var pixel = pixels[y * destWidth + x];
+                
+                // HWC layout: batch=0 (already sliced), height=y, width=x, channel=c
+                ReadOnlySpan<nint> rIndices = [0, y, x, 0]; // Red channel
+                ReadOnlySpan<nint> gIndices = [0, y, x, 1]; // Green channel
+                ReadOnlySpan<nint> bIndices = [0, y, x, 2]; // Blue channel
+                
+                tensorSlice[rIndices] = pixel.R;
+                tensorSlice[gIndices] = pixel.G;
+                tensorSlice[bIndices] = pixel.B;
+            }
+        }
     }
 
     /// <summary>
