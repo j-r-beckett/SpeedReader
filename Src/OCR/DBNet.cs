@@ -21,7 +21,7 @@ public static class DBNet
         (int width, int height) = CalculateDimensions(batch);
 
         // Create NCHW tensor for the batch
-        ReadOnlySpan<nint> shape = [(nint)batch.Length, 3, (nint)height, (nint)width];
+        ReadOnlySpan<nint> shape = [batch.Length, 3, height, width];
         var data = new float[batch.Length * 3 * height * width];
         var tensor = Tensor.Create(data, shape);
         var tensorSpan = tensor.AsTensorSpan();
@@ -34,25 +34,10 @@ public static class DBNet
 
             for (int i = 0; i < batch.Length; i++)
             {
-                AspectResizeInto(batch[i], memory, width, height);
+                Resize.AspectResizeInto(batch[i], memory, width, height);
 
-                // Copy pixels from HWC to CHW layout in tensor
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        var pixel = memory.Span[y * width + x];
-
-                        // Convert HWC to CHW: batch, channel, height, width
-                        ReadOnlySpan<nint> rIndices = [i, 0, y, x]; // Red channel
-                        ReadOnlySpan<nint> gIndices = [i, 1, y, x]; // Green channel
-                        ReadOnlySpan<nint> bIndices = [i, 2, y, x]; // Blue channel
-
-                        tensorSpan[rIndices] = pixel.R;
-                        tensorSpan[gIndices] = pixel.G;
-                        tensorSpan[bIndices] = pixel.B;
-                    }
-                }
+                // Convert single image from HWC to CHW layout in tensor
+                TensorConversion.ConvertImageToNCHW(memory, tensorSpan, i, width, height);
             }
         }
         finally
@@ -64,6 +49,7 @@ public static class DBNet
         // Model-specific normalization parameters from pipeline.json
         float[] means = [123.675f, 116.28f, 103.53f];
         float[] stds = [58.395f, 57.12f, 57.375f];
+        var normalizationSpan = tensor.AsTensorSpan();
 
         for (int channel = 0; channel < 3; channel++)
         {
@@ -75,7 +61,7 @@ public static class DBNet
                 NRange.All                            // All widths
             ];
 
-            var channelSlice = tensorSpan[channelRange];
+            var channelSlice = normalizationSpan[channelRange];
 
             // Subtract mean and divide by std in-place
             Tensor.Subtract(channelSlice, means[channel], channelSlice);
@@ -176,39 +162,4 @@ public static class DBNet
         return (maxWidth, maxHeight);
     }
 
-    // src is scaled up or scaled down so that it just barely fits inside a destWidth x destHeight box
-    // pixels left uncovered by src are black
-    internal static void AspectResizeInto(Image<Rgb24> src, Memory<Rgb24> dest, int destWidth, int destHeight)
-    {
-        if (destWidth * destHeight != dest.Length)
-        {
-            throw new ArgumentException(
-                $"Expected buffer size {destWidth * destHeight}, actual size was {dest.Length}");
-        }
-
-        // TODO: ImageSharp doesn't have a ResizeInto equivalent. Implement in raw memory, writing directly to dest
-        var config = Configuration.Default.Clone();
-        config.PreferContiguousImageBuffers = true;
-        using var resized = src.Clone(config, x => x
-            .Resize(new ResizeOptions
-            {
-                Size = new Size(destWidth, destHeight),
-                Mode = ResizeMode.Pad,
-                Position = AnchorPositionMode.TopLeft,
-                PadColor = Color.Black,
-                Sampler = KnownResamplers.Bicubic
-            }));
-
-        if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> resizedMemory))
-        {
-            throw new NonContiguousImageException("Image memory is not contiguous after resize/pad operations");
-        }
-
-        resizedMemory.CopyTo(dest);
-    }
-}
-
-public class NonContiguousImageException : InvalidOperationException
-{
-    public NonContiguousImageException(string message) : base(message) { }
 }

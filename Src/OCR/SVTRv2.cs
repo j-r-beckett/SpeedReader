@@ -3,6 +3,7 @@ using System.Buffers;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using OCR.Algorithms;
 
 namespace OCR;
 
@@ -35,32 +36,21 @@ public static class SVTRv2
 
             for (int i = 0; i < batch.Length; i++)
             {
-                AspectResizeInto(batch[i], memory, maxWidth, TargetHeight);
+                Resize.ScaleResizeInto(batch[i], memory, maxWidth, TargetHeight, MinWidth, MaxWidth);
 
-                // Copy pixels from HWC to CHW layout in tensor with SVTRv2 normalization
-                for (int y = 0; y < TargetHeight; y++)
-                {
-                    for (int x = 0; x < maxWidth; x++)
-                    {
-                        var pixel = memory.Span[y * maxWidth + x];
-
-                        // SVTRv2 normalization: [0,255] → [0,1] → [-1,1]
-                        // Formula: (pixel/255 - 0.5) / 0.5
-                        ReadOnlySpan<nint> rIndices = [i, 0, y, x]; // Red channel
-                        ReadOnlySpan<nint> gIndices = [i, 1, y, x]; // Green channel
-                        ReadOnlySpan<nint> bIndices = [i, 2, y, x]; // Blue channel
-
-                        tensorSpan[rIndices] = (pixel.R / 255.0f - 0.5f) / 0.5f;
-                        tensorSpan[gIndices] = (pixel.G / 255.0f - 0.5f) / 0.5f;
-                        tensorSpan[bIndices] = (pixel.B / 255.0f - 0.5f) / 0.5f;
-                    }
-                }
+                // Convert single image from HWC to CHW layout in tensor
+                TensorConversion.ConvertImageToNCHW(memory, tensorSpan, i, maxWidth, TargetHeight);
             }
         }
         finally
         {
             ArrayPool<Rgb24>.Shared.Return(pixelBuffer);
         }
+
+        // Apply SVTRv2 normalization: [0,255] → [-1,1]
+        // Optimized: (pixel/255 - 0.5) / 0.5 = pixel/127.5 - 1.0
+        Tensor.Divide(tensor, 127.5f, tensor);
+        Tensor.Subtract(tensor, 1.0f, tensor);
 
         return tensor;
     }
@@ -104,47 +94,6 @@ public static class SVTRv2
         return maxWidth;
     }
 
-    // src is scaled to fixed height (48px) with aspect ratio preservation
-    // pixels left uncovered by src are black (padding on the right)
-    internal static void AspectResizeInto(Image<Rgb24> src, Memory<Rgb24> dest, int destWidth, int destHeight)
-    {
-        if (destWidth * destHeight != dest.Length)
-        {
-            throw new ArgumentException(
-                $"Expected buffer size {destWidth * destHeight}, actual size was {dest.Length}");
-        }
-
-        // Calculate target width maintaining aspect ratio
-        double aspectRatio = (double)src.Width / src.Height;
-        int targetWidth = (int)Math.Round(aspectRatio * destHeight);
-        targetWidth = Math.Max(MinWidth, Math.Min(destWidth, targetWidth));
-
-        var config = Configuration.Default.Clone();
-        config.PreferContiguousImageBuffers = true;
-        using var resized = src.Clone(config, x => x
-            .Resize(new ResizeOptions
-            {
-                Size = new Size(targetWidth, destHeight),
-                Mode = ResizeMode.Stretch,
-                Sampler = KnownResamplers.Bicubic
-            }));
-
-        if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> resizedMemory))
-        {
-            throw new NonContiguousImageException("Image memory is not contiguous after resize operations");
-        }
-
-        // Clear destination buffer to black (padding)
-        dest.Span.Fill(new Rgb24(0, 0, 0));
-
-        // Copy resized image to the left side of destination buffer
-        for (int y = 0; y < destHeight; y++)
-        {
-            var srcRow = resizedMemory.Span.Slice(y * targetWidth, targetWidth);
-            var destRow = dest.Span.Slice(y * destWidth, targetWidth);
-            srcRow.CopyTo(destRow);
-        }
-    }
 
     private static string DecodeSingleSequence(Tensor<float> probabilities, int batchIndex, int seqLen, int numClasses)
     {
