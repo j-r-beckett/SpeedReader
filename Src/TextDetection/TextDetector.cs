@@ -30,13 +30,13 @@ public class TextDetector : IDisposable
         using var runOptions = new RunOptions();
         using var ortOutputs = _session.Run(runOptions, inputs, _session.OutputNames);
         var firstOutput = ortOutputs.First();
-        
+
         // Convert OrtValue to Tensor<float>
         var outputSpan = firstOutput.GetTensorDataAsSpan<float>();
         var outputShape = firstOutput.GetTensorTypeAndShape().Shape;
         var outputData = outputSpan.ToArray();
         ReadOnlySpan<nint> tensorShape = outputShape.Select(x => (nint)x).ToArray();
-        
+
         return Tensor.Create(outputData, tensorShape);
     }
 
