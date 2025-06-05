@@ -1,9 +1,8 @@
-using System.Numerics.Tensors;
 using System.Buffers;
+using System.Numerics.Tensors;
+using OCR.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using OCR.Algorithms;
 
 namespace OCR;
 
@@ -85,7 +84,7 @@ public static class SVTRv2
             // Calculate target width maintaining aspect ratio with fixed height of 48px
             double aspectRatio = (double)image.Width / image.Height;
             int targetWidth = (int)Math.Round(aspectRatio * TargetHeight);
-            
+
             // Clamp to reasonable bounds
             targetWidth = Math.Max(MinWidth, Math.Min(MaxWidth, targetWidth));
             maxWidth = Math.Max(maxWidth, targetWidth);

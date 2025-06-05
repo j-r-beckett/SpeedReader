@@ -1,12 +1,11 @@
 using Engine;
+using Engine.Test;
+using Models;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.Fonts;
-using Models;
-using Microsoft.Extensions.Logging;
-using Engine.Test;
 using Xunit.Abstractions;
 
 namespace OCR.Test;
@@ -305,10 +304,10 @@ public class PreprocessorTests
 
         // Calculate text position based on quadrant (with adaptive margin)
         int margin = Math.Min(width, height) / 10; // Adaptive margin
-        
+
         // Measure text size for better positioning
         var textSize = TextMeasurer.MeasureSize(text, new TextOptions(_font));
-        
+
         var (x, y) = quadrant switch
         {
             0 => (margin, margin),                                              // Top-left
@@ -421,13 +420,13 @@ public class PreprocessorTests
         // 3. Calculate dimensions using Preprocessor logic and show actual scaled images
         var calculatedDimensions = DBNet.CalculateDimensions(images);
         _outputHelper.WriteLine($"Calculated tensor dimensions: {calculatedDimensions.width}x{calculatedDimensions.height}");
-        
+
         for (int i = 0; i < images.Length; i++)
         {
             // Show exactly how each image looks after Preprocessor scaling
             using var actualScaledImage = CreateActualScaledImage(images[i], calculatedDimensions.width, calculatedDimensions.height);
             await _urlPublisher.PublishAsync(actualScaledImage, $"jagged-actual-scaled-{i}-{imageInfo[i].text}.png");
-            
+
             // Also show the visualization with tensor fitting
             using var scaledImage = CreateScaledImageVisualization(images[i], originalDimensions[i], modelWidth, modelHeight);
             await _urlPublisher.PublishAsync(scaledImage, $"jagged-tensor-fit-{i}-{imageInfo[i].text}.png");

@@ -1,4 +1,3 @@
-using Xunit;
 using NumericsTensor = System.Numerics.Tensors.Tensor;
 
 namespace OCR.Test;
@@ -20,7 +19,7 @@ public class TensorOpsTests
         Assert.Single(result);
         Assert.Equal(2, result[0].GetLength(0)); // height
         Assert.Equal(2, result[0].GetLength(1)); // width
-        
+
         Assert.Equal(0.1f, result[0][0, 0]);
         Assert.Equal(0.2f, result[0][0, 1]);
         Assert.Equal(0.3f, result[0][1, 0]);
@@ -31,7 +30,7 @@ public class TensorOpsTests
     public void ExtractProbabilityMaps_MultipleBatch_ExtractsAllBatches()
     {
         // Arrange: Create a 3D NHW Tensor<float> with 2 batches
-        var tensorData = new float[] 
+        var tensorData = new float[]
         {
             // Batch 0
             0.1f, 0.2f, 0.3f, 0.4f,
@@ -46,13 +45,13 @@ public class TensorOpsTests
 
         // Assert
         Assert.Equal(2, result.Length);
-        
+
         // Batch 0
         Assert.Equal(0.1f, result[0][0, 0]);
         Assert.Equal(0.2f, result[0][0, 1]);
         Assert.Equal(0.3f, result[0][1, 0]);
         Assert.Equal(0.4f, result[0][1, 1]);
-        
+
         // Batch 1
         Assert.Equal(0.5f, result[1][0, 0]);
         Assert.Equal(0.6f, result[1][0, 1]);
@@ -64,7 +63,7 @@ public class TensorOpsTests
     public void ExtractProbabilityMaps_LargerTensor_MaintainsRowColumnOrder()
     {
         // Arrange: Create a 3D NHW Tensor<float> to test row/column ordering
-        var tensorData = new float[] 
+        var tensorData = new float[]
         {
             // Row 0
             1.0f, 2.0f, 3.0f, 4.0f,
@@ -83,7 +82,7 @@ public class TensorOpsTests
         Assert.Single(result);
         Assert.Equal(3, result[0].GetLength(0)); // height
         Assert.Equal(4, result[0].GetLength(1)); // width
-        
+
         // Verify row-major order is preserved
         Assert.Equal(1.0f, result[0][0, 0]);
         Assert.Equal(4.0f, result[0][0, 3]);
@@ -95,7 +94,7 @@ public class TensorOpsTests
     public void ExtractProbabilityMaps_BatchSizes_HandlesDifferentDimensions()
     {
         // Arrange: Create a 3D NHW Tensor<float> with larger batch/dimensions
-        var tensorData = new float[] 
+        var tensorData = new float[]
         {
             // Batch 0: 2x3 image
             1.0f, 2.0f, 3.0f,
@@ -115,14 +114,14 @@ public class TensorOpsTests
 
         // Assert
         Assert.Equal(3, result.Length); // 3 batches
-        
+
         // Verify each batch has correct dimensions
         for (int i = 0; i < 3; i++)
         {
             Assert.Equal(2, result[i].GetLength(0)); // height
             Assert.Equal(3, result[i].GetLength(1)); // width
         }
-        
+
         // Verify specific values
         Assert.Equal(1.0f, result[0][0, 0]);   // Batch 0, top-left
         Assert.Equal(6.0f, result[0][1, 2]);   // Batch 0, bottom-right

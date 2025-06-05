@@ -13,7 +13,7 @@ public static class ConnectedComponents
 
         int height = (int)batchSlice.Lengths[1];
         int width = (int)batchSlice.Lengths[2];
-        
+
         List<(int X, int Y)[]> components = [];
 
         for (int y = 0; y < height; y++)

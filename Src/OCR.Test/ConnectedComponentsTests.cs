@@ -1,7 +1,5 @@
 using System.Numerics.Tensors;
-using System.Buffers;
 using OCR.Algorithms;
-using Xunit;
 
 namespace OCR.Test;
 
@@ -14,7 +12,7 @@ public class ConnectedComponentsTests
     {
         int height = data.GetLength(0);
         int width = data.GetLength(1);
-        
+
         var flatData = new float[height * width];
         for (int y = 0; y < height; y++)
         {
@@ -23,7 +21,7 @@ public class ConnectedComponentsTests
                 flatData[y * width + x] = data[y, x];
             }
         }
-        
+
         ReadOnlySpan<nint> shape = [1, height, width];
         var tensor = Tensor.Create(flatData, shape);
         return tensor.AsTensorSpan();
@@ -47,7 +45,7 @@ public class ConnectedComponentsTests
         // Assert
         Assert.Single(components);
         Assert.Equal(4, components[0].Length);
-        
+
         var points = components[0].ToHashSet();
         Assert.Contains((1, 1), points);
         Assert.Contains((2, 1), points);
@@ -73,7 +71,7 @@ public class ConnectedComponentsTests
 
         // Assert
         Assert.Equal(4, components.Length);
-        
+
         foreach (var component in components)
         {
             Assert.Single(component);
@@ -123,7 +121,7 @@ public class ConnectedComponentsTests
         // Assert
         Assert.Single(components);
         Assert.Equal(3, components[0].Length);
-        
+
         var points = components[0].ToHashSet();
         Assert.Contains((0, 0), points);
         Assert.Contains((1, 1), points);
@@ -148,7 +146,7 @@ public class ConnectedComponentsTests
         // Assert
         Assert.Single(components);
         Assert.Equal(5, components[0].Length);
-        
+
         var points = components[0].ToHashSet();
         Assert.Contains((0, 0), points);
         Assert.Contains((1, 0), points);
@@ -195,7 +193,7 @@ public class ConnectedComponentsTests
 
         // Assert
         Assert.Equal(4, components.Length);
-        
+
         foreach (var component in components)
         {
             Assert.Single(component);

@@ -1,8 +1,8 @@
 #pragma warning disable
 // Rider intellisense incorrectly flags tensor[i,j] indexing as syntax error in preview .NET
 // This compiles correctly with both dotnet CLI and Rider solution build
-using CommunityToolkit.HighPerformance;
 using System.Numerics.Tensors;
+using CommunityToolkit.HighPerformance;
 using OCR.Algorithms;
 using Xunit;
 

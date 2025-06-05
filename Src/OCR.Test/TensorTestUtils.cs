@@ -33,11 +33,11 @@ public static class TensorTestUtils
             int batchOffset = batchIndex * imageSize;
             var hwSpan = tensorData.AsSpan(batchOffset, imageSize);
             var span2D = hwSpan.AsSpan2D(height, width);
-            
+
             // Copy from span to new array for testing
             var probabilityMap = new float[height, width];
             span2D.CopyTo(probabilityMap);
-            
+
             results[batchIndex] = probabilityMap;
         }
 

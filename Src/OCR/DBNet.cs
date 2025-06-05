@@ -1,9 +1,8 @@
-using System.Numerics.Tensors;
 using System.Buffers;
+using System.Numerics.Tensors;
+using OCR.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using OCR.Algorithms;
 
 namespace OCR;
 
