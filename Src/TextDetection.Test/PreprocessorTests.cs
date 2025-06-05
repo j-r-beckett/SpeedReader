@@ -261,7 +261,7 @@ public class PreprocessorTests
 
             var preprocessedTensor = Preprocessor.Preprocess(images);
             var modelOutput = detector.RunTextDetection(preprocessedTensor);
-            var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
+            var probabilityMaps = TensorOps.ExtractProbabilityMaps(modelOutput);
 
             // Assert: Verify pipeline worked correctly
             Assert.Equal(imageInfo.Length, probabilityMaps.Length);

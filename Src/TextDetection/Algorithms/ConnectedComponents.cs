@@ -1,8 +1,8 @@
 using System.Numerics.Tensors;
 
-namespace TextDetection;
+namespace TextDetection.Algorithms;
 
-public static class ConnectedComponentAnalysis
+public static class ConnectedComponents
 {
     public static (int X, int Y)[][] FindComponents(TensorSpan<float> batchSlice)
     {

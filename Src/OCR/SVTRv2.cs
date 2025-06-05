@@ -4,15 +4,15 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace TextRecognition;
+namespace OCR;
 
-public class Preprocessor
+public static class SVTRv2
 {
     private const int TargetHeight = 48;
     private const int MinWidth = 12;
     private const int MaxWidth = 320;
 
-    public static Tensor<float> Preprocess(Image<Rgb24>[] batch)
+    public static Tensor<float> PreProcess(Image<Rgb24>[] batch)
     {
         if (batch.Length == 0)
         {
@@ -63,6 +63,27 @@ public class Preprocessor
         }
 
         return tensor;
+    }
+
+    public static string[] PostProcess(Tensor<float> probabilities)
+    {
+        // Input: [batch_size, sequence_length, num_classes]
+        // sequence_length = spatial positions from left-to-right across text image
+        // num_classes = vocabulary size (6625 for SVTRv2)
+        // Output: Decoded text strings
+
+        var results = new List<string>();
+        var batchSize = (int)probabilities.Lengths[0];
+        var sequenceLength = (int)probabilities.Lengths[1];
+        var numClasses = (int)probabilities.Lengths[2];
+
+        for (int batch = 0; batch < batchSize; batch++)
+        {
+            string text = DecodeSingleSequence(probabilities, batch, sequenceLength, numClasses);
+            results.Add(text);
+        }
+
+        return results.ToArray();
     }
 
     internal static int CalculateMaxWidth(Image<Rgb24>[] batch)
@@ -124,9 +145,40 @@ public class Preprocessor
             srcRow.CopyTo(destRow);
         }
     }
-}
 
-public class NonContiguousImageException : InvalidOperationException
-{
-    public NonContiguousImageException(string message) : base(message) { }
+    private static string DecodeSingleSequence(Tensor<float> probabilities, int batchIndex, int seqLen, int numClasses)
+    {
+        var decoded = new List<char>();
+        int prevIndex = -1;
+        var probabilitySpan = probabilities.AsTensorSpan();
+
+        for (int t = 0; t < seqLen; t++)
+        {
+            // Find argmax at spatial position t (left-to-right across text image)
+            int maxIndex = 0;
+            float maxValue = float.MinValue;
+
+            for (int c = 0; c < numClasses; c++)
+            {
+                ReadOnlySpan<nint> indices = [batchIndex, t, c];
+                float value = probabilitySpan[indices];
+                if (value > maxValue)
+                {
+                    maxValue = value;
+                    maxIndex = c;
+                }
+            }
+
+            // CTC greedy decoding rule: only add if different from previous and not blank
+            if (maxIndex != prevIndex && maxIndex != CharacterDictionary.Blank)
+            {
+                char character = CharacterDictionary.IndexToChar(maxIndex);
+                decoded.Add(character);
+            }
+
+            prevIndex = maxIndex;
+        }
+
+        return new string(decoded.ToArray());
+    }
 }

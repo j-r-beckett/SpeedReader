@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 
-namespace TextDetection;
+namespace OCR.Algorithms;
 
 public static class Binarization
 {

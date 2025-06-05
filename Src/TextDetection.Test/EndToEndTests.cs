@@ -55,17 +55,15 @@ public class EndToEndTests
 
         // Act: Run complete pipeline
         using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
-        using var detector = new TextDetector(session, new TestLogger<TextDetector>(_outputHelper));
-        var postProcessor = new PostProcessor();
-
+        
         // Step 1: Preprocessing
-        var preprocessedTensor = Preprocessor.Preprocess([testImage]);
+        var preprocessedTensor = DBNet.PreProcess([testImage]);
         
         // Step 2: Inference
-        var modelOutput = detector.RunTextDetection(preprocessedTensor);
+        var modelOutput = ModelRunner.Run(session, preprocessedTensor);
         
         // Step 3: Post-processing  
-        var detectedPolygons = postProcessor.PostProcess(modelOutput, originalWidth, originalHeight);
+        var detectedPolygons = DBNet.PostProcess(modelOutput, originalWidth, originalHeight);
 
         // Assert: Verify we detected at least one polygon
         Assert.NotEmpty(detectedPolygons);

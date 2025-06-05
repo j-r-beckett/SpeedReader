@@ -54,7 +54,7 @@ public class BatchProcessingTests
         // Use new 3-class flow: Preprocessor → TextDetector → PostProcessor
         var preprocessedTensor = Preprocessor.Preprocess([image1, image2, image3, image4]);
         var modelOutput = detector.RunTextDetection(preprocessedTensor);
-        var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
+        var probabilityMaps = TensorOps.ExtractProbabilityMaps(modelOutput);
 
         // Save detection results for inspection
         using var result1 = RenderAsGreyscale(probabilityMaps[0]);

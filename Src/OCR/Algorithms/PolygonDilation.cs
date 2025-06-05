@@ -1,6 +1,6 @@
 using Clipper2Lib;
 
-namespace TextDetection;
+namespace OCR.Algorithms;
 
 public static class PolygonDilation
 {

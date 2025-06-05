@@ -48,17 +48,15 @@ public class EndToEndTests
         // Act: Run complete pipeline
         using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
         using var recognizer = new TextRecognizer(session, new TestLogger<TextRecognizer>(_outputHelper));
-        var dictionary = new CharacterDictionary();
-        var postProcessor = new PostProcessor(dictionary);
 
         // Step 1: Preprocessing
-        var preprocessedTensor = Preprocessor.Preprocess([testImage]);
+        var preprocessedTensor = SVTRv2.PreProcess([testImage]);
         
         // Step 2: Inference
         var modelOutput = recognizer.RunTextRecognition(preprocessedTensor);
         
         // Step 3: Post-processing  
-        var recognizedTexts = postProcessor.DecodeCTC(modelOutput);
+        var recognizedTexts = SVTRv2.PostProcess(modelOutput);
 
         // Assert: Verify we recognized the expected text
         Assert.NotEmpty(recognizedTexts);

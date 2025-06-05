@@ -1,23 +1,11 @@
 using System.Numerics.Tensors;
-using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
-namespace TextRecognition;
+namespace OCR;
 
-public class TextRecognizer : IDisposable
+public static class ModelRunner
 {
-    private readonly InferenceSession _session;
-    private readonly ILogger<TextRecognizer> _logger;
-
-    public TextRecognizer(InferenceSession session, ILogger<TextRecognizer> logger)
-    {
-        _session = session;
-        _logger = logger;
-    }
-
-    public Tensor<float> RunTextRecognition(Tensor<float> input)
+    public static Tensor<float> Run(InferenceSession session, Tensor<float> input)
     {
         float[] inputBuffer = new float[input.FlattenedLength];
         input.FlattenTo(inputBuffer);
@@ -30,21 +18,15 @@ public class TextRecognizer : IDisposable
         };
 
         using var runOptions = new RunOptions();
-        using var ortOutputs = _session.Run(runOptions, inputs, _session.OutputNames);
+        using var ortOutputs = session.Run(runOptions, inputs, session.OutputNames);
         var firstOutput = ortOutputs.First();
-        
+
         // Convert OrtValue to Tensor<float>
         var outputSpan = firstOutput.GetTensorDataAsSpan<float>();
         var outputShape = firstOutput.GetTensorTypeAndShape().Shape;
         var outputData = outputSpan.ToArray();
         ReadOnlySpan<nint> tensorShape = outputShape.Select(x => (nint)x).ToArray();
-        
-        return Tensor.Create(outputData, tensorShape);
-    }
 
-    public void Dispose()
-    {
-        _session.Dispose();
-        GC.SuppressFinalize(this);
+        return Tensor.Create(outputData, tensorShape);
     }
 }

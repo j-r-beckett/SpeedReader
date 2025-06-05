@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="svtrv2_character_dict.txt" CopyToOutputDirectory="Always" />
+    <None Include="CharacterDictionary.Data.txt" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
 </Project>

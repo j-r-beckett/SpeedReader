@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace TextRecognition;
+namespace OCR;
 
 public static class CharacterDictionary
 {
