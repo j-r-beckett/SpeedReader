@@ -29,7 +29,7 @@ public static class DBNet
         }
 
         // Convert to NCHW in place and update Shape
-        TensorOps.NHWCToNCHW(buffer);
+        TensorOps.NhwcToNchw(buffer);
 
         // Normalize each channel using tensor operations
         var tensor = buffer.AsTensor();

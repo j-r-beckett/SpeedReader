@@ -28,7 +28,7 @@ public static class SVTRv2
             Resampling.ScaleResizeInto(batch[i], dest, maxWidth, TargetHeight, MinWidth, MaxWidth);
         }
 
-        TensorOps.NHWCToNCHW(buffer);
+        TensorOps.NhwcToNchw(buffer);
 
         // Apply SVTRv2 normalization: [0,255] → [-1,1]
         // Optimized: (pixel/255 - 0.5) / 0.5 = pixel/127.5 - 1.0
