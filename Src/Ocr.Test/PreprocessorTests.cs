@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Xunit.Abstractions;
 
-namespace OCR.Test;
+namespace Ocr.Test;
 
 [Collection("ONNX")]
 public class PreprocessorTests

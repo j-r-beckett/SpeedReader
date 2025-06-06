@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../OCR/OCR.csproj" />
+    <ProjectReference Include="../Ocr/Ocr.csproj" />
     <ProjectReference Include="../Video/Video.csproj" />
     <ProjectReference Include="../Video.Test/Video.Test.csproj" />
     <ProjectReference Include="../Models/Models.csproj" />

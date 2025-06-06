@@ -1,11 +1,11 @@
 using System.Buffers;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
-using OCR.Algorithms;
+using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace OCR;
+namespace Ocr;
 
 public static class DBNet
 {

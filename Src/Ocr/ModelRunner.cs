@@ -1,7 +1,7 @@
 using System.Numerics.Tensors;
 using Microsoft.ML.OnnxRuntime;
 
-namespace OCR;
+namespace Ocr;
 
 public static class ModelRunner
 {

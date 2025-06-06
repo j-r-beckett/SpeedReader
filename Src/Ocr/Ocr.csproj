@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="OCR.Test" />
+    <InternalsVisibleTo Include="Ocr.Test" />
   </ItemGroup>
 
   <ItemGroup>

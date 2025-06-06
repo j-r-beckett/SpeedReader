@@ -1,4 +1,6 @@
-namespace OCR.Test;
+using Ocr.Algorithms;
+
+namespace Ocr.Test;
 
 public class ConvexHullTests
 {

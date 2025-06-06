@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using CommunityToolkit.HighPerformance;
 
-namespace OCR.Algorithms;
+namespace Ocr.Algorithms;
 
 public static class ConnectedComponents
 {

@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Numerics.Tensors;
 
-namespace OCR.Algorithms;
+namespace Ocr.Algorithms;
 
 public static class TensorOps
 {

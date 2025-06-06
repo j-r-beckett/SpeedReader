@@ -3,10 +3,10 @@
 // This compiles correctly with both dotnet CLI and Rider solution build
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
-using OCR.Algorithms;
+using Ocr.Algorithms;
 using Xunit;
 
-namespace OCR.Test;
+namespace Ocr.Test;
 
 public class ThresholdingTests
 {

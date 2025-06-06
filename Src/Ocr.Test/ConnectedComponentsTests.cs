@@ -1,7 +1,7 @@
 using CommunityToolkit.HighPerformance;
-using OCR.Algorithms;
+using Ocr.Algorithms;
 
-namespace OCR.Test;
+namespace Ocr.Test;
 
 public class ConnectedComponentsTests
 {

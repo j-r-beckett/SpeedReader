@@ -1,4 +1,4 @@
-namespace OCR;
+namespace Ocr.Algorithms;
 
 public static class ConvexHull
 {

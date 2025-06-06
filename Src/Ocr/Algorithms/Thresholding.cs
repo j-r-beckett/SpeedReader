@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 
-namespace OCR.Algorithms;
+namespace Ocr.Algorithms;
 
 public static class Thresholding
 {

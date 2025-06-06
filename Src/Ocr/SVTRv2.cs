@@ -1,9 +1,9 @@
 using System.Numerics.Tensors;
-using OCR.Algorithms;
+using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace OCR;
+namespace Ocr;
 
 public static class SVTRv2
 {

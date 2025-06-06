@@ -1,6 +1,6 @@
 using CommunityToolkit.HighPerformance;
 
-namespace OCR.Test;
+namespace Ocr.Test;
 
 public static class TensorTestUtils
 {

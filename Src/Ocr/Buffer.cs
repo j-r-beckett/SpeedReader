@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Numerics.Tensors;
 
-namespace OCR;
+namespace Ocr;
 
 // Provides views into backing memory
 public class Buffer<T> : IDisposable where T : unmanaged
