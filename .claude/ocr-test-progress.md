@@ -8,12 +8,12 @@
 - [ ] `SVTRv2.cs` → `SVTRv2PreprocessTests.cs` + `SVTRv2PostprocessTests.cs`
 
 ## Algorithm Files (already have tests):
-- [x] `Binarization.cs` → `BinarizationTests.cs` ✓
-- [x] `ConnectedComponents.cs` → `ConnectedComponentsTests.cs` ✓
+- [x] `Thresholding.cs` (was Binarization) → `BinarizationTests.cs` ✓
+- [x] `ConnectedComponents.cs` → `ConnectedComponentsTests.cs` ✓ **COMPLETED**
 - [x] `ConvexHull.cs` → `ConvexHullTests.cs` ✓ **COMPLETED**
-- [x] `PolygonDilation.cs` → `PolygonDilationTests.cs` ✓
-- [x] `Resize.cs` → `ResizeCalculationTests.cs` ✓
-- [x] `TensorConversion.cs` → `TensorOpsTests.cs` ✓
+- [x] `TensorOps.cs` (was TensorConversion) → `TensorOpsTests.cs` ✓ **COMPLETED**
+- [ ] `Dilation.cs` (was PolygonDilation) → `PolygonDilationTests.cs` - needs documentation & test improvements
+- [ ] `Resampling.cs` (was Resize) → `ResizeCalculationTests.cs` - needs documentation & test improvements
 - [ ] `CTC.cs` → May need dedicated `CTCTests.cs` (currently only in end-to-end tests)
 
 ## Data Files (no tests needed):
