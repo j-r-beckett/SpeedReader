@@ -59,7 +59,7 @@ public class EndToEndTests
         using var preprocessedBuffer = DBNet.PreProcess([testImage]);
 
         // Step 2: Inference
-        var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
+        using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
 
         // Step 3: Post-processing  
         var detectedPolygons = DBNet.PostProcess(modelOutput, originalWidth, originalHeight);

@@ -48,10 +48,10 @@ public class RecognitionEndToEndTests
         using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
         // Step 1: Preprocessing
-        var preprocessedTensor = SVTRv2.PreProcess([testImage]);
+        using var preprocessedBuffer = SVTRv2.PreProcess([testImage]);
 
         // Step 2: Inference
-        var modelOutput = ModelRunner.Run(session, preprocessedTensor);
+        using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
 
         // Step 3: Post-processing
         var recognizedTexts = SVTRv2.PostProcess(modelOutput);

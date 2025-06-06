@@ -52,7 +52,7 @@ public class BatchProcessingTests
 
         // Use new 3-class flow: DBNet → ModelRunner → DBNet
         using var preprocessedBuffer = DBNet.PreProcess([image1, image2, image3, image4]);
-        var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
+        using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
         var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
 
         // Save detection results for inspection

@@ -5,7 +5,7 @@ namespace OCR;
 
 public static class ModelRunner
 {
-    public static Tensor<float> Run(InferenceSession session, Tensor<float> input)
+    public static Buffer<float> Run(InferenceSession session, Tensor<float> input)
     {
         float[] inputBuffer = new float[input.FlattenedLength];
         input.FlattenTo(inputBuffer);
@@ -21,12 +21,12 @@ public static class ModelRunner
         using var ortOutputs = session.Run(runOptions, inputs, session.OutputNames);
         var firstOutput = ortOutputs.First();
 
-        // Convert OrtValue to Tensor<float>
+        // Convert OrtValue to Buffer<float>
         var outputSpan = firstOutput.GetTensorDataAsSpan<float>();
         var outputShape = firstOutput.GetTensorTypeAndShape().Shape;
-        var outputData = outputSpan.ToArray();
-        ReadOnlySpan<nint> tensorShape = outputShape.Select(x => (nint)x).ToArray();
+        var buffer = new Buffer<float>(outputSpan.Length, outputShape.Select(x => (nint)x).ToArray());
+        outputSpan.CopyTo(buffer.AsSpan());
 
-        return Tensor.Create(outputData, tensorShape);
+        return buffer;
     }
 }

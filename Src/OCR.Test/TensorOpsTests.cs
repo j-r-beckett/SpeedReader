@@ -13,7 +13,8 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
+        using var buffer = CreateBufferFromTensor(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
 
         // Assert
         Assert.Single(result);
@@ -41,7 +42,8 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
+        using var buffer = CreateBufferFromTensor(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
 
         // Assert
         Assert.Equal(2, result.Length);
@@ -76,7 +78,8 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
+        using var buffer = CreateBufferFromTensor(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
 
         // Assert
         Assert.Single(result);
@@ -110,7 +113,8 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
+        using var buffer = CreateBufferFromTensor(tensor);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
 
         // Assert
         Assert.Equal(3, result.Length); // 3 batches
@@ -127,5 +131,12 @@ public class TensorOpsTests
         Assert.Equal(6.0f, result[0][1, 2]);   // Batch 0, bottom-right
         Assert.Equal(7.0f, result[1][0, 0]);   // Batch 1, top-left
         Assert.Equal(18.0f, result[2][1, 2]);  // Batch 2, bottom-right
+    }
+
+    private static Buffer<float> CreateBufferFromTensor(System.Numerics.Tensors.Tensor<float> tensor)
+    {
+        var buffer = new Buffer<float>((int)tensor.FlattenedLength, tensor.Lengths.ToArray());
+        tensor.FlattenTo(buffer.AsSpan());
+        return buffer;
     }
 }

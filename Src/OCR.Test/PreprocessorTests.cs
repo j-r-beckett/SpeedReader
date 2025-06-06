@@ -268,7 +268,7 @@ public class PreprocessorTests
             using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
 
             using var preprocessedBuffer = DBNet.PreProcess(images);
-            var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
+            using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
             var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
 
             // Assert: Verify pipeline worked correctly

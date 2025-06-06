@@ -57,8 +57,9 @@ public static class DBNet
         return buffer;
     }
 
-    public static List<List<(int X, int Y)>> PostProcess(Tensor<float> tensor, int originalWidth, int originalHeight)
+    public static List<List<(int X, int Y)>> PostProcess(Buffer<float> buffer, int originalWidth, int originalHeight)
     {
+        var tensor = buffer.AsTensor();
         var shape = tensor.Lengths;
         int batchSize = (int)shape[0];
         int modelHeight = (int)shape[1];
