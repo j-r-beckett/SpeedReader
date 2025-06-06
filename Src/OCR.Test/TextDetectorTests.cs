@@ -87,8 +87,8 @@ public class TextDetectorTests
             int originalHeight = testImage.Height;
 
             // Use new 3-class flow: Preprocessor → TextDetector → PostProcessor
-            var preprocessedTensor = DBNet.PreProcess([testImage]);
-            var modelOutput = ModelRunner.Run(session, preprocessedTensor);
+            using var preprocessedBuffer = DBNet.PreProcess([testImage]);
+            var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
             var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
             var probabilityMap = probabilityMaps[0];
 

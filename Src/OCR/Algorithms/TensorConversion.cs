@@ -42,27 +42,28 @@ public static class TensorConversion
         }
     }
 
-    public static nint[] NHWCToNCHW<T>(Buffer<T> buffer, nint[] nhwcShape) where T : unmanaged
+    public static void NHWCToNCHW<T>(Buffer<T> buffer) where T : unmanaged
     {
-        var tensor = buffer.AsTensor(nhwcShape);
+        var tensor = buffer.AsTensor();
+        var shape = tensor.Lengths;  // NHWC
 
-        if (nhwcShape.Length != 4)
+        if (shape.Length != 4)
         {
-            throw new ArgumentException($"Tensor has {tensor.Lengths.Length} dimensions, expected 4 (NHWC)");
+            throw new ArgumentException($"Tensor has {shape.Length} dimensions, expected 4 (NHWC)");
         }
 
-        int batchSize = (int)(nhwcShape[1] * nhwcShape[2] * nhwcShape[3]);
+        int batchSize = (int)(shape[1] * shape[2] * shape[3]);
         T[] tempBuffer = ArrayPool<T>.Shared.Rent(batchSize);
-        var tempTensor = Tensor.Create(tempBuffer, [nhwcShape[3], nhwcShape[1], nhwcShape[2]]);
+        var tempTensor = Tensor.Create(tempBuffer, [shape[3], shape[1], shape[2]]);
         try
         {
             // Convert from NHWC to NCHW
             // TODO: refactor to a block-based memory-access pattern
-            for (int n = 0; n < nhwcShape[0]; n++) // batch
+            for (int n = 0; n < shape[0]; n++) // batch
             {
-                for (int h = 0; h < nhwcShape[1]; h++)      // height
-                for (int w = 0; w < nhwcShape[2]; w++)      // width
-                for (int c = 0; c < nhwcShape[3]; c++)      // channel
+                for (int h = 0; h < shape[1]; h++)      // height
+                for (int w = 0; w < shape[2]; w++)      // width
+                for (int c = 0; c < shape[3]; c++)      // channel
                 {
                     tempTensor[[c, h, w]] = tensor[[n, h, w, c]];
                 }
@@ -75,6 +76,7 @@ public static class TensorConversion
             ArrayPool<T>.Shared.Return(tempBuffer);
         }
 
-        return [nhwcShape[0], nhwcShape[3], nhwcShape[1], nhwcShape[2]];
+        // Update buffer's shape to NCHW
+        buffer.Shape = [shape[0], shape[3], shape[1], shape[2]];
     }
 }

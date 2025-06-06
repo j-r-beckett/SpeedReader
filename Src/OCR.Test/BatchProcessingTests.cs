@@ -51,8 +51,8 @@ public class BatchProcessingTests
         await _urlPublisher.PublishAsync(image4, "batch-original-botrgt.png");
 
         // Use new 3-class flow: DBNet → ModelRunner → DBNet
-        var preprocessedTensor = DBNet.PreProcess([image1, image2, image3, image4]);
-        var modelOutput = ModelRunner.Run(session, preprocessedTensor);
+        using var preprocessedBuffer = DBNet.PreProcess([image1, image2, image3, image4]);
+        var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
         var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
 
         // Save detection results for inspection

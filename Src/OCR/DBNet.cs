@@ -10,7 +10,7 @@ public static class DBNet
 {
     private const float BinarizationThreshold = 0.2f;
 
-    public static Tensor<float> PreProcess(Image<Rgb24>[] batch)
+    public static Buffer<float> PreProcess(Image<Rgb24>[] batch)
     {
         if (batch.Length == 0)
         {
@@ -19,7 +19,7 @@ public static class DBNet
 
         (int width, int height) = CalculateDimensions(batch);
 
-        var buffer = new Buffer<float>(batch.Length * 3 * height * width);
+        var buffer = new Buffer<float>(batch.Length * 3 * height * width, [batch.Length, height, width, 3]);
 
         for (int i = 0; i < batch.Length; i++)
         {
@@ -27,11 +27,11 @@ public static class DBNet
             Resize.AspectResizeInto(batch[i], dest, width, height);
         }
 
-        // Converts buffer from NHWC to NCHW in place
-        nint[] nchwShape = TensorConversion.NHWCToNCHW(buffer, [batch.Length, height, width, 3]);
+        // Convert to NCHW in place and update Shape
+        TensorConversion.NHWCToNCHW(buffer);
 
         // Normalize each channel using tensor operations
-        var tensor = buffer.AsTensor(nchwShape);
+        var tensor = buffer.AsTensor();
         var tensorSpan = tensor.AsTensorSpan();
 
         float[] means = [123.675f, 116.28f, 103.53f];
@@ -54,7 +54,7 @@ public static class DBNet
             Tensor.Divide(channelSlice, stds[channel], channelSlice);
         }
 
-        return tensor;
+        return buffer;
     }
 
     public static List<List<(int X, int Y)>> PostProcess(Tensor<float> tensor, int originalWidth, int originalHeight)

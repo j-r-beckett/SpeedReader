@@ -56,10 +56,10 @@ public class EndToEndTests
         using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
 
         // Step 1: Preprocessing
-        var preprocessedTensor = DBNet.PreProcess([testImage]);
+        using var preprocessedBuffer = DBNet.PreProcess([testImage]);
 
         // Step 2: Inference
-        var modelOutput = ModelRunner.Run(session, preprocessedTensor);
+        var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
 
         // Step 3: Post-processing  
         var detectedPolygons = DBNet.PostProcess(modelOutput, originalWidth, originalHeight);

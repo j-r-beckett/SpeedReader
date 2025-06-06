@@ -38,7 +38,8 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(1, 1, new Rgb24(255, 128, 0));
 
         // Act
-        var tensor = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]);
+        var tensor = buffer.AsTensor();
 
         // Assert: Verify exact normalized values using DBNet's normalization parameters
         var means = new[] { 123.675f, 116.28f, 103.53f };
@@ -70,7 +71,8 @@ public class PreprocessorTests
         image[1, 1] = new Rgb24(103, 153, 203); // Bottom-right
 
         // Act
-        var tensor = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]);
+        var tensor = buffer.AsTensor();
 
         // Assert: Verify CHW layout - all R values, then all G values, then all B values
         var shape = tensor.Lengths;
@@ -98,7 +100,8 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(100, 50);
 
         // Act
-        var tensor = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]);
+        var tensor = buffer.AsTensor();
 
         // Assert: Verify dimensions are multiples of 32
         var shape = tensor.Lengths;
@@ -124,7 +127,8 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(32, 32, new Rgb24(0, 0, 0));
 
         // Act
-        var tensor = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]);
+        var tensor = buffer.AsTensor();
 
         // Assert: Black pixels should normalize to specific negative values
         var means = new[] { 123.675f, 116.28f, 103.53f };
@@ -155,7 +159,8 @@ public class PreprocessorTests
         using var image3 = new Image<Rgb24>(100, 50, new Rgb24(0, 0, 255));
 
         // Act
-        var tensor = DBNet.PreProcess([image1, image2, image3]);
+        using var buffer = DBNet.PreProcess([image1, image2, image3]);
+        var tensor = buffer.AsTensor();
 
         // Assert: Verify batch dimensions
         var shape = tensor.Lengths;
@@ -179,10 +184,15 @@ public class PreprocessorTests
         using var blueImage = new Image<Rgb24>(32, 32, new Rgb24(0, 0, 255));   // All blue
 
         // Act
-        var batchTensor = DBNet.PreProcess([redImage, greenImage, blueImage]);
-        var redTensor = DBNet.PreProcess([redImage]);
-        var greenTensor = DBNet.PreProcess([greenImage]);
-        var blueTensor = DBNet.PreProcess([blueImage]);
+        using var batchBuffer = DBNet.PreProcess([redImage, greenImage, blueImage]);
+        using var redBuffer = DBNet.PreProcess([redImage]);
+        using var greenBuffer = DBNet.PreProcess([greenImage]);
+        using var blueBuffer = DBNet.PreProcess([blueImage]);
+        
+        var batchTensor = batchBuffer.AsTensor();
+        var redTensor = redBuffer.AsTensor();
+        var greenTensor = greenBuffer.AsTensor();
+        var blueTensor = blueBuffer.AsTensor();
 
         // Assert: Verify each image in batch matches individual processing
         var batchData = new float[batchTensor.FlattenedLength];
@@ -257,8 +267,8 @@ public class PreprocessorTests
             // Act: Process through complete pipeline
             using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
 
-            var preprocessedTensor = DBNet.PreProcess(images);
-            var modelOutput = ModelRunner.Run(session, preprocessedTensor);
+            using var preprocessedBuffer = DBNet.PreProcess(images);
+            var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
             var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
 
             // Assert: Verify pipeline worked correctly
