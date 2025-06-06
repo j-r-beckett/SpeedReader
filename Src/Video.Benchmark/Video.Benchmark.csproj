@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Engine\Engine.csproj" />
-    <ProjectReference Include="..\Engine.Test\Engine.Test.csproj" />
+    <ProjectReference Include="..\Video\Video.csproj" />
+    <ProjectReference Include="..\Video.Test\Video.Test.csproj" />
   </ItemGroup>
 
   <ItemGroup>

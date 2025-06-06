@@ -10,7 +10,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit.Abstractions;
 
-namespace Engine.Test;
+namespace Video.Test;
 
 public enum FramePattern
 {

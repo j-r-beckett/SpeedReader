@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Engine.Test;
+namespace Video.Test;
 
 public class FileSystemUrlPublisherTests : IDisposable
 {

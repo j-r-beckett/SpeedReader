@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 
-namespace Engine;
+namespace Video;
 
 public class FileSystemUrlPublisher<T> : IUrlPublisher<T>
 {

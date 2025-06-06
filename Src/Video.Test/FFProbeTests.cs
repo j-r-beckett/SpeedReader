@@ -8,7 +8,7 @@ using CliWrap.Buffered;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Engine.Test;
+namespace Video.Test;
 
 public class FFProbeTests
 {

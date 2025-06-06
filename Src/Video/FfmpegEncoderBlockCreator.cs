@@ -8,7 +8,7 @@ using CliWrap;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Engine;
+namespace Video;
 
 public class FfmpegEncoderBlockCreator
 {

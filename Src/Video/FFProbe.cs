@@ -7,7 +7,7 @@ using CliWrap;
 using CliWrap.Buffered;
 using CliWrap.Exceptions;
 
-namespace Engine;
+namespace Video;
 
 public class FFProbe
 {

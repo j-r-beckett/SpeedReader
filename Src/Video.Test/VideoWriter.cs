@@ -10,7 +10,7 @@ using FFMpegCore.Pipes;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Engine.Test;
+namespace Video.Test;
 
 public class FrameWriter
 {

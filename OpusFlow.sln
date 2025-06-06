@@ -5,11 +5,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{F755A031-F1DA-4DBB-A2BD-FAE509288FAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Src\Engine\Engine.csproj", "{3B2B492D-1AE7-4E97-BE29-FA9C374689C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Video", "Src\Video\Video.csproj", "{3B2B492D-1AE7-4E97-BE29-FA9C374689C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.Benchmark", "Src\Engine.Benchmark\Engine.Benchmark.csproj", "{7EAC4BE3-9F85-41CB-A638-403AF91E7EE9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Video.Benchmark", "Src\Video.Benchmark\Video.Benchmark.csproj", "{7EAC4BE3-9F85-41CB-A638-403AF91E7EE9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine.Test", "Src\Engine.Test\Engine.Test.csproj", "{1EB8C93E-EC07-4D4B-8DDB-40C27FB02C7D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Video.Test", "Src\Video.Test\Video.Test.csproj", "{1EB8C93E-EC07-4D4B-8DDB-40C27FB02C7D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "Src\Models\Models.csproj", "{B501A4B2-154E-49F8-AD69-CA7CBFFC09FF}"
 EndProject

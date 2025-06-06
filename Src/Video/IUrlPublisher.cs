@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SixLabors.ImageSharp;
 
-namespace Engine;
+namespace Video;
 
 public record ChartData(string[] Labels, ChartDataset[] Datasets);
 public record ChartDataset(string Label, double[] Data, string BackgroundColor = "#36A2EB");

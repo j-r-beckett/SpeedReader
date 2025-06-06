@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CliWrap;
 
-namespace Engine;
+namespace Video;
 
 public class StreamingPipeSource : PipeSource
 {

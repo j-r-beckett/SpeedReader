@@ -8,7 +8,7 @@ using System.Threading.Tasks.Dataflow;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Engine.Benchmark;
+namespace Video.Benchmark;
 
 public record BenchmarkResult(string TestName, int FrameCount, double CreateTimeSeconds, double DecodeTimeMs, double Fps);
 public record FpsTimePoint(double ElapsedSeconds, double Fps);
@@ -120,7 +120,7 @@ public class FfmpegDecoderBenchmark
     {
         // TODO: Optimize performance - 500 frames takes 12.1s generation + 27.2s compression
         var frames = GenerateBlackFrames(frameCount).ToList();
-        var result = await Engine.Test.FrameWriter.ToCompressedVideo(Width, Height, FrameRate,
+        var result = await Video.Test.FrameWriter.ToCompressedVideo(Width, Height, FrameRate,
             frames.ToAsyncEnumerable(), default);
 
         // Dispose frames to free memory

@@ -26,8 +26,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../OCR/OCR.csproj" />
-    <ProjectReference Include="../Engine/Engine.csproj" />
-    <ProjectReference Include="../Engine.Test/Engine.Test.csproj" />
+    <ProjectReference Include="../Video/Video.csproj" />
+    <ProjectReference Include="../Video.Test/Video.Test.csproj" />
     <ProjectReference Include="../Models/Models.csproj" />
   </ItemGroup>
 
