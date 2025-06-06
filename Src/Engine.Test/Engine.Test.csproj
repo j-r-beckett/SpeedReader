@@ -18,7 +18,6 @@
     <PackageReference Include="sixlabors.fonts" />
     <PackageReference Include="Sixlabors.Imagesharp" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />
-    <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
