@@ -2,32 +2,15 @@ namespace OCR.Test;
 
 public class ConvexHullTests
 {
-    [Fact]
-    public void ConvexHull_EmptyArray_ReturnsEmpty()
+    [Theory]
+    [InlineData(new int[0], new int[0])]  // Empty array
+    [InlineData(new [] { 5 }, new [] { 3 })]  // Single point
+    [InlineData(new [] { 0, 3 }, new [] { 0, 4 })]  // Two points
+    public void ConvexHull_FewerThanThreePoints_ReturnsEmpty(int[] xCoords, int[] yCoords)
     {
-        var points = Array.Empty<(int X, int Y)>();
+        var points = xCoords.Zip(yCoords, (x, y) => (x, y)).ToArray();
 
-        var result = GrahamScan.ComputeConvexHull(points);
-
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public void ConvexHull_SinglePoint_ReturnsEmpty()
-    {
-        var points = new[] { (5, 3) };
-
-        var result = GrahamScan.ComputeConvexHull(points);
-
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public void ConvexHull_TwoPoints_ReturnsEmpty()
-    {
-        var points = new[] { (0, 0), (3, 4) };
-
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Empty(result);
     }
@@ -37,7 +20,7 @@ public class ConvexHullTests
     {
         var points = new[] { (0, 0), (4, 0), (2, 3) };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(3, result.Length);
         Assert.Contains((0, 0), result);
@@ -50,7 +33,7 @@ public class ConvexHullTests
     {
         var points = new[] { (0, 0), (4, 0), (4, 4), (0, 4) };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(4, result.Length);
         Assert.Contains((0, 0), result);
@@ -68,41 +51,36 @@ public class ConvexHullTests
             (2, 2), (1, 1), (3, 3)           // interior points
         };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(4, result.Length);
         Assert.Contains((0, 0), result);
         Assert.Contains((4, 0), result);
         Assert.Contains((4, 4), result);
         Assert.Contains((0, 4), result);
-
-        // Interior points should not be in hull
-        Assert.DoesNotContain((2, 2), result);
-        Assert.DoesNotContain((1, 1), result);
-        Assert.DoesNotContain((3, 3), result);
     }
 
     [Fact]
     public void ConvexHull_CollinearPoints_ReturnsMinimalSet()
     {
         // All collinear cases should return minimal point set (strict convex hull)
-        var diagonal = new[] { (0, 0), (1, 1), (2, 2), (3, 3), (4, 4) };
-        var horizontal = new[] { (0, 5), (1, 5), (2, 5), (3, 5) };
-        var vertical = new[] { (5, 0), (5, 1), (5, 2), (5, 3) };
+        // For us, that means the point with the smallest (y, x)
+        var diagonal = new[] { (8, 8), (-2, -2), (4, 4), (0, 0), (6, 6) };
+        var horizontal = new[] { (7, 3), (-1, 3), (2, 3), (0, 3) };
+        var vertical = new[] { (-3, 9), (-3, 1), (-3, 5), (-3, 3) };
 
-        var diagonalResult = GrahamScan.ComputeConvexHull(diagonal);
-        var horizontalResult = GrahamScan.ComputeConvexHull(horizontal);
-        var verticalResult = GrahamScan.ComputeConvexHull(vertical);
+        var diagonalResult = ConvexHull.GrahamScan(diagonal);
+        var horizontalResult = ConvexHull.GrahamScan(horizontal);
+        var verticalResult = ConvexHull.GrahamScan(vertical);
 
-        // Strict Graham scan returns minimal set for collinear points
         Assert.Single(diagonalResult);
-        Assert.Contains((0, 0), diagonalResult); // Start point (lowest Y)
+        Assert.Contains((-2, -2), diagonalResult); // Start point (lowest Y)
 
         Assert.Single(horizontalResult);
-        Assert.Contains((0, 5), horizontalResult); // Start point (lowest Y, leftmost X)
+        Assert.Contains((-1, 3), horizontalResult); // Start point (lowest Y, leftmost X)
 
         Assert.Single(verticalResult);
-        Assert.Contains((5, 0), verticalResult); // Start point (lowest Y)
+        Assert.Contains((-3, 1), verticalResult); // Start point (lowest Y)
     }
 
     [Fact]
@@ -118,7 +96,7 @@ public class ConvexHullTests
             (-2, -1)   // bottom left
         };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(5, result.Length);
         foreach (var point in points)
@@ -131,14 +109,14 @@ public class ConvexHullTests
     public void ConvexHull_StarShape_ReturnsOuterPoints()
     {
         var points = new[]
-        { 
+        {
             // Outer points (should be in hull)
             (0, 4), (4, 0), (0, -4), (-4, 0),
             // Inner points (should not be in hull)
             (0, 1), (1, 0), (0, -1), (-1, 0)
         };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(4, result.Length);
         Assert.Contains((0, 4), result);
@@ -155,7 +133,7 @@ public class ConvexHullTests
             (0, 0), (0, 0), (4, 0), (4, 0), (4, 4), (4, 4), (0, 4), (0, 4)
         };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(4, result.Length);
         Assert.Contains((0, 0), result);
@@ -167,16 +145,15 @@ public class ConvexHullTests
     [Fact]
     public void ConvexHull_NegativeCoordinates_WorksCorrectly()
     {
-        var points = new[] { (-2, -2), (2, -2), (2, 2), (-2, 2), (0, 0) };
+        var points = new[] { (-2, 2), (0, 0), (-2, -2), (2, 2), (2, -2) };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(4, result.Length);
         Assert.Contains((-2, -2), result);
         Assert.Contains((2, -2), result);
         Assert.Contains((2, 2), result);
         Assert.Contains((-2, 2), result);
-        Assert.DoesNotContain((0, 0), result);
     }
 
     [Fact]
@@ -187,14 +164,13 @@ public class ConvexHullTests
             (1000, 1000), (2000, 1000), (2000, 2000), (1000, 2000), (1500, 1500)
         };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
         Assert.Equal(4, result.Length);
         Assert.Contains((1000, 1000), result);
         Assert.Contains((2000, 1000), result);
         Assert.Contains((2000, 2000), result);
         Assert.Contains((1000, 2000), result);
-        Assert.DoesNotContain((1500, 1500), result);
     }
 
     [Fact]
@@ -202,15 +178,24 @@ public class ConvexHullTests
     {
         var points = new[] { (0, 0), (4, 0), (4, 4), (0, 4) };
 
-        var result = GrahamScan.ComputeConvexHull(points);
+        var result = ConvexHull.GrahamScan(points);
 
-        // Find the bottom-left point (start point)
-        var startIndex = Array.IndexOf(result, (0, 0));
-        Assert.True(startIndex >= 0, "Start point should be in result");
-
-        // Verify the ordering is counter-clockwise from start point
-        // This depends on your implementation - adjust if your algorithm produces clockwise ordering
         Assert.Equal(4, result.Length);
+
+        // Verify counter-clockwise ordering by checking cross products
+        for (int i = 0; i < result.Length; i++)
+        {
+            var current = result[i];
+            var next = result[(i + 1) % result.Length];
+            var afterNext = result[(i + 2) % result.Length];
+            
+            // Cross product should be positive for counter-clockwise turns
+            var crossProduct = (next.X - current.X) * (afterNext.Y - current.Y) - 
+                              (next.Y - current.Y) * (afterNext.X - current.X);
+            
+            Assert.True(crossProduct > 0, 
+                $"Points {current}, {next}, {afterNext} should form counter-clockwise turn, got cross product {crossProduct}");
+        }
     }
 
 
@@ -218,21 +203,21 @@ public class ConvexHullTests
     public void ConvexHull_RandomPointCloud_ProducesValidHull()
     {
         // Generate random points inside a circle
-        var random = new Random(42); // Fixed seed for reproducible tests
+        var random = new Random(0);
         var points = new List<(int X, int Y)>();
 
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 500; i++)
         {
-            var angle = random.NextDouble() * 2 * Math.PI;
-            var radius = random.NextDouble() * 10;
-            var x = (int)(radius * Math.Cos(angle));
-            var y = (int)(radius * Math.Sin(angle));
+            double angle = random.NextDouble() * 2 * Math.PI;
+            double radius = random.NextDouble() * 10;
+            int x = (int)(radius * Math.Cos(angle));
+            int y = (int)(radius * Math.Sin(angle));
             points.Add((x, y));
         }
 
-        var result = GrahamScan.ComputeConvexHull(points.ToArray());
+        var result = ConvexHull.GrahamScan(points.ToArray());
 
-        // Basic validation: hull should have at least 3 points for 50 random points
+        // Basic validation
         Assert.True(result.Length >= 3, $"Hull should have at least 3 points, got {result.Length}");
         Assert.True(result.Length <= points.Count, "Hull cannot have more points than input");
 

@@ -91,7 +91,7 @@ public static class DBNet
         {
             if (component.Length >= 3)
             {
-                var hull = GrahamScan.ComputeConvexHull(component);
+                var hull = ConvexHull.GrahamScan(component);
                 if (hull.Length >= 3)
                 {
                     contours.Add(hull);
