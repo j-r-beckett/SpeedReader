@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Numerics.Tensors;
+using CommunityToolkit.HighPerformance;
 using OCR.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -70,22 +71,18 @@ public static class DBNet
 
         Binarization.BinarizeInPlace(tensor, BinarizationThreshold);
 
-        // Process each batch item directly using tensor slicing - no flattening needed!
+        // Process each batch item using Span2D for efficient 2D access
         var allComponents = new List<(int X, int Y)[]>();
-        var tensorSpan = tensor.AsTensorSpan();
+        var bufferSpan = buffer.AsSpan();
+        int imageSize = modelHeight * modelWidth;
 
         for (int batchIndex = 0; batchIndex < batchSize; batchIndex++)
         {
-            // Extract single batch using NRange slicing
-            ReadOnlySpan<NRange> batchRange = [
-                new NRange(batchIndex, batchIndex + 1), // Single batch
-                NRange.All,                             // All heights
-                NRange.All                              // All widths
-            ];
+            // Extract 2D span for this batch
+            var batchSpan = bufferSpan.Slice(batchIndex * imageSize, imageSize);
+            var probabilityMap = batchSpan.AsSpan2D(modelHeight, modelWidth);
 
-            var batchSlice = tensorSpan[batchRange]; // Shape: [1, H, W]
-
-            var components = ConnectedComponents.FindComponents(batchSlice);
+            var components = ConnectedComponents.FindComponents(probabilityMap);
             allComponents.AddRange(components);
         }
 

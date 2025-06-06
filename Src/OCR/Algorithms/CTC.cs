@@ -5,14 +5,6 @@ namespace OCR.Algorithms;
 
 public static class CTC
 {
-    /// <summary>
-    /// Performs CTC (Connectionist Temporal Classification) greedy decoding on a single sequence.
-    /// Takes a span representing [sequence_length, num_classes] probabilities and returns decoded text.
-    /// </summary>
-    /// <param name="sequenceSpan">Span containing probabilities for one sequence in [seq_len, num_classes] format</param>
-    /// <param name="seqLen">Length of the sequence (temporal dimension)</param>
-    /// <param name="numClasses">Number of classes (vocabulary size)</param>
-    /// <returns>Decoded text string using CTC greedy decoding rules</returns>
     public static string DecodeSingleSequence(Span<float> sequenceSpan, int seqLen, int numClasses)
     {
         var decoded = new List<char>();

@@ -1,18 +1,14 @@
 using System.Numerics.Tensors;
+using CommunityToolkit.HighPerformance;
 
 namespace OCR.Algorithms;
 
 public static class ConnectedComponents
 {
-    public static (int X, int Y)[][] FindComponents(TensorSpan<float> batchSlice)
+    public static (int X, int Y)[][] FindComponents(Span2D<float> probabilityMap)
     {
-        if (batchSlice.Rank != 3)
-        {
-            throw new ArgumentException($"Expected 3D [1,H,W] tensor, got {batchSlice.Rank}D tensor");
-        }
-
-        int height = (int)batchSlice.Lengths[1];
-        int width = (int)batchSlice.Lengths[2];
+        int height = probabilityMap.Height;
+        int width = probabilityMap.Width;
 
         List<(int X, int Y)[]> components = [];
 
@@ -20,10 +16,9 @@ public static class ConnectedComponents
         {
             for (int x = 0; x < width; x++)
             {
-                ReadOnlySpan<nint> indices = [0, y, x];
-                if (batchSlice[indices] > 0)
+                if (probabilityMap[y, x] > 0)
                 {
-                    var component = ExploreComponent(x, y, batchSlice, height, width);
+                    var component = ExploreComponent(x, y, probabilityMap, height, width);
                     components.Add(component);
                 }
             }
@@ -33,7 +28,7 @@ public static class ConnectedComponents
     }
 
     // TODO: replace with scanline flood fill
-    private static (int X, int Y)[] ExploreComponent(int x, int y, TensorSpan<float> batchSlice, int height, int width)
+    private static (int X, int Y)[] ExploreComponent(int x, int y, Span2D<float> probabilityMap, int height, int width)
     {
         List<(int X, int Y)> component = [];
         Stack<(int X, int Y)> stack = [];
@@ -44,11 +39,10 @@ public static class ConnectedComponents
         {
             (x, y) = stack.Pop();
 
-            ReadOnlySpan<nint> indices = [0, y, x];
-            if (batchSlice[indices] <= 0) continue;
+            if (probabilityMap[y, x] <= 0) continue;
 
             component.Add((x, y));
-            batchSlice[indices] = 0;
+            probabilityMap[y, x] = 0;
 
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -61,8 +55,7 @@ public static class ConnectedComponents
 
                     if (nx >= 0 && nx < width && ny >= 0 && ny < height)
                     {
-                        ReadOnlySpan<nint> neighborIndices = [0, ny, nx];
-                        if (batchSlice[neighborIndices] > 0)
+                        if (probabilityMap[ny, nx] > 0)
                         {
                             stack.Push((nx, ny));
                         }

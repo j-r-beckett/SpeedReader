@@ -1,4 +1,5 @@
 using System.Numerics.Tensors;
+using CommunityToolkit.HighPerformance;
 using OCR.Algorithms;
 
 namespace OCR.Test;
@@ -6,9 +7,9 @@ namespace OCR.Test;
 public class ConnectedComponentsTests
 {
     /// <summary>
-    /// Helper method to convert a 2D array to a [1, H, W] tensor for testing
+    /// Helper method to convert a 2D array to a Span2D for testing
     /// </summary>
-    private static TensorSpan<float> CreateBatchTensor(float[,] data)
+    private static Span2D<float> CreateSpan2D(float[,] data)
     {
         int height = data.GetLength(0);
         int width = data.GetLength(1);
@@ -22,9 +23,7 @@ public class ConnectedComponentsTests
             }
         }
 
-        ReadOnlySpan<nint> shape = [1, height, width];
-        var tensor = Tensor.Create(flatData, shape);
-        return tensor.AsTensorSpan();
+        return flatData.AsSpan().AsSpan2D(height, width);
     }
     [Fact]
     public void ConnectedComponents_SingleComponent_ReturnsSingleComponent()
@@ -37,10 +36,10 @@ public class ConnectedComponentsTests
             { 0f, 1f, 1f, 0f },
             { 0f, 0f, 0f, 0f }
         };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Single(components);
@@ -64,10 +63,10 @@ public class ConnectedComponentsTests
             { 0f, 0f, 0f, 0f },
             { 1f, 0f, 0f, 1f }
         };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Equal(4, components.Length);
@@ -94,10 +93,10 @@ public class ConnectedComponentsTests
             { 0f, 0f, 0f },
             { 0f, 0f, 0f }
         };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Empty(components);
@@ -113,10 +112,10 @@ public class ConnectedComponentsTests
             { 0f, 1f, 0f },
             { 0f, 0f, 1f }
         };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Single(components);
@@ -138,10 +137,10 @@ public class ConnectedComponentsTests
             { 1f, 0f, 0f },
             { 1f, 0f, 0f }
         };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Single(components);
@@ -165,10 +164,10 @@ public class ConnectedComponentsTests
             { 0f, 1f, 0f },
             { 0f, 0f, 0f }
         };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Single(components);
@@ -186,10 +185,10 @@ public class ConnectedComponentsTests
             { 0f, 0f, 0f },
             { 1f, 0f, 1f }
         };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Equal(4, components.Length);
@@ -211,10 +210,10 @@ public class ConnectedComponentsTests
     {
         // Arrange
         var data = new float[,] { { 1f } };
-        var batchTensor = CreateBatchTensor(data);
+        var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(batchTensor);
+        var components = ConnectedComponents.FindComponents(probabilityMap);
 
         // Assert
         Assert.Single(components);
