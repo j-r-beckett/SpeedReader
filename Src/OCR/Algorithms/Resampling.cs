@@ -4,7 +4,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace OCR.Algorithms;
 
-public static class Resize
+public static class Resampling
 {
     public static void AspectResizeInto(Image<Rgb24> src, Span<float> dest, int destWidth, int destHeight)
     {

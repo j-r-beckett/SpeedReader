@@ -8,7 +8,7 @@ using Xunit;
 
 namespace OCR.Test;
 
-public class BinarizationTests
+public class ThresholdingTests
 {
 
     [Fact]
@@ -24,7 +24,7 @@ public class BinarizationTests
         var tensor = Tensor.Create<float>(probabilityData, [3, 3]);
 
         // Act
-        Binarization.BinarizeInPlace(tensor, 0.2f);
+        Thresholding.BinarizeInPlace(tensor, 0.2f);
 
         // Assert: Values > 0.2 should be 1.0f, <= 0.2 should be 0.0f
         Assert.Equal(0.0f, tensor[0, 0]); // 0.1 <= 0.2
@@ -52,7 +52,7 @@ public class BinarizationTests
         var tensor = Tensor.Create<float>(probabilityData, [2, 2]);
 
         // Act
-        Binarization.BinarizeInPlace(tensor, 0.2f);
+        Thresholding.BinarizeInPlace(tensor, 0.2f);
 
         // Assert: Test exact threshold boundary and negative values
         Assert.Equal(0.0f, tensor[0, 0]); // Exactly 0.2 should be 0.0f
@@ -69,8 +69,8 @@ public class BinarizationTests
         var largeTensor = Tensor.Create<float>(new float[100 * 200], [100, 200]);
 
         // Act
-        Binarization.BinarizeInPlace(smallTensor, 0.2f);
-        Binarization.BinarizeInPlace(largeTensor, 0.2f);
+        Thresholding.BinarizeInPlace(smallTensor, 0.2f);
+        Thresholding.BinarizeInPlace(largeTensor, 0.2f);
 
         // Assert: Dimensions should be preserved
         Assert.Equal(2, smallTensor.Lengths[0]);
@@ -88,8 +88,8 @@ public class BinarizationTests
         var lowTensor = Tensor.Create<float>([0.1f], [1, 1]);
 
         // Act
-        Binarization.BinarizeInPlace(highTensor, 0.2f);
-        Binarization.BinarizeInPlace(lowTensor, 0.2f);
+        Thresholding.BinarizeInPlace(highTensor, 0.2f);
+        Thresholding.BinarizeInPlace(lowTensor, 0.2f);
 
         // Assert
         Assert.Equal(1.0f, highTensor[0, 0]);

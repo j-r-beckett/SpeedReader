@@ -5,11 +5,11 @@ using Xunit.Abstractions;
 
 namespace OCR.Test;
 
-public class ResizeCalculationTests
+public class ResamplingTests
 {
     private readonly ITestOutputHelper _output;
 
-    public ResizeCalculationTests(ITestOutputHelper output)
+    public ResamplingTests(ITestOutputHelper output)
     {
         _output = output;
     }

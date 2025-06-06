@@ -3,7 +3,7 @@ using System.Numerics.Tensors;
 
 namespace OCR.Algorithms;
 
-public static class TensorConversion
+public static class TensorOps
 {
     public static void NHWCToNCHW<T>(Buffer<T> buffer) where T : unmanaged
     {

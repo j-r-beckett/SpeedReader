@@ -2,7 +2,7 @@ using Clipper2Lib;
 
 namespace OCR.Algorithms;
 
-public static class PolygonDilation
+public static class Dilation
 {
     private const double DilationRatio = 1.5;
     private const double MinimumArea = 9.0;

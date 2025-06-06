@@ -25,11 +25,11 @@ public static class DBNet
         for (int i = 0; i < batch.Length; i++)
         {
             var dest = buffer.AsSpan().Slice(i * width * height * 3, width * height * 3);
-            Resize.AspectResizeInto(batch[i], dest, width, height);
+            Resampling.AspectResizeInto(batch[i], dest, width, height);
         }
 
         // Convert to NCHW in place and update Shape
-        TensorConversion.NHWCToNCHW(buffer);
+        TensorOps.NHWCToNCHW(buffer);
 
         // Normalize each channel using tensor operations
         var tensor = buffer.AsTensor();
@@ -69,7 +69,7 @@ public static class DBNet
         float scaleX = (float)originalWidth / modelWidth;
         float scaleY = (float)originalHeight / modelHeight;
 
-        Binarization.BinarizeInPlace(tensor, BinarizationThreshold);
+        Thresholding.BinarizeInPlace(tensor, BinarizationThreshold);
 
         // Process each batch item using Span2D for efficient 2D access
         var allComponents = new List<(int X, int Y)[]>();
@@ -99,7 +99,7 @@ public static class DBNet
             }
         }
 
-        var dilatedContours = PolygonDilation.DilatePolygons(contours.ToArray());
+        var dilatedContours = Dilation.DilatePolygons(contours.ToArray());
 
         var resultPolygons = new List<List<(int X, int Y)>>();
         foreach (var polygon in dilatedContours)

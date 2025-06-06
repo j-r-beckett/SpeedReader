@@ -2,14 +2,14 @@ using OCR.Algorithms;
 
 namespace OCR.Test;
 
-public class PolygonDilationTests
+public class DilationTests
 {
     [Fact]
     public void DilatePolygon_EmptyPolygon_ReturnsNull()
     {
         var polygon = Array.Empty<(int X, int Y)>();
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.Null(result);
     }
@@ -19,7 +19,7 @@ public class PolygonDilationTests
     {
         var polygon = new[] { (5, 3) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.Null(result);
     }
@@ -29,7 +29,7 @@ public class PolygonDilationTests
     {
         var polygon = new[] { (0, 0), (3, 4) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.Null(result);
     }
@@ -40,7 +40,7 @@ public class PolygonDilationTests
         // Degenerate triangle with area < 9 pixels
         var polygon = new[] { (0, 0), (1, 0), (0, 1) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.Null(result);
     }
@@ -51,7 +51,7 @@ public class PolygonDilationTests
         // Triangle with area >= 9 pixels: area = 0.5 * base * height = 0.5 * 6 * 3 = 9
         var polygon = new[] { (0, 0), (6, 0), (3, 3) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
         Assert.True(result.Length >= 3);
@@ -70,7 +70,7 @@ public class PolygonDilationTests
         // 10x10 square (area = 100)
         var polygon = new[] { (0, 0), (10, 0), (10, 10), (0, 10) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
         Assert.True(result.Length >= 4);
@@ -96,7 +96,7 @@ public class PolygonDilationTests
         // 20x5 rectangle (area = 100)
         var polygon = new[] { (0, 0), (20, 0), (20, 5), (0, 5) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
         Assert.True(result.Length >= 4);
@@ -115,7 +115,7 @@ public class PolygonDilationTests
         // 100x100 square (area = 10000)
         var polygon = new[] { (0, 0), (100, 0), (100, 100), (0, 100) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
 
@@ -144,7 +144,7 @@ public class PolygonDilationTests
             (0, 0), (10, 0), (10, 5), (5, 5), (5, 10), (0, 10)
         };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
         Assert.True(result.Length >= 6);
@@ -163,7 +163,7 @@ public class PolygonDilationTests
         // Degenerate case: all points are the same (zero perimeter)
         var polygon = new[] { (5, 5), (5, 5), (5, 5) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.Null(result);
     }
@@ -173,7 +173,7 @@ public class PolygonDilationTests
     {
         var polygons = Array.Empty<(int X, int Y)[]>();
 
-        var result = PolygonDilation.DilatePolygons(polygons);
+        var result = Dilation.DilatePolygons(polygons);
 
         Assert.Empty(result);
     }
@@ -189,7 +189,7 @@ public class PolygonDilationTests
             new[] { (10, 10), (20, 10), (20, 20), (10, 20) } // Valid: square
         };
 
-        var result = PolygonDilation.DilatePolygons(polygons);
+        var result = Dilation.DilatePolygons(polygons);
 
         Assert.Equal(2, result.Length);
 
@@ -211,7 +211,7 @@ public class PolygonDilationTests
             new[] { (0, 20), (8, 20), (4, 26) } // Triangle (area = 24)
         };
 
-        var result = PolygonDilation.DilatePolygons(polygons);
+        var result = Dilation.DilatePolygons(polygons);
 
         Assert.Equal(3, result.Length);
 
@@ -228,8 +228,8 @@ public class PolygonDilationTests
     {
         var polygon = new[] { (0, 0), (10, 0), (10, 10), (0, 10) };
 
-        var result1 = PolygonDilation.DilatePolygon(polygon);
-        var result2 = PolygonDilation.DilatePolygon(polygon);
+        var result1 = Dilation.DilatePolygon(polygon);
+        var result2 = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result1);
         Assert.NotNull(result2);
@@ -246,7 +246,7 @@ public class PolygonDilationTests
     {
         var polygon = new[] { (-10, -10), (0, -10), (0, 0), (-10, 0) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
         Assert.True(result.Length >= 4);
@@ -264,7 +264,7 @@ public class PolygonDilationTests
     {
         var polygon = new[] { (1000, 1000), (1100, 1000), (1100, 1100), (1000, 1100) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
         Assert.True(result.Length >= 4);
@@ -283,7 +283,7 @@ public class PolygonDilationTests
         // Very thin rectangle: 100x1 (area = 100, perimeter = 202)
         var polygon = new[] { (0, 0), (100, 0), (100, 1), (0, 1) };
 
-        var result = PolygonDilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon);
 
         Assert.NotNull(result);
         Assert.True(result.Length >= 4);

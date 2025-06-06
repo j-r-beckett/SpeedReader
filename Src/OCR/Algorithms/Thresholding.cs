@@ -3,7 +3,7 @@ using System.Numerics.Tensors;
 
 namespace OCR.Algorithms;
 
-public static class Binarization
+public static class Thresholding
 {
     public static void BinarizeInPlace(Tensor<float> probabilityMap, float threshold)
     {

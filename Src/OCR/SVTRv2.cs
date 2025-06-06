@@ -25,10 +25,10 @@ public static class SVTRv2
         for (int i = 0; i < batch.Length; i++)
         {
             var dest = buffer.AsSpan().Slice(i * TargetHeight * maxWidth * 3, TargetHeight * maxWidth * 3);
-            Resize.ScaleResizeInto(batch[i], dest, maxWidth, TargetHeight, MinWidth, MaxWidth);
+            Resampling.ScaleResizeInto(batch[i], dest, maxWidth, TargetHeight, MinWidth, MaxWidth);
         }
 
-        TensorConversion.NHWCToNCHW(buffer);
+        TensorOps.NHWCToNCHW(buffer);
 
         // Apply SVTRv2 normalization: [0,255] → [-1,1]
         // Optimized: (pixel/255 - 0.5) / 0.5 = pixel/127.5 - 1.0
