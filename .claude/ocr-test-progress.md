@@ -13,7 +13,7 @@
 - [x] `ConvexHull.cs` → `ConvexHullTests.cs` ✓ **COMPLETED**
 - [x] `TensorOps.cs` (was TensorConversion) → `TensorOpsTests.cs` ✓ **COMPLETED**
 - [ ] `Dilation.cs` (was PolygonDilation) → `PolygonDilationTests.cs` - needs documentation & test improvements
-- [ ] `Resampling.cs` (was Resize) → `ResizeCalculationTests.cs` - needs documentation & test improvements
+- [x] `Resampling.cs` (was Resize) → `ResizeCalculationTests.cs` ✓ **COMPLETED**
 - [ ] `CTC.cs` → May need dedicated `CTCTests.cs` (currently only in end-to-end tests)
 
 ## Data Files (no tests needed):

@@ -6,6 +6,20 @@ namespace OCR.Algorithms;
 
 public static class Resampling
 {
+    /// <summary>
+    /// Scales image as large as possible (preserves aspect ratio) while fitting within destination bounds, then places
+    /// at top-left corner of dest.
+    /// </summary>
+    /// <param name="src">Source image to resize</param>
+    /// <param name="dest">Destination buffer for RGB pixel data in HWC layout</param>
+    /// <param name="destWidth">Target width</param>
+    /// <param name="destHeight">Target height</param>
+    /// <exception cref="ArgumentException">Thrown when destination buffer size doesn't match expected dimensions</exception>
+    /// <exception cref="NonContiguousImageException">Thrown when ImageSharp fails to provide contiguous pixel memory</exception>
+    /// <remarks>
+    /// Uses bicubic resampling. The scaled image fills maximum area while preserving aspect ratio.
+    /// Used by DBNet preprocessing.
+    /// </remarks>
     public static void AspectResizeInto(Image<Rgb24> src, Span<float> dest, int destWidth, int destHeight)
     {
         if (destWidth * destHeight * 3 != dest.Length)
@@ -19,20 +33,7 @@ public static class Resampling
         int targetWidth = (int)Math.Round(src.Width * scale);
         int targetHeight = (int)Math.Round(src.Height * scale);
 
-        var config = Configuration.Default.Clone();
-        config.PreferContiguousImageBuffers = true;
-        using var resized = src.Clone(config, x => x
-            .Resize(new ResizeOptions
-            {
-                Size = new Size(targetWidth, targetHeight),
-                Mode = ResizeMode.Stretch,
-                Sampler = KnownResamplers.Bicubic
-            }));
-
-        if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> resizedMemory))
-        {
-            throw new NonContiguousImageException("Image memory is not contiguous after resize operations");
-        }
+        ResizeToExactDimensions(src, targetWidth, targetHeight, out Memory<Rgb24> resizedMemory);
 
         // Clear destination to black (padding)
         dest.Fill(0.0f);
@@ -52,9 +53,21 @@ public static class Resampling
     }
 
     /// <summary>
-    /// Scales image with aspect ratio preservation and manual padding (SVTRv2 approach).
-    /// Scales to target height, maintains aspect ratio, then pads on the right with black.
+    /// Scales image to exact target height, calculates proportional width with min/max constraints, then left-aligns
+    /// with black padding on right.
     /// </summary>
+    /// <param name="src">Source image to resize</param>
+    /// <param name="dest">Destination buffer for RGB pixel data in HWC layout</param>
+    /// <param name="destWidth">Target width (used for padding bounds)</param>
+    /// <param name="destHeight">Target height (fixed dimension)</param>
+    /// <param name="minWidth">Minimum allowed width after scaling</param>
+    /// <param name="maxWidth">Maximum allowed width after scaling</param>
+    /// <exception cref="ArgumentException">Thrown when destination buffer size doesn't match expected dimensions</exception>
+    /// <exception cref="NonContiguousImageException">Thrown when ImageSharp fails to provide contiguous pixel memory</exception>
+    /// <remarks>
+    /// Uses bicubic resampling. Height is fixed, width varies with aspect ratio constraints.
+    /// Used by SVTRv2 preprocessing for variable-width text recognition.
+    /// </remarks>
     public static void ScaleResizeInto(Image<Rgb24> src, Span<float> dest, int destWidth, int destHeight, int minWidth, int maxWidth)
     {
         if (destWidth * destHeight * 3 != dest.Length)
@@ -68,23 +81,10 @@ public static class Resampling
         int targetWidth = (int)Math.Round(aspectRatio * destHeight);
         targetWidth = Math.Max(minWidth, Math.Min(destWidth, targetWidth));
 
-        var config = Configuration.Default.Clone();
-        config.PreferContiguousImageBuffers = true;
-        using var resized = src.Clone(config, x => x
-            .Resize(new ResizeOptions
-            {
-                Size = new Size(targetWidth, destHeight),
-                Mode = ResizeMode.Stretch,
-                Sampler = KnownResamplers.Bicubic
-            }));
-
-        if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> resizedMemory))
-        {
-            throw new NonContiguousImageException("Image memory is not contiguous after resize operations");
-        }
+        ResizeToExactDimensions(src, targetWidth, destHeight, out Memory<Rgb24> resizedMemory);
 
         // Clear destination buffer to black (padding)
-        dest.Fill(0.0f);
+        dest.Clear();
 
         // Copy resized image to the left side of destination buffer in HWC format
         for (int y = 0; y < destHeight; y++)
@@ -94,12 +94,43 @@ public static class Resampling
                 var pixel = resizedMemory.Span[y * targetWidth + x];
                 int destIndex = (y * destWidth + x) * 3;
                 dest[destIndex] = pixel.R;      // R
-                dest[destIndex + 1] = pixel.G;  // G  
+                dest[destIndex + 1] = pixel.G;  // G
                 dest[destIndex + 2] = pixel.B;  // B
             }
         }
     }
 
+    /// <summary>
+    /// Resizes image to exact dimensions using bicubic resampling.
+    /// </summary>
+    /// <param name="src">Source image to resize</param>
+    /// <param name="width">Target width</param>
+    /// <param name="height">Target height</param>
+    /// <param name="resizedMemory">Output contiguous pixel memory from resized image</param>
+    /// <exception cref="NonContiguousImageException">Thrown when ImageSharp fails to provide contiguous pixel memory</exception>
+    /// <remarks>Performance: resize directly into destination buffer, avoiding ImageSharp copy</remarks>
+    private static void ResizeToExactDimensions(Image<Rgb24> src, int width, int height, out Memory<Rgb24> resizedMemory)
+    {
+        var config = Configuration.Default.Clone();
+        config.PreferContiguousImageBuffers = true;
+        using var resized = src.Clone(config, x => x
+            .Resize(new ResizeOptions
+            {
+                Size = new Size(width, height),
+                Mode = ResizeMode.Stretch,
+                Sampler = KnownResamplers.Bicubic
+            }));
+
+        if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> tempMemory))
+        {
+            throw new NonContiguousImageException("Image memory is not contiguous after resize operations");
+        }
+
+        // Create independent copy to avoid ImageSharp lifetime issues
+        var pixelData = new Rgb24[width * height];
+        tempMemory.Span.CopyTo(pixelData);
+        resizedMemory = pixelData;
+    }
 }
 
 public class NonContiguousImageException : InvalidOperationException
