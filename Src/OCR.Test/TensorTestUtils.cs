@@ -1,4 +1,3 @@
-using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 
 namespace OCR.Test;

@@ -188,7 +188,7 @@ public class PreprocessorTests
         using var redBuffer = DBNet.PreProcess([redImage]);
         using var greenBuffer = DBNet.PreProcess([greenImage]);
         using var blueBuffer = DBNet.PreProcess([blueImage]);
-        
+
         var batchTensor = batchBuffer.AsTensor();
         var redTensor = redBuffer.AsTensor();
         var greenTensor = greenBuffer.AsTensor();

@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Numerics.Tensors;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace OCR.Algorithms;
 
@@ -26,11 +25,11 @@ public static class TensorConversion
             for (int n = 0; n < shape[0]; n++) // batch
             {
                 for (int h = 0; h < shape[1]; h++)      // height
-                for (int w = 0; w < shape[2]; w++)      // width
-                for (int c = 0; c < shape[3]; c++)      // channel
-                {
-                    tempTensor[[c, h, w]] = tensor[[n, h, w, c]];
-                }
+                    for (int w = 0; w < shape[2]; w++)      // width
+                        for (int c = 0; c < shape[3]; c++)      // channel
+                        {
+                            tempTensor[[c, h, w]] = tensor[[n, h, w, c]];
+                        }
 
                 tempTensor.FlattenTo(buffer.AsSpan().Slice(n * batchSize, batchSize));
             }
