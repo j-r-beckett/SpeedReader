@@ -7,13 +7,9 @@ namespace OCR.Algorithms;
 
 public static class Resize
 {
-    /// <summary>
-    /// Resizes image to exact dimensions with padding (DBNet approach).
-    /// Scales image to fit within bounds and pads with black to reach exact dimensions.
-    /// </summary>
-    public static void AspectResizeInto(Image<Rgb24> src, Memory<Rgb24> dest, int destWidth, int destHeight)
+    public static void AspectResizeInto(Image<Rgb24> src, Span<float> dest, int destWidth, int destHeight)
     {
-        if (destWidth * destHeight != dest.Length)
+        if (destWidth * destHeight * 3 != dest.Length)
         {
             throw new ArgumentException(
                 $"Expected buffer size {destWidth * destHeight}, actual size was {dest.Length}");
@@ -36,50 +32,11 @@ public static class Resize
             throw new NonContiguousImageException("Image memory is not contiguous after resize/pad operations");
         }
 
-        resizedMemory.CopyTo(dest);
-    }
-
-    /// <summary>
-    /// Resizes image to exact dimensions with padding and copies directly into tensor slice (DBNet approach).
-    /// Scales image to fit within bounds and pads with black to reach exact dimensions.
-    /// </summary>
-    public static void AspectResizeInto(Image<Rgb24> src, TensorSpan<float> tensorSlice, int destWidth, int destHeight)
-    {
-        var config = Configuration.Default.Clone();
-        config.PreferContiguousImageBuffers = true;
-        using var resized = src.Clone(config, x => x
-            .Resize(new ResizeOptions
-            {
-                Size = new Size(destWidth, destHeight),
-                Mode = ResizeMode.Pad,
-                Position = AnchorPositionMode.TopLeft,
-                PadColor = Color.Black,
-                Sampler = KnownResamplers.Bicubic
-            }));
-
-        if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> resizedMemory))
+        for (int i = 0; i < resizedMemory.Length; i++)
         {
-            throw new NonContiguousImageException("Image memory is not contiguous after resize/pad operations");
-        }
-
-        var pixels = resizedMemory.Span;
-
-        // Copy directly into tensor slice in HWC layout
-        for (int y = 0; y < destHeight; y++)
-        {
-            for (int x = 0; x < destWidth; x++)
-            {
-                var pixel = pixels[y * destWidth + x];
-                
-                // HWC layout: batch=0 (already sliced), height=y, width=x, channel=c
-                ReadOnlySpan<nint> rIndices = [0, y, x, 0]; // Red channel
-                ReadOnlySpan<nint> gIndices = [0, y, x, 1]; // Green channel
-                ReadOnlySpan<nint> bIndices = [0, y, x, 2]; // Blue channel
-                
-                tensorSlice[rIndices] = pixel.R;
-                tensorSlice[gIndices] = pixel.G;
-                tensorSlice[bIndices] = pixel.B;
-            }
+            dest[i * 3] = resizedMemory.Span[i].R;
+            dest[i * 3 + 1] = resizedMemory.Span[i].G;
+            dest[i * 3 + 2] = resizedMemory.Span[i].B;
         }
     }
 

@@ -27,11 +27,7 @@ public class Buffer<T> : IDisposable where T : unmanaged
 
     public Tensor<T> AsTensor(nint[] shape) => AsTensorInternal(0, shape);
 
-    public Tensor<T> AsTensor(int[] shape) => AsTensorInternal(0, shape.Select(n => (nint)n).ToArray());
-
     public Tensor<T> AsTensor(int start, nint[] shape) => AsTensorInternal(start, shape);
-
-    public Tensor<T> AsTensor(int start, int[] shape) => AsTensorInternal(start, shape.Select(n => (nint)n).ToArray());
 
     public Span<T> AsSpan()
     {
@@ -49,7 +45,7 @@ public class Buffer<T> : IDisposable where T : unmanaged
             throw new ArgumentException($"Start {start} is less than zero");
         }
 
-        long requiredSize = shape.Aggregate(1L, (a, b) => a * b);
+        int requiredSize = shape.Aggregate(1, (a, b) => a * (int)b);
         if (start + requiredSize > _size)
         {
             throw new ArgumentException($"Start {start} + shape size {requiredSize} exceeds buffer size {_size}");

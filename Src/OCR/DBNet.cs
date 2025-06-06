@@ -19,50 +19,37 @@ public static class DBNet
 
         (int width, int height) = CalculateDimensions(batch);
 
-        // Create NCHW tensor for the batch
-        ReadOnlySpan<nint> shape = [batch.Length, 3, height, width];
-        var data = new float[batch.Length * 3 * height * width];
-        var tensor = Tensor.Create(data, shape);
+        var buffer = new Buffer<float>(batch.Length * 3 * height * width);
+
+        for (int i = 0; i < batch.Length; i++)
+        {
+            var dest = buffer.AsSpan().Slice(i * width * height * 3, width * height * 3);
+            Resize.AspectResizeInto(batch[i], dest, width, height);
+        }
+
+        // Converts buffer from NHWC to NCHW in place
+        nint[] nchwShape = TensorConversion.NHWCToNCHW(buffer, [batch.Length, height, width, 3]);
+
+        // Normalize each channel using tensor operations
+        var tensor = buffer.AsTensor(nchwShape);
         var tensorSpan = tensor.AsTensorSpan();
 
-        // Create temporary pixel buffer for each image using ArrayPool
-        var pixelBuffer = ArrayPool<Rgb24>.Shared.Rent(width * height);
-        try
-        {
-            var memory = pixelBuffer.AsMemory(0, width * height);
-
-            for (int i = 0; i < batch.Length; i++)
-            {
-                Resize.AspectResizeInto(batch[i], memory, width, height);
-
-                // Convert single image from HWC to CHW layout in tensor
-                TensorConversion.ConvertImageToNCHW(memory, tensorSpan, i, width, height);
-            }
-        }
-        finally
-        {
-            ArrayPool<Rgb24>.Shared.Return(pixelBuffer);
-        }
-
-        // Apply normalization per channel using tensor operations
-        // Model-specific normalization parameters from pipeline.json
         float[] means = [123.675f, 116.28f, 103.53f];
         float[] stds = [58.395f, 57.12f, 57.375f];
-        var normalizationSpan = tensor.AsTensorSpan();
 
         for (int channel = 0; channel < 3; channel++)
         {
-            // Slice all batches, single channel, all spatial dimensions
+            // Range over a single color channel
             ReadOnlySpan<NRange> channelRange = [
                 NRange.All,                           // All batches
-                new NRange(channel, channel + 1),     // Single channel
+                new (channel, channel + 1),     // One channel
                 NRange.All,                           // All heights
                 NRange.All                            // All widths
             ];
 
-            var channelSlice = normalizationSpan[channelRange];
+            var channelSlice = tensorSpan[channelRange];
 
-            // Subtract mean and divide by std in-place
+            // Subtract mean and divide by std in place
             Tensor.Subtract(channelSlice, means[channel], channelSlice);
             Tensor.Divide(channelSlice, stds[channel], channelSlice);
         }
