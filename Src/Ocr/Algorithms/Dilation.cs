@@ -7,27 +7,27 @@ public static class Dilation
     private const double DilationRatio = 1.5;
     private const double MinimumArea = 9.0;
 
-    public static (int X, int Y)[][] DilatePolygons((int X, int Y)[][] polygons)
+    public static List<(int X, int Y)[]> DilatePolygons((int X, int Y)[][] polygons)
     {
         List<(int X, int Y)[]> dilatedPolygons = [];
 
         foreach (var polygon in polygons)
         {
-            var dilated = DilatePolygon(polygon);
-            if (dilated != null)
+            var dilated = DilatePolygon(polygon.ToList());
+            if (dilated.Count > 0)
             {
-                dilatedPolygons.Add(dilated);
+                dilatedPolygons.Add(dilated.ToArray());
             }
         }
 
-        return dilatedPolygons.ToArray();
+        return dilatedPolygons;
     }
 
-    public static (int X, int Y)[]? DilatePolygon((int X, int Y)[] polygon)
+    public static List<(int X, int Y)> DilatePolygon(List<(int X, int Y)> polygon)
     {
-        if (polygon.Length < 3)
+        if (polygon.Count < 3)
         {
-            return null;
+            return [];
         }
 
         var clipperPathD = new PathD();
@@ -41,7 +41,7 @@ public static class Dilation
 
         if (perimeter <= 0 || area < MinimumArea)
         {
-            return null;
+            return [];
         }
 
         double offset = area * DilationRatio / perimeter;
@@ -55,14 +55,14 @@ public static class Dilation
 
         if (solution.Count == 0 || solution[0].Count < 3)
         {
-            return null;
+            return [];
         }
 
-        var dilatedPolygon = new (int X, int Y)[solution[0].Count];
+        var dilatedPolygon = new List<(int X, int Y)>(solution[0].Count);
         for (int i = 0; i < solution[0].Count; i++)
         {
             var point = solution[0][i];
-            dilatedPolygon[i] = ((int)point.X, (int)point.Y);
+            dilatedPolygon.Add(((int)point.X, (int)point.Y));
         }
 
         return dilatedPolygon;

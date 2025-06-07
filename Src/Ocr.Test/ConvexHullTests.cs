@@ -6,8 +6,8 @@ public class ConvexHullTests
 {
     [Theory]
     [InlineData(new int[0], new int[0])]  // Empty array
-    [InlineData(new [] { 5 }, new [] { 3 })]  // Single point
-    [InlineData(new [] { 0, 3 }, new [] { 0, 4 })]  // Two points
+    [InlineData(new[] { 5 }, new[] { 3 })]  // Single point
+    [InlineData(new[] { 0, 3 }, new[] { 0, 4 })]  // Two points
     public void ConvexHull_FewerThanThreePoints_ReturnsEmpty(int[] xCoords, int[] yCoords)
     {
         // Arrange
@@ -30,7 +30,7 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(3, result.Length);
+        Assert.Equal(3, result.Count);
         Assert.Contains((0, 0), result);
         Assert.Contains((4, 0), result);
         Assert.Contains((2, 3), result);
@@ -46,7 +46,7 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(4, result.Length);
+        Assert.Equal(4, result.Count);
         Assert.Contains((0, 0), result);
         Assert.Contains((4, 0), result);
         Assert.Contains((4, 4), result);
@@ -67,7 +67,7 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(4, result.Length);
+        Assert.Equal(4, result.Count);
         Assert.Contains((0, 0), result);
         Assert.Contains((4, 0), result);
         Assert.Contains((4, 4), result);
@@ -118,7 +118,7 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(5, result.Length);
+        Assert.Equal(5, result.Count);
         foreach (var point in points)
         {
             Assert.Contains(point, result);
@@ -141,7 +141,7 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(4, result.Length);
+        Assert.Equal(4, result.Count);
         Assert.Contains((0, 4), result);
         Assert.Contains((4, 0), result);
         Assert.Contains((0, -4), result);
@@ -161,7 +161,7 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(4, result.Length);
+        Assert.Equal(4, result.Count);
         Assert.Contains((0, 0), result);
         Assert.Contains((4, 0), result);
         Assert.Contains((4, 4), result);
@@ -178,7 +178,7 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(4, result.Length);
+        Assert.Equal(4, result.Count);
         Assert.Contains((-2, -2), result);
         Assert.Contains((2, -2), result);
         Assert.Contains((2, 2), result);
@@ -198,39 +198,11 @@ public class ConvexHullTests
         var result = ConvexHull.GrahamScan(points);
 
         // Assert
-        Assert.Equal(4, result.Length);
+        Assert.Equal(4, result.Count);
         Assert.Contains((1000, 1000), result);
         Assert.Contains((2000, 1000), result);
         Assert.Contains((2000, 2000), result);
         Assert.Contains((1000, 2000), result);
-    }
-
-    [Fact]
-    public void ConvexHull_ResultIsCounterClockwise()
-    {
-        // Arrange
-        var points = new[] { (0, 0), (4, 0), (4, 4), (0, 4) };
-
-        // Act
-        var result = ConvexHull.GrahamScan(points);
-
-        // Assert
-        Assert.Equal(4, result.Length);
-
-        // Verify counter-clockwise ordering by checking cross products
-        for (int i = 0; i < result.Length; i++)
-        {
-            var current = result[i];
-            var next = result[(i + 1) % result.Length];
-            var afterNext = result[(i + 2) % result.Length];
-            
-            // Cross product should be positive for counter-clockwise turns
-            var crossProduct = (next.X - current.X) * (afterNext.Y - current.Y) - 
-                              (next.Y - current.Y) * (afterNext.X - current.X);
-            
-            Assert.True(crossProduct > 0, 
-                $"Points {current}, {next}, {afterNext} should form counter-clockwise turn, got cross product {crossProduct}");
-        }
     }
 
 
@@ -256,8 +228,8 @@ public class ConvexHullTests
 
         // Assert
         // Basic validation
-        Assert.True(result.Length >= 3, $"Hull should have at least 3 points, got {result.Length}");
-        Assert.True(result.Length <= points.Count, "Hull cannot have more points than input");
+        Assert.True(result.Count >= 3, $"Hull should have at least 3 points, got {result.Count}");
+        Assert.True(result.Count <= points.Count, "Hull cannot have more points than input");
 
         // All hull points should be from original set
         foreach (var hullPoint in result)

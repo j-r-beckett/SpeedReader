@@ -225,13 +225,13 @@ public class ConnectedComponentsTests
         Assert.Equal(16, components[0].Length); // 5x5 - 3x3 hole = 16 pixels
 
         var points = components[0].ToHashSet();
-        
+
         // Verify outer border is included
         Assert.Contains((0, 0), points);
         Assert.Contains((4, 0), points);
         Assert.Contains((0, 4), points);
         Assert.Contains((4, 4), points);
-        
+
         // Verify hole pixels are not included
         Assert.DoesNotContain((2, 2), points); // Center of hole
         Assert.DoesNotContain((1, 1), points); // Corner of hole

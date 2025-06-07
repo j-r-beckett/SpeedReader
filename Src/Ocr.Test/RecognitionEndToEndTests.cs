@@ -1,4 +1,3 @@
-using Video.Test;
 using Microsoft.Extensions.Logging;
 using Models;
 using SixLabors.Fonts;
@@ -6,6 +5,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Video.Test;
 using Xunit.Abstractions;
 
 namespace Ocr.Test;

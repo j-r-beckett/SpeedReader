@@ -9,9 +9,9 @@ public class DilationTests
     {
         var polygon = Array.Empty<(int X, int Y)>();
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
-        Assert.Null(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -19,9 +19,9 @@ public class DilationTests
     {
         var polygon = new[] { (5, 3) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
-        Assert.Null(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -29,9 +29,9 @@ public class DilationTests
     {
         var polygon = new[] { (0, 0), (3, 4) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
-        Assert.Null(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -40,9 +40,9 @@ public class DilationTests
         // Degenerate triangle with area < 9 pixels
         var polygon = new[] { (0, 0), (1, 0), (0, 1) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
-        Assert.Null(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -51,14 +51,14 @@ public class DilationTests
         // Triangle with area >= 9 pixels: area = 0.5 * base * height = 0.5 * 6 * 3 = 9
         var polygon = new[] { (0, 0), (6, 0), (3, 3) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
-        Assert.NotNull(result);
-        Assert.True(result.Length >= 3);
+        Assert.NotEmpty(result);
+        Assert.True(result.Count >= 3);
 
         // Dilated polygon should be larger than original
         var originalBounds = GetBounds(polygon);
-        var dilatedBounds = GetBounds(result);
+        var dilatedBounds = GetBounds(result.ToArray());
 
         Assert.True(dilatedBounds.Width >= originalBounds.Width);
         Assert.True(dilatedBounds.Height >= originalBounds.Height);
@@ -70,21 +70,21 @@ public class DilationTests
         // 10x10 square (area = 100)
         var polygon = new[] { (0, 0), (10, 0), (10, 10), (0, 10) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
         Assert.NotNull(result);
-        Assert.True(result.Length >= 4);
+        Assert.True(result.Count >= 4);
 
         // Check that dilation expanded the polygon
         var originalBounds = GetBounds(polygon);
-        var dilatedBounds = GetBounds(result);
+        var dilatedBounds = GetBounds(result.ToArray());
 
         Assert.True(dilatedBounds.Width > originalBounds.Width);
         Assert.True(dilatedBounds.Height > originalBounds.Height);
 
         // Center should be approximately the same
         var originalCenter = GetCenter(polygon);
-        var dilatedCenter = GetCenter(result);
+        var dilatedCenter = GetCenter(result.ToArray());
 
         Assert.True(Math.Abs(originalCenter.X - dilatedCenter.X) < 2);
         Assert.True(Math.Abs(originalCenter.Y - dilatedCenter.Y) < 2);
@@ -96,14 +96,14 @@ public class DilationTests
         // 20x5 rectangle (area = 100)
         var polygon = new[] { (0, 0), (20, 0), (20, 5), (0, 5) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
         Assert.NotNull(result);
-        Assert.True(result.Length >= 4);
+        Assert.True(result.Count >= 4);
 
         // Verify dilation expanded the polygon
         var originalBounds = GetBounds(polygon);
-        var dilatedBounds = GetBounds(result);
+        var dilatedBounds = GetBounds(result.ToArray());
 
         Assert.True(dilatedBounds.Width > originalBounds.Width);
         Assert.True(dilatedBounds.Height > originalBounds.Height);
@@ -115,7 +115,7 @@ public class DilationTests
         // 100x100 square (area = 10000)
         var polygon = new[] { (0, 0), (100, 0), (100, 100), (0, 100) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
         Assert.NotNull(result);
 
@@ -124,7 +124,7 @@ public class DilationTests
         // Expected offset = 10000 * 1.5 / 400 = 37.5
 
         var originalBounds = GetBounds(polygon);
-        var dilatedBounds = GetBounds(result);
+        var dilatedBounds = GetBounds(result.ToArray());
 
         var expectedIncrease = 37.5 * 2; // Both sides expand
         var actualWidthIncrease = dilatedBounds.Width - originalBounds.Width;
@@ -144,14 +144,14 @@ public class DilationTests
             (0, 0), (10, 0), (10, 5), (5, 5), (5, 10), (0, 10)
         };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
         Assert.NotNull(result);
-        Assert.True(result.Length >= 6);
+        Assert.True(result.Count >= 6);
 
         // Verify dilation expanded the polygon
         var originalBounds = GetBounds(polygon);
-        var dilatedBounds = GetBounds(result);
+        var dilatedBounds = GetBounds(result.ToArray());
 
         Assert.True(dilatedBounds.Width > originalBounds.Width);
         Assert.True(dilatedBounds.Height > originalBounds.Height);
@@ -163,9 +163,9 @@ public class DilationTests
         // Degenerate case: all points are the same (zero perimeter)
         var polygon = new[] { (5, 5), (5, 5), (5, 5) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
-        Assert.Null(result);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public class DilationTests
 
         var result = Dilation.DilatePolygons(polygons);
 
-        Assert.Equal(2, result.Length);
+        Assert.Equal(2, result.Count);
 
         // Both results should be non-null and have at least 3 vertices
         foreach (var dilated in result)
@@ -213,7 +213,7 @@ public class DilationTests
 
         var result = Dilation.DilatePolygons(polygons);
 
-        Assert.Equal(3, result.Length);
+        Assert.Equal(3, result.Count);
 
         // All results should be valid dilated polygons
         foreach (var dilated in result)
@@ -228,14 +228,14 @@ public class DilationTests
     {
         var polygon = new[] { (0, 0), (10, 0), (10, 10), (0, 10) };
 
-        var result1 = Dilation.DilatePolygon(polygon);
-        var result2 = Dilation.DilatePolygon(polygon);
+        var result1 = Dilation.DilatePolygon(polygon.ToList());
+        var result2 = Dilation.DilatePolygon(polygon.ToList());
 
-        Assert.NotNull(result1);
-        Assert.NotNull(result2);
-        Assert.Equal(result1.Length, result2.Length);
+        Assert.NotEmpty(result1);
+        Assert.NotEmpty(result2);
+        Assert.Equal(result1.Count, result2.Count);
 
-        for (int i = 0; i < result1.Length; i++)
+        for (int i = 0; i < result1.Count; i++)
         {
             Assert.Equal(result1[i], result2[i]);
         }
@@ -246,14 +246,14 @@ public class DilationTests
     {
         var polygon = new[] { (-10, -10), (0, -10), (0, 0), (-10, 0) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
         Assert.NotNull(result);
-        Assert.True(result.Length >= 4);
+        Assert.True(result.Count >= 4);
 
         // Verify dilation expanded the polygon
         var originalBounds = GetBounds(polygon);
-        var dilatedBounds = GetBounds(result);
+        var dilatedBounds = GetBounds(result.ToArray());
 
         Assert.True(dilatedBounds.Width > originalBounds.Width);
         Assert.True(dilatedBounds.Height > originalBounds.Height);
@@ -264,10 +264,10 @@ public class DilationTests
     {
         var polygon = new[] { (1000, 1000), (1100, 1000), (1100, 1100), (1000, 1100) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
         Assert.NotNull(result);
-        Assert.True(result.Length >= 4);
+        Assert.True(result.Count >= 4);
 
         // Verify coordinates are still in reasonable range
         foreach (var point in result)
@@ -283,14 +283,14 @@ public class DilationTests
         // Very thin rectangle: 100x1 (area = 100, perimeter = 202)
         var polygon = new[] { (0, 0), (100, 0), (100, 1), (0, 1) };
 
-        var result = Dilation.DilatePolygon(polygon);
+        var result = Dilation.DilatePolygon(polygon.ToList());
 
         Assert.NotNull(result);
-        Assert.True(result.Length >= 4);
+        Assert.True(result.Count >= 4);
 
         // Thin rectangle should still dilate properly
         var originalBounds = GetBounds(polygon);
-        var dilatedBounds = GetBounds(result);
+        var dilatedBounds = GetBounds(result.ToArray());
 
         Assert.True(dilatedBounds.Width > originalBounds.Width);
         Assert.True(dilatedBounds.Height > originalBounds.Height);

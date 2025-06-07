@@ -12,40 +12,42 @@ public static class ConvexHull
     /// Returns empty array if fewer than 3 points provided.
     /// </returns>
     /// <seealso href="https://www.youtube.com/watch?v=B2AJoQSZf4M">Goated Graham Scan explanation</seealso>
-    public static (int X, int Y)[] GrahamScan((int X, int Y)[] points)
+    public static List<(int X, int Y)> GrahamScan((int X, int Y)[] points)
     {
         if (points.Length < 3)
         {
             return [];
         }
 
-        var stack = new Stack<(int, int)>();
+        var stack = new List<(int, int)>();
         var minYPoint = GetStartPoint(points);
         Array.Sort(points, (p1, p2) => ComparePolarAngle(minYPoint, p1, p2));
-        stack.Push(points[0]);
-        stack.Push(points[1]);
+        stack.Add(points[0]);
+        stack.Add(points[1]);
 
         for (int i = 2; i < points.Length; i++)
         {
             var next = points[i];
-            var p = stack.Pop();
-            while (stack.Count > 0 && CrossProductZ(stack.Peek(), p, next) <= 0)
+            var p = stack[^1];
+            stack.RemoveAt(stack.Count - 1);
+            while (stack.Count > 0 && CrossProductZ(stack[^1], p, next) <= 0)
             {
-                p = stack.Pop();
+                p = stack[^1];
+                stack.RemoveAt(stack.Count - 1);
             }
-            stack.Push(p);
-            stack.Push(next);
+            stack.Add(p);
+            stack.Add(next);
         }
 
-        var lastPoint = stack.Pop();
-        if (CrossProductZ(stack.Peek(), lastPoint, minYPoint) > 0)
+        var lastPoint = stack[^1];
+        stack.RemoveAt(stack.Count - 1);
+        if (CrossProductZ(stack[^1], lastPoint, minYPoint) > 0)
         {
-            stack.Push(lastPoint);
+            stack.Add(lastPoint);
         }
 
-        var result = stack.ToArray();
-        Array.Reverse(result);
-        return result;
+        stack.Reverse();
+        return stack;
     }
 
     /// <summary>

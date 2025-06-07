@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
@@ -58,71 +59,71 @@ public static class DBNet
         return buffer;
     }
 
-    public static List<List<(int X, int Y)>> PostProcess(Buffer<float> buffer, int originalWidth, int originalHeight)
+    internal static List<Rectangle>[] PostProcess(Buffer<float> batch, int originalWidth, int originalHeight)
     {
-        var tensor = buffer.AsTensor();
-        var shape = tensor.Lengths;
-        int batchSize = (int)shape[0];
-        int modelHeight = (int)shape[1];
-        int modelWidth = (int)shape[2];
+        int n = (int)batch.Shape[0];
+        int height = (int)batch.Shape[1];
+        int width = (int)batch.Shape[2];
 
-        float scaleX = (float)originalWidth / modelWidth;
-        float scaleY = (float)originalHeight / modelHeight;
+        List<Rectangle>[] results = new List<Rectangle>[n];
 
-        Thresholding.BinarizeInPlace(tensor, BinarizationThreshold);
-
-        // Process each batch item using Span2D for efficient 2D access
-        var allComponents = new List<(int X, int Y)[]>();
-        var bufferSpan = buffer.AsSpan();
-        int imageSize = modelHeight * modelWidth;
-
-        for (int batchIndex = 0; batchIndex < batchSize; batchIndex++)
+        int size = height * width;
+        for (int i = 0; i < n; i++)
         {
-            // Extract 2D span for this batch
-            var batchSpan = bufferSpan.Slice(batchIndex * imageSize, imageSize);
-            var probabilityMap = batchSpan.AsSpan2D(modelHeight, modelWidth);
-
+            var probabilityMap = batch.AsSpan().Slice(i * size, size).AsSpan2D(height, width);
             var components = ConnectedComponents.FindComponents(probabilityMap);
-            allComponents.AddRange(components);
-        }
-
-        var contours = new List<(int X, int Y)[]>();
-        foreach (var component in allComponents)
-        {
-            if (component.Length >= 3)
+            List<Rectangle> boundingBoxes = [];
+            foreach (var connectedComponent in components)
             {
-                var hull = ConvexHull.GrahamScan(component);
-                if (hull.Length >= 3)
+                var polygon = ConvexHull.GrahamScan(connectedComponent);
+                if (polygon.Count != 0)
                 {
-                    contours.Add(hull);
+                    var dilatedPolygon = Dilation.DilatePolygon(polygon);
+                    Scale(dilatedPolygon);
+                    var boundingBox = GetBoundingBox(dilatedPolygon);
+                    boundingBoxes.Add(boundingBox);
                 }
             }
+
+            results[i] = boundingBoxes;
         }
 
-        var dilatedContours = Dilation.DilatePolygons(contours.ToArray());
+        return results;
 
-        var resultPolygons = new List<List<(int X, int Y)>>();
-        foreach (var polygon in dilatedContours)
+        void Scale(List<(int X, int Y)> polygon)
         {
-            var scaledPolygon = new List<(int X, int Y)>();
-            foreach (var point in polygon)
+            float scaleX = (float)originalWidth / width;
+            float scaleY = (float)originalHeight / height;
+
+            for (int i = 0; i < polygon.Count; i++)
             {
-                int originalX = (int)Math.Round(point.X * scaleX);
-                int originalY = (int)Math.Round(point.Y * scaleY);
+                int originalX = (int)Math.Round(polygon[i].X * scaleX);
+                int originalY = (int)Math.Round(polygon[i].Y * scaleY);
 
                 originalX = Math.Clamp(originalX, 0, originalWidth - 1);
                 originalY = Math.Clamp(originalY, 0, originalHeight - 1);
 
-                scaledPolygon.Add((originalX, originalY));
-            }
-
-            if (scaledPolygon.Count >= 3)
-            {
-                resultPolygons.Add(scaledPolygon);
+                polygon[i] = (originalX, originalY);
             }
         }
+    }
 
-        return resultPolygons;
+    internal static Rectangle GetBoundingBox(List<(int X, int Y)> polygon)
+    {
+        int maxX = int.MinValue;
+        int maxY = int.MinValue;
+        int minX = int.MaxValue;
+        int minY = int.MaxValue;
+
+        foreach ((int x, int y) in polygon)
+        {
+            maxX = Math.Max(maxX, x);
+            maxY = Math.Max(maxY, y);
+            minX = Math.Min(minX, x);
+            minY = Math.Min(minY, y);
+        }
+
+        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
     }
 
     internal static (int width, int height) CalculateDimensions(Image<Rgb24>[] batch)

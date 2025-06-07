@@ -1,5 +1,3 @@
-using Video;
-using Video.Test;
 using Microsoft.Extensions.Logging;
 using Models;
 using SixLabors.Fonts;
@@ -7,6 +5,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Video;
+using Video.Test;
 using Xunit.Abstractions;
 
 namespace Ocr.Test;
@@ -64,9 +64,10 @@ public class EndToEndTests
         // Step 3: Post-processing  
         var detectedPolygons = DBNet.PostProcess(modelOutput, originalWidth, originalHeight);
 
-        // Assert: Verify we detected at least one polygon
+        // Assert: Verify we detected at least one rectangle in first batch
         Assert.NotEmpty(detectedPolygons);
-        _logger.LogInformation($"Detected {detectedPolygons.Count} text regions");
+        Assert.NotEmpty(detectedPolygons[0]);
+        _logger.LogInformation($"Detected {detectedPolygons[0].Count} text regions in first batch");
 
         // Create visualization with bounding boxes
         using var resultImage = testImage.Clone();
@@ -74,28 +75,18 @@ public class EndToEndTests
         resultImage.Mutate(ctx =>
         {
             var colors = new[] { Color.Red, Color.Green, Color.Blue, Color.Orange, Color.Purple };
+            var firstBatchRectangles = detectedPolygons[0];
 
-            for (int i = 0; i < detectedPolygons.Count; i++)
+            for (int i = 0; i < firstBatchRectangles.Count; i++)
             {
-                var polygon = detectedPolygons[i];
+                var rectangle = firstBatchRectangles[i];
                 var color = colors[i % colors.Length];
 
-                // Draw polygon outline
-                var points = polygon.Select(p => new PointF(p.X, p.Y)).ToArray();
-                if (points.Length >= 3)
-                {
-                    ctx.DrawPolygon(Pens.Solid(color, 4), points);
-                }
-
                 // Draw bounding rectangle
-                var minX = polygon.Min(p => p.X);
-                var minY = polygon.Min(p => p.Y);
-                var maxX = polygon.Max(p => p.X);
-                var maxY = polygon.Max(p => p.Y);
-                var boundingRect = new RectangleF(minX, minY, maxX - minX, maxY - minY);
-                ctx.Draw(Pens.Dot(color, 2), boundingRect);
+                var boundingRect = new RectangleF(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+                ctx.Draw(Pens.Solid(color, 4), boundingRect);
 
-                _logger.LogInformation($"Region {i}: Polygon with {polygon.Count} vertices, bounding box: {boundingRect}");
+                _logger.LogInformation($"Region {i}: Rectangle {boundingRect}");
             }
         });
 
@@ -104,9 +95,9 @@ public class EndToEndTests
         await _urlPublisher.PublishAsync(resultImage, filename);
 
         // Verify text was detected in approximately correct location
-        var firstPolygon = detectedPolygons[0];
-        var detectedCenterX = firstPolygon.Average(p => p.X);
-        var detectedCenterY = firstPolygon.Average(p => p.Y);
+        var firstRectangle = detectedPolygons[0][0];
+        var detectedCenterX = firstRectangle.X + firstRectangle.Width / 2.0;
+        var detectedCenterY = firstRectangle.Y + firstRectangle.Height / 2.0;
 
         // Allow some tolerance for detection accuracy
         var tolerance = Math.Min(originalWidth, originalHeight) * 0.3; // 30% tolerance
