@@ -56,13 +56,13 @@ public class EndToEndTests
         using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
 
         // Step 1: Preprocessing
-        using var preprocessedBuffer = DBNet.PreProcess([testImage]);
+        using var preprocessedBuffer = DBNet.PreProcess([testImage]).Buffer;
 
         // Step 2: Inference
         using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
 
         // Step 3: Post-processing  
-        var detectedPolygons = DBNet.PostProcess(modelOutput, originalWidth, originalHeight);
+        var detectedPolygons = DBNet.PostProcess(modelOutput, [(originalWidth, originalHeight)]);
 
         // Assert: Verify we detected at least one rectangle in first batch
         Assert.NotEmpty(detectedPolygons);

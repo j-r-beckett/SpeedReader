@@ -27,7 +27,7 @@ public class DBNetTests
         }
 
         // Test with 1:1 scaling (model size = original size)
-        var result = DBNet.PostProcess(buffer, originalWidth: 128, originalHeight: 128);
+        var result = DBNet.PostProcess(buffer, [(128, 128)]);
 
         // Should return array of batches, each containing list of rectangles
         Assert.NotEmpty(result);

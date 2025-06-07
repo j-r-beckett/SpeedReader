@@ -12,11 +12,17 @@ public static class DBNet
 {
     private const float BinarizationThreshold = 0.2f;
 
-    public static Buffer<float> PreProcess(Image<Rgb24>[] batch)
+    public static (Buffer<float> Buffer, (int Width, int Height)[] OriginalDimensions) PreProcess(Image<Rgb24>[] batch)
     {
         if (batch.Length == 0)
         {
             throw new ArgumentException("Batch cannot be empty", nameof(batch));
+        }
+
+        var originalDimensions = new (int Width, int Height)[batch.Length];
+        for (int i = 0; i < batch.Length; i++)
+        {
+            originalDimensions[i] = (batch[i].Width, batch[i].Height);
         }
 
         (int width, int height) = CalculateDimensions(batch);
@@ -56,10 +62,10 @@ public static class DBNet
             Tensor.Divide(channelSlice, stds[channel], channelSlice);
         }
 
-        return buffer;
+        return (buffer, originalDimensions);
     }
 
-    internal static List<Rectangle>[] PostProcess(Buffer<float> batch, int originalWidth, int originalHeight)
+    internal static List<Rectangle>[] PostProcess(Buffer<float> batch, (int Width, int Height)[] originalDimensions)
     {
         int n = (int)batch.Shape[0];
         int height = (int)batch.Shape[1];
@@ -75,13 +81,15 @@ public static class DBNet
             var probabilityMap = batch.AsSpan().Slice(i * size, size).AsSpan2D(height, width);
             var components = ConnectedComponents.FindComponents(probabilityMap);
             List<Rectangle> boundingBoxes = [];
+            (int originalWidth, int originalHeight) = originalDimensions[i];
+
             foreach (var connectedComponent in components)
             {
                 var polygon = ConvexHull.GrahamScan(connectedComponent);
                 if (polygon.Count != 0)
                 {
                     var dilatedPolygon = Dilation.DilatePolygon(polygon);
-                    Scale(dilatedPolygon);
+                    Scale(dilatedPolygon, originalWidth, originalHeight, width, height);
                     var boundingBox = GetBoundingBox(dilatedPolygon);
                     boundingBoxes.Add(boundingBox);
                 }
@@ -91,22 +99,22 @@ public static class DBNet
         }
 
         return results;
+    }
 
-        void Scale(List<(int X, int Y)> polygon)
+    internal static void Scale(List<(int X, int Y)> polygon, int originalWidth, int originalHeight, int modelWidth, int modelHeight)
+    {
+        float scaleX = (float)originalWidth / modelWidth;
+        float scaleY = (float)originalHeight / modelHeight;
+
+        for (int i = 0; i < polygon.Count; i++)
         {
-            float scaleX = (float)originalWidth / width;
-            float scaleY = (float)originalHeight / height;
+            int originalX = (int)Math.Round(polygon[i].X * scaleX);
+            int originalY = (int)Math.Round(polygon[i].Y * scaleY);
 
-            for (int i = 0; i < polygon.Count; i++)
-            {
-                int originalX = (int)Math.Round(polygon[i].X * scaleX);
-                int originalY = (int)Math.Round(polygon[i].Y * scaleY);
+            originalX = Math.Clamp(originalX, 0, originalWidth - 1);
+            originalY = Math.Clamp(originalY, 0, originalHeight - 1);
 
-                originalX = Math.Clamp(originalX, 0, originalWidth - 1);
-                originalY = Math.Clamp(originalY, 0, originalHeight - 1);
-
-                polygon[i] = (originalX, originalY);
-            }
+            polygon[i] = (originalX, originalY);
         }
     }
 

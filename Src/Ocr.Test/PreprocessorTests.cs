@@ -38,10 +38,10 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(1, 1, new Rgb24(255, 128, 0));
 
         // Act
-        using var buffer = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]).Buffer;
         var tensor = buffer.AsTensor();
 
-        // Assert: Verify exact normalized values using DBNet's normalization parameters
+            // Assert: Verify exact normalized values using DBNet's normalization parameters
         var means = new[] { 123.675f, 116.28f, 103.53f };
         var stds = new[] { 58.395f, 57.12f, 57.375f };
 
@@ -71,7 +71,7 @@ public class PreprocessorTests
         image[1, 1] = new Rgb24(103, 153, 203); // Bottom-right
 
         // Act
-        using var buffer = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]).Buffer;
         var tensor = buffer.AsTensor();
 
         // Assert: Verify CHW layout - all R values, then all G values, then all B values
@@ -100,7 +100,7 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(100, 50);
 
         // Act
-        using var buffer = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]).Buffer;
         var tensor = buffer.AsTensor();
 
         // Assert: Verify dimensions are multiples of 32
@@ -127,7 +127,7 @@ public class PreprocessorTests
         using var image = new Image<Rgb24>(32, 32, new Rgb24(0, 0, 0));
 
         // Act
-        using var buffer = DBNet.PreProcess([image]);
+        using var buffer = DBNet.PreProcess([image]).Buffer;
         var tensor = buffer.AsTensor();
 
         // Assert: Black pixels should normalize to specific negative values
@@ -159,7 +159,7 @@ public class PreprocessorTests
         using var image3 = new Image<Rgb24>(100, 50, new Rgb24(0, 0, 255));
 
         // Act
-        using var buffer = DBNet.PreProcess([image1, image2, image3]);
+        using var buffer = DBNet.PreProcess([image1, image2, image3]).Buffer;
         var tensor = buffer.AsTensor();
 
         // Assert: Verify batch dimensions
@@ -184,10 +184,10 @@ public class PreprocessorTests
         using var blueImage = new Image<Rgb24>(32, 32, new Rgb24(0, 0, 255));   // All blue
 
         // Act
-        using var batchBuffer = DBNet.PreProcess([redImage, greenImage, blueImage]);
-        using var redBuffer = DBNet.PreProcess([redImage]);
-        using var greenBuffer = DBNet.PreProcess([greenImage]);
-        using var blueBuffer = DBNet.PreProcess([blueImage]);
+        using var batchBuffer = DBNet.PreProcess([redImage, greenImage, blueImage]).Buffer;
+        using var redBuffer = DBNet.PreProcess([redImage]).Buffer;
+        using var greenBuffer = DBNet.PreProcess([greenImage]).Buffer;
+        using var blueBuffer = DBNet.PreProcess([blueImage]).Buffer;
 
         var batchTensor = batchBuffer.AsTensor();
         var redTensor = redBuffer.AsTensor();
@@ -247,7 +247,7 @@ public class PreprocessorTests
         var imageInfo = new[]
         {
             (width: 800, height: 600, text: "SMALL", quadrant: 0),    // Small - both dimensions smaller than target
-            (width: 1000, height: 500, text: "MEDIUM", quadrant: 1),  // Medium - width smaller, height smaller  
+            (width: 1000, height: 500, text: "MEDIUM", quadrant: 1),  // Medium - width smaller, height smaller
             (width: 600, height: 900, text: "VERTICAL", quadrant: 2), // Medium - width smaller, height bigger
             (width: 1600, height: 1000, text: "LARGE", quadrant: 3)   // Large - both dimensions bigger than target
         };
@@ -267,7 +267,7 @@ public class PreprocessorTests
             // Act: Process through complete pipeline
             using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
 
-            using var preprocessedBuffer = DBNet.PreProcess(images);
+            using var preprocessedBuffer = DBNet.PreProcess(images).Buffer;
             using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
             var probabilityMaps = TensorTestUtils.ExtractProbabilityMapsForTesting(modelOutput);
 
@@ -321,7 +321,7 @@ public class PreprocessorTests
         var (x, y) = quadrant switch
         {
             0 => (margin, margin),                                              // Top-left
-            1 => (width - margin - (int)textSize.Width, margin),                // Top-right  
+            1 => (width - margin - (int)textSize.Width, margin),                // Top-right
             2 => (margin, height - margin - (int)textSize.Height),              // Bottom-left
             3 => (width - margin - (int)textSize.Width, height - margin - (int)textSize.Height), // Bottom-right
             _ => throw new ArgumentException($"Invalid quadrant: {quadrant}")
