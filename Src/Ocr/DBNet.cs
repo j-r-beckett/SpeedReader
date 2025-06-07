@@ -64,10 +64,12 @@ public static class DBNet
         int n = (int)batch.Shape[0];
         int height = (int)batch.Shape[1];
         int width = (int)batch.Shape[2];
+        int size = height * width;
 
         List<Rectangle>[] results = new List<Rectangle>[n];
 
-        int size = height * width;
+        Thresholding.BinarizeInPlace(batch.AsTensor(), BinarizationThreshold);
+
         for (int i = 0; i < n; i++)
         {
             var probabilityMap = batch.AsSpan().Slice(i * size, size).AsSpan2D(height, width);

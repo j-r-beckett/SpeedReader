@@ -18,6 +18,7 @@ public static class ConnectedComponents
     public static List<(int X, int Y)[]> FindComponents(Span2D<float> probabilityMap)
     {
         Debug.Assert(probabilityMap.ToArray().Cast<float>().Min() >= 0);
+
         int height = probabilityMap.Height;
         int width = probabilityMap.Width;
 
