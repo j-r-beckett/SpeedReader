@@ -1,6 +1,7 @@
 using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Logging;
 using Models;
+using Ocr.Blocks;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
