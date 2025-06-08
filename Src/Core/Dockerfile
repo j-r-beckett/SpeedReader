@@ -1,16 +1,10 @@
 FROM ubuntu:20.04
 
-# Set timezone and install basic dependencies
-ENV TZ=America/Los_Angeles
-RUN apt-get update && apt-get install -y tzdata && \
-    ln -fs /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata && \
-    apt-get install -y \
-    wget \
-    ca-certificates \
-    ffmpeg \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install FFmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create app directory
 WORKDIR /app
