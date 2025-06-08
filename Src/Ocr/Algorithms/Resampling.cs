@@ -108,7 +108,6 @@ public static class Resampling
     /// <param name="height">Target height</param>
     /// <param name="resizedMemory">Output contiguous pixel memory from resized image</param>
     /// <exception cref="NonContiguousImageException">Thrown when ImageSharp fails to provide contiguous pixel memory</exception>
-    /// <remarks>Performance: resize directly into destination buffer, avoiding ImageSharp copy</remarks>
     private static void ResizeToExactDimensions(Image<Rgb24> src, int width, int height, out Memory<Rgb24> resizedMemory)
     {
         var config = Configuration.Default.Clone();

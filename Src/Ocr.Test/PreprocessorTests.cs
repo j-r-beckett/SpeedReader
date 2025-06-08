@@ -41,7 +41,7 @@ public class PreprocessorTests
         using var buffer = DBNet.PreProcess([image]).Buffer;
         var tensor = buffer.AsTensor();
 
-            // Assert: Verify exact normalized values using DBNet's normalization parameters
+        // Assert: Verify exact normalized values using DBNet's normalization parameters
         var means = new[] { 123.675f, 116.28f, 103.53f };
         var stds = new[] { 58.395f, 57.12f, 57.375f };
 

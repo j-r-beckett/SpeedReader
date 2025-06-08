@@ -13,7 +13,6 @@ public static class ConnectedComponents
     /// <returns>List of connected components, each containing the coordinates of pixels in that component</returns>
     /// <remarks>
     /// The input probability map is modified during processing - positive values are set to 0 as they are processed.
-    /// Performance: SIMD skip-ahead for zero blocks
     /// </remarks>
     public static List<(int X, int Y)[]> FindComponents(Span2D<float> probabilityMap)
     {

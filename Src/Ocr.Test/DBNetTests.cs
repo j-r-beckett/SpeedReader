@@ -1,6 +1,4 @@
 using CommunityToolkit.HighPerformance;
-using Ocr;
-using Xunit;
 
 namespace Ocr.Test;
 

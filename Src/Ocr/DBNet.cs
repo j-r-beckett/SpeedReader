@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Diagnostics;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
