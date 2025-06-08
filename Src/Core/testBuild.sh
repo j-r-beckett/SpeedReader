@@ -8,12 +8,12 @@ if ! timeout 5s docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-# Build the Core project first
-echo "Building Wheft Core project..."
+# Publish the Core project first
+echo "Publishing Wheft Core project..."
 cd /home/jimmy/Wheft
-dotnet build Src/Core/Core.csproj
+dotnet publish Src/Core/Core.csproj -c Release
 if [ $? -ne 0 ]; then
-  echo "Error: Failed to build Core project"
+  echo "Error: Failed to publish Core project"
   exit 1
 fi
 
@@ -42,6 +42,18 @@ if [ $? -ne 0 ]; then
   docker rm "$CONTAINER_ID" > /dev/null
   exit 1
 fi
+
+# Copy wheft executable into container
+echo "Copying wheft executable into container..."
+docker cp bin/Release/net10.0/linux-x64/publish/wheft "$CONTAINER_ID":/app/wheft
+if [ $? -ne 0 ]; then
+  echo "Error: Failed to copy wheft executable into container"
+  docker rm "$CONTAINER_ID" > /dev/null
+  exit 1
+fi
+
+# Make wheft executable
+docker exec "$CONTAINER_ID" chmod +x /app/wheft
 
 # Copy test image into container
 echo "Copying hello.jpg into container..."

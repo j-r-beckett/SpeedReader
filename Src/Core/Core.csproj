@@ -9,6 +9,13 @@
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />

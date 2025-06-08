@@ -9,10 +9,6 @@ RUN apt-get update && \
 # Create app directory
 WORKDIR /app
 
-# Copy the built application from linux-x64 subdirectory
-COPY bin/Debug/net10.0/linux-x64/ /app/
-
-# Make wheft executable
-RUN chmod +x /app/wheft
+# Application will be copied via docker cp
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
