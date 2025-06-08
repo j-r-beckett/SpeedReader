@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 using Models;
 using Ocr.Blocks;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -50,38 +51,77 @@ public class Program
                 using var image = await Image.LoadAsync<Rgb24>(input.FullName);
 
 
-                // Create inference session for DBNet
-                using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
+                // Step 1: Text Detection with DBNet
+                using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
+                var dbNetBlock = DBNetBlock.Create(dbnetSession);
 
-                // Create DBNetBlock
-                var dbNetBlock = DBNetBlock.Create(session);
+                var detectedRectangles = new List<Rectangle>();
+                var rectangleCollector = new ActionBlock<List<Rectangle>>(rects => detectedRectangles.AddRange(rects));
 
-                // Create action block to collect results
-                var results = new List<List<Rectangle>>();
-                var actionBlock = new ActionBlock<List<Rectangle>>(result => results.Add(result));
+                dbNetBlock.LinkTo(rectangleCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
-                // Link blocks
-                dbNetBlock.LinkTo(actionBlock, new DataflowLinkOptions { PropagateCompletion = true });
-
-                // Send image through pipeline
                 await dbNetBlock.SendAsync(image);
                 dbNetBlock.Complete();
+                await rectangleCollector.Completion;
 
-                // Wait for completion
-                await dbNetBlock.Completion;
-                await actionBlock.Completion;
-
-                // Draw bounding boxes on the image
-                if (results.Count > 0 && results[0].Count > 0)
+                // Step 2: Text Recognition with SVTRv2 (if text was detected)
+                List<string> recognizedTexts = new();
+                if (detectedRectangles.Count > 0)
                 {
+                    using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+                    var svtrBlock = SVTRBlock.Create(svtrSession);
+
+                    var textCollector = new ActionBlock<List<string>>(texts => recognizedTexts.AddRange(texts));
+                    svtrBlock.LinkTo(textCollector, new DataflowLinkOptions { PropagateCompletion = true });
+
+                    await svtrBlock.SendAsync((image, detectedRectangles));
+                    svtrBlock.Complete();
+                    await textCollector.Completion;
+                }
+
+                // Step 3: Annotate image with results
+                if (detectedRectangles.Count > 0)
+                {
+                    // Load font for text annotation
+                    FontFamily fontFamily;
+                    if (!SystemFonts.TryGet("Arial", out fontFamily))
+                    {
+                        fontFamily = SystemFonts.Collection.Families.First();
+                    }
+                    var font = fontFamily.CreateFont(16, FontStyle.Bold);
+
                     image.Mutate(ctx =>
                     {
-                        foreach (var rectangle in results[0])
+                        for (int i = 0; i < detectedRectangles.Count; i++)
                         {
+                            var rectangle = detectedRectangles[i];
+                            
+                            // Draw bounding box
                             var boundingRect = new RectangleF(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
-                            ctx.Draw(Pens.Solid(Color.Red, 3), boundingRect);
+                            ctx.Draw(Pens.Solid(Color.Red, 2), boundingRect);
+                            
+                            // Draw recognized text above the bounding box (if available)
+                            if (i < recognizedTexts.Count)
+                            {
+                                var text = recognizedTexts[i].Trim();
+                                if (!string.IsNullOrEmpty(text))
+                                {
+                                    var textPosition = new PointF(rectangle.X, Math.Max(0, rectangle.Y - 20));
+                                    ctx.DrawText(text, font, Color.Blue, textPosition);
+                                }
+                            }
                         }
                     });
+
+                    Console.WriteLine($"Detected {detectedRectangles.Count} text regions");
+                    if (recognizedTexts.Count > 0)
+                    {
+                        Console.WriteLine($"Recognized {recognizedTexts.Count} text segments:");
+                        for (int i = 0; i < recognizedTexts.Count; i++)
+                        {
+                            Console.WriteLine($"  {i + 1}: '{recognizedTexts[i].Trim()}'");
+                        }
+                    }
                 }
 
                 // Save output image
