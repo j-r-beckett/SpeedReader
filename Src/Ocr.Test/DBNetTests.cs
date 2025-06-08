@@ -1,4 +1,6 @@
 using CommunityToolkit.HighPerformance;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr.Test;
 
@@ -25,7 +27,9 @@ public class DBNetTests
         }
 
         // Test with 1:1 scaling (model size = original size)
-        var result = DBNet.PostProcess(buffer, [(128, 128)]);
+        var testImage = new Image<Rgb24>(128, 128);
+        var result = DBNet.PostProcess(buffer, [testImage]);
+        testImage.Dispose();
 
         // Should return array of batches, each containing list of rectangles
         Assert.NotEmpty(result);

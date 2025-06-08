@@ -13,19 +13,19 @@ using Xunit.Abstractions;
 namespace Ocr.Test;
 
 [Collection("ONNX")]
-public class OcrBlockTests
+public class DbNetBlockTests
 {
     private readonly ITestOutputHelper _outputHelper;
-    private readonly TestLogger<OcrBlockTests> _logger;
-    private readonly FileSystemUrlPublisher<OcrBlockTests> _urlPublisher;
+    private readonly TestLogger<DbNetBlockTests> _logger;
+    private readonly FileSystemUrlPublisher<DbNetBlockTests> _urlPublisher;
     private readonly Font _font;
 
-    public OcrBlockTests(ITestOutputHelper outputHelper)
+    public DbNetBlockTests(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-        _logger = new TestLogger<OcrBlockTests>(outputHelper);
+        _logger = new TestLogger<DbNetBlockTests>(outputHelper);
         var outputDirectory = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "out", "debug");
-        _urlPublisher = new FileSystemUrlPublisher<OcrBlockTests>(outputDirectory, _logger);
+        _urlPublisher = new FileSystemUrlPublisher<DbNetBlockTests>(outputDirectory, _logger);
 
         // Load font for text rendering
         FontFamily fontFamily;
@@ -51,7 +51,7 @@ public class OcrBlockTests
 
         // Create OCR block
         using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
-        var ocrBlock = OcrBlock.CreateOcrBlock(session);
+        var ocrBlock = DBNetBlock.Create(session);
 
         // Act: Send image through pipeline and collect results
         var results = new List<List<Rectangle>>();

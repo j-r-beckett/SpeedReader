@@ -11,7 +11,7 @@ public static class DBNet
 {
     private const float BinarizationThreshold = 0.2f;
 
-    public static (Buffer<float> Buffer, (int Width, int Height)[] OriginalDimensions) PreProcess(Image<Rgb24>[] batch)
+    public static Buffer<float> PreProcess(Image<Rgb24>[] batch)
     {
         if (batch.Length == 0)
         {
@@ -61,10 +61,10 @@ public static class DBNet
             Tensor.Divide(channelSlice, stds[channel], channelSlice);
         }
 
-        return (buffer, originalDimensions);
+        return buffer;
     }
 
-    internal static List<Rectangle>[] PostProcess(Buffer<float> batch, (int Width, int Height)[] originalDimensions)
+    internal static List<Rectangle>[] PostProcess(Buffer<float> batch, Image<Rgb24>[] originalBatch)
     {
         int n = (int)batch.Shape[0];
         int height = (int)batch.Shape[1];
@@ -80,7 +80,7 @@ public static class DBNet
             var probabilityMap = batch.AsSpan().Slice(i * size, size).AsSpan2D(height, width);
             var components = ConnectedComponents.FindComponents(probabilityMap);
             List<Rectangle> boundingBoxes = [];
-            (int originalWidth, int originalHeight) = originalDimensions[i];
+            (int originalWidth, int originalHeight) = (originalBatch[i].Width, originalBatch[i].Height);
 
             foreach (var connectedComponent in components)
             {
