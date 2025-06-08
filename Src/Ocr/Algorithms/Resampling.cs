@@ -101,6 +101,49 @@ public static class Resampling
     }
 
     /// <summary>
+    /// Crops a region from the source image, scales to specified dimensions, then left-aligns with black padding on right.
+    /// </summary>
+    /// <param name="src">Source image to crop from</param>
+    /// <param name="cropRect">Rectangle defining the region to crop</param>
+    /// <param name="dest">Destination buffer for RGB pixel data in HWC layout</param>
+    /// <param name="destWidth">Buffer width (used for padding bounds)</param>
+    /// <param name="destHeight">Target height after resize</param>
+    /// <param name="targetWidth">Target width after resize (pre-calculated to maintain aspect ratio)</param>
+    /// <exception cref="ArgumentException">Thrown when destination buffer size doesn't match expected dimensions</exception>
+    /// <exception cref="NonContiguousImageException">Thrown when ImageSharp fails to provide contiguous pixel memory</exception>
+    /// <remarks>
+    /// Uses bicubic resampling. Caller should pre-calculate targetWidth based on aspect ratio constraints.
+    /// Temporary implementation using ImageSharp crop - can be optimized to true zero-copy in future.
+    /// Used by SVTRv2 preprocessing for cropped text region recognition.
+    /// </remarks>
+    public static void CropResizeInto(Image<Rgb24> src, Rectangle cropRect, Span<float> dest, int destWidth, int destHeight, int targetWidth)
+    {
+        if (destWidth * destHeight * 3 != dest.Length)
+        {
+            throw new ArgumentException(
+                $"Expected buffer size {destWidth * destHeight * 3}, actual size was {dest.Length}");
+        }
+
+        CropAndResizeToExactDimensions(src, cropRect, targetWidth, destHeight, out Memory<Rgb24> resizedMemory);
+
+        // Clear destination buffer to black (padding)
+        dest.Clear();
+
+        // Copy resized image to the left side of destination buffer in HWC format
+        for (int y = 0; y < destHeight; y++)
+        {
+            for (int x = 0; x < targetWidth; x++)
+            {
+                var pixel = resizedMemory.Span[y * targetWidth + x];
+                int destIndex = (y * destWidth + x) * 3;
+                dest[destIndex] = pixel.R;      // R
+                dest[destIndex + 1] = pixel.G;  // G
+                dest[destIndex + 2] = pixel.B;  // B
+            }
+        }
+    }
+
+    /// <summary>
     /// Resizes image to exact dimensions using bicubic resampling.
     /// </summary>
     /// <param name="src">Source image to resize</param>
@@ -123,6 +166,39 @@ public static class Resampling
         if (!resized.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> tempMemory))
         {
             throw new NonContiguousImageException("Image memory is not contiguous after resize operations");
+        }
+
+        // Create independent copy to avoid ImageSharp lifetime issues
+        var pixelData = new Rgb24[width * height];
+        tempMemory.Span.CopyTo(pixelData);
+        resizedMemory = pixelData;
+    }
+
+    /// <summary>
+    /// Crops a region from the image and resizes to exact dimensions using bicubic resampling.
+    /// </summary>
+    /// <param name="src">Source image to crop and resize</param>
+    /// <param name="cropRect">Rectangle defining the region to crop</param>
+    /// <param name="width">Target width</param>
+    /// <param name="height">Target height</param>
+    /// <param name="resizedMemory">Output contiguous pixel memory from cropped and resized image</param>
+    /// <exception cref="NonContiguousImageException">Thrown when ImageSharp fails to provide contiguous pixel memory</exception>
+    private static void CropAndResizeToExactDimensions(Image<Rgb24> src, Rectangle cropRect, int width, int height, out Memory<Rgb24> resizedMemory)
+    {
+        var config = Configuration.Default.Clone();
+        config.PreferContiguousImageBuffers = true;
+        using var cropped = src.Clone(config, x => x
+            .Crop(cropRect)
+            .Resize(new ResizeOptions
+            {
+                Size = new Size(width, height),
+                Mode = ResizeMode.Stretch,
+                Sampler = KnownResamplers.Bicubic
+            }));
+
+        if (!cropped.DangerousTryGetSinglePixelMemory(out Memory<Rgb24> tempMemory))
+        {
+            throw new NonContiguousImageException("Image memory is not contiguous after crop and resize operations");
         }
 
         // Create independent copy to avoid ImageSharp lifetime issues

@@ -11,21 +11,47 @@ public static class SVTRv2
     private const int MinWidth = 12;
     private const int MaxWidth = 320;
 
-    public static Buffer<float> PreProcess(Image<Rgb24>[] batch)
+    public static Buffer<float> PreProcess(Image<Rgb24>[] images, List<Rectangle>[] rectangles)
     {
-        if (batch.Length == 0)
+        if (images.Length == 0)
         {
-            throw new ArgumentException("Batch cannot be empty", nameof(batch));
+            throw new ArgumentException("Images cannot be empty", nameof(images));
         }
 
-        int maxWidth = CalculateMaxWidth(batch);
-
-        var buffer = new Buffer<float>(batch.Length * TargetHeight * maxWidth * 3, [batch.Length, TargetHeight, maxWidth, 3]);
-
-        for (int i = 0; i < batch.Length; i++)
+        if (images.Length != rectangles.Length)
         {
-            var dest = buffer.AsSpan().Slice(i * TargetHeight * maxWidth * 3, TargetHeight * maxWidth * 3);
-            Resampling.ScaleResizeInto(batch[i], dest, maxWidth, TargetHeight, MinWidth, MaxWidth);
+            throw new ArgumentException("Images and rectangles arrays must have the same length", nameof(rectangles));
+        }
+
+        // Validate rectangles and count total
+        int totalRectangles = 0;
+        for (int i = 0; i < images.Length; i++)
+        {
+            if (rectangles[i] == null || rectangles[i].Count == 0)
+            {
+                throw new ArgumentException($"Rectangles array at index {i} cannot be null or empty", nameof(rectangles));
+            }
+            totalRectangles += rectangles[i].Count;
+        }
+
+        // Calculate max width across all rectangles
+        int maxWidth = CalculateMaxWidth(rectangles);
+
+        var buffer = new Buffer<float>(totalRectangles * TargetHeight * maxWidth * 3, [totalRectangles, TargetHeight, maxWidth, 3]);
+
+        // Process each image and its rectangles
+        int bufferIndex = 0;
+        for (int i = 0; i < images.Length; i++)
+        {
+            for (int j = 0; j < rectangles[i].Count; j++)
+            {
+                var rect = rectangles[i][j];
+                int targetWidth = CalculateTargetWidth(rect);
+                
+                var dest = buffer.AsSpan().Slice(bufferIndex * TargetHeight * maxWidth * 3, TargetHeight * maxWidth * 3);
+                Resampling.CropResizeInto(images[i], rect, dest, maxWidth, TargetHeight, targetWidth);
+                bufferIndex++;
+            }
         }
 
         TensorOps.NhwcToNchw(buffer);
@@ -59,23 +85,29 @@ public static class SVTRv2
         return results.ToArray();
     }
 
-    internal static int CalculateMaxWidth(Image<Rgb24>[] batch)
+    internal static int CalculateTargetWidth(Rectangle rect)
+    {
+        // Calculate target width maintaining aspect ratio of the cropped region
+        double aspectRatio = (double)rect.Width / rect.Height;
+        int targetWidth = (int)Math.Round(aspectRatio * TargetHeight);
+        
+        // Clamp to reasonable bounds
+        return Math.Max(MinWidth, Math.Min(MaxWidth, targetWidth));
+    }
+
+    internal static int CalculateMaxWidth(List<Rectangle>[] rectangles)
     {
         int maxWidth = MinWidth;
 
-        foreach (var image in batch)
+        foreach (var rectList in rectangles)
         {
-            // Calculate target width maintaining aspect ratio with fixed height of 48px
-            double aspectRatio = (double)image.Width / image.Height;
-            int targetWidth = (int)Math.Round(aspectRatio * TargetHeight);
-
-            // Clamp to reasonable bounds
-            targetWidth = Math.Max(MinWidth, Math.Min(MaxWidth, targetWidth));
-            maxWidth = Math.Max(maxWidth, targetWidth);
+            foreach (var rect in rectList)
+            {
+                int targetWidth = CalculateTargetWidth(rect);
+                maxWidth = Math.Max(maxWidth, targetWidth);
+            }
         }
 
         return maxWidth;
     }
-
-
 }

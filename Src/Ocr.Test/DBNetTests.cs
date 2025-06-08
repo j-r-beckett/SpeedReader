@@ -9,25 +9,31 @@ public class DBNetTests
     [Fact]
     public void PostProcess_WithSimpleBinaryMap_ReturnsPolygons()
     {
-        // Create a 128x128 binary probability map with a 16x16 text region
-        var buffer = new Buffer<float>(1 * 128 * 128, [1, 128, 128]);
+        // Use an image size that results in 1:1 scaling with DBNet
+        // DBNet fits images within 1333x736, so use 736x736 to get no scaling
+        var testImage = new Image<Rgb24>(736, 736);
+        
+        // Create a buffer that matches the padded dimensions (must be divisible by 32)
+        var paddedSize = 736; // Already divisible by 32
+        var buffer = new Buffer<float>(1 * paddedSize * paddedSize, [1, paddedSize, paddedSize]);
         var span = buffer.AsSpan();
 
         // Fill with zeros (background)
         span.Fill(0.0f);
 
-        // Create a 16x16 text region in the center with values above threshold (0.2)
-        var map = span.AsSpan2D(128, 128);
-        for (int y = 56; y < 72; y++)
+        // Create a text region in the expected position (scaled appropriately)
+        var map = span.AsSpan2D(paddedSize, paddedSize);
+        // Scale the original 56-72 region proportionally
+        int startPos = (int)(56.0 / 128 * paddedSize);
+        int endPos = (int)(72.0 / 128 * paddedSize);
+        
+        for (int y = startPos; y < endPos; y++)
         {
-            for (int x = 56; x < 72; x++)
+            for (int x = startPos; x < endPos; x++)
             {
                 map[y, x] = 0.8f;  // Text pixel
             }
         }
-
-        // Test with 1:1 scaling (model size = original size)
-        var testImage = new Image<Rgb24>(128, 128);
         var result = DBNet.PostProcess(buffer, [testImage]);
         testImage.Dispose();
 
@@ -41,16 +47,20 @@ public class DBNetTests
         Assert.True(rectangle.Height > 0);
 
         // Rectangle should be within image bounds
-        Assert.InRange(rectangle.X, 0, 127);
-        Assert.InRange(rectangle.Y, 0, 127);
-        Assert.InRange(rectangle.X + rectangle.Width, 0, 128);
-        Assert.InRange(rectangle.Y + rectangle.Height, 0, 128);
+        Assert.InRange(rectangle.X, 0, testImage.Width - 1);
+        Assert.InRange(rectangle.Y, 0, testImage.Height - 1);
+        Assert.InRange(rectangle.X + rectangle.Width, 0, testImage.Width);
+        Assert.InRange(rectangle.Y + rectangle.Height, 0, testImage.Height);
 
-        // The rectangle should roughly encompass the text region (56-72 range)
-        // Should be roughly in the center area (allowing for dilation)
-        Assert.InRange(rectangle.X, 40, 65);
-        Assert.InRange(rectangle.X + rectangle.Width, 63, 88);
-        Assert.InRange(rectangle.Y, 40, 65);
-        Assert.InRange(rectangle.Y + rectangle.Height, 63, 88);
+        // The rectangle should roughly encompass the text region
+        // Original region was 56-72 in 128x128, scale to 736x736
+        int expectedStart = (int)(56.0 / 128 * 736);  // ~322
+        int expectedEnd = (int)(72.0 / 128 * 736);    // ~414
+        
+        // Allow for dilation effects
+        Assert.InRange(rectangle.X, expectedStart - 40, expectedStart + 10);
+        Assert.InRange(rectangle.X + rectangle.Width, expectedEnd - 10, expectedEnd + 40);
+        Assert.InRange(rectangle.Y, expectedStart - 40, expectedStart + 10);
+        Assert.InRange(rectangle.Y + rectangle.Height, expectedEnd - 10, expectedEnd + 40);
     }
 }

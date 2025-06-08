@@ -47,8 +47,11 @@ public class RecognitionEndToEndTests
         // Act: Run complete pipeline
         using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
-        // Step 1: Preprocessing
-        using var preprocessedBuffer = SVTRv2.PreProcess([testImage]);
+        // Step 1: Preprocessing - process the whole image
+        var rectangles = new List<Rectangle>[] { 
+            new List<Rectangle> { new Rectangle(0, 0, testImage.Width, testImage.Height) } 
+        };
+        using var preprocessedBuffer = SVTRv2.PreProcess([testImage], rectangles);
 
         // Step 2: Inference
         using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
