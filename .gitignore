@@ -5,6 +5,9 @@ obj/
 # Generated models
 Src/Models/models/
 
+# Generated ffmpeg binaries
+Src/Core/binaries
+
 # Rider
 .idea/
 

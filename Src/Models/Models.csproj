@@ -23,7 +23,8 @@
   </Target>
 
   <ItemGroup>
-    <None Include="models/**/*" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="models/**/*.onnx" />
+    <EmbeddedResource Include="models/**/*.json" />
   </ItemGroup>
 
   <Target Name="CleanModels" BeforeTargets="BeforeClean">
