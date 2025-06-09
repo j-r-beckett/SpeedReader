@@ -46,6 +46,7 @@ fi
 # Copy wheft executable into container
 echo "Copying wheft executable into container..."
 docker cp bin/Release/net10.0/linux-x64/publish/wheft "$CONTAINER_ID":/app/wheft
+#docker cp bin/Release/net10.0/linux-x64/native/wheft "$CONTAINER_ID":/app/wheft
 if [ $? -ne 0 ]; then
   echo "Error: Failed to copy wheft executable into container"
   docker rm "$CONTAINER_ID" > /dev/null

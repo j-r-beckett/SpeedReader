@@ -55,6 +55,12 @@ git -C "$DIR" ls-files | while read -r FILE; do
     continue
   fi
   
+  # Skip entire .claude directory
+  if [[ "$FILE" == .claude/* ]]; then
+    echo "Skipping .claude directory file: $FILE"
+    continue
+  fi
+  
   # Skip CLAUDE.md unless --include-claude is specified
   if [[ "$FILE" == "CLAUDE.md" && "$INCLUDE_CLAUDE" == false ]]; then
     echo "Skipping CLAUDE.md (use --include-claude to include)"
