@@ -134,6 +134,7 @@ public class Program
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error: {ex}");
+                Console.Error.WriteLine($"Inner: {ex.InnerException.StackTrace}");
                 Environment.Exit(1);
             }
         }, inputArgument, outputArgument);
