@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>wheft</AssemblyName>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -43,6 +44,7 @@
   <ItemGroup>
     <EmbeddedResource Include="binaries/ffmpeg" />
     <EmbeddedResource Include="binaries/ffprobe" />
+    <EmbeddedResource Include="arial.ttf" />
   </ItemGroup>
 
   <Target Name="CleanBinaries" BeforeTargets="BeforeClean">

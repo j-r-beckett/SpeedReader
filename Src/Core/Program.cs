@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading.Tasks.Dataflow;
 using Models;
 using Ocr.Blocks;
@@ -15,6 +16,10 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        Console.WriteLine($"HOME: {Environment.GetEnvironmentVariable("HOME")}");
+        string ffmpegPath = FFmpegResolver.GetFFmpegPath();
+        Console.WriteLine($"FFmpeg path: {ffmpegPath}");
+
         var inputArgument = new Argument<FileInfo>(
             name: "input",
             description: "Input image file")
@@ -82,12 +87,11 @@ public class Program
                 // Step 3: Annotate image with results
                 if (detectedRectangles.Count > 0)
                 {
-                    // Load font for text annotation
-                    FontFamily fontFamily;
-                    if (!SystemFonts.TryGet("Arial", out fontFamily))
-                    {
-                        fontFamily = SystemFonts.Collection.Families.First();
-                    }
+                    // Load embedded Arial font
+                    var assembly = Assembly.GetExecutingAssembly();
+                    using var fontStream = assembly.GetManifestResourceStream("Core.arial.ttf");
+                    var fontCollection = new FontCollection();
+                    var fontFamily = fontCollection.Add(fontStream);
                     var font = fontFamily.CreateFont(16, FontStyle.Bold);
 
                     image.Mutate(ctx =>
@@ -95,11 +99,11 @@ public class Program
                         for (int i = 0; i < detectedRectangles.Count; i++)
                         {
                             var rectangle = detectedRectangles[i];
-                            
+
                             // Draw bounding box
                             var boundingRect = new RectangleF(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
                             ctx.Draw(Pens.Solid(Color.Red, 2), boundingRect);
-                            
+
                             // Draw recognized text above the bounding box (if available)
                             if (i < recognizedTexts.Count)
                             {
@@ -129,7 +133,7 @@ public class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"Error: {ex}");
                 Environment.Exit(1);
             }
         }, inputArgument, outputArgument);

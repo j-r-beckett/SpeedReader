@@ -1,14 +1,18 @@
 FROM ubuntu:20.04
 
-# Install FFmpeg
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Create app directory
+# Create app directory and change ownership
 WORKDIR /app
+RUN chown appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Application will be copied via docker cp
+
+# Set extraction directory to /tmp
+ENV DOTNET_BUNDLE_EXTRACT_BASE_DIR=/tmp
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]

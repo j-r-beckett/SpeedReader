@@ -98,17 +98,44 @@ public static class FFmpegResolver
 
     private static string GetDeterministicPath(string binaryName)
     {
-        // Use ~/.local/share/wheft/binaries/ (follows XDG spec)
-        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (!string.IsNullOrEmpty(homeDir))
+        // Follow XDG Base Directory Specification
+        // 1. Check XDG_DATA_HOME environment variable
+        var xdgDataHome = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+        if (!string.IsNullOrEmpty(xdgDataHome) && HasWriteAccess(xdgDataHome))
         {
-            var xdgPath = Path.Combine(homeDir, ".local", "share", "wheft", "binaries", binaryName);
-            return xdgPath;
+            return Path.Combine(xdgDataHome, "wheft", "binaries", binaryName);
         }
 
-        // Fallback to current directory if home directory unavailable
-        var fallbackPath = Path.Combine(".", "wheft-binaries", binaryName);
-        return fallbackPath;
+        // 2. Fallback to ~/.local/share (XDG default)
+        var homeDir = Environment.GetEnvironmentVariable("HOME");
+        if (!string.IsNullOrEmpty(homeDir))
+        {
+            var localShareDir = Path.Combine(homeDir, ".local", "share");
+            if (HasWriteAccess(localShareDir))
+            {
+                return Path.Combine(localShareDir, "wheft", "binaries", binaryName);
+            }
+        }
+
+        // 3. Final fallback to /tmp for containers/edge cases
+        return Path.Combine("/tmp", "wheft", "binaries", binaryName);
+    }
+
+    private static bool HasWriteAccess(string directoryPath)
+    {
+        try
+        {
+            if (!Directory.Exists(directoryPath)) return false;
+
+            var testFile = Path.Combine(directoryPath, $".test_{Environment.ProcessId}");
+            File.WriteAllText(testFile, "");
+            File.Delete(testFile);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static void ExtractEmbeddedBinary(string binaryName, string targetPath)
