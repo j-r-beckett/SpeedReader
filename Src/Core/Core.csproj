@@ -24,6 +24,29 @@
   <ItemGroup>
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
+    <ProjectReference Include="..\Video\Video.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <BinaryBuilderFiles Include="$(MSBuildProjectDirectory)/downloadBinaries.sh" />
+  </ItemGroup>
+
+  <Target Name="DownloadBinaries"
+          BeforeTargets="BeforeBuild"
+          Inputs="@(BinaryBuilderFiles)"
+          Outputs="binaries/.downloaded">
+    <RemoveDir Directories="binaries" Condition="Exists('binaries')" />
+    <Exec Command="bash downloadBinaries.sh binaries" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Touch Files="binaries/.downloaded" AlwaysCreate="true" />
+  </Target>
+
+  <ItemGroup>
+    <EmbeddedResource Include="binaries/ffmpeg" />
+    <EmbeddedResource Include="binaries/ffprobe" />
+  </ItemGroup>
+
+  <Target Name="CleanBinaries" BeforeTargets="BeforeClean">
+    <RemoveDir Directories="binaries" Condition="Exists('binaries')" />
+  </Target>
 
 </Project>

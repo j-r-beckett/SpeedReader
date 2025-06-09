@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="CharacterDictionary.Data.txt" CopyToOutputDirectory="Always" />
+    <EmbeddedResource Include="CharacterDictionary.Data.txt" />
   </ItemGroup>
 
 </Project>

@@ -5,25 +5,33 @@ namespace Models;
 
 public class ModelZoo
 {
-    private const string ModelDir = "models";
-    private const string ModelOnnxFileName = "end2end.onnx";
-
     public static InferenceSession GetInferenceSession(Model model) => GetInferenceSession(model, new SessionOptions());
 
     public static InferenceSession GetInferenceSession(Model model, SessionOptions options)
-        => new(GetModelPath(model), options);
-
-    private static string GetModelPath(Model model)
     {
-        string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        string resourceName = GetResourceName(model);
+        var assembly = Assembly.GetExecutingAssembly();
+        
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+            throw new FileNotFoundException($"Embedded resource '{resourceName}' not found");
+            
+        var modelBytes = new byte[stream.Length];
+        stream.ReadExactly(modelBytes);
+        
+        return new InferenceSession(modelBytes, options);
+    }
+
+    private static string GetResourceName(Model model)
+    {
         string modelName = model switch
         {
             Model.DbNet18 => "dbnet_resnet18_fpnc_1200e_icdar2015",
             Model.SVTRv2 => "svtrv2_base_ctc",
             _ => throw new ArgumentException($"Unknown model {model}")
         };
-        // Example: my/assembly/location/models/dbnet_resnet18_fpnc_1200e_icdar2015/end2end.onnx
-        return Path.Combine(assemblyDirectory, ModelDir, modelName, ModelOnnxFileName);
+        
+        return $"Models.models.{modelName}.end2end.onnx";
     }
 }
 
