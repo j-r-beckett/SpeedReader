@@ -10,18 +10,16 @@ public static class CharacterDictionary
 
     static CharacterDictionary()
     {
-        // Load character dictionary from TextRecognition project directory
+        // Load character dictionary from embedded resource
         _indexToChar = new Dictionary<int, char>();
-        var assemblyLocation = Assembly.GetExecutingAssembly().Location;
-        var assemblyDir = Path.GetDirectoryName(assemblyLocation)!;
-        var dictPath = Path.Combine(assemblyDir, "CharacterDictionary.Data.txt");
-
-        if (!File.Exists(dictPath))
-        {
-            throw new FileNotFoundException($"Character dictionary not found at: {dictPath}");
-        }
-
-        var lines = File.ReadAllLines(dictPath);
+        var assembly = Assembly.GetExecutingAssembly();
+        
+        using var stream = assembly.GetManifestResourceStream("Ocr.CharacterDictionary.Data.txt");
+        if (stream == null)
+            throw new FileNotFoundException("Embedded resource 'Ocr.CharacterDictionary.Data.txt' not found");
+            
+        using var reader = new StreamReader(stream);
+        var lines = reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
         // Index 0 reserved for CTC blank token
         _indexToChar[0] = '\0'; // Use null character for blank
