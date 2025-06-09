@@ -16,9 +16,8 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        Console.WriteLine($"HOME: {Environment.GetEnvironmentVariable("HOME")}");
-        string ffmpegPath = FFmpegResolver.GetFFmpegPath();
-        Console.WriteLine($"FFmpeg path: {ffmpegPath}");
+        // string ffmpegPath = FFmpegResolver.GetFFmpegPath();
+        // Console.WriteLine($"FFmpeg path: {ffmpegPath}");
 
         var inputArgument = new Argument<FileInfo>(
             name: "input",
