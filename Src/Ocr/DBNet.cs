@@ -18,12 +18,6 @@ public static class DBNet
             throw new ArgumentException("Batch cannot be empty", nameof(batch));
         }
 
-        var originalDimensions = new (int Width, int Height)[batch.Length];
-        for (int i = 0; i < batch.Length; i++)
-        {
-            originalDimensions[i] = (batch[i].Width, batch[i].Height);
-        }
-
         (int width, int height) = CalculateDimensions(batch);
 
         var buffer = new Buffer<float>(batch.Length * 3 * height * width, [batch.Length, height, width, 3]);
@@ -94,22 +88,10 @@ public static class DBNet
                     continue;
                 }
 
-                // Extract contour boundary instead of using convex hull
-                var contour = ExtractContour(connectedComponent, height, width);
-                if (contour.Count < 4)
-                {
-                    continue;
-                }
-
-                // Apply polygon approximation to reduce vertices
-                var approximatedPolygon = ApproximatePolygon(contour);
-                if (approximatedPolygon.Count < 4)
-                {
-                    continue;
-                }
+                var polygon = ConvexHull.GrahamScan(connectedComponent);
 
                 // Dilate the polygon
-                var dilatedPolygon = Dilation.DilatePolygon(approximatedPolygon);
+                var dilatedPolygon = Dilation.DilatePolygon(polygon);
                 if (dilatedPolygon.Count == 0)
                 {
                     continue;
@@ -186,168 +168,4 @@ public static class DBNet
         int fittedHeight = (int)Math.Round(originalHeight * scale);
         return (fittedWidth, fittedHeight);
     }
-
-    private static List<(int X, int Y)> ExtractContour((int X, int Y)[] component, int height, int width)
-    {
-        // Create a binary map for the component
-        var componentMap = new bool[height, width];
-        foreach (var point in component)
-        {
-            componentMap[point.Y, point.X] = true;
-        }
-
-        // Find a starting point on the boundary
-        (int X, int Y)? startPoint = null;
-        foreach (var point in component)
-        {
-            // Check if this point is on the boundary (has at least one non-component neighbor)
-            bool isBoundary = false;
-            for (int dy = -1; dy <= 1 && !isBoundary; dy++)
-            {
-                for (int dx = -1; dx <= 1 && !isBoundary; dx++)
-                {
-                    if (dx == 0 && dy == 0) continue;
-                    int nx = point.X + dx;
-                    int ny = point.Y + dy;
-                    if (nx < 0 || nx >= width || ny < 0 || ny >= height || !componentMap[ny, nx])
-                    {
-                        isBoundary = true;
-                        startPoint = point;
-                    }
-                }
-            }
-            if (isBoundary) break;
-        }
-
-        if (!startPoint.HasValue)
-        {
-            return [];
-        }
-
-        // Trace the boundary using Moore neighborhood tracing
-        var boundary = new List<(int X, int Y)>();
-        var current = startPoint.Value;
-        var start = current;
-
-        // Direction vectors for 8-connectivity (clockwise from right)
-        var directions = new (int dx, int dy)[]
-        {
-            (1, 0), (1, 1), (0, 1), (-1, 1),
-            (-1, 0), (-1, -1), (0, -1), (1, -1)
-        };
-
-        int dir = 0; // Start looking to the right
-        int maxIterations = component.Length * 2; // Prevent infinite loops
-        int iterations = 0;
-
-        do
-        {
-            boundary.Add(current);
-
-            // Find next boundary pixel
-            bool found = false;
-            for (int i = 0; i < 8; i++)
-            {
-                int checkDir = (dir + 6 + i) % 8; // Start from behind-left of current direction
-                int nx = current.X + directions[checkDir].dx;
-                int ny = current.Y + directions[checkDir].dy;
-
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height && componentMap[ny, nx])
-                {
-                    current = (nx, ny);
-                    dir = checkDir;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found || ++iterations > maxIterations)
-            {
-                break;
-            }
-        }
-        while (current != start || boundary.Count < 3);
-
-        return boundary;
-    }
-
-    private static List<(int X, int Y)> ApproximatePolygon(List<(int X, int Y)> polygon)
-    {
-        if (polygon.Count < 3)
-        {
-            return polygon;
-        }
-
-        // Calculate perimeter
-        double perimeter = 0;
-        for (int i = 0; i < polygon.Count; i++)
-        {
-            var p1 = polygon[i];
-            var p2 = polygon[(i + 1) % polygon.Count];
-            double dx = p2.X - p1.X;
-            double dy = p2.Y - p1.Y;
-            perimeter += Math.Sqrt(dx * dx + dy * dy);
-        }
-
-        // Use Douglas-Peucker algorithm with epsilon = 1% of perimeter
-        double epsilon = perimeter * 0.01;
-        return DouglasPeucker(polygon, epsilon);
-    }
-
-    private static List<(int X, int Y)> DouglasPeucker(List<(int X, int Y)> points, double epsilon)
-    {
-        if (points.Count < 3)
-        {
-            return points;
-        }
-
-        // Find the point with maximum distance from the line between first and last point
-        double maxDistance = 0;
-        int maxIndex = 0;
-
-        for (int i = 1; i < points.Count - 1; i++)
-        {
-            double distance = PerpendicularDistance(points[i], points[0], points[^1]);
-            if (distance > maxDistance)
-            {
-                maxDistance = distance;
-                maxIndex = i;
-            }
-        }
-
-        // If max distance is greater than epsilon, recursively simplify
-        if (maxDistance > epsilon)
-        {
-            var leftPart = DouglasPeucker(points.GetRange(0, maxIndex + 1), epsilon);
-            var rightPart = DouglasPeucker(points.GetRange(maxIndex, points.Count - maxIndex), epsilon);
-
-            // Combine results (remove duplicate point at maxIndex)
-            var result = new List<(int X, int Y)>(leftPart);
-            result.AddRange(rightPart.Skip(1));
-            return result;
-        }
-        else
-        {
-            // Return only endpoints
-            return [points[0], points[^1]];
-        }
-    }
-
-    private static double PerpendicularDistance((int X, int Y) point, (int X, int Y) lineStart, (int X, int Y) lineEnd)
-    {
-        double dx = lineEnd.X - lineStart.X;
-        double dy = lineEnd.Y - lineStart.Y;
-
-        if (dx == 0 && dy == 0)
-        {
-            // Line start and end are the same point
-            dx = point.X - lineStart.X;
-            dy = point.Y - lineStart.Y;
-            return Math.Sqrt(dx * dx + dy * dy);
-        }
-
-        double normalLength = Math.Sqrt(dx * dx + dy * dy);
-        return Math.Abs((point.X - lineStart.X) * dy - (point.Y - lineStart.Y) * dx) / normalLength;
-    }
-
 }
