@@ -32,13 +32,13 @@ public class TestImageGeneratorValidation
         var textBoxes = new[]
         {
             // Top-left corner
-            new TextBox(new Rectangle(0, 0, 200, 60)),
+            new Rectangle(0, 0, 200, 60),
             
             // Exact center
-            new TextBox(new Rectangle((imageWidth - 200) / 2, (imageHeight - 60) / 2, 200, 60)),
+            new Rectangle((imageWidth - 200) / 2, (imageHeight - 60) / 2, 200, 60),
             
             // Bottom-right corner (box ends at image edge)
-            new TextBox(new Rectangle(imageWidth - 200, imageHeight - 60, 200, 60))
+            new Rectangle(imageWidth - 200, imageHeight - 60, 200, 60)
         };
         
         // Generate image
@@ -49,9 +49,9 @@ public class TestImageGeneratorValidation
         await _urlPublisher.PublishAsync(result.Image, filename);
         
         _logger.LogInformation($"Generated test image with {textBoxes.Length} boxes at positions:");
-        _logger.LogInformation($"  Top-left corner: {textBoxes[0].Bounds}");
-        _logger.LogInformation($"  Exact center: {textBoxes[1].Bounds}");
-        _logger.LogInformation($"  Bottom-right corner: {textBoxes[2].Bounds}");
+        _logger.LogInformation($"  Top-left corner: {textBoxes[0]}");
+        _logger.LogInformation($"  Exact center: {textBoxes[1]}");
+        _logger.LogInformation($"  Bottom-right corner: {textBoxes[2]}");
         
         // Cleanup
         result.Image.Dispose();
@@ -63,9 +63,9 @@ public class TestImageGeneratorValidation
         // Create boxes with different heights to test font scaling
         var textBoxes = new[]
         {
-            new TextBox(new Rectangle(50, 50, 200, 30)),    // Small height: 30px → 24pt font
-            new TextBox(new Rectangle(50, 150, 200, 60)),   // Medium height: 60px → 48pt font
-            new TextBox(new Rectangle(50, 300, 200, 120))   // Large height: 120px → 96pt font
+            new Rectangle(50, 50, 200, 30),    // Small height: 30px → 24pt font
+            new Rectangle(50, 150, 200, 60),   // Medium height: 60px → 48pt font
+            new Rectangle(50, 300, 200, 120)   // Large height: 120px → 96pt font
         };
         
         // Generate image
@@ -79,8 +79,8 @@ public class TestImageGeneratorValidation
         _logger.LogInformation("  Box heights: 30px, 60px, 120px → Font sizes: 24pt, 48pt, 96pt");
         foreach (var (box, i) in textBoxes.Select((b, i) => (b, i)))
         {
-            var fontSize = box.Bounds.Height * 0.8f;
-            _logger.LogInformation($"  Box {i}: Height={box.Bounds.Height}px, Font size={fontSize:F1}pt");
+            var fontSize = box.Height * 0.8f;
+            _logger.LogInformation($"  Box {i}: Height={box.Height}px, Font size={fontSize:F1}pt");
         }
         
         // Cleanup
@@ -93,9 +93,9 @@ public class TestImageGeneratorValidation
         // Create boxes with different widths to test word selection
         var textBoxes = new[]
         {
-            new TextBox(new Rectangle(50, 50, 100, 60)),    // Narrow box - should fit short words
-            new TextBox(new Rectangle(50, 150, 300, 60)),   // Wide box - should fit longer words
-            new TextBox(new Rectangle(50, 250, 500, 60))    // Very wide box - should fit longest words
+            new Rectangle(50, 50, 100, 60),    // Narrow box - should fit short words
+            new Rectangle(50, 150, 300, 60),   // Wide box - should fit longer words
+            new Rectangle(50, 250, 500, 60)    // Very wide box - should fit longest words
         };
         
         // Generate image
@@ -120,10 +120,10 @@ public class TestImageGeneratorValidation
         // Create boxes with varied widths to show text filling
         var textBoxes = new[]
         {
-            new TextBox(new Rectangle(50, 50, 150, 60)),    // Narrow - will fit short words
-            new TextBox(new Rectangle(250, 50, 250, 60)),   // Medium - will fit medium words
-            new TextBox(new Rectangle(50, 150, 350, 60)),   // Wide - will fit longer words
-            new TextBox(new Rectangle(50, 250, 450, 60)),   // Very wide - will fit longest words
+            new Rectangle(50, 50, 150, 60),    // Narrow - will fit short words
+            new Rectangle(250, 50, 250, 60),   // Medium - will fit medium words
+            new Rectangle(50, 150, 350, 60),   // Wide - will fit longer words
+            new Rectangle(50, 250, 450, 60),   // Very wide - will fit longest words
         };
         
         // Generate image
@@ -149,9 +149,9 @@ public class TestImageGeneratorValidation
         // Create boxes to demonstrate exact bounds tracking
         var textBoxes = new[]
         {
-            new TextBox(new Rectangle(50, 50, 300, 80)),    // Large hint box
-            new TextBox(new Rectangle(50, 150, 200, 60)),   // Medium hint box
-            new TextBox(new Rectangle(50, 250, 150, 40)),   // Small hint box
+            new Rectangle(50, 50, 300, 80),    // Large hint box
+            new Rectangle(50, 150, 200, 60),   // Medium hint box
+            new Rectangle(50, 250, 150, 40),   // Small hint box
         };
         
         // Generate image
@@ -167,10 +167,8 @@ public class TestImageGeneratorValidation
         for (int i = 0; i < result.RenderedTexts.Length; i++)
         {
             var rendered = result.RenderedTexts[i];
-            var hint = textBoxes[i].Bounds;
-            _logger.LogInformation($"  Text {i}: '{rendered.Text}'");
-            _logger.LogInformation($"    Hint box: {hint}");
-            _logger.LogInformation($"    Actual bounds: {rendered.ActualBounds}");
+            var hint = textBoxes[i];
+            _logger.LogInformation($"  Text {i}: '{rendered.Text}' in hint box {hint}");
         }
         
         // Cleanup

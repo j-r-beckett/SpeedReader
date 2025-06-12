@@ -6,111 +6,92 @@ using SixLabors.Fonts;
 
 namespace Ocr.Test;
 
-public record TextBox(Rectangle Bounds);
-public record RenderedText(string Text, Rectangle ActualBounds);
+public record RenderedText(string Text);
 public record GeneratedImage(Image<Rgb24> Image, RenderedText[] RenderedTexts);
 
 public static class TestImageGenerator
 {
-    private const float FontSizeFactor = 0.8f;
-    private const int TextMargin = 5;
-    
-    private static readonly string[] BaseWords = 
+    private static readonly string[] Words =
     {
-        "A", "GO", "CAT", "JUMP", "QUICK", "FROZEN", "RAINBOW", "SUNSHINE",
-        "WONDERFUL", "BASKETBALL", "COMFORTABLE", "STRAWBERRIES", 
-        "EXTRAORDINARY", "TRANSFORMATION", "INTERNATIONALLY",
-        "BASKETBALLCOURT", "STRAWBERRIESNICE", "RAINBOWSUNSHINE",
-        "WONDERFULBASKETBALL", "COMFORTABLESUNSHINE", "EXTRAORDINARYJOURNEY",
-        "TRANSFORMATIONPROCESS", "INTERNATIONALLYKNOWN", "BASKETBALLCOURTOUTSIDE",
-        "STRAWBERRIESANDCREAMTEA"
+        "GO", "CAT", "RUN", "SUN", "WIN", "FUN", "JOY", "BOX", "KEY", "MAP"
     };
-    
-    public static GeneratedImage Generate(Size imageSize, params TextBox[] textBoxes)
+
+    public static GeneratedImage Generate(Size imageSize, params Rectangle[] hintBoxes)
     {
         var image = new Image<Rgb24>(imageSize.Width, imageSize.Height, Color.White);
-        var renderedTexts = new RenderedText[textBoxes.Length];
+        var renderedTexts = new RenderedText[hintBoxes.Length];
+        var random = new Random(0);
         var fontFamily = GetFontFamily();
-        var digitGenerator = new Random(0); // Fresh instance for deterministic output
-        
-        for (int i = 0; i < textBoxes.Length; i++)
+
+        for (int i = 0; i < hintBoxes.Length; i++)
         {
-            renderedTexts[i] = RenderTextBox(image, textBoxes[i], fontFamily, digitGenerator.Next(0, 10));
+            renderedTexts[i] = RenderTextInHintBox(image, hintBoxes[i], fontFamily, random);
         }
-        
+
         return new GeneratedImage(image, renderedTexts);
     }
-    
-    private static RenderedText RenderTextBox(Image<Rgb24> image, TextBox textBox, FontFamily fontFamily, int digit)
+
+    private static RenderedText RenderTextInHintBox(Image<Rgb24> image, Rectangle hintBox, FontFamily fontFamily, Random random)
     {
-        var box = textBox.Bounds;
-        var fontSize = box.Height * FontSizeFactor;
+        var word = Words[random.Next(Words.Length)];
+        var digit = random.Next(0, 10);
+        var text = $"{word}{digit}";
+
+        // Size font to fit within hint box with margin
+        var maxWidth = hintBox.Width * 0.9f;
+        var maxHeight = hintBox.Height * 0.8f;
+
+        var fontSize = Math.Min(maxWidth / text.Length * 1.2f, maxHeight);
         var font = fontFamily.CreateFont(fontSize, FontStyle.Regular);
-        
-        // Select and measure text
-        var text = SelectTextForBox(box, font, digit);
         var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
-        
-        // Calculate centered position
-        var x = box.X + (box.Width - textSize.Width) / 2;
-        var y = box.Y + (box.Height - textSize.Height) / 2;
-        var actualBounds = new Rectangle((int)x, (int)y, (int)textSize.Width, (int)textSize.Height);
-        
-        // Draw everything
+
+        // Ensure text actually fits, reduce font size if needed
+        while ((textSize.Width > maxWidth || textSize.Height > maxHeight) && fontSize > 8)
+        {
+            fontSize *= 0.9f;
+            font = fontFamily.CreateFont(fontSize, FontStyle.Regular);
+            textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
+        }
+
+        // Center text in hint box
+        var x = hintBox.X + (hintBox.Width - textSize.Width) / 2;
+        var y = hintBox.Y + (hintBox.Height - textSize.Height) / 2;
+
+        // Draw hint box and text (no ActualBounds needed)
         image.Mutate(ctx =>
         {
-            ctx.Draw(Pens.Solid(Color.LightGray, 2), box);          // Hint box
-            ctx.Draw(Pens.Solid(Color.Red, 2), actualBounds);       // Actual bounds
-            ctx.DrawText(text, font, Color.Black, new PointF(x, y)); // Text
+            ctx.Draw(Pens.Solid(Color.LightGray, 2), hintBox);
+            ctx.DrawText(text, font, Color.Black, new PointF(x, y));
         });
-        
-        return new RenderedText(text, actualBounds);
+
+        return new RenderedText(text);
     }
-    
+
     private static FontFamily GetFontFamily()
     {
         return SystemFonts.TryGet("Arial", out var arial) ? arial : SystemFonts.Families.First();
-    }
-    
-    private static string SelectTextForBox(Rectangle box, Font font, int digit)
-    {
-        var availableWidth = box.Width - (TextMargin * 2);
-        var bestWord = BaseWords[0]; // Default to shortest
-        
-        foreach (var word in BaseWords)
-        {
-            var candidateText = $"{word}{digit}";
-            var textWidth = TextMeasurer.MeasureSize(candidateText, new TextOptions(font)).Width;
-            
-            if (textWidth <= availableWidth && word.Length > bestWord.Length)
-            {
-                bestWord = word;
-            }
-        }
-        
-        return $"{bestWord}{digit}";
     }
 }
 
 public static class TextBoxLayouts
 {
-    public static TextBox[] CreateGrid(int rows, int cols, int boxWidth, int boxHeight, int margin = 20, int startX = 20, int startY = 20)
+    public static Rectangle[] CreateGrid(int rows, int cols, int boxWidth, int boxHeight, int margin = 20, int startX = 20, int startY = 20)
     {
-        var boxes = new List<TextBox>();
-        
+        var boxes = new List<Rectangle>();
+
         for (int row = 0; row < rows; row++)
         {
             for (int col = 0; col < cols; col++)
             {
                 var x = startX + col * (boxWidth + margin);
                 var y = startY + row * (boxHeight + margin);
-                boxes.Add(new TextBox(new Rectangle(x, y, boxWidth, boxHeight)));
+                boxes.Add(new Rectangle(x, y, boxWidth, boxHeight));
             }
         }
-        
+
         return boxes.ToArray();
     }
-    
+
     public static Size CalculateImageSize(int rows, int cols, int boxWidth, int boxHeight, int margin = 20, int padding = 40)
     {
         var width = cols * boxWidth + (cols - 1) * margin + padding;
