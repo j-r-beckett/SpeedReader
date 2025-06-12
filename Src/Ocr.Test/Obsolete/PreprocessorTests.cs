@@ -11,17 +11,17 @@ using Xunit.Abstractions;
 namespace Ocr.Test;
 
 [Collection("ONNX")]
-public class PreprocessorTests
+public class PreprocessorTests_dirty
 {
     private readonly ITestOutputHelper _outputHelper;
     private readonly Font _font;
-    private readonly FileSystemUrlPublisher<PreprocessorTests> _urlPublisher;
+    private readonly FileSystemUrlPublisher<PreprocessorTests_dirty> _urlPublisher;
 
-    public PreprocessorTests(ITestOutputHelper outputHelper)
+    public PreprocessorTests_dirty(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
         var outputDirectory = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "out", "debug");
-        _urlPublisher = new FileSystemUrlPublisher<PreprocessorTests>(outputDirectory, new TestLogger<PreprocessorTests>(outputHelper));
+        _urlPublisher = new FileSystemUrlPublisher<PreprocessorTests_dirty>(outputDirectory, new TestLogger<PreprocessorTests_dirty>(outputHelper));
 
         // Load font for text rendering
         FontFamily fontFamily;

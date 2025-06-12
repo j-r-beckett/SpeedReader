@@ -11,16 +11,16 @@ using Xunit.Abstractions;
 namespace Ocr.Test;
 
 [Collection("ONNX")]
-public class RecognitionEndToEndTests
+public class RecognitionEndToEndTests_dirty
 {
     private readonly ITestOutputHelper _outputHelper;
-    private readonly TestLogger<RecognitionEndToEndTests> _logger;
+    private readonly TestLogger<RecognitionEndToEndTests_dirty> _logger;
     private readonly Font _font;
 
-    public RecognitionEndToEndTests(ITestOutputHelper outputHelper)
+    public RecognitionEndToEndTests_dirty(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-        _logger = new TestLogger<RecognitionEndToEndTests>(outputHelper);
+        _logger = new TestLogger<RecognitionEndToEndTests_dirty>(outputHelper);
 
         // Load font for text rendering
         FontFamily fontFamily;
@@ -48,8 +48,8 @@ public class RecognitionEndToEndTests
         using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
         // Step 1: Preprocessing - process the whole image
-        var rectangles = new List<Rectangle>[] { 
-            new List<Rectangle> { new Rectangle(0, 0, testImage.Width, testImage.Height) } 
+        var rectangles = new List<Rectangle>[] {
+            new List<Rectangle> { new Rectangle(0, 0, testImage.Width, testImage.Height) }
         };
         using var preprocessedBuffer = SVTRv2.PreProcess([testImage], rectangles);
 

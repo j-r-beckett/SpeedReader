@@ -12,19 +12,19 @@ using Xunit.Abstractions;
 namespace Ocr.Test;
 
 [Collection("ONNX")]
-public class EndToEndTests
+public class EndToEndTests_dirty
 {
     private readonly ITestOutputHelper _outputHelper;
-    private readonly TestLogger<EndToEndTests> _logger;
-    private readonly FileSystemUrlPublisher<EndToEndTests> _urlPublisher;
+    private readonly TestLogger<EndToEndTests_dirty> _logger;
+    private readonly FileSystemUrlPublisher<EndToEndTests_dirty> _urlPublisher;
     private readonly Font _font;
 
-    public EndToEndTests(ITestOutputHelper outputHelper)
+    public EndToEndTests_dirty(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-        _logger = new TestLogger<EndToEndTests>(outputHelper);
+        _logger = new TestLogger<EndToEndTests_dirty>(outputHelper);
         var outputDirectory = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "out", "debug");
-        _urlPublisher = new FileSystemUrlPublisher<EndToEndTests>(outputDirectory, _logger);
+        _urlPublisher = new FileSystemUrlPublisher<EndToEndTests_dirty>(outputDirectory, _logger);
 
         // Load font for text rendering
         FontFamily fontFamily;
@@ -61,7 +61,7 @@ public class EndToEndTests
         // Step 2: Inference
         using var modelOutput = ModelRunner.Run(session, preprocessedBuffer.AsTensor());
 
-        // Step 3: Post-processing  
+        // Step 3: Post-processing
         var detectedPolygons = DBNet.PostProcess(modelOutput, [testImage]);
 
         // Assert: Verify we detected at least one rectangle in first batch

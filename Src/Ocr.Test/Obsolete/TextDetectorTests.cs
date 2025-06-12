@@ -12,20 +12,20 @@ using Xunit.Abstractions;
 namespace Ocr.Test;
 
 [Collection("ONNX")]
-public class TextDetectorTests
+public class TextDetectorTests_dirty
 {
     private readonly ITestOutputHelper _outputHelper;
-    private readonly TestLogger<TextDetectorTests> _logger;
-    private readonly FileSystemUrlPublisher<TextDetectorTests> _urlPublisher;
+    private readonly TestLogger<TextDetectorTests_dirty> _logger;
+    private readonly FileSystemUrlPublisher<TextDetectorTests_dirty> _urlPublisher;
     private readonly Font _font;
     private readonly int _bufferSize = 10;
 
-    public TextDetectorTests(ITestOutputHelper outputHelper)
+    public TextDetectorTests_dirty(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-        _logger = new TestLogger<TextDetectorTests>(outputHelper);
+        _logger = new TestLogger<TextDetectorTests_dirty>(outputHelper);
         var outputDirectory = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "out", "debug");
-        _urlPublisher = new FileSystemUrlPublisher<TextDetectorTests>(outputDirectory, _logger);
+        _urlPublisher = new FileSystemUrlPublisher<TextDetectorTests_dirty>(outputDirectory, _logger);
 
         _logger.LogError("Hello world");
 
