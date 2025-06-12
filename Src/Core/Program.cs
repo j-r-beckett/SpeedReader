@@ -90,7 +90,7 @@ public class Program
                     var assembly = Assembly.GetExecutingAssembly();
                     using var fontStream = assembly.GetManifestResourceStream("Core.arial.ttf");
                     var fontCollection = new FontCollection();
-                    var fontFamily = fontCollection.Add(fontStream);
+                    var fontFamily = fontCollection.Add(fontStream!);
                     var font = fontFamily.CreateFont(16, FontStyle.Bold);
 
                     image.Mutate(ctx =>
@@ -133,7 +133,7 @@ public class Program
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error: {ex}");
-                Console.Error.WriteLine($"Inner: {ex.InnerException.StackTrace}");
+                Console.Error.WriteLine($"Inner: {ex.InnerException?.StackTrace}");
                 Environment.Exit(1);
             }
         }, inputArgument, outputArgument);
