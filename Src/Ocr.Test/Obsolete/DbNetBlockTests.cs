@@ -14,19 +14,19 @@ using Xunit.Abstractions;
 namespace Ocr.Test;
 
 [Collection("ONNX")]
-public class DbNetBlockTests
+public class DbNetBlockTests_dirty
 {
     private readonly ITestOutputHelper _outputHelper;
-    private readonly TestLogger<DbNetBlockTests> _logger;
-    private readonly FileSystemUrlPublisher<DbNetBlockTests> _urlPublisher;
+    private readonly TestLogger<DbNetBlockTests_dirty> _logger;
+    private readonly FileSystemUrlPublisher<DbNetBlockTests_dirty> _urlPublisher;
     private readonly Font _font;
 
-    public DbNetBlockTests(ITestOutputHelper outputHelper)
+    public DbNetBlockTests_dirty(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-        _logger = new TestLogger<DbNetBlockTests>(outputHelper);
+        _logger = new TestLogger<DbNetBlockTests_dirty>(outputHelper);
         var outputDirectory = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "out", "debug");
-        _urlPublisher = new FileSystemUrlPublisher<DbNetBlockTests>(outputDirectory, _logger);
+        _urlPublisher = new FileSystemUrlPublisher<DbNetBlockTests_dirty>(outputDirectory, _logger);
 
         // Load font for text rendering
         FontFamily fontFamily;

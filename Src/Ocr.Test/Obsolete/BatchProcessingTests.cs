@@ -12,17 +12,17 @@ using Xunit.Abstractions;
 namespace Ocr.Test;
 
 [Collection("ONNX")]
-public class BatchProcessingTests
+public class BatchProcessingTests_dirty
 {
     private readonly ITestOutputHelper _outputHelper;
     private readonly Font _font;
-    private readonly FileSystemUrlPublisher<BatchProcessingTests> _urlPublisher;
+    private readonly FileSystemUrlPublisher<BatchProcessingTests_dirty> _urlPublisher;
 
-    public BatchProcessingTests(ITestOutputHelper outputHelper)
+    public BatchProcessingTests_dirty(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
         var outputDirectory = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "out", "debug");
-        _urlPublisher = new FileSystemUrlPublisher<BatchProcessingTests>(outputDirectory, new TestLogger<BatchProcessingTests>(outputHelper));
+        _urlPublisher = new FileSystemUrlPublisher<BatchProcessingTests_dirty>(outputDirectory, new TestLogger<BatchProcessingTests_dirty>(outputHelper));
 
         // Load font for text rendering
         FontFamily fontFamily;
@@ -40,7 +40,7 @@ public class BatchProcessingTests
 
         // Create images with words in different quadrants (3-letter codes, half dimensions)
         using var image1 = CreateImageWithText("TOP", (12, 19));       // Top-left quadrant
-        using var image2 = CreateImageWithText("RGT", (12, 69));       // Top-right quadrant  
+        using var image2 = CreateImageWithText("RGT", (12, 69));       // Top-right quadrant
         using var image3 = CreateImageWithText("BOT", (56, 19));       // Bottom-left quadrant
         using var image4 = CreateImageWithText("LFT", (56, 69));       // Bottom-right quadrant
 
@@ -94,7 +94,7 @@ public class BatchProcessingTests
         // Quadrant 0: Top-left
         quadrantTotals[0] = CalculateQuadrantTotal(probabilityMap, 0, height / 2, 0, width / 2);
 
-        // Quadrant 1: Top-right  
+        // Quadrant 1: Top-right
         quadrantTotals[1] = CalculateQuadrantTotal(probabilityMap, 0, height / 2, width / 2, width);
 
         // Quadrant 2: Bottom-left
@@ -103,7 +103,7 @@ public class BatchProcessingTests
         // Quadrant 3: Bottom-right
         quadrantTotals[3] = CalculateQuadrantTotal(probabilityMap, height / 2, height, width / 2, width);
 
-        var logger = new TestLogger<BatchProcessingTests>(_outputHelper);
+        var logger = new TestLogger<BatchProcessingTests_dirty>(_outputHelper);
         logger.LogInformation($"Text '{expectedText}' quadrant totals: TL={quadrantTotals[0]:F1}, TR={quadrantTotals[1]:F1}, BL={quadrantTotals[2]:F1}, BR={quadrantTotals[3]:F1}");
 
         // The expected quadrant should have significantly higher total probability than any other quadrant
