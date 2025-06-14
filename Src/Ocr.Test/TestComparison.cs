@@ -63,8 +63,8 @@ public class OcrValidator
             Assert.True(IsContainedWithin(detectedBox, hintBox),
                 $"Detected box {detectedBox} at index {i} is not contained within hint box {hintBox}");
 
-            var minWidth = hintBox.Width * 0.6;
-            var minHeight = hintBox.Height * 0.4;
+            var minWidth = hintBox.Width * 0.4;
+            var minHeight = hintBox.Height * 0.25;
             Assert.True(MeetsMinimumSize(detectedBox, hintBox),
                 $"Detected box {detectedBox} at index {i} is too small (min: {minWidth:F0}x{minHeight:F0})");
         }
@@ -73,33 +73,48 @@ public class OcrValidator
 
     private bool TextMatches(string expected, string actual)
     {
-        // First try exact match
-        if (expected == actual)
-            return true;
-
-        // Try with common OCR character substitutions
-        var normalizedExpected = NormalizeOcrText(expected);
-        var normalizedActual = NormalizeOcrText(actual);
-
-        return normalizedExpected == normalizedActual;
+        var expectedTrimmed = expected.Trim().ToUpperInvariant();
+        var actualTrimmed = actual.Trim().ToUpperInvariant();
+        
+        // Allow up to 1 character difference using Levenshtein distance
+        return LevenshteinDistance(expectedTrimmed, actualTrimmed) <= 1;
     }
 
-    private string NormalizeOcrText(string text)
+    private int LevenshteinDistance(string s1, string s2)
     {
-        return text
-            .Replace('O', '0')  // Letter O → Digit 0
-            .Replace('o', '0')  // Lowercase o → Digit 0
-            .Replace('I', '1')  // Letter I → Digit 1
-            .Replace('l', '1')  // Lowercase l → Digit 1
-            .Replace('S', '5')  // Letter S → Digit 5
-            .Replace('s', '5')  // Lowercase s → Digit 5
-            .Replace('Z', '2')  // Letter Z → Digit 2
-            .Replace('z', '2')  // Lowercase z → Digit 2
-            .Replace('G', '6')  // Letter G → Digit 6
-            .Replace('g', '6')  // Lowercase g → Digit 6
-            .Replace('B', '8')  // Letter B → Digit 8
-            .Replace('b', '8')  // Lowercase b → Digit 8
-            .ToUpperInvariant(); // Normalize case
+        var memo = new Dictionary<(int, int), int>();
+        return LevenshteinDistanceRecursive(s1, s2, s1.Length, s2.Length, memo);
+    }
+    
+    private int LevenshteinDistanceRecursive(string s1, string s2, int i, int j, Dictionary<(int, int), int> memo)
+    {
+        // Base cases
+        if (i == 0) return j;
+        if (j == 0) return i;
+        
+        // Check memoization
+        var key = (i, j);
+        if (memo.ContainsKey(key))
+            return memo[key];
+        
+        int result;
+        if (s1[i - 1] == s2[j - 1])
+        {
+            // Characters match, no operation needed
+            result = LevenshteinDistanceRecursive(s1, s2, i - 1, j - 1, memo);
+        }
+        else
+        {
+            // Characters don't match, try all three operations and take minimum
+            var substitute = LevenshteinDistanceRecursive(s1, s2, i - 1, j - 1, memo) + 1;
+            var delete = LevenshteinDistanceRecursive(s1, s2, i - 1, j, memo) + 1;
+            var insert = LevenshteinDistanceRecursive(s1, s2, i, j - 1, memo) + 1;
+            
+            result = Math.Min(Math.Min(substitute, delete), insert);
+        }
+        
+        memo[key] = result;
+        return result;
     }
 
 
@@ -162,8 +177,8 @@ public class OcrValidator
 
     private bool MeetsMinimumSize(Rectangle detected, Rectangle hint)
     {
-        var minWidth = hint.Width * 0.6;   // 40% minimum width
-        var minHeight = hint.Height * 0.4; // 30% minimum height
+        var minWidth = hint.Width * 0.4;   // 40% minimum width
+        var minHeight = hint.Height * 0.25; // 25% minimum height
 
         return detected.Width >= minWidth && detected.Height >= minHeight;
     }

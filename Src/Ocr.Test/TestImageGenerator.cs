@@ -11,10 +11,7 @@ public record GeneratedImage(Image<Rgb24> Image, RenderedText[] RenderedTexts);
 
 public static class TestImageGenerator
 {
-    private static readonly string[] Words =
-    {
-        "GO", "CAT", "RUN", "SUN", "WIN", "FUN", "JOY", "BOX", "KEY", "MAP"
-    };
+    private static readonly char[] UppercaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
 
     public static GeneratedImage Generate(Size imageSize, params Rectangle[] hintBoxes)
     {
@@ -33,16 +30,33 @@ public static class TestImageGenerator
 
     private static RenderedText RenderTextInHintBox(Image<Rgb24> image, Rectangle hintBox, FontFamily fontFamily, Random random)
     {
-        var word = Words[random.Next(Words.Length)];
-        var digit = random.Next(0, 10);
-        var text = $"{word}{digit}";
-
-        // Size font to fit within hint box with margin
+        // With monospace font, calculate optimal character count first
         var maxWidth = hintBox.Width * 0.9f;
         var maxHeight = hintBox.Height * 0.8f;
 
-        var fontSize = Math.Min(maxWidth / text.Length * 1.2f, maxHeight);
+        // Start with font size based on height constraint
+        var fontSize = maxHeight;
         var font = fontFamily.CreateFont(fontSize, FontStyle.Regular);
+        
+        // Measure a single character width (monospace = all chars same width)
+        var singleCharWidth = TextMeasurer.MeasureSize("A", new TextOptions(font)).Width;
+        
+        // Calculate how many characters can fit
+        var targetLength = Math.Max(2, Math.Min(8, (int)(maxWidth / singleCharWidth)));
+        var text = GenerateRandomLetters(random, targetLength);
+
+        // Safety check: ensure text won't overshoot the box
+        var testTextSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
+        while (testTextSize.Width > maxWidth && targetLength > 2)
+        {
+            targetLength--;
+            text = GenerateRandomLetters(random, targetLength);
+            testTextSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
+        }
+
+        // Now size font to fit both width and height constraints
+        fontSize = Math.Min(maxWidth / text.Length, maxHeight);
+        font = fontFamily.CreateFont(fontSize, FontStyle.Regular);
         var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
 
         // Ensure text actually fits, reduce font size if needed
@@ -67,8 +81,27 @@ public static class TestImageGenerator
         return new RenderedText(text);
     }
 
+    private static string GenerateRandomLetters(Random random, int length)
+    {
+        var chars = new char[length];
+        for (int i = 0; i < length; i++)
+        {
+            chars[i] = UppercaseLetters[random.Next(UppercaseLetters.Length)];
+        }
+        return new string(chars);
+    }
+
     private static FontFamily GetFontFamily()
     {
+        // Try to get a monospace font first for consistent character spacing
+        if (SystemFonts.TryGet("Courier New", out var courier))
+            return courier;
+        if (SystemFonts.TryGet("Consolas", out var consolas))
+            return consolas;
+        if (SystemFonts.TryGet("Monaco", out var monaco))
+            return monaco;
+        
+        // Fallback to Arial if no monospace fonts available
         return SystemFonts.TryGet("Arial", out var arial) ? arial : SystemFonts.Families.First();
     }
 }
