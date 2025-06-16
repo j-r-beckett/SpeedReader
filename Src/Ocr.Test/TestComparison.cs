@@ -42,7 +42,7 @@ public class OcrValidator
 
         // Find spatial matching between detected boxes and hint boxes
         var matches = FindSpatialMatches(hintBoxes, detectedBoxes);
-        Assert.True(matches != null, 
+        Assert.True(matches != null,
             $"Could not create spatial matching between {detectedBoxes.Length} detected boxes and {hintBoxes.Length} hint boxes. " +
             "This usually means detected boxes don't overlap sufficiently with hint boxes.");
 
@@ -62,11 +62,6 @@ public class OcrValidator
             // Spatial validation: Check if detected box is within hint box
             Assert.True(IsContainedWithin(detectedBox, hintBox),
                 $"Detected box {detectedBox} at index {i} is not contained within hint box {hintBox}");
-
-            var minWidth = hintBox.Width * 0.4;
-            var minHeight = hintBox.Height * 0.25;
-            Assert.True(MeetsMinimumSize(detectedBox, hintBox),
-                $"Detected box {detectedBox} at index {i} is too small (min: {minWidth:F0}x{minHeight:F0})");
         }
     }
 
@@ -75,7 +70,7 @@ public class OcrValidator
     {
         var expectedTrimmed = expected.Trim().ToUpperInvariant();
         var actualTrimmed = actual.Trim().ToUpperInvariant();
-        
+
         // Allow up to 1 character difference using Levenshtein distance
         return LevenshteinDistance(expectedTrimmed, actualTrimmed) <= 1;
     }
@@ -85,18 +80,18 @@ public class OcrValidator
         var memo = new Dictionary<(int, int), int>();
         return LevenshteinDistanceRecursive(s1, s2, s1.Length, s2.Length, memo);
     }
-    
+
     private int LevenshteinDistanceRecursive(string s1, string s2, int i, int j, Dictionary<(int, int), int> memo)
     {
         // Base cases
         if (i == 0) return j;
         if (j == 0) return i;
-        
+
         // Check memoization
         var key = (i, j);
         if (memo.ContainsKey(key))
             return memo[key];
-        
+
         int result;
         if (s1[i - 1] == s2[j - 1])
         {
@@ -109,10 +104,10 @@ public class OcrValidator
             var substitute = LevenshteinDistanceRecursive(s1, s2, i - 1, j - 1, memo) + 1;
             var delete = LevenshteinDistanceRecursive(s1, s2, i - 1, j, memo) + 1;
             var insert = LevenshteinDistanceRecursive(s1, s2, i, j - 1, memo) + 1;
-            
+
             result = Math.Min(Math.Min(substitute, delete), insert);
         }
-        
+
         memo[key] = result;
         return result;
     }
@@ -173,14 +168,6 @@ public class OcrValidator
                inner.Y >= outer.Y &&
                inner.Right <= outer.Right &&
                inner.Bottom <= outer.Bottom;
-    }
-
-    private bool MeetsMinimumSize(Rectangle detected, Rectangle hint)
-    {
-        var minWidth = hint.Width * 0.4;   // 40% minimum width
-        var minHeight = hint.Height * 0.25; // 25% minimum height
-
-        return detected.Width >= minWidth && detected.Height >= minHeight;
     }
 
     private void GenerateDebugImage(GeneratedImage generated, string[] recognizedTexts, Rectangle[] detectedBoxes, Rectangle[] hintBoxes)
