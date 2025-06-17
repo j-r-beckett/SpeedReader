@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Wheft is a .NET 8 video processing solution with five main components:
+SpeedReader is a .NET 8 video processing solution with five main components:
 - **Engine**: Core video processing library using FFMpegCore, CliWrap, and SixLabors.ImageSharp
 - **Engine.Test**: Test project with video generation and processing tests
 - **Engine.Benchmark**: Performance benchmarking with Chart.js visualization
@@ -48,7 +48,7 @@ dotnet run analyze.cs
 
 ## Architecture Notes
 
-# Backpressure Implementation in Wheft
+# Backpressure Implementation in SpeedReader
 
 ## Core Principle
 **FFmpeg + Unix pipes provide natural backpressure coordination** - when stdout blocks, FFmpeg automatically pauses stdin. No manual throttling needed.
@@ -170,7 +170,7 @@ Test-generated media files are saved to `{CurrentDirectory}/out/debug/` and logg
 - Exploring integration patterns between different systems
 
 **When NOT to use the index**:
-- For basic questions easily answered from existing Wheft code
+- For basic questions easily answered from existing SpeedReader code
 - For general programming concepts not specific to the reference libraries
 - When the task is straightforward and doesn't require deep technical research
 

@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>wheft</AssemblyName>
+    <AssemblyName>speedread</AssemblyName>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
