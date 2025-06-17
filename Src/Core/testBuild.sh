@@ -9,7 +9,7 @@ if ! timeout 5s docker info >/dev/null 2>&1; then
 fi
 
 # Publish the Core project first
-echo "Publishing Wheft Core project..."
+echo "Publishing SpeedReader Core project..."
 cd /home/jimmy/Wheft
 dotnet publish Src/Core/Core.csproj -c Release
 if [ $? -ne 0 ]; then
@@ -20,7 +20,7 @@ fi
 # Build Docker image
 echo "Building Docker image..."
 cd Src/Core
-docker build -t wheft-test:latest --progress plain .
+docker build -t speedreader-test:latest --progress plain .
 if [ $? -ne 0 ]; then
   echo "Error: Failed to build Docker image"
   exit 1
@@ -28,7 +28,7 @@ fi
 
 # Create container
 echo "Creating container..."
-CONTAINER_ID=$(docker create wheft-test:latest)
+CONTAINER_ID=$(docker create speedreader-test:latest)
 if [ -z "$CONTAINER_ID" ]; then
   echo "Error: Failed to create container"
   exit 1
@@ -43,9 +43,9 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Copy wheft executable into container
-echo "Copying wheft executable into container..."
-docker cp bin/Release/net10.0/linux-x64/publish/wheft "$CONTAINER_ID":/app/wheft
+# Copy speedreader executable into container
+echo "Copying speedreader executable into container..."
+docker cp bin/Release/net10.0/linux-x64/publish/speedreader "$CONTAINER_ID":/app/speedreader
 #docker cp bin/Release/net10.0/linux-x64/native/wheft "$CONTAINER_ID":/app/wheft
 if [ $? -ne 0 ]; then
   echo "Error: Failed to copy wheft executable into container"
@@ -53,8 +53,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Make wheft executable
-docker exec "$CONTAINER_ID" chmod +x /app/wheft
+# Make speedreader executable
+docker exec "$CONTAINER_ID" chmod +x /app/speedreader
 
 # Copy test image into container
 echo "Copying hello.jpg into container..."
@@ -65,12 +65,12 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Run wheft binary and capture output
-echo "Running wheft binary..."
-OUTPUT=$(docker exec "$CONTAINER_ID" /app/wheft hello.jpg output.png 2>&1)
+# Run speedreader binary and capture output
+echo "Running speedreader binary..."
+OUTPUT=$(docker exec "$CONTAINER_ID" /app/speedreader hello.jpg output.png 2>&1)
 EXIT_CODE=$?
 
-echo "=== Wheft Output ==="
+echo "=== SpeedReader Output ==="
 echo "$OUTPUT"
 echo "===================="
 

@@ -103,7 +103,7 @@ public static class FFmpegResolver
         var xdgDataHome = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
         if (!string.IsNullOrEmpty(xdgDataHome) && HasWriteAccess(xdgDataHome))
         {
-            return Path.Combine(xdgDataHome, "wheft", "binaries", binaryName);
+            return Path.Combine(xdgDataHome, "speedreader", "binaries", binaryName);
         }
 
         // 2. Fallback to ~/.local/share (XDG default)
@@ -113,12 +113,12 @@ public static class FFmpegResolver
             var localShareDir = Path.Combine(homeDir, ".local", "share");
             if (HasWriteAccess(localShareDir))
             {
-                return Path.Combine(localShareDir, "wheft", "binaries", binaryName);
+                return Path.Combine(localShareDir, "speedreader", "binaries", binaryName);
             }
         }
 
         // 3. Final fallback to /tmp for containers/edge cases
-        return Path.Combine("/tmp", "wheft", "binaries", binaryName);
+        return Path.Combine("/tmp", "speedreader", "binaries", binaryName);
     }
 
     private static bool HasWriteAccess(string directoryPath)
