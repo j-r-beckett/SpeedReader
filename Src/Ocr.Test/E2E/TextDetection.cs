@@ -85,6 +85,44 @@ public class TextDetection
         await TestTextDetection(images, boundingBoxes);
     }
 
+    [Fact]
+    public async Task TextDetectionHandlesJaggedBatch()
+    {
+        const int size = 3;
+        var images = new Image<Rgb24>[size];
+        var boundingBoxes = new List<Rectangle>[size];
+        for (int i = 0; i < boundingBoxes.Length; i++)
+        {
+            boundingBoxes[i] = [];
+        }
+
+        // Square image
+        images[0] = new Image<Rgb24>(800, 800, Color.White);
+        boundingBoxes[0].Add(DrawText(images[0], "square", 100, 100));
+        boundingBoxes[0].Add(DrawText(images[0], "center", 350, 350));
+        boundingBoxes[0].Add(DrawText(images[0], "corner", 650, 650));
+        boundingBoxes[0].Add(DrawText(images[0], "side", 100, 650));
+        boundingBoxes[0].Add(DrawText(images[0], "edge", 650, 100));
+
+        // Long and short rectangle
+        images[1] = new Image<Rgb24>(2400, 400, Color.White);
+        boundingBoxes[1].Add(DrawText(images[1], "wide", 100, 100));
+        boundingBoxes[1].Add(DrawText(images[1], "long", 800, 200));
+        boundingBoxes[1].Add(DrawText(images[1], "stretch", 2000, 100));
+        boundingBoxes[1].Add(DrawText(images[1], "span", 400, 300));
+        boundingBoxes[1].Add(DrawText(images[1], "broad", 1200, 300));
+
+        // Tall and thin rectangle
+        images[2] = new Image<Rgb24>(400, 1600, Color.White);
+        boundingBoxes[2].Add(DrawText(images[2], "tall", 100, 100));
+        boundingBoxes[2].Add(DrawText(images[2], "thin", 200, 400));
+        boundingBoxes[2].Add(DrawText(images[2], "high", 100, 800));
+        boundingBoxes[2].Add(DrawText(images[2], "long", 200, 1200));
+        boundingBoxes[2].Add(DrawText(images[2], "slim", 100, 1500));
+
+        await TestTextDetection(images, boundingBoxes);
+    }
+
     private async Task TestTextDetection(Image<Rgb24>[] images, List<Rectangle>[] expectedBoundingBoxes)
     {
         Debug.Assert(images.Length == expectedBoundingBoxes.Length);
@@ -108,7 +146,7 @@ public class TextDetection
                 var expected = expectedBoundingBoxes[i][j];
                 var closestActual = actuals.MinBy(r => CalculateCloseness(r, expected));
                 actuals.Remove(closestActual);
-                Assert.True(Pad(closestActual, 5).Contains(expected));
+                Assert.True(Pad(closestActual, 2).Contains(expected));
 
                 Assert.True(closestActual.Width * 0.5 < expected.Width);
                 Assert.True(closestActual.Height * 0.5 < expected.Height);

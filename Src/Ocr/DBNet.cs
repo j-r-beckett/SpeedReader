@@ -78,7 +78,7 @@ public static class DBNet
             (int originalWidth, int originalHeight) = (originalBatch[i].Width, originalBatch[i].Height);
 
             // Calculate the actual fitted dimensions (without padding) for this image
-            var (fittedWidth, fittedHeight) = CalculateFittedDimensions(originalWidth, originalHeight);
+            var (batchWidth, batchHeight) = CalculateDimensions(originalBatch);
 
             foreach (var connectedComponent in components)
             {
@@ -98,7 +98,8 @@ public static class DBNet
                 }
 
                 // Scale to original coordinates using fitted dimensions
-                Scale(dilatedPolygon, originalWidth, originalHeight, fittedWidth, fittedHeight);
+                double scale = Math.Max((double)originalWidth / batchWidth, (double)originalHeight / batchHeight);
+                Scale(dilatedPolygon, scale, scale);
                 var boundingBox = GetBoundingBox(dilatedPolygon);
                 boundingBoxes.Add(boundingBox);
             }
@@ -109,19 +110,12 @@ public static class DBNet
         return results;
     }
 
-    internal static void Scale(List<(int X, int Y)> polygon, int originalWidth, int originalHeight, int modelWidth, int modelHeight)
+    internal static void Scale(List<(int X, int Y)> polygon, double scaleX, double scaleY)
     {
-        float scaleX = (float)originalWidth / modelWidth;
-        float scaleY = (float)originalHeight / modelHeight;
-
         for (int i = 0; i < polygon.Count; i++)
         {
             int originalX = (int)Math.Round(polygon[i].X * scaleX);
             int originalY = (int)Math.Round(polygon[i].Y * scaleY);
-
-            originalX = Math.Clamp(originalX, 0, originalWidth - 1);
-            originalY = Math.Clamp(originalY, 0, originalHeight - 1);
-
             polygon[i] = (originalX, originalY);
         }
     }
