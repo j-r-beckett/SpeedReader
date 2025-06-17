@@ -68,37 +68,37 @@ public static class Resampling
     /// Uses bicubic resampling. Height is fixed, width varies with aspect ratio constraints.
     /// Used by SVTRv2 preprocessing for variable-width text recognition.
     /// </remarks>
-    public static void ScaleResizeInto(Image<Rgb24> src, Span<float> dest, int destWidth, int destHeight, int minWidth, int maxWidth)
-    {
-        if (destWidth * destHeight * 3 != dest.Length)
-        {
-            throw new ArgumentException(
-                $"Expected buffer size {destWidth * destHeight * 3}, actual size was {dest.Length}");
-        }
-
-        // Calculate target width maintaining aspect ratio
-        double aspectRatio = (double)src.Width / src.Height;
-        int targetWidth = (int)Math.Round(aspectRatio * destHeight);
-        targetWidth = Math.Max(minWidth, Math.Min(destWidth, targetWidth));
-
-        ResizeToExactDimensions(src, targetWidth, destHeight, out Memory<Rgb24> resizedMemory);
-
-        // Clear destination buffer to black (padding)
-        dest.Clear();
-
-        // Copy resized image to the left side of destination buffer in HWC format
-        for (int y = 0; y < destHeight; y++)
-        {
-            for (int x = 0; x < targetWidth; x++)
-            {
-                var pixel = resizedMemory.Span[y * targetWidth + x];
-                int destIndex = (y * destWidth + x) * 3;
-                dest[destIndex] = pixel.R;      // R
-                dest[destIndex + 1] = pixel.G;  // G
-                dest[destIndex + 2] = pixel.B;  // B
-            }
-        }
-    }
+    // public static void ScaleResizeInto(Image<Rgb24> src, Span<float> dest, int destWidth, int destHeight, int minWidth, int maxWidth)
+    // {
+    //     if (destWidth * destHeight * 3 != dest.Length)
+    //     {
+    //         throw new ArgumentException(
+    //             $"Expected buffer size {destWidth * destHeight * 3}, actual size was {dest.Length}");
+    //     }
+    //
+    //     // Calculate target width maintaining aspect ratio
+    //     double aspectRatio = (double)src.Width / src.Height;
+    //     int targetWidth = (int)Math.Round(aspectRatio * destHeight);
+    //     targetWidth = Math.Max(minWidth, Math.Min(destWidth, targetWidth));
+    //
+    //     ResizeToExactDimensions(src, targetWidth, destHeight, out Memory<Rgb24> resizedMemory);
+    //
+    //     // Clear destination buffer to black (padding)
+    //     dest.Clear();
+    //
+    //     // Copy resized image to the left side of destination buffer in HWC format
+    //     for (int y = 0; y < destHeight; y++)
+    //     {
+    //         for (int x = 0; x < targetWidth; x++)
+    //         {
+    //             var pixel = resizedMemory.Span[y * targetWidth + x];
+    //             int destIndex = (y * destWidth + x) * 3;
+    //             dest[destIndex] = pixel.R;      // R
+    //             dest[destIndex + 1] = pixel.G;  // G
+    //             dest[destIndex + 2] = pixel.B;  // B
+    //         }
+    //     }
+    // }
 
     /// <summary>
     /// Crops a region from the source image, scales to specified dimensions, then left-aligns with black padding on right.
