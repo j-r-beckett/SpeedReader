@@ -34,7 +34,7 @@ public class Program
             Arity = ArgumentArity.ZeroOrOne
         };
 
-        var rootCommand = new RootCommand("Wheft - Text detection tool")
+        var rootCommand = new RootCommand("SpeedReader - Text detection tool")
         {
             inputArgument,
             outputArgument
