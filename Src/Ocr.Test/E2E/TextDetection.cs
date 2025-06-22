@@ -154,7 +154,7 @@ public class TextDetection
         }
     }
 
-    private static Rectangle Pad(Rectangle r, int p) => new (r.X - p, r.Y - p, r.Width + 2 * p, r.Height + 2 * p);
+    private static Rectangle Pad(Rectangle r, int p) => new(r.X - p, r.Y - p, r.Width + 2 * p, r.Height + 2 * p);
 
     private static int CalculateCloseness(Rectangle r1, Rectangle r2)
     {

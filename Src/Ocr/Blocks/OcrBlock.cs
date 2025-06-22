@@ -11,9 +11,9 @@ public static class OcrBlock
     {
         var dbNetBlock = DBNetBlock.Create(dbnetSession);
         var svtrBlock = SVTRBlock.Create(svtrSession);
-        
+
         dbNetBlock.LinkTo(svtrBlock, new DataflowLinkOptions { PropagateCompletion = true });
-        
+
         return DataflowBlock.Encapsulate(dbNetBlock, svtrBlock);
     }
 }
