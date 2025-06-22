@@ -7,7 +7,7 @@ namespace Ocr.Blocks;
 
 public static class DBNetBlock
 {
-    public static IPropagatorBlock<Image<Rgb24>, List<Rectangle>> Create(InferenceSession session)
+    public static IPropagatorBlock<Image<Rgb24>, (Image<Rgb24>, List<Rectangle>)> Create(InferenceSession session)
     {
         var batchBlock = CreateAdaptiveBatchBlock<Image<Rgb24>>();
         var preProcessingBlock = CreatePreProcessingBlock();
@@ -41,13 +41,20 @@ public static class DBNetBlock
         });
     }
 
-    private static TransformManyBlock<(Buffer<float>, Image<Rgb24>[]), List<Rectangle>> CreatePostProcessingBlock()
+    private static TransformManyBlock<(Buffer<float>, Image<Rgb24>[]), (Image<Rgb24>, List<Rectangle>)> CreatePostProcessingBlock()
     {
-        return new TransformManyBlock<(Buffer<float> Buffer, Image<Rgb24>[] Batch), List<Rectangle>>(data =>
+        return new TransformManyBlock<(Buffer<float> Buffer, Image<Rgb24>[] Batch), (Image<Rgb24>, List<Rectangle>)>(data =>
         {
-            var result = DBNet.PostProcess(data.Buffer, data.Batch);
+            var rectangleResults = DBNet.PostProcess(data.Buffer, data.Batch);
             data.Buffer.Dispose();
-            return result;
+            
+            // Return tuple combining original images with their detected rectangles
+            var results = new List<(Image<Rgb24>, List<Rectangle>)>();
+            for (int i = 0; i < data.Batch.Length; i++)
+            {
+                results.Add((data.Batch[i], rectangleResults[i]));
+            }
+            return results;
         });
     }
 }
