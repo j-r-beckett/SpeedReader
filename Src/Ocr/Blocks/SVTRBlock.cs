@@ -7,7 +7,7 @@ namespace Ocr.Blocks;
 
 public static class SVTRBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<Rectangle>), List<string>> Create(InferenceSession session)
+    public static IPropagatorBlock<(Image<Rgb24>, List<Rectangle>), (Image<Rgb24>, List<Rectangle>, List<string>)> Create(InferenceSession session)
     {
         var batchBlock = CreateAdaptiveBatchBlock<(Image<Rgb24>, List<Rectangle>)>();
         var preProcessingBlock = CreatePreProcessingBlock();
@@ -48,25 +48,25 @@ public static class SVTRBlock
         });
     }
 
-    private static TransformManyBlock<(Buffer<float>, (Image<Rgb24>, List<Rectangle>)[]), List<string>> CreatePostProcessingBlock()
+    private static TransformManyBlock<(Buffer<float>, (Image<Rgb24>, List<Rectangle>)[]), (Image<Rgb24>, List<Rectangle>, List<string>)> CreatePostProcessingBlock()
     {
-        return new TransformManyBlock<(Buffer<float> Buffer, (Image<Rgb24>, List<Rectangle>)[] Batch), List<string>>(data =>
+        return new TransformManyBlock<(Buffer<float> Buffer, (Image<Rgb24>, List<Rectangle>)[] Batch), (Image<Rgb24>, List<Rectangle>, List<string>)>(data =>
         {
             var recognizedTexts = SVTRv2.PostProcess(data.Buffer);
             data.Buffer.Dispose();
             
-            // Convert to individual results per batch item
-            var results = new List<List<string>>();
+            // Return tuple combining original images, rectangles, and recognized texts
+            var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>)>();
             int textIndex = 0;
             
-            foreach (var (_, rectangles) in data.Batch)
+            foreach (var (image, rectangles) in data.Batch)
             {
-                var batchResult = new List<string>();
+                var batchTexts = new List<string>();
                 for (int i = 0; i < rectangles.Count; i++)
                 {
-                    batchResult.Add(recognizedTexts[textIndex++]);
+                    batchTexts.Add(recognizedTexts[textIndex++]);
                 }
-                results.Add(batchResult);
+                results.Add((image, rectangles, batchTexts));
             }
             
             return results;

@@ -55,33 +55,24 @@ public class Program
                 using var image = await Image.LoadAsync<Rgb24>(input.FullName);
 
 
-                // Step 1: Text Detection with DBNet
+                // Create OCR pipeline
                 using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
-                var dbNetBlock = DBNetBlock.Create(dbnetSession);
+                using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+                
+                var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
+                
+                var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>)>();
+                var resultCollector = new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>)>(data => results.Add(data));
+                
+                ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
-                var detectedRectangles = new List<Rectangle>();
-                var rectangleCollector = new ActionBlock<List<Rectangle>>(rects => detectedRectangles.AddRange(rects));
+                await ocrBlock.SendAsync(image);
+                ocrBlock.Complete();
+                await resultCollector.Completion;
 
-                dbNetBlock.LinkTo(rectangleCollector, new DataflowLinkOptions { PropagateCompletion = true });
-
-                await dbNetBlock.SendAsync(image);
-                dbNetBlock.Complete();
-                await rectangleCollector.Completion;
-
-                // Step 2: Text Recognition with SVTRv2 (if text was detected)
-                List<string> recognizedTexts = new();
-                if (detectedRectangles.Count > 0)
-                {
-                    using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
-                    var svtrBlock = SVTRBlock.Create(svtrSession);
-
-                    var textCollector = new ActionBlock<List<string>>(texts => recognizedTexts.AddRange(texts));
-                    svtrBlock.LinkTo(textCollector, new DataflowLinkOptions { PropagateCompletion = true });
-
-                    await svtrBlock.SendAsync((image, detectedRectangles));
-                    svtrBlock.Complete();
-                    await textCollector.Completion;
-                }
+                // Extract results for annotation
+                var detectedRectangles = results.SelectMany(r => r.Item2).ToList();
+                var recognizedTexts = results.SelectMany(r => r.Item3).ToList();
 
                 // Step 3: Annotate image with results
                 if (detectedRectangles.Count > 0)
