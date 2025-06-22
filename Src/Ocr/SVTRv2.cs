@@ -47,7 +47,7 @@ public static class SVTRv2
             {
                 var rect = rectangles[i][j];
                 int targetWidth = CalculateTargetWidth(rect);
-                
+
                 var dest = buffer.AsSpan().Slice(bufferIndex * TargetHeight * maxWidth * 3, TargetHeight * maxWidth * 3);
                 Resampling.CropResizeInto(images[i], rect, dest, maxWidth, TargetHeight, targetWidth);
                 bufferIndex++;
@@ -90,7 +90,7 @@ public static class SVTRv2
         // Calculate target width maintaining aspect ratio of the cropped region
         double aspectRatio = (double)rect.Width / rect.Height;
         int targetWidth = (int)Math.Round(aspectRatio * TargetHeight);
-        
+
         // Clamp to reasonable bounds
         return Math.Max(MinWidth, Math.Min(MaxWidth, targetWidth));
     }

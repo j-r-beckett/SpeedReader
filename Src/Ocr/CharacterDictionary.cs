@@ -13,11 +13,11 @@ public static class CharacterDictionary
         // Load character dictionary from embedded resource
         _indexToChar = new Dictionary<int, char>();
         var assembly = Assembly.GetExecutingAssembly();
-        
+
         using var stream = assembly.GetManifestResourceStream("Ocr.CharacterDictionary.Data.txt");
         if (stream == null)
             throw new FileNotFoundException("Embedded resource 'Ocr.CharacterDictionary.Data.txt' not found");
-            
+
         using var reader = new StreamReader(stream);
         var lines = reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
 

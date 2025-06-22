@@ -47,7 +47,7 @@ public static class DBNetBlock
         {
             var rectangleResults = DBNet.PostProcess(data.Buffer, data.Batch);
             data.Buffer.Dispose();
-            
+
             // Return tuple combining original images with their detected rectangles
             var results = new List<(Image<Rgb24>, List<Rectangle>)>();
             for (int i = 0; i < data.Batch.Length; i++)

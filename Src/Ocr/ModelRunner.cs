@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Numerics.Tensors;
 using Microsoft.ML.OnnxRuntime;
 

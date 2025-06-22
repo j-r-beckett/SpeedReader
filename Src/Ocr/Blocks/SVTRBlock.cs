@@ -32,7 +32,7 @@ public static class SVTRBlock
         {
             var images = batch.Select(item => item.Item1).ToArray();
             var rectangles = batch.Select(item => item.Item2).ToArray();
-            
+
             var buffer = SVTRv2.PreProcess(images, rectangles);
             return (buffer, batch);
         });
@@ -54,11 +54,11 @@ public static class SVTRBlock
         {
             var recognizedTexts = SVTRv2.PostProcess(data.Buffer);
             data.Buffer.Dispose();
-            
+
             // Return tuple combining original images, rectangles, and recognized texts
             var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>)>();
             int textIndex = 0;
-            
+
             foreach (var (image, rectangles) in data.Batch)
             {
                 var batchTexts = new List<string>();
@@ -68,7 +68,7 @@ public static class SVTRBlock
                 }
                 results.Add((image, rectangles, batchTexts));
             }
-            
+
             return results;
         });
     }

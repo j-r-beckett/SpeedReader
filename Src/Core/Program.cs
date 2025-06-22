@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks.Dataflow;
 using Models;
@@ -58,12 +57,12 @@ public class Program
                 // Create OCR pipeline
                 using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
                 using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
-                
+
                 var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
-                
+
                 var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>)>();
                 var resultCollector = new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>)>(data => results.Add(data));
-                
+
                 ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
                 await ocrBlock.SendAsync(image);
