@@ -50,7 +50,7 @@ git -C "$DIR" ls-files | while read -r FILE; do
   fi
   
   # Skip excluded files
-  if [[ "$FILE" == "copy-repo.sh" || "$FILE" == ".editorconfig" ]]; then
+  if [[ "$FILE" == "copy-repo.sh" || "$FILE" == ".editorconfig" || "$FILE" == "CharacterDictionary.Data.txt" || "$FILE" == ".gitignore" ]]; then
     echo "Skipping excluded file: $FILE"
     continue
   fi
