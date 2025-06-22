@@ -27,10 +27,6 @@ public static class SVTRv2
         int totalRectangles = 0;
         for (int i = 0; i < images.Length; i++)
         {
-            if (rectangles[i] == null || rectangles[i].Count == 0)
-            {
-                throw new ArgumentException($"Rectangles array at index {i} cannot be null or empty", nameof(rectangles));
-            }
             totalRectangles += rectangles[i].Count;
         }
 

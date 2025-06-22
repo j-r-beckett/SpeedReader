@@ -32,12 +32,12 @@ public class TextRecognition
             }
         }
 
-        _font = fontFamily.CreateFont(18);
+        _font = fontFamily.CreateFont(12);
         _imageSaver = new FileSystemUrlPublisher<TextRecognition>("/tmp", new TestLogger<TextRecognition>(outputHelper));
     }
 
     [Fact]
-    public async Task TextRecognitionHandlesSparseText()
+    public async Task TextRecognitionHandlesBasicText()
     {
         var testWords = new[] { "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "alphabet" };
 
@@ -73,16 +73,14 @@ public class TextRecognition
         await TestTextRecognition(image, boundingBoxes, expectedTexts);
     }
 
+
     private async Task TestTextRecognition(Image<Rgb24> image, List<Rectangle> boundingBoxes, List<string> expectedTexts)
     {
         Debug.Assert(boundingBoxes.Count == expectedTexts.Count);
 
-        // Pad bounding boxes by 5 pixels for better text recognition
-        var paddedBoundingBoxes = boundingBoxes.Select(bbox => Pad(bbox, 5)).ToList();
+        var actualTexts = RunTextRecognition(image, boundingBoxes);
 
-        var actualTexts = RunTextRecognition(image, paddedBoundingBoxes);
-
-        await SaveDebugImage(image, paddedBoundingBoxes, actualTexts);
+        await SaveDebugImage(image, boundingBoxes, actualTexts);
 
         Assert.Equal(expectedTexts.Count, actualTexts.Length);
 
@@ -91,8 +89,6 @@ public class TextRecognition
             Assert.Equal(expectedTexts[i], actualTexts[i]);
         }
     }
-
-    private static Rectangle Pad(Rectangle r, int p) => new(r.X - p, r.Y - p, r.Width + 2 * p, r.Height + 2 * p);
 
     private static string[] RunTextRecognition(Image<Rgb24> image, List<Rectangle> boundingBoxes)
     {
