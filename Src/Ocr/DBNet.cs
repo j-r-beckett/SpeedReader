@@ -100,7 +100,7 @@ public static class DBNet
                 // Scale to original coordinates using fitted dimensions
                 double scale = Math.Max((double)originalWidth / batchWidth, (double)originalHeight / batchHeight);
                 Scale(dilatedPolygon, scale, scale);
-                var boundingBox = GetBoundingBox(dilatedPolygon);
+                var boundingBox = GetBoundingBox(dilatedPolygon, originalWidth, originalHeight);
                 boundingBoxes.Add(boundingBox);
             }
 
@@ -120,7 +120,7 @@ public static class DBNet
         }
     }
 
-    internal static Rectangle GetBoundingBox(List<(int X, int Y)> polygon)
+    internal static Rectangle GetBoundingBox(List<(int X, int Y)> polygon, int imageWidth, int imageHeight)
     {
         int maxX = int.MinValue;
         int maxY = int.MinValue;
@@ -135,7 +135,13 @@ public static class DBNet
             minY = Math.Min(minY, y);
         }
 
-        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+        // Clamp coordinates to image bounds
+        minX = Math.Max(0, minX);
+        minY = Math.Max(0, minY);
+        maxX = Math.Min(imageWidth - 1, maxX);
+        maxY = Math.Min(imageHeight - 1, maxY);
+
+        return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
 
     internal static (int width, int height) CalculateDimensions(Image<Rgb24>[] batch)

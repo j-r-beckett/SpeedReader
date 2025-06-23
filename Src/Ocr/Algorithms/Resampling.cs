@@ -126,8 +126,8 @@ public static class Resampling
 
         CropAndResizeToExactDimensions(src, cropRect, targetWidth, destHeight, out Memory<Rgb24> resizedMemory);
 
-        // Clear destination buffer to black (padding)
-        dest.Clear();
+        // Clear destination buffer to middle gray (padding) - matches OpenOCR approach
+        dest.Fill(127.5f);
 
         // Copy resized image to the left side of destination buffer in HWC format
         for (int y = 0; y < destHeight; y++)
