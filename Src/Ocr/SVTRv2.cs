@@ -106,4 +106,5 @@ public static class SVTRv2
 
         return maxWidth;
     }
+
 }
