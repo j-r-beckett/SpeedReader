@@ -42,15 +42,34 @@ TEMP_FILE=$(mktemp)
 # Clear the temporary file
 > "$TEMP_FILE"
 
+# Process README.md first if it exists
+if git -C "$DIR" ls-files | grep -q "^README.md$"; then
+  FILE="README.md"
+  if [ -f "$DIR/$FILE" ]; then
+    echo "Processing README.md first..."
+    echo "=== FILE: $FILE ===" >> "$TEMP_FILE"
+    echo "" >> "$TEMP_FILE"
+    cat "$DIR/$FILE" >> "$TEMP_FILE"
+    echo "" >> "$TEMP_FILE"
+    echo "=== END OF FILE ===" >> "$TEMP_FILE"
+    echo "" >> "$TEMP_FILE"
+    echo "" >> "$TEMP_FILE"
+  fi
+fi
+
 # Get all files tracked by git (respects .gitignore automatically)
 git -C "$DIR" ls-files | while read -r FILE; do
+  # Skip README.md since we already processed it
+  if [[ "$FILE" == "README.md" ]]; then
+    continue
+  fi
   # Skip if file doesn't exist (shouldn't happen with ls-files, but safety check)
   if [ ! -f "$DIR/$FILE" ]; then
     continue
   fi
   
   # Skip excluded files
-  if [[ "$FILE" == "copy-repo.sh" || "$FILE" == ".editorconfig" || "$FILE" == "CharacterDictionary.Data.txt" || "$FILE" == ".gitignore" ]]; then
+  if [[ "$FILE" == "copy-repo.sh" || "$FILE" == ".editorconfig" || "$FILE" == "CharacterDictionary.Data.txt" || "$FILE" == ".gitignore" || "$FILE" == *"Dictionary"*".txt" ]]; then
     echo "Skipping excluded file: $FILE"
     continue
   fi

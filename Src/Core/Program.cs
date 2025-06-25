@@ -25,21 +25,20 @@ public class Program
             Arity = ArgumentArity.ExactlyOne
         };
 
-        var outputArgument = new Argument<FileInfo>(
+        var outputArgument = new Argument<FileInfo?>(
             name: "output",
-            description: "Output image file",
-            getDefaultValue: () => new FileInfo("out.png"))
+            description: "Output image file")
         {
             Arity = ArgumentArity.ZeroOrOne
         };
 
-        var rootCommand = new RootCommand("SpeedReader - Text detection tool")
+        var rootCommand = new RootCommand("SpeedReader - Blazing fast OCR")
         {
             inputArgument,
             outputArgument
         };
 
-        rootCommand.SetHandler(async (FileInfo input, FileInfo output) =>
+        rootCommand.SetHandler(async (input, output) =>
         {
             try
             {
@@ -50,18 +49,28 @@ public class Program
                     Environment.Exit(1);
                 }
 
+                // Generate output filename if not specified
+                if (output == null)
+                {
+                    var inputDir = Path.GetDirectoryName(input.FullName) ?? ".";
+                    var inputName = Path.GetFileNameWithoutExtension(input.FullName);
+                    var inputExt = Path.GetExtension(input.FullName);
+                    var outputPath = Path.Combine(inputDir, $"{inputName}_ocr{inputExt}");
+                    output = new FileInfo(outputPath);
+                }
+
                 // Load input image
                 using var image = await Image.LoadAsync<Rgb24>(input.FullName);
 
-
                 // Create OCR pipeline
-                using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
-                using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+                var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
+                var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
                 var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
 
                 var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>)>();
-                var resultCollector = new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>)>(data => results.Add(data));
+                var resultCollector =
+                    new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>)>(data => results.Add(data));
 
                 ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
@@ -78,10 +87,10 @@ public class Program
                 {
                     // Load embedded Arial font
                     var assembly = Assembly.GetExecutingAssembly();
-                    using var fontStream = assembly.GetManifestResourceStream("Core.arial.ttf");
+                    await using var fontStream = assembly.GetManifestResourceStream("Core.arial.ttf");
                     var fontCollection = new FontCollection();
                     var fontFamily = fontCollection.Add(fontStream!);
-                    var font = fontFamily.CreateFont(16, FontStyle.Bold);
+                    var font = fontFamily.CreateFont(14, FontStyle.Bold);
 
                     image.Mutate(ctx =>
                     {
@@ -90,35 +99,44 @@ public class Program
                             var rectangle = detectedRectangles[i];
 
                             // Draw bounding box
-                            var boundingRect = new RectangleF(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+                            var boundingRect = new RectangleF(rectangle.X, rectangle.Y, rectangle.Width,
+                                rectangle.Height);
                             ctx.Draw(Pens.Solid(Color.Red, 2), boundingRect);
 
-                            // Draw recognized text above the bounding box (if available)
+                            // Draw recognized text to the right of the bounding box (if available)
                             if (i < recognizedTexts.Count)
                             {
+                                var textPosition = new PointF(rectangle.X + rectangle.Width + 5, rectangle.Y);
                                 var text = recognizedTexts[i].Trim();
-                                if (!string.IsNullOrEmpty(text))
+
+                                var whiteBrush = Brushes.Solid(Color.White);
+                                var blueBrush = Brushes.Solid(Color.Blue);
+
+                                // Draw white outline with improved legibility
+                                var outlineWidth = 1;
+                                for (int dx = -outlineWidth; dx <= outlineWidth; dx++)
                                 {
-                                    var textPosition = new PointF(rectangle.X, Math.Max(0, rectangle.Y - 20));
-                                    ctx.DrawText(text, font, Color.Blue, textPosition);
+                                    for (int dy = -outlineWidth; dy <= outlineWidth; dy++)
+                                    {
+                                        if (dx != 0 || dy != 0)
+                                        {
+                                            ctx.DrawText(text, font, whiteBrush,
+                                                new PointF(textPosition.X + dx, textPosition.Y + dy));
+                                        }
+                                    }
                                 }
+
+                                // Draw blue text on top
+                                ctx.DrawText(text, font, blueBrush, textPosition);
                             }
                         }
                     });
-
-                    Console.WriteLine($"Detected {detectedRectangles.Count} text regions");
-                    if (recognizedTexts.Count > 0)
-                    {
-                        Console.WriteLine($"Recognized {recognizedTexts.Count} text segments:");
-                        for (int i = 0; i < recognizedTexts.Count; i++)
-                        {
-                            Console.WriteLine($"  {i + 1}: '{recognizedTexts[i].Trim()}'");
-                        }
-                    }
                 }
 
                 // Save output image
                 await image.SaveAsync(output.FullName);
+
+                Console.WriteLine($"OCR results saved to: {output.FullName}");
             }
             catch (Exception ex)
             {
