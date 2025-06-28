@@ -6,3 +6,4 @@ scp bin/Release/net10.0/win-x64/publish/speedread.exe root@jimmybeckett.com:/srv
 
 dotnet publish -c Release -r osx-arm64
 scp bin/Release/net10.0/osx-arm64/publish/speedread root@jimmybeckett.com:/srv/speedreader/binaries/0.1.0/osx-arm64/speedread
+
