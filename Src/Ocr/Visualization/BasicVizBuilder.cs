@@ -1,5 +1,8 @@
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace Ocr.Visualization;
 
@@ -8,19 +11,7 @@ public class BasicVizBuilder : VizBuilder
     protected List<Rectangle> _mergedRectangles = new();
     protected List<string> _mergedTexts = new();
 
-    public BasicVizBuilder(Image<Rgb24> sourceImage) : base(sourceImage)
-    {
-    }
-
-    public override void AddDetectionResults(List<Rectangle> rectangles, Buffer<float>? probabilityMap = null)
-    {
-        // Basic mode ignores raw detection results
-    }
-
-    public override void AddRecognitionResults(List<Rectangle> rectangles, List<string> texts)
-    {
-        // Basic mode ignores unmerged recognition results
-    }
+    public BasicVizBuilder(Image<Rgb24> sourceImage) : base(sourceImage) { }
 
     public override void AddMergedResults(List<Rectangle> mergedRectangles, List<string> mergedTexts)
     {
@@ -28,10 +19,68 @@ public class BasicVizBuilder : VizBuilder
         _mergedTexts = mergedTexts;
     }
 
-    public override Image<Rgb24> Build()
+    public override Image<Rgb24> Render()
     {
-        // TODO: Implement actual visualization
-        // For now, just return a clone of the source image
-        return _sourceImage.Clone();
+        var result = _sourceImage.Clone();
+
+        if (_mergedRectangles.Count == 0)
+        {
+            return result;
+        }
+
+        // Get font - try Arial first, then fallback to system default
+        FontFamily fontFamily;
+        if (!SystemFonts.TryGet("Arial", out fontFamily))
+        {
+            fontFamily = SystemFonts.Families.FirstOrDefault();
+            if (fontFamily == default)
+            {
+                // No fonts available, return image without text annotations
+                return result;
+            }
+        }
+
+        var font = fontFamily.CreateFont(14, FontStyle.Bold);
+
+        result.Mutate(ctx =>
+        {
+            for (int i = 0; i < _mergedRectangles.Count; i++)
+            {
+                var rectangle = _mergedRectangles[i];
+
+                // Draw bounding box
+                var boundingRect = new RectangleF(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+                ctx.Draw(Pens.Solid(Color.Red, 2), boundingRect);
+
+                // Draw recognized text to the right of the bounding box
+                if (i < _mergedTexts.Count)
+                {
+                    var textPosition = new PointF(rectangle.X + rectangle.Width + 5, rectangle.Y);
+                    var text = _mergedTexts[i].Trim();
+
+                    var whiteBrush = Brushes.Solid(Color.White);
+                    var blueBrush = Brushes.Solid(Color.Blue);
+
+                    // Draw white outline for improved legibility
+                    var outlineWidth = 1;
+                    for (int dx = -outlineWidth; dx <= outlineWidth; dx++)
+                    {
+                        for (int dy = -outlineWidth; dy <= outlineWidth; dy++)
+                        {
+                            if (dx != 0 || dy != 0)
+                            {
+                                ctx.DrawText(text, font, whiteBrush,
+                                    new PointF(textPosition.X + dx, textPosition.Y + dy));
+                            }
+                        }
+                    }
+
+                    // Draw blue text on top
+                    ctx.DrawText(text, font, blueBrush, textPosition);
+                }
+            }
+        });
+
+        return result;
     }
 }
