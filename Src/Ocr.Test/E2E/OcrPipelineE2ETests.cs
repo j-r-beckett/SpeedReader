@@ -1,12 +1,13 @@
 using System.Diagnostics;
+using System.Threading.Tasks.Dataflow;
 using Models;
 using Ocr.Blocks;
+using Ocr.Visualization;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.Threading.Tasks.Dataflow;
 using Video;
 using Video.Test;
 using Xunit.Abstractions;
@@ -121,7 +122,7 @@ public class OcrPipelineE2ETests
         var resultsDict = new Dictionary<Image<Rgb24>, List<(Rectangle Box, string Text)>>();
         var resultsLock = new object();
 
-        var resultCollector = new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>)>(data =>
+        var resultCollector = new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(data =>
         {
             var imageResults = new List<(Rectangle Box, string Text)>();
 
@@ -147,7 +148,9 @@ public class OcrPipelineE2ETests
         // Send all images through the pipeline
         foreach (var image in images)
         {
-            await dbNetBlock.SendAsync(image);
+            // Create VizBuilder and send to pipeline (same pattern as CLI)
+            var vizBuilder = VizBuilder.Create(VizMode.None, image);
+            await dbNetBlock.SendAsync((image, vizBuilder));
         }
 
         dbNetBlock.Complete();
