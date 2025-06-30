@@ -12,13 +12,13 @@ public abstract class VizBuilder
         _sourceImage = sourceImage;
     }
 
-    public abstract void AddDetectionResults(List<Rectangle> rectangles, Buffer<float>? probabilityMap = null);
+    public virtual void AddDetectionResults(List<Rectangle> rectangles, Buffer<float> probabilityMap) { }
 
-    public abstract void AddRecognitionResults(List<Rectangle> rectangles, List<string> texts);
+    public virtual void AddRecognitionResults(List<Rectangle> rectangles, List<string> texts) { }
 
-    public abstract void AddMergedResults(List<Rectangle> mergedRectangles, List<string> mergedTexts);
+    public virtual void AddMergedResults(List<Rectangle> mergedRectangles, List<string> mergedTexts) { }
 
-    public abstract Image<Rgb24> Build();
+    public abstract Image<Rgb24> Render();
 
     public static VizBuilder Create(VizMode mode, Image<Rgb24> sourceImage)
     {
