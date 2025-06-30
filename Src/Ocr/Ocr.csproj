@@ -15,7 +15,9 @@
     <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+    <PackageReference Include="SixLabors.Fonts" />
     <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     <PackageReference Include="System.Numerics.Tensors" />
   </ItemGroup>
 

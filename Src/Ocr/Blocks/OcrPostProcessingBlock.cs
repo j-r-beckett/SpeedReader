@@ -14,7 +14,8 @@ public static class OcrPostProcessingBlock
             var (filteredRectangles, filteredTexts) = RemoveEmptyText(data.Rectangles, data.Texts);
             var (mergedRectangles, mergedTexts) = MergeLines(filteredRectangles, filteredTexts);
 
-            // return (data.Image, filteredRectangles, filteredTexts);
+            data.VizBuilder.AddMergedResults(mergedRectangles, mergedTexts);
+
             return (data.Image, mergedRectangles, mergedTexts, data.VizBuilder);
         });
     }

@@ -1,14 +1,10 @@
 using System.CommandLine;
-using System.Reflection;
 using System.Threading.Tasks.Dataflow;
 using Models;
 using Ocr.Blocks;
 using Ocr.Visualization;
-using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace Core;
 
@@ -33,13 +29,19 @@ public class Program
             Arity = ArgumentArity.ZeroOrOne
         };
 
+        var vizOption = new Option<VizMode>(
+            name: "--viz",
+            description: "Visualization mode",
+            getDefaultValue: () => VizMode.Basic);
+
         var rootCommand = new RootCommand("SpeedReader - Blazing fast OCR")
         {
             inputArgument,
-            outputArgument
+            outputArgument,
+            vizOption
         };
 
-        rootCommand.SetHandler(async (input, output) =>
+        rootCommand.SetHandler(async (input, output, vizMode) =>
         {
             try
             {
@@ -56,7 +58,7 @@ public class Program
                     var inputDir = Path.GetDirectoryName(input.FullName) ?? ".";
                     var inputName = Path.GetFileNameWithoutExtension(input.FullName);
                     var inputExt = Path.GetExtension(input.FullName);
-                    var outputPath = Path.Combine(inputDir, $"{inputName}_ocr{inputExt}");
+                    var outputPath = Path.Combine(inputDir, $"{inputName}_viz{inputExt}");
                     output = new FileInfo(outputPath);
                 }
 
@@ -69,78 +71,33 @@ public class Program
 
                 var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
 
-                var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>)>();
+                var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>();
                 var resultCollector =
                     new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(
-                        data => results.Add((data.Item1, data.Item2, data.Item3)));
+                        data => results.Add(data));
 
                 ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
                 // Create VizBuilder and send to pipeline
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
+                var vizBuilder = VizBuilder.Create(vizMode, image);
                 await ocrBlock.SendAsync((image, vizBuilder));
                 ocrBlock.Complete();
                 await resultCollector.Completion;
 
-                // Extract results for annotation
-                var detectedRectangles = results.SelectMany(r => r.Item2).ToList();
-                var recognizedTexts = results.SelectMany(r => r.Item3).ToList();
-
-                // Step 3: Annotate image with results
-                if (detectedRectangles.Count > 0)
+                // Generate visualization using VizBuilder
+                if (vizMode == VizMode.None)
                 {
-                    // Load embedded Arial font
-                    var assembly = Assembly.GetExecutingAssembly();
-                    await using var fontStream = assembly.GetManifestResourceStream("Core.arial.ttf");
-                    var fontCollection = new FontCollection();
-                    var fontFamily = fontCollection.Add(fontStream!);
-                    var font = fontFamily.CreateFont(14, FontStyle.Bold);
-
-                    image.Mutate(ctx =>
-                    {
-                        for (int i = 0; i < detectedRectangles.Count; i++)
-                        {
-                            var rectangle = detectedRectangles[i];
-
-                            // Draw bounding box
-                            var boundingRect = new RectangleF(rectangle.X, rectangle.Y, rectangle.Width,
-                                rectangle.Height);
-                            ctx.Draw(Pens.Solid(Color.Red, 2), boundingRect);
-
-                            // Draw recognized text to the right of the bounding box (if available)
-                            if (i < recognizedTexts.Count)
-                            {
-                                var textPosition = new PointF(rectangle.X + rectangle.Width + 5, rectangle.Y);
-                                var text = recognizedTexts[i].Trim();
-
-                                var whiteBrush = Brushes.Solid(Color.White);
-                                var blueBrush = Brushes.Solid(Color.Blue);
-
-                                // Draw white outline with improved legibility
-                                var outlineWidth = 1;
-                                for (int dx = -outlineWidth; dx <= outlineWidth; dx++)
-                                {
-                                    for (int dy = -outlineWidth; dy <= outlineWidth; dy++)
-                                    {
-                                        if (dx != 0 || dy != 0)
-                                        {
-                                            ctx.DrawText(text, font, whiteBrush,
-                                                new PointF(textPosition.X + dx, textPosition.Y + dy));
-                                        }
-                                    }
-                                }
-
-                                // Draw blue text on top
-                                ctx.DrawText(text, font, blueBrush, textPosition);
-                            }
-                        }
-                    });
+                    Console.WriteLine("OCR completed. No visualization generated (--viz None).");
                 }
+                else
+                {
+                    var result = results[0];
+                    var outputImage = result.Item4.Render();
 
-                // Save output image
-                await image.SaveAsync(output.FullName);
-
-                Console.WriteLine($"OCR results saved to: {output.FullName}");
+                    // Save output image
+                    await outputImage.SaveAsync(output.FullName);
+                    Console.WriteLine($"OCR visualization saved to: {output.FullName}");
+                }
             }
             catch (Exception ex)
             {
@@ -148,7 +105,7 @@ public class Program
                 Console.Error.WriteLine($"Inner: {ex.InnerException?.StackTrace}");
                 Environment.Exit(1);
             }
-        }, inputArgument, outputArgument);
+        }, inputArgument, outputArgument, vizOption);
 
         return await rootCommand.InvokeAsync(args);
     }
