@@ -1,4 +1,5 @@
 using System.Threading.Tasks.Dataflow;
+using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -6,15 +7,15 @@ namespace Ocr.Blocks;
 
 public static class OcrPostProcessingBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<Rectangle>, List<string>), (Image<Rgb24>, List<Rectangle>, List<string>)> Create()
+    public static IPropagatorBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)> Create()
     {
-        return new TransformBlock<(Image<Rgb24> Image, List<Rectangle> Rectangles, List<string> Texts), (Image<Rgb24>, List<Rectangle>, List<string>)>(data =>
+        return new TransformBlock<(Image<Rgb24> Image, List<Rectangle> Rectangles, List<string> Texts, VizBuilder VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(data =>
         {
             var (filteredRectangles, filteredTexts) = RemoveEmptyText(data.Rectangles, data.Texts);
             var (mergedRectangles, mergedTexts) = MergeLines(filteredRectangles, filteredTexts);
 
             // return (data.Image, filteredRectangles, filteredTexts);
-            return (data.Image, mergedRectangles, mergedTexts);
+            return (data.Image, mergedRectangles, mergedTexts, data.VizBuilder);
         });
     }
 
@@ -100,7 +101,7 @@ public static class OcrPostProcessingBlock
         var midY1 = rect1.Y + rect1.Height / 2;
         var midY2 = rect2.Y + rect2.Height / 2;
         var maxHeight = Math.Max(rect1.Height, rect2.Height);
-        
+
         if (Math.Abs(midY1 - midY2) > 2 * maxHeight)
             return false;
 
@@ -125,33 +126,33 @@ public static class OcrPostProcessingBlock
     private static bool ShouldMerge(Rectangle currentRect, Rectangle candidateRect)
     {
         var height = currentRect.Height;
-        
+
         var currentTopRight = new Point(currentRect.Right, currentRect.Top);
         var currentBottomRight = new Point(currentRect.Right, currentRect.Bottom);
         var candidateTopLeft = new Point(candidateRect.Left, candidateRect.Top);
         var candidateBottomLeft = new Point(candidateRect.Left, candidateRect.Bottom);
-        
+
         var topDistance = AnisotropicDistance(currentTopRight, candidateTopLeft, height);
         var bottomDistance = AnisotropicDistance(currentBottomRight, candidateBottomLeft, height);
-        
+
         return topDistance <= 1.0 && bottomDistance <= 1.0;
     }
-    
+
     private static double AnisotropicDistance(Point p1, Point p2, int referenceHeight)
     {
         var dx = Math.Abs(p1.X - p2.X);
         var dy = Math.Abs(p1.Y - p2.Y);
-        
+
         // Normalize by reference height
         var normalizedDx = dx / (double)referenceHeight;
         var normalizedDy = dy / (double)referenceHeight;
-        
+
         // Weight vertical distance more heavily than horizontal
         // This allows more horizontal gap (up to ~1.5x height) while keeping vertical tolerance tight
         var horizontalWeight = 0.67;  // More lenient
         var verticalWeight = 2.0;     // More strict
-        
-        return Math.Sqrt(horizontalWeight * normalizedDx * normalizedDx + 
+
+        return Math.Sqrt(horizontalWeight * normalizedDx * normalizedDx +
                         verticalWeight * normalizedDy * normalizedDy);
     }
 
