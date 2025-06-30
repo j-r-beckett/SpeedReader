@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading.Tasks.Dataflow;
 using Models;
 using Ocr.Blocks;
+using Ocr.Visualization;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -70,11 +71,14 @@ public class Program
 
                 var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>)>();
                 var resultCollector =
-                    new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>)>(data => results.Add(data));
+                    new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(
+                        data => results.Add((data.Item1, data.Item2, data.Item3)));
 
                 ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
-                await ocrBlock.SendAsync(image);
+                // Create VizBuilder and send to pipeline
+                var vizBuilder = VizBuilder.Create(VizMode.None, image);
+                await ocrBlock.SendAsync((image, vizBuilder));
                 ocrBlock.Complete();
                 await resultCollector.Completion;
 
