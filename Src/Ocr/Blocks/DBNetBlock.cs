@@ -1,4 +1,5 @@
 using System.Threading.Tasks.Dataflow;
+using CommunityToolkit.HighPerformance;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
@@ -52,15 +53,34 @@ public static class DBNetBlock
         return new TransformManyBlock<(Buffer<float> Buffer, (Image<Rgb24>, VizBuilder)[] Batch), (Image<Rgb24>, List<Rectangle>, VizBuilder)>(data =>
         {
             var images = data.Batch.Select(b => b.Item1).ToArray();
-            var rectangleResults = DBNet.PostProcess(data.Buffer, images);
-            data.Buffer.Dispose();
 
-            // Return tuple combining original images with their detected rectangles and VizBuilder
+            // Get dimensions from buffer
+            int height = (int)data.Buffer.Shape[1];
+            int width = (int)data.Buffer.Shape[2];
+            int imageSize = height * width;
+
+            // Binarize for connected component analysis
+            // Algorithms.Thresholding.BinarizeInPlace(data.Buffer.AsTensor(), 0.2f);
+
             var results = new List<(Image<Rgb24>, List<Rectangle>, VizBuilder)>();
+
             for (int i = 0; i < data.Batch.Length; i++)
             {
-                results.Add((data.Batch[i].Item1, rectangleResults[i], data.Batch[i].Item2));
+                var (originalImage, vizBuilder) = data.Batch[i];
+
+                var probabilityMapSlice = data.Buffer.AsSpan().Slice(i * imageSize, imageSize).AsSpan2D(height, width);
+
+                vizBuilder.AddProbabilityMap(probabilityMapSlice);
+
+                // mutates probability map
+                var rectangles = DBNet.PostProcess(probabilityMapSlice, originalImage.Width, originalImage.Height);
+
+                vizBuilder.AddRectangles(rectangles);
+
+                results.Add((originalImage, rectangles, vizBuilder));
             }
+
+            data.Buffer.Dispose();
             return results;
         });
     }
