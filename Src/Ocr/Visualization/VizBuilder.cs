@@ -1,3 +1,4 @@
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -12,9 +13,11 @@ public abstract class VizBuilder
         _sourceImage = sourceImage;
     }
 
-    public virtual void AddDetectionResults(List<Rectangle> rectangles, Buffer<float> probabilityMap) { }
+    public virtual void AddRectangles(List<Rectangle> rectangles) { }
 
-    public virtual void AddRecognitionResults(List<Rectangle> rectangles, List<string> texts) { }
+    public virtual void AddProbabilityMap(Span2D<float> probabilityMap) { }
+
+    public virtual void AddRecognitionResults(List<string> texts) { }
 
     public virtual void AddMergedResults(List<Rectangle> mergedRectangles, List<string> mergedTexts) { }
 
