@@ -17,7 +17,7 @@ public class ConnectedComponentsTests
         };
         var probabilityMap = CreateSpan2D(data);
 
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         Assert.Single(components);
         Assert.Equal(4, components[0].Length);
@@ -43,7 +43,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Equal(2, components.Count);
@@ -78,7 +78,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Empty(components);
@@ -97,7 +97,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Single(components);
@@ -122,7 +122,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Single(components);
@@ -149,7 +149,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Single(components);
@@ -170,7 +170,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Equal(4, components.Count);
@@ -195,7 +195,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Single(components);
@@ -218,7 +218,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Single(components);
@@ -251,7 +251,7 @@ public class ConnectedComponentsTests
         var probabilityMap = CreateSpan2D(data);
 
         // Act
-        var components = ConnectedComponents.FindComponents(probabilityMap);
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0);
 
         // Assert
         Assert.Single(components); // All positive values are connected via 8-connectivity

@@ -58,64 +58,42 @@ public static class DBNet
         return buffer;
     }
 
-    internal static List<Rectangle>[] PostProcess(Buffer<float> batch, Image<Rgb24>[] originalBatch)
+    internal static List<Rectangle> PostProcess(Span2D<float> probabilityMap, int originalWidth, int originalHeight)
     {
-        int n = (int)batch.Shape[0];
-        int height = (int)batch.Shape[1];
-        int width = (int)batch.Shape[2];
-        int size = height * width;
+        var components = ConnectedComponents.FindComponents(probabilityMap, 0.2f);
+        List<Rectangle> boundingBoxes = [];
 
-        List<Rectangle>[] results = new List<Rectangle>[n];
-
-        // Binarize for connected component analysis
-        Thresholding.BinarizeInPlace(batch.AsTensor(), BinarizationThreshold);
-
-        for (int i = 0; i < n; i++)
+        foreach (var connectedComponent in components)
         {
-            var probabilityMap = batch.AsSpan().Slice(i * size, size).AsSpan2D(height, width);
-            var components = ConnectedComponents.FindComponents(probabilityMap);
-            List<Rectangle> boundingBoxes = [];
-            (int originalWidth, int originalHeight) = (originalBatch[i].Width, originalBatch[i].Height);
-
-            // Calculate the actual fitted dimensions (without padding) for this image
-            var (batchWidth, batchHeight) = CalculateDimensions(originalBatch);
-
-            foreach (var connectedComponent in components)
+            // Skip very small components
+            if (connectedComponent.Length < 10)
             {
-                // Skip very small components
-                if (connectedComponent.Length < 10)
-                {
-                    continue;
-                }
-
-                var polygon = ConvexHull.GrahamScan(connectedComponent);
-
-                // Dilate the polygon
-                var dilatedPolygon = Dilation.DilatePolygon(polygon);
-                if (dilatedPolygon.Count == 0)
-                {
-                    continue;
-                }
-
-                // Scale to original coordinates using fitted dimensions
-                double scale = Math.Max((double)originalWidth / batchWidth, (double)originalHeight / batchHeight);
-                Scale(dilatedPolygon, scale, scale);
-                var boundingBox = GetBoundingBox(dilatedPolygon, originalWidth, originalHeight);
-                boundingBoxes.Add(boundingBox);
+                continue;
             }
 
-            results[i] = boundingBoxes;
+            var polygon = ConvexHull.GrahamScan(connectedComponent);
+
+            // Dilate the polygon
+            var dilatedPolygon = Dilation.DilatePolygon(polygon);
+            if (dilatedPolygon.Count == 0)
+            {
+                continue;
+            }
+
+            double scale = Math.Max((double)originalWidth / probabilityMap.Width, (double)originalHeight / probabilityMap.Height);
+            Scale(dilatedPolygon, scale);
+            boundingBoxes.Add(GetBoundingBox(dilatedPolygon, originalWidth, originalHeight));
         }
 
-        return results;
+        return boundingBoxes;
     }
 
-    internal static void Scale(List<(int X, int Y)> polygon, double scaleX, double scaleY)
+    private static void Scale(List<(int X, int Y)> polygon, double scale)
     {
         for (int i = 0; i < polygon.Count; i++)
         {
-            int originalX = (int)Math.Round(polygon[i].X * scaleX);
-            int originalY = (int)Math.Round(polygon[i].Y * scaleY);
+            int originalX = (int)Math.Round(polygon[i].X * scale);
+            int originalY = (int)Math.Round(polygon[i].Y * scale);
             polygon[i] = (originalX, originalY);
         }
     }

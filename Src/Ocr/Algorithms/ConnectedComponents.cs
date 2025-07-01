@@ -14,7 +14,7 @@ public static class ConnectedComponents
     /// <remarks>
     /// The input probability map is modified during processing - positive values are set to 0 as they are processed.
     /// </remarks>
-    public static List<(int X, int Y)[]> FindComponents(Span2D<float> probabilityMap)
+    public static List<(int X, int Y)[]> FindComponents(Span2D<float> probabilityMap, float threshold)
     {
         Debug.Assert(probabilityMap.ToArray().Cast<float>().Min() >= 0);
 
@@ -27,9 +27,9 @@ public static class ConnectedComponents
         {
             for (int x = 0; x < width; x++)
             {
-                if (probabilityMap[y, x] > 0)
+                if (probabilityMap[y, x] > threshold)
                 {
-                    var component = ExploreComponent(x, y, probabilityMap, height, width);
+                    var component = ExploreComponent(x, y, probabilityMap, height, width, threshold);
                     components.Add(component);
                 }
             }
@@ -49,7 +49,7 @@ public static class ConnectedComponents
     /// <param name="width">Width of the probability map</param>
     /// <returns>Array of all pixel coordinates belonging to this connected component</returns>
     /// <remarks>Performance: use scanline flood fill; return boundary pixels only</remarks>
-    private static (int X, int Y)[] ExploreComponent(int x, int y, Span2D<float> probabilityMap, int height, int width)
+    private static (int X, int Y)[] ExploreComponent(int x, int y, Span2D<float> probabilityMap, int height, int width, float threshold)
     {
         List<(int X, int Y)> component = [];
         Stack<(int X, int Y)> stack = [];
@@ -60,7 +60,7 @@ public static class ConnectedComponents
         {
             (x, y) = stack.Pop();
 
-            if (probabilityMap[y, x] <= 0) continue;
+            if (probabilityMap[y, x] <= threshold) continue;
 
             component.Add((x, y));
             probabilityMap[y, x] = 0;
@@ -76,7 +76,7 @@ public static class ConnectedComponents
 
                     if (nx >= 0 && nx < width && ny >= 0 && ny < height)
                     {
-                        if (probabilityMap[ny, nx] > 0)
+                        if (probabilityMap[ny, nx] > threshold)
                         {
                             stack.Push((nx, ny));
                         }

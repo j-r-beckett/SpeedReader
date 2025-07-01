@@ -8,8 +8,8 @@ namespace Ocr.Visualization;
 
 public class BasicVizBuilder : VizBuilder
 {
-    protected List<Rectangle> _mergedRectangles = new();
-    protected List<string> _mergedTexts = new();
+    private List<Rectangle> _mergedRectangles = [];
+    private List<string> _mergedTexts = [];
 
     public BasicVizBuilder(Image<Rgb24> sourceImage) : base(sourceImage) { }
 
@@ -21,6 +21,11 @@ public class BasicVizBuilder : VizBuilder
 
     public override Image<Rgb24> Render()
     {
+        return RenderBasicViz();
+    }
+
+    protected Image<Rgb24> RenderBasicViz()
+    {
         var result = _sourceImage.Clone();
 
         if (_mergedRectangles.Count == 0)
@@ -29,8 +34,7 @@ public class BasicVizBuilder : VizBuilder
         }
 
         // Get font - try Arial first, then fallback to system default
-        FontFamily fontFamily;
-        if (!SystemFonts.TryGet("Arial", out fontFamily))
+        if (!SystemFonts.TryGet("Arial", out var fontFamily))
         {
             fontFamily = SystemFonts.Families.FirstOrDefault();
             if (fontFamily == default)

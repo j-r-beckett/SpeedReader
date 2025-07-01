@@ -67,6 +67,7 @@ public static class SVTRBlock
                 {
                     batchTexts.Add(recognizedTexts[textIndex++]);
                 }
+                vizBuilder.AddRecognitionResults(batchTexts);
                 results.Add((image, rectangles, batchTexts, vizBuilder));
             }
 

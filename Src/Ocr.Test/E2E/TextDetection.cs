@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CommunityToolkit.HighPerformance;
 using Models;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
@@ -168,9 +169,29 @@ public class TextDetection
 
     private static List<Rectangle>[] RunTextDetection(Image<Rgb24>[] images)
     {
-        var tensor = DBNet.PreProcess(images).AsTensor();
+        var buffer = DBNet.PreProcess(images);
+        var tensor = buffer.AsTensor();
         var rawResults = ModelRunner.Run(ModelZoo.GetInferenceSession(Model.DbNet18), tensor);
-        return DBNet.PostProcess(rawResults, images);
+        
+        // Binarize for connected component analysis
+        Algorithms.Thresholding.BinarizeInPlace(rawResults.AsTensor(), 0.2f);
+        
+        int height = (int)rawResults.Shape[1];
+        int width = (int)rawResults.Shape[2];
+        int imageSize = height * width;
+        
+        var results = new List<Rectangle>[images.Length];
+        
+        for (int i = 0; i < images.Length; i++)
+        {
+            var probabilityMap = rawResults.AsSpan().Slice(i * imageSize, imageSize).AsSpan2D(height, width);
+            results[i] = DBNet.PostProcess(probabilityMap, images[i].Width, images[i].Height);
+        }
+        
+        buffer.Dispose();
+        rawResults.Dispose();
+        
+        return results;
     }
 
     private Rectangle DrawText(Image image, string text, int x, int y)
