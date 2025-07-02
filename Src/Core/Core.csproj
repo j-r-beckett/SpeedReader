@@ -20,6 +20,10 @@
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Models\Models.csproj" />
