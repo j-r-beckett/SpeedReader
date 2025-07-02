@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://speedreader.app/schemas/ocr-results.json",
+  "title": "OCR Results",
+  "description": "Schema for OCR results from a single image",
+  "type": "object",
+  "required": ["pageNumber", "blocks", "lines", "words"],
+  "properties": {
+    "pageNumber": {
+      "type": "integer",
+      "description": "Page number in multi-page documents",
+      "minimum": 1
+    },
+    "blocks": {
+      "type": "array",
+      "description": "Text blocks in the document",
+      "items": {
+        "$ref": "#/$defs/block"
+      }
+    },
+    "lines": {
+      "type": "array",
+      "description": "Text lines in the document",
+      "items": {
+        "$ref": "#/$defs/line"
+      }
+    },
+    "words": {
+      "type": "array",
+      "description": "Individual words in the document",
+      "items": {
+        "$ref": "#/$defs/word"
+      }
+    }
+  },
+  "$defs": {
+    "boundingBox": {
+      "type": "object",
+      "description": "Bounding box with both polygon and axis-aligned rectangle representations",
+      "required": ["polygon", "rectangle"],
+      "properties": {
+        "polygon": {
+          "type": "array",
+          "description": "4-point polygon in normalized coordinates (0-1)",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["x", "y"],
+            "properties": {
+              "x": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Normalized X coordinate (0-1)"
+              },
+              "y": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Normalized Y coordinate (0-1)"
+              }
+            }
+          }
+        },
+        "rectangle": {
+          "type": "object",
+          "description": "Axis-aligned bounding rectangle in normalized coordinates",
+          "required": ["x", "y", "width", "height"],
+          "properties": {
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Normalized X coordinate of top-left corner"
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Normalized Y coordinate of top-left corner"
+            },
+            "width": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Normalized width"
+            },
+            "height": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Normalized height"
+            }
+          }
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "description": "A text block containing multiple lines",
+      "required": ["id", "boundingBox", "confidence", "lineIds"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the block"
+        },
+        "boundingBox": {
+          "$ref": "#/$defs/boundingBox"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score with 2 decimal digits of accuracy"
+        },
+        "lineIds": {
+          "type": "array",
+          "description": "IDs of lines contained in this block",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "line": {
+      "type": "object",
+      "description": "A text line containing multiple words",
+      "required": ["id", "boundingBox", "confidence", "text", "wordIds"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the line"
+        },
+        "boundingBox": {
+          "$ref": "#/$defs/boundingBox"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score with 2 decimal digits of accuracy"
+        },
+        "text": {
+          "type": "string",
+          "description": "Full text content of the line"
+        },
+        "wordIds": {
+          "type": "array",
+          "description": "IDs of words contained in this line",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "word": {
+      "type": "object",
+      "description": "An individual word",
+      "required": ["id", "boundingBox", "confidence", "text"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the word"
+        },
+        "boundingBox": {
+          "$ref": "#/$defs/boundingBox"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score with 2 decimal digits of accuracy"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text content of the word"
+        }
+      }
+    }
+  }
+}
