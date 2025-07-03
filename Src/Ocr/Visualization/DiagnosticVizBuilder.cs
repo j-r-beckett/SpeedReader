@@ -26,17 +26,17 @@ public class DiagnosticVizBuilder : BasicVizBuilder
         // The probability map is at preprocessed size, not original size
         var height = probabilityMap.Height;
         var width = probabilityMap.Width;
-        
+
         // Calculate the fitted dimensions (what the image was resized to before padding)
         var originalWidth = _sourceImage.Width;
         var originalHeight = _sourceImage.Height;
         double scale = Math.Min((double)1333 / originalWidth, (double)736 / originalHeight);
         int fittedWidth = (int)Math.Round(originalWidth * scale);
         int fittedHeight = (int)Math.Round(originalHeight * scale);
-        
+
         // Create a grayscale image from the probability map (only the fitted portion, not padding)
         var probImage = new Image<L8>(fittedWidth, fittedHeight);
-        
+
         for (int y = 0; y < fittedHeight; y++)
         {
             for (int x = 0; x < fittedWidth; x++)
@@ -46,17 +46,17 @@ public class DiagnosticVizBuilder : BasicVizBuilder
                 probImage[x, y] = new L8((byte)(probability * 255));
             }
         }
-        
+
         // Resize back to original image size
-        _probabilityMap = probImage.Clone(ctx => 
+        _probabilityMap = probImage.Clone(ctx =>
             ctx.Resize(originalWidth, originalHeight, KnownResamplers.Bicubic));
-        
+
         probImage.Dispose();
     }
 
     public override void AddRecognitionResults(List<string> texts)
     {
-        Debug.Assert(_rectangles.Count == texts.Count, 
+        Debug.Assert(_rectangles.Count == texts.Count,
             $"Number of rectangles ({_rectangles.Count}) should match number of recognition results ({texts.Count})");
         _recognitionTexts = texts;
     }
@@ -86,7 +86,7 @@ public class DiagnosticVizBuilder : BasicVizBuilder
             {
                 // Convert grayscale probability map to RGBA with transparency
                 using var overlayImage = new Image<Rgba32>(_probabilityMap.Width, _probabilityMap.Height);
-                
+
                 for (int y = 0; y < _probabilityMap.Height; y++)
                 {
                     for (int x = 0; x < _probabilityMap.Width; x++)
@@ -115,18 +115,18 @@ public class DiagnosticVizBuilder : BasicVizBuilder
             {
                 var rect = _rectangles[i];
                 var text = _recognitionTexts[i].Trim();
-                
+
                 if (!string.IsNullOrEmpty(text))
                 {
                     // Position text below the rectangle
                     var textPosition = new PointF(rect.X, rect.Bottom + 2);
-                    
+
                     // Draw with white background for readability
                     var textSize = TextMeasurer.MeasureAdvance(text, new TextOptions(smallFont));
-                    var backgroundRect = new RectangleF(textPosition.X - 1, textPosition.Y - 1, 
+                    var backgroundRect = new RectangleF(textPosition.X - 1, textPosition.Y - 1,
                         textSize.Width + 2, textSize.Height + 2);
                     ctx.Fill(Color.White.WithAlpha(0.8f), backgroundRect);
-                    
+
                     // Draw the text
                     ctx.DrawText(text, smallFont, Color.Green, textPosition);
                 }
