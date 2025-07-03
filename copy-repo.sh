@@ -87,7 +87,7 @@ git -C "$DIR" ls-files | while read -r FILE; do
   fi
   
   # Skip binary files (check if file is text)
-  if file "$DIR/$FILE" | grep -q "text\|script\|source"; then
+  if file "$DIR/$FILE" | grep -q "text\|script\|source\|JSON"; then
     # File is text, include it
     :
   else
