@@ -57,12 +57,17 @@ public class Program
             description: "Port to listen on",
             getDefaultValue: () => 5000);
 
-        serveCommand.AddOption(portOption);
+        var homepageOption = new Option<FileInfo?>(
+            name: "--homepage",
+            description: "HTML file to serve at root path");
 
-        serveCommand.SetHandler(async (port) =>
+        serveCommand.AddOption(portOption);
+        serveCommand.AddOption(homepageOption);
+
+        serveCommand.SetHandler(async (port, homepage) =>
         {
-            await RunServer(port);
-        }, portOption);
+            await RunServer(port, homepage);
+        }, portOption, homepageOption);
 
         // Add subcommands to root
         rootCommand.AddCommand(processCommand);
@@ -146,7 +151,7 @@ public class Program
         }
     }
 
-    private static async Task RunServer(int port)
+    private static async Task RunServer(int port, FileInfo? homepage)
     {
         // Create shared inference sessions
         var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
@@ -154,27 +159,22 @@ public class Program
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
-        
-        // Add CORS support for development
-        if (!builder.Environment.IsProduction())
-        {
-            builder.Services.AddCors(options =>
-            {
-                options.AddDefaultPolicy(policy =>
-                {
-                    policy.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader();
-                });
-            });
-        }
-        
         var app = builder.Build();
-        
-        // Use CORS in development
-        if (!app.Environment.IsProduction())
+
+        // Serve homepage at root if specified
+        if (homepage != null)
         {
-            app.UseCors();
+            if (!homepage.Exists)
+            {
+                Console.Error.WriteLine($"Error: Homepage file '{homepage.FullName}' not found.");
+                Environment.Exit(1);
+            }
+
+            app.MapGet("/", async context =>
+            {
+                context.Response.ContentType = "text/html";
+                await context.Response.SendFileAsync(homepage.FullName);
+            });
         }
 
         app.MapPost("/speedread", async context =>
