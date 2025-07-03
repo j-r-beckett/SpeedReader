@@ -8,7 +8,7 @@ namespace Ocr.Blocks;
 
 public static class OcrBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)> Create(
+    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create(
         InferenceSession dbnetSession,
         InferenceSession svtrSession)
     {

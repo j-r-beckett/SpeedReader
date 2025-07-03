@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
@@ -7,20 +8,31 @@ namespace Ocr.Blocks;
 
 public static class OcrPostProcessingBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)> Create()
+    public static IPropagatorBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create()
     {
-        return new TransformBlock<(Image<Rgb24> Image, List<Rectangle> Rectangles, List<string> Texts, VizBuilder VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(data =>
+        return new TransformBlock<(Image<Rgb24> Image, List<Rectangle> Rectangles, List<string> Texts, VizBuilder VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(data =>
         {
-            var (filteredRectangles, filteredTexts) = RemoveEmptyText(data.Rectangles, data.Texts);
-            var (mergedRectangles, mergedTexts) = MergeLines(filteredRectangles, filteredTexts);
+            Debug.Assert(data.Rectangles.Count == data.Texts.Count);
 
+            // Step 1: Filter out empty text
+            var (filteredRectangles, filteredTexts) = FilterEmptyText(data.Rectangles, data.Texts);
+
+            // Step 2: Create lines from words
+            var lines = CreateLines(filteredRectangles, filteredTexts);
+
+            // Step 3: Convert to OcrResult
+            var ocrResults = ConvertToOcrResults(filteredRectangles, filteredTexts, lines, data.Image);
+
+            // Add merged results for visualization
+            var mergedRectangles = lines.Select(line => line.bounds).ToList();
+            var mergedTexts = lines.Select(line => line.text).ToList();
             data.VizBuilder.AddMergedResults(mergedRectangles, mergedTexts);
 
-            return (data.Image, mergedRectangles, mergedTexts, data.VizBuilder);
+            return (data.Image, ocrResults, data.VizBuilder);
         });
     }
 
-    private static (List<Rectangle>, List<string>) RemoveEmptyText(List<Rectangle> rectangles, List<string> texts)
+    private static (List<Rectangle>, List<string>) FilterEmptyText(List<Rectangle> rectangles, List<string> texts)
     {
         var filteredRectangles = new List<Rectangle>();
         var filteredTexts = new List<string>();
@@ -38,19 +50,20 @@ public static class OcrPostProcessingBlock
         return (filteredRectangles, filteredTexts);
     }
 
-    private static (List<Rectangle>, List<string>) MergeLines(List<Rectangle> rectangles, List<string> texts)
+
+    private static List<(string text, Rectangle bounds, List<int> wordIndices)> CreateLines(List<Rectangle> rectangles, List<string> texts)
     {
         if (rectangles.Count == 0)
-            return (rectangles, texts);
+            return new List<(string, Rectangle, List<int>)>();
 
-        // Build adjacency list for connected components
+        // Build undirected adjacency list for connected components
         var adjacency = new List<List<int>>();
         for (int i = 0; i < rectangles.Count; i++)
         {
-            adjacency.Add(new List<int>());
+            adjacency.Add([]);
         }
 
-        // Check all pairs to build edges (O(n^2))
+        // Create edges (O(n^2))
         for (int i = 0; i < rectangles.Count; i++)
         {
             for (int j = i + 1; j < rectangles.Count; j++)
@@ -77,10 +90,8 @@ public static class OcrPostProcessingBlock
             }
         }
 
-        // Merge each component into a single rectangle and text
-        var mergedRectangles = new List<Rectangle>();
-        var mergedTexts = new List<string>();
-
+        // Create lines from components
+        var lines = new List<(string text, Rectangle bounds, List<int> wordIndices)>();
         foreach (var component in components)
         {
             // Sort component by X position for proper text ordering
@@ -89,25 +100,113 @@ public static class OcrPostProcessingBlock
             var componentRects = component.Select(i => rectangles[i]).ToList();
             var componentTexts = component.Select(i => texts[i]).ToList();
 
-            mergedRectangles.Add(MergeRectangles(componentRects));
-            mergedTexts.Add(string.Join(" ", componentTexts));
+            var lineBounds = MergeRectangles(componentRects);
+            var lineText = string.Join(" ", componentTexts);
+
+            lines.Add((lineText, lineBounds, component));
         }
 
-        return (mergedRectangles, mergedTexts);
+        return lines;
+    }
+
+    private static OcrResult ConvertToOcrResults(
+        List<Rectangle> wordRectangles,
+        List<string> wordTexts,
+        List<(string text, Rectangle bounds, List<int> wordIndices)> lines,
+        Image<Rgb24> image)
+    {
+
+        var result = new OcrResult
+        {
+            PageNumber = -1, // Updated to real value later
+            Blocks = [], // TODO
+            Lines = [],
+            Words = []
+        };
+
+        // Create Word objects
+        for (int i = 0; i < wordRectangles.Count; i++)
+        {
+            result.Words.Add(new Word
+            {
+                Id = $"word_{i}",
+                BoundingBox = CreateBoundingBox(wordRectangles[i], image.Width, image.Height),
+                Confidence = Math.Round(1.0, 2), // TODO
+                Text = wordTexts[i]
+            });
+        }
+
+        // Create Line objects
+        for (int i = 0; i < lines.Count; i++)
+        {
+            var (text, bounds, wordIndices) = lines[i];
+
+            result.Lines.Add(new Line
+            {
+                Id = $"line_{i}",
+                BoundingBox = CreateBoundingBox(bounds, image.Width, image.Height),
+                Confidence = Math.Round(1.0, 2), // TODO
+                Text = text,
+                WordIds = wordIndices.Select(idx => $"word_{idx}").ToList()
+            });
+        }
+
+        return result;
     }
 
     private static bool CanMerge(Rectangle rect1, Rectangle rect2)
     {
-        // Check if rectangles are on same line (within 2x height)
-        var midY1 = rect1.Y + rect1.Height / 2;
-        var midY2 = rect2.Y + rect2.Height / 2;
-        var maxHeight = Math.Max(rect1.Height, rect2.Height);
+        // Calculate IoU (Intersection over Union)
+        var intersectLeft = Math.Max(rect1.Left, rect2.Left);
+        var intersectTop = Math.Max(rect1.Top, rect2.Top);
+        var intersectRight = Math.Min(rect1.Right, rect2.Right);
+        var intersectBottom = Math.Min(rect1.Bottom, rect2.Bottom);
 
-        if (Math.Abs(midY1 - midY2) > 2 * maxHeight)
-            return false;
+        var intersectWidth = Math.Max(0, intersectRight - intersectLeft);
+        var intersectHeight = Math.Max(0, intersectBottom - intersectTop);
+        var intersectArea = intersectWidth * intersectHeight;
 
-        // Check proximity in both directions
-        return ShouldMerge(rect1, rect2) || ShouldMerge(rect2, rect1);
+        var area1 = rect1.Width * rect1.Height;
+        var area2 = rect2.Width * rect2.Height;
+        var unionArea = area1 + area2 - intersectArea;
+
+        var iou = unionArea > 0 ? (double)intersectArea / unionArea : 0;
+
+        // If significant overlap, merge them
+        if (iou >= 0.5)
+            return true;
+
+        // Otherwise, check if they're adjacent words on the same line
+        // Determine left/right by horizontal center
+        var center1 = rect1.X + rect1.Width / 2.0;
+        var center2 = rect2.X + rect2.Width / 2.0;
+
+        var leftRect = center1 <= center2 ? rect1 : rect2;
+        var rightRect = center1 <= center2 ? rect2 : rect1;
+
+        var leftTopRight = new Point(leftRect.Right, leftRect.Top);
+        var leftBottomRight = new Point(leftRect.Right, leftRect.Bottom);
+        var rightTopLeft = new Point(rightRect.Left, rightRect.Top);
+        var rightBottomLeft = new Point(rightRect.Left, rightRect.Bottom);
+
+        var topDistance = AnisotropicDistance(leftTopRight, rightTopLeft);
+        var bottomDistance = AnisotropicDistance(leftBottomRight, rightBottomLeft);
+
+        // Text height is proportional to character height and width
+        var maxDistance = leftRect.Height * 1.5;
+        return topDistance <= maxDistance && bottomDistance <= maxDistance;
+    }
+
+    private static double AnisotropicDistance(Point p1, Point p2)
+    {
+        // Vertical gaps are amplified and horizontal gaps are reduced
+        var horizontalWeight = 0.67;
+        var verticalWeight = 2.0;
+
+        var dx = Math.Abs(p1.X - p2.X);
+        var dy = Math.Abs(p1.Y - p2.Y);
+
+        return Math.Sqrt(horizontalWeight * dx * dx + verticalWeight * dy * dy);
     }
 
     private static void DFS(int node, List<List<int>> adjacency, bool[] visited, List<int> component)
@@ -124,49 +223,47 @@ public static class OcrPostProcessingBlock
         }
     }
 
-    private static bool ShouldMerge(Rectangle currentRect, Rectangle candidateRect)
-    {
-        var height = currentRect.Height;
-
-        var currentTopRight = new Point(currentRect.Right, currentRect.Top);
-        var currentBottomRight = new Point(currentRect.Right, currentRect.Bottom);
-        var candidateTopLeft = new Point(candidateRect.Left, candidateRect.Top);
-        var candidateBottomLeft = new Point(candidateRect.Left, candidateRect.Bottom);
-
-        var topDistance = AnisotropicDistance(currentTopRight, candidateTopLeft, height);
-        var bottomDistance = AnisotropicDistance(currentBottomRight, candidateBottomLeft, height);
-
-        return topDistance <= 1.0 && bottomDistance <= 1.0;
-    }
-
-    private static double AnisotropicDistance(Point p1, Point p2, int referenceHeight)
-    {
-        var dx = Math.Abs(p1.X - p2.X);
-        var dy = Math.Abs(p1.Y - p2.Y);
-
-        // Normalize by reference height
-        var normalizedDx = dx / (double)referenceHeight;
-        var normalizedDy = dy / (double)referenceHeight;
-
-        // Weight vertical distance more heavily than horizontal
-        // This allows more horizontal gap (up to ~1.5x height) while keeping vertical tolerance tight
-        var horizontalWeight = 0.67;  // More lenient
-        var verticalWeight = 2.0;     // More strict
-
-        return Math.Sqrt(horizontalWeight * normalizedDx * normalizedDx +
-                        verticalWeight * normalizedDy * normalizedDy);
-    }
-
     private static Rectangle MergeRectangles(List<Rectangle> rectangles)
     {
-        if (rectangles.Count == 0)
-            return Rectangle.Empty;
-
         var minX = rectangles.Min(r => r.Left);
         var minY = rectangles.Min(r => r.Top);
         var maxX = rectangles.Max(r => r.Right);
         var maxY = rectangles.Max(r => r.Bottom);
 
         return Rectangle.FromLTRB(minX, minY, maxX, maxY);
+    }
+
+
+    private static BoundingBox CreateBoundingBox(Rectangle rect, int imageWidth, int imageHeight)
+    {
+        // Create normalized coordinates (0-1 range) with 6 decimal digits
+        double normalizedX = Math.Round((double)rect.X / imageWidth, 6);
+        double normalizedY = Math.Round((double)rect.Y / imageHeight, 6);
+        double normalizedWidth = Math.Round((double)rect.Width / imageWidth, 6);
+        double normalizedHeight = Math.Round((double)rect.Height / imageHeight, 6);
+
+        // Create 4-point polygon (clockwise from top-left)
+        var polygon = new List<JsonPoint>
+        {
+            new() { X = normalizedX, Y = normalizedY }, // Top-left
+            new() { X = Math.Round(normalizedX + normalizedWidth, 6), Y = normalizedY }, // Top-right
+            new() { X = Math.Round(normalizedX + normalizedWidth, 6), Y = Math.Round(normalizedY + normalizedHeight, 6) }, // Bottom-right
+            new() { X = normalizedX, Y = Math.Round(normalizedY + normalizedHeight, 6) } // Bottom-left
+        };
+
+        // Create axis-aligned rectangle
+        var rectangle = new JsonRectangle
+        {
+            X = normalizedX,
+            Y = normalizedY,
+            Width = normalizedWidth,
+            Height = normalizedHeight
+        };
+
+        return new BoundingBox
+        {
+            Polygon = polygon,
+            Rectangle = rectangle
+        };
     }
 }
