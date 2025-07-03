@@ -1,8 +1,10 @@
 using System.CommandLine;
+using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Models;
+using Ocr;
 using Ocr.Blocks;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
@@ -53,18 +55,12 @@ public class Program
             description: "Port to listen on",
             getDefaultValue: () => 5000);
 
-        var serveVizOption = new Option<VizMode>(
-            name: "--viz",
-            description: "Visualization mode for server responses",
-            getDefaultValue: () => VizMode.Basic);
-
         serveCommand.AddOption(portOption);
-        serveCommand.AddOption(serveVizOption);
 
-        serveCommand.SetHandler(async (port, vizMode) =>
+        serveCommand.SetHandler(async (port) =>
         {
-            await RunServer(port, vizMode);
-        }, portOption, serveVizOption);
+            await RunServer(port);
+        }, portOption);
 
         // Add subcommands to root
         rootCommand.AddCommand(processCommand);
@@ -103,9 +99,9 @@ public class Program
 
             var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
 
-            var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>();
+            var results = new List<(Image<Rgb24>, OcrResult, VizBuilder)>();
             var resultCollector =
-                new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(
+                new ActionBlock<(Image<Rgb24>, OcrResult, VizBuilder)>(
                     data => results.Add(data));
 
             ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
@@ -116,15 +112,25 @@ public class Program
             ocrBlock.Complete();
             await resultCollector.Completion;
 
+            // Get results
+            var result = results[0];
+
+            // Update page number
+            var ocrResults = result.Item2 with { PageNumber = 0 };
+
+            // Output JSON to stdout
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            var json = JsonSerializer.Serialize(ocrResults, jsonOptions);
+            Console.WriteLine(json);
+
             // Generate visualization using VizBuilder
-            if (vizMode == VizMode.None)
+            if (vizMode != VizMode.None)
             {
-                Console.WriteLine("OCR completed. No visualization generated (--viz None).");
-            }
-            else
-            {
-                var result = results[0];
-                var outputImage = result.Item4.Render();
+                var outputImage = result.Item3.Render();
 
                 // Save output image
                 await outputImage.SaveAsync(output.FullName);
@@ -138,7 +144,7 @@ public class Program
         }
     }
 
-    private static async Task RunServer(int port, VizMode vizMode)
+    private static async Task RunServer(int port)
     {
         // Create shared inference sessions
         var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
@@ -163,26 +169,34 @@ public class Program
                 // Create per-request OCR pipeline
                 var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
 
-                var results = new List<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>();
+                var results = new List<(Image<Rgb24>, OcrResult, VizBuilder)>();
                 var resultCollector =
-                    new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(
+                    new ActionBlock<(Image<Rgb24>, OcrResult, VizBuilder)>(
                         data => results.Add(data));
 
                 ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
-                // Create VizBuilder and send to pipeline
-                var vizBuilder = VizBuilder.Create(vizMode, image);
+                // Create VizBuilder and send to pipeline (always VizMode.None for server)
+                var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 await ocrBlock.SendAsync((image, vizBuilder));
                 ocrBlock.Complete();
                 await resultCollector.Completion;
 
-                // Generate visualization
+                // Get results
                 var result = results[0];
-                var outputImage = result.Item4.Render();
 
-                // Return annotated image
-                context.Response.ContentType = "image/png";
-                await outputImage.SaveAsPngAsync(context.Response.Body);
+                // Update page number
+                var ocrResults = result.Item2 with { PageNumber = 0 };
+
+                // Return JSON response
+                context.Response.ContentType = "application/json";
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                var json = JsonSerializer.Serialize(ocrResults, jsonOptions);
+                await context.Response.WriteAsync(json);
             }
             catch (Exception ex)
             {
