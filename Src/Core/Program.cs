@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Models;
 using Ocr;
 using Ocr.Blocks;
@@ -152,7 +154,28 @@ public class Program
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
+        
+        // Add CORS support for development
+        if (!builder.Environment.IsProduction())
+        {
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+        }
+        
         var app = builder.Build();
+        
+        // Use CORS in development
+        if (!app.Environment.IsProduction())
+        {
+            app.UseCors();
+        }
 
         app.MapPost("/speedread", async context =>
         {
