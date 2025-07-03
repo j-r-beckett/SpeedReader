@@ -172,25 +172,25 @@ public class TextDetection
         var buffer = DBNet.PreProcess(images);
         var tensor = buffer.AsTensor();
         var rawResults = ModelRunner.Run(ModelZoo.GetInferenceSession(Model.DbNet18), tensor);
-        
+
         // Binarize for connected component analysis
         Algorithms.Thresholding.BinarizeInPlace(rawResults.AsTensor(), 0.2f);
-        
+
         int height = (int)rawResults.Shape[1];
         int width = (int)rawResults.Shape[2];
         int imageSize = height * width;
-        
+
         var results = new List<Rectangle>[images.Length];
-        
+
         for (int i = 0; i < images.Length; i++)
         {
             var probabilityMap = rawResults.AsSpan().Slice(i * imageSize, imageSize).AsSpan2D(height, width);
             results[i] = DBNet.PostProcess(probabilityMap, images[i].Width, images[i].Height);
         }
-        
+
         buffer.Dispose();
         rawResults.Dispose();
-        
+
         return results;
     }
 
