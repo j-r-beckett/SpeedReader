@@ -14,7 +14,7 @@ version=0.1.0
 wget https://jimmybeckett.com/speedreader/binaries/$version/linux-x64/speedread
 chmod +x speedread
 wget https://jimmybeckett.com/speedreader/examples/rat.png
-./speedread rat.png
+./speedread process rat.png
 ```
 
 ### Windows
@@ -23,7 +23,7 @@ $version="0.1.0"
 $ProgressPreference = 'SilentlyContinue'
 Invoke-WebRequest -Uri "https://jimmybeckett.com/speedreader/binaries/$version/win-x64/speedread.exe" -OutFile speedread.exe
 Invoke-WebRequest -Uri "https://jimmybeckett.com/speedreader/examples/rat.png" -OutFile rat.png
-.\speedread.exe rat.png
+.\speedread.exe process rat.png
 ```
 
 ### MacOS
@@ -32,7 +32,14 @@ version=0.1.0
 wget https://jimmybeckett.com/speedreader/binaries/$version/osx-arm64/speedread
 chmod +x speedread
 wget https://jimmybeckett.com/speedreader/examples/rat.png
-./speedread rat.png
+./speedread process rat.png
+```
+
+## Server Mode
+
+```bash
+./speedread serve --port 5000
+curl -X POST -H "Content-Type: image/jpeg" --data-binary @image.jpg http://localhost:5000/speedread
 ```
 
 ## Build
