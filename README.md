@@ -38,9 +38,26 @@ wget https://jimmybeckett.com/speedreader/examples/rat.png
 ## Server Mode
 
 ```bash
-./speedread serve --port 5000
-curl -X POST -H "Content-Type: image/jpeg" --data-binary @image.jpg http://localhost:5000/speedread
+./speedread serve
+curl -X POST -H "Content-Type: image/jpeg" --data-binary @image.jpg http://localhost:5000/api/ocr
 ```
+
+### Configuration
+
+Configure the server interface and port using the `ASPNETCORE_URLS` environment variable:
+
+```bash
+# Listen on all interfaces, port 8080
+ASPNETCORE_URLS=http://0.0.0.0:8080 ./speedread serve
+
+# Listen on specific interface and port
+ASPNETCORE_URLS=http://192.168.1.100:5000 ./speedread serve
+
+# Multiple URLs
+ASPNETCORE_URLS="http://localhost:5000;https://localhost:5001" ./speedread serve
+```
+
+Default: `http://localhost:5000`
 
 ## Build
 
