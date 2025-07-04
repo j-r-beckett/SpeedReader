@@ -3,8 +3,6 @@ using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Models;
 using Ocr;
 using Ocr.Blocks;
@@ -52,22 +50,16 @@ public class Program
         // Create serve subcommand
         var serveCommand = new Command("serve", "Run as HTTP server");
 
-        var portOption = new Option<int>(
-            name: "--port",
-            description: "Port to listen on",
-            getDefaultValue: () => 5000);
-
         var homepageOption = new Option<FileInfo?>(
             name: "--homepage",
             description: "HTML file to serve at root path");
 
-        serveCommand.AddOption(portOption);
         serveCommand.AddOption(homepageOption);
 
-        serveCommand.SetHandler(async (port, homepage) =>
+        serveCommand.SetHandler(async (homepage) =>
         {
-            await RunServer(port, homepage);
-        }, portOption, homepageOption);
+            await RunServer(homepage);
+        }, homepageOption);
 
         // Add subcommands to root
         rootCommand.AddCommand(processCommand);
@@ -151,7 +143,7 @@ public class Program
         }
     }
 
-    private static async Task RunServer(int port, FileInfo? homepage)
+    private static async Task RunServer(FileInfo? homepage)
     {
         // Create shared inference sessions
         var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
@@ -177,7 +169,9 @@ public class Program
             });
         }
 
-        app.MapPost("/speedread", async context =>
+        app.MapGet("/health", () => "Healthy");
+
+        app.MapPost("api/ocr", async context =>
         {
             try
             {
@@ -228,8 +222,7 @@ public class Program
             }
         });
 
-        var url = $"http://localhost:{port}";
-        Console.WriteLine($"Starting SpeedReader server on {url}");
-        await app.RunAsync(url);
+        Console.WriteLine("Starting SpeedReader server...");
+        await app.RunAsync();
     }
 }
