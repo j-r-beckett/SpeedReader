@@ -52,8 +52,6 @@ public static class DBNetBlock
     {
         return new TransformManyBlock<(Buffer<float> Buffer, (Image<Rgb24>, VizBuilder)[] Batch), (Image<Rgb24>, List<Rectangle>, VizBuilder)>(data =>
         {
-            var images = data.Batch.Select(b => b.Item1).ToArray();
-
             // Get dimensions from buffer
             int height = (int)data.Buffer.Shape[1];
             int width = (int)data.Buffer.Shape[2];

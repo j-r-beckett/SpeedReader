@@ -28,20 +28,10 @@ public class Buffer<T> : IDisposable where T : unmanaged
     private readonly int _size;
     private bool _disposed;
 
-    public Buffer(int size, nint[] shape)
+    public Buffer(nint[] shape)
     {
-        if (size <= 0)
-        {
-            throw new ArgumentException("Size must be positive");
-        }
-
-        if (size != TotalSize(shape))
-        {
-            throw new ArgumentException($"Shape {shape} does not match size {size}");
-        }
-
-        _backingArray = s_pool.Rent(size);  // may return an array larger than size!
-        _size = size;
+        _backingArray = s_pool.Rent(TotalSize(shape));  // may return an array larger than size!
+        _size = TotalSize(shape);
         Shape = shape;
     }
 

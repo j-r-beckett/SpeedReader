@@ -33,7 +33,7 @@ public static class SVTRv2
         // Calculate max width across all rectangles
         int maxWidth = CalculateMaxWidth(rectangles);
 
-        var buffer = new Buffer<float>(totalRectangles * TargetHeight * maxWidth * 3, [totalRectangles, TargetHeight, maxWidth, 3]);
+        var buffer = new Buffer<float>([totalRectangles, TargetHeight, maxWidth, 3]);
 
         // Process each image and its rectangles
         int bufferIndex = 0;
