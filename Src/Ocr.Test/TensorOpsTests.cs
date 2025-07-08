@@ -139,7 +139,7 @@ public class TensorOpsTests
     {
         // Arrange: 1x2x3x1 tensor (N=1, H=2, W=3, C=1)
         var data = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f };
-        var buffer = new Buffer<float>(data.Length, [1, 2, 3, 1]);
+        var buffer = new Buffer<float>([1, 2, 3, 1]);
         data.CopyTo(buffer.AsSpan());
 
         // Act
@@ -170,7 +170,7 @@ public class TensorOpsTests
             10.0f, 11.0f, 12.0f
         };
 
-        var buffer = new Buffer<float>(data.Length, [1, 2, 2, 3]);
+        var buffer = new Buffer<float>([1, 2, 2, 3]);
         data.CopyTo(buffer.AsSpan());
 
         // Act
@@ -212,7 +212,7 @@ public class TensorOpsTests
             7.0f, 8.0f    // Pixel (0,1): C0=7, C1=8
         };
 
-        var buffer = new Buffer<float>(data.Length, [2, 1, 2, 2]);
+        var buffer = new Buffer<float>([2, 1, 2, 2]);
         data.CopyTo(buffer.AsSpan());
 
         // Act
@@ -247,7 +247,7 @@ public class TensorOpsTests
             data[i] = i + 1.0f;
         }
 
-        var buffer = new Buffer<float>(data.Length, [1, 3, 4, 2]);
+        var buffer = new Buffer<float>([1, 3, 4, 2]);
         data.CopyTo(buffer.AsSpan());
 
         // Act
@@ -289,15 +289,15 @@ public class TensorOpsTests
     public void NhwcToNchw_InvalidDimensions_ThrowsArgumentException()
     {
         // Test 3D tensor
-        var buffer3D = new Buffer<float>(6, [2, 3, 1]);
+        var buffer3D = new Buffer<float>([2, 3, 1]);
         Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(buffer3D));
 
         // Test 5D tensor
-        var buffer5D = new Buffer<float>(6, [1, 1, 1, 2, 3]);
+        var buffer5D = new Buffer<float>([1, 1, 1, 2, 3]);
         Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(buffer5D));
 
         // Test 2D tensor
-        var buffer2D = new Buffer<float>(6, [2, 3]);
+        var buffer2D = new Buffer<float>([2, 3]);
         Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(buffer2D));
     }
 
@@ -305,7 +305,7 @@ public class TensorOpsTests
     public void NhwcToNchw_EdgeCases_HandlesCorrectly()
     {
         // Test with 1x1x1x1 tensor (minimal valid case)
-        var buffer1x1 = new Buffer<float>(1, [1, 1, 1, 1]);
+        var buffer1x1 = new Buffer<float>([1, 1, 1, 1]);
         buffer1x1.AsSpan()[0] = 42.0f;
 
         TensorOps.NhwcToNchw(buffer1x1);
@@ -314,7 +314,7 @@ public class TensorOpsTests
         Assert.Equal(42.0f, buffer1x1.AsSpan()[0]);
 
         // Test with large channel count
-        var bufferManyChannels = new Buffer<float>(32, [1, 2, 2, 8]); // 8 channels
+        var bufferManyChannels = new Buffer<float>([1, 2, 2, 8]); // 8 channels
         for (int i = 0; i < 32; i++)
         {
             bufferManyChannels.AsSpan()[i] = i;
@@ -335,7 +335,7 @@ public class TensorOpsTests
     {
         // Test with byte data (common for image processing)
         var byteData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var byteBuffer = new Buffer<byte>(byteData.Length, [1, 2, 2, 2]);
+        var byteBuffer = new Buffer<byte>([1, 2, 2, 2]);
         byteData.CopyTo(byteBuffer.AsSpan());
 
         TensorOps.NhwcToNchw(byteBuffer);
@@ -344,7 +344,7 @@ public class TensorOpsTests
 
         // Test with int data
         var intData = new int[] { 10, 20, 30, 40 };
-        var intBuffer = new Buffer<int>(intData.Length, [1, 1, 2, 2]);
+        var intBuffer = new Buffer<int>([1, 1, 2, 2]);
         intData.CopyTo(intBuffer.AsSpan());
 
         TensorOps.NhwcToNchw(intBuffer);
@@ -361,7 +361,7 @@ public class TensorOpsTests
 
     private static Buffer<float> CreateBufferFromTensor(System.Numerics.Tensors.Tensor<float> tensor)
     {
-        var buffer = new Buffer<float>((int)tensor.FlattenedLength, tensor.Lengths.ToArray());
+        var buffer = new Buffer<float>(tensor.Lengths.ToArray());
         tensor.FlattenTo(buffer.AsSpan());
         return buffer;
     }

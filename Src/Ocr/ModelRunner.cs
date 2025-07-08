@@ -24,7 +24,7 @@ public static class ModelRunner
         // Convert OrtValue to Buffer<float>
         var outputSpan = firstOutput.GetTensorDataAsSpan<float>();
         var outputShape = firstOutput.GetTensorTypeAndShape().Shape;
-        var buffer = new Buffer<float>(outputSpan.Length, outputShape.Select(x => (nint)x).ToArray());
+        var buffer = new Buffer<float>(outputShape.Select(x => (nint)x).ToArray());
         outputSpan.CopyTo(buffer.AsSpan());
 
         return buffer;

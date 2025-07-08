@@ -20,7 +20,7 @@ public static class DBNet
 
         (int width, int height) = CalculateDimensions(batch);
 
-        var buffer = new Buffer<float>(batch.Length * 3 * height * width, [batch.Length, height, width, 3]);
+        var buffer = new Buffer<float>([batch.Length, height, width, 3]);
 
         for (int i = 0; i < batch.Length; i++)
         {
