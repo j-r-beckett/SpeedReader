@@ -18,34 +18,33 @@ public static class SVTRv2
         // Use fixed dimensions for all text regions
         const int fixedHeight = 48;
         const int fixedWidth = 320;  // Maximum width
-        
+
         int totalRectangles = rectangles.Count;
-        
-        // Create buffer to match the batch preprocessing approach
-        var buffer = new Buffer<float>([totalRectangles, fixedHeight, fixedWidth, 3]);
-        
+
+        // Allocate array directly in NHWC format
+        float[] nhwcData = new float[totalRectangles * fixedHeight * fixedWidth * 3];
+
         // Process each rectangle
         for (int i = 0; i < rectangles.Count; i++)
         {
             var rect = rectangles[i];
             int targetWidth = CalculateTargetWidth(rect);
-            
-            var dest = buffer.AsSpan().Slice(i * fixedHeight * fixedWidth * 3, fixedHeight * fixedWidth * 3);
+
+            var dest = nhwcData.AsSpan().Slice(i * fixedHeight * fixedWidth * 3, fixedHeight * fixedWidth * 3);
             Resampling.CropResizeInto(image, rect, dest, fixedWidth, fixedHeight, targetWidth);
         }
+
+        // Convert to NCHW format in place
+        TensorOps.NhwcToNchw(nhwcData, [totalRectangles, fixedHeight, fixedWidth, 3]);
+
+        // Apply SVTRv2 normalization: [0,255] → [-1,1] using tensor operations
+        var nchwTensor = Tensor.Create(nhwcData, [totalRectangles, 3, fixedHeight, fixedWidth]);
+        var tensorSpan = nchwTensor.AsTensorSpan();
         
-        // Convert to NCHW format (just like batch preprocessing)
-        TensorOps.NhwcToNchw(buffer);
-        
-        // Apply SVTRv2 normalization: [0,255] → [-1,1]
-        var tensor = buffer.AsTensor();
-        Tensor.Divide(tensor, 127.5f, tensor);
-        Tensor.Subtract(tensor, 1.0f, tensor);
-        
-        // Return as float array
-        var result = buffer.AsSpan().ToArray();
-        buffer.Dispose();
-        return result;
+        Tensor.Divide(tensorSpan, 127.5f, tensorSpan);
+        Tensor.Subtract(tensorSpan, 1.0f, tensorSpan);
+
+        return nhwcData;  // This is now mutated to NCHW format
     }
 
     public static string[] PostProcessSingle(float[] modelOutput, int numRectangles)
@@ -53,9 +52,9 @@ public static class SVTRv2
         // Model output dimensions from SVTRv2
         int sequenceLength = (int)modelOutput.Length / numRectangles / 6625;  // Assuming 6625 vocab size
         int numClasses = 6625;
-        
+
         var results = new List<string>();
-        
+
         for (int i = 0; i < numRectangles; i++)
         {
             // Each rectangle's output data: [sequence_length, num_classes]
@@ -63,7 +62,7 @@ public static class SVTRv2
             string text = CTC.DecodeSingleSequence(regionSpan, sequenceLength, numClasses);
             results.Add(text);
         }
-        
+
         return results.ToArray();
     }
 
@@ -76,6 +75,4 @@ public static class SVTRv2
         // Clamp to reasonable bounds
         return Math.Max(MinWidth, Math.Min(MaxWidth, targetWidth));
     }
-
-
 }

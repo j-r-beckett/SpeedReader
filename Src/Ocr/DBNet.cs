@@ -18,18 +18,18 @@ public static class DBNet
         const int fixedWidth = 1344;  // 1333 rounded up to multiple of 32
         const int fixedHeight = 736;  // Already a multiple of 32
         
-        // Create a buffer to match the batch preprocessing approach
-        var buffer = new Buffer<float>([1, fixedHeight, fixedWidth, 3]);
+        // Allocate array directly in NHWC format
+        float[] nhwcData = new float[1 * fixedHeight * fixedWidth * 3];
         
         // Resize image to fixed dimensions
-        Resampling.AspectResizeInto(image, buffer.AsSpan(), fixedWidth, fixedHeight);
+        Resampling.AspectResizeInto(image, nhwcData, fixedWidth, fixedHeight);
         
-        // Convert to NCHW in place and update Shape (just like batch preprocessing)
-        TensorOps.NhwcToNchw(buffer);
+        // Convert to NCHW format in place
+        TensorOps.NhwcToNchw(nhwcData, [1, fixedHeight, fixedWidth, 3]);
         
-        // Apply normalization using tensor operations (just like batch preprocessing)
-        var tensor = buffer.AsTensor();
-        var tensorSpan = tensor.AsTensorSpan();
+        // Apply normalization using tensor operations
+        var nchwTensor = Tensor.Create(nhwcData, [1, 3, fixedHeight, fixedWidth]);
+        var tensorSpan = nchwTensor.AsTensorSpan();
         
         float[] means = [123.675f, 116.28f, 103.53f];
         float[] stds = [58.395f, 57.12f, 57.375f];
@@ -51,10 +51,7 @@ public static class DBNet
             Tensor.Divide(channelSlice, stds[channel], channelSlice);
         }
         
-        // Return as float array
-        var result = buffer.AsSpan().ToArray();
-        buffer.Dispose();
-        return result;
+        return nhwcData;  // This is now mutated to NCHW format
     }
 
     internal static List<Rectangle> PostProcess(Span2D<float> probabilityMap, int originalWidth, int originalHeight)
