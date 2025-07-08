@@ -1,54 +1,65 @@
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics.Tensors;
 
 namespace Ocr.Algorithms;
 
 public static class TensorOps
 {
+    // Pool with maxArrayLength of 1 Gb (bigger than the ArrayPool.Shared maxArrayLength of 1 Mb)
+    private static ArrayPool<float> s_pool = ArrayPool<float>.Create(1 << 30, 64);
+
     /// <summary>
     /// Converts tensor layout from NHWC (batch, height, width, channels) to NCHW (batch, channels, height, width).
-    /// Modifies the buffer in-place by reordering data and updating the buffer's shape metadata.
+    /// Mutates the input array in place.
     /// </summary>
-    /// <typeparam name="T">Unmanaged numeric type (float, int, byte, etc.)</typeparam>
-    /// <param name="buffer">Buffer containing tensor data in NHWC layout, will be modified to NCHW layout</param>
-    /// <exception cref="ArgumentException">Thrown when tensor is not 4-dimensional</exception>
+    /// <param name="tensor">Array containing tensor in NHWC layout, will be mutated to NCHW layout</param>
+    /// <param name="shape">Shape in NHWC format [N, H, W, C]</param>
+    /// <exception cref="ArgumentException">Thrown when shape is not 4-dimensional</exception>
     /// <remarks>Performance: block-based memory-access pattern for cache efficiency</remarks>
-    public static void NhwcToNchw<T>(Buffer<T> buffer) where T : unmanaged
+    public static void NhwcToNchw(float[] tensor, nint[] shape)
     {
-        var tensor = buffer.AsTensor();
-        var shape = tensor.Lengths;  // NHWC
-
         if (shape.Length != 4)
         {
-            throw new ArgumentException($"Tensor has {shape.Length} dimensions, expected 4 (NHWC)");
+            throw new ArgumentException($"Shape has {shape.Length} dimensions, expected 4 (NHWC)");
         }
 
-        // We only need temporary space equal to the size of the data being reordered (H * W * C)
-        int tempBufferSize = (int)(shape[1] * shape[2] * shape[3]);
-        T[] tempBuffer = ArrayPool<T>.Shared.Rent(tempBufferSize);
-        var tempTensor = Tensor.Create(tempBuffer, [shape[3], shape[1], shape[2]]);
+        int N = Convert.ToInt32(shape[0]);
+        int H = Convert.ToInt32(shape[1]);
+        int W = Convert.ToInt32(shape[2]);
+        int C = Convert.ToInt32(shape[3]);
+
+        // We only need temporary space equal to the size of the tensor being reordered (H * W * C)
+        int workspaceSize;
+        checked
+        {
+            workspaceSize = H * W * C;
+        }
+        float[] workspace = s_pool.Rent(workspaceSize);  // Array returned by pool may be bigger than workspaceSize!
 
         try
         {
-            // Convert from NHWC to NCHW, one batch at a time
-            for (int n = 0; n < shape[0]; n++)  // batch
+            for (int n = 0; n < N; n++)
             {
-                for (int h = 0; h < shape[1]; h++)          // height
-                    for (int w = 0; w < shape[2]; w++)      // width
-                        for (int c = 0; c < shape[3]; c++)  // channel
+                var tensorSlice = tensor.AsSpan().Slice(n * workspaceSize, workspaceSize);
+
+                // Write HWC slice of tensor to workspace, converting to CHW as we go
+                for (int h = 0; h < H; h++)          // height
+                    for (int w = 0; w < W; w++)      // width
+                        for (int c = 0; c < C; c++)  // channel
                         {
-                            tempTensor[[c, h, w]] = tensor[[n, h, w, c]];
+                            int hwcIndex = h * W * C + w * C + c;
+                            int chwIndex = c * H * W + h * W + w;
+                            workspace[chwIndex] = tensorSlice[hwcIndex];
                         }
 
-                tempTensor.FlattenTo(buffer.AsSpan().Slice(n * tempBufferSize, tempBufferSize));
+                // Copy workspace back to tensor slice
+                workspace.AsSpan()[.. workspaceSize].CopyTo(tensorSlice);
             }
         }
         finally
         {
-            ArrayPool<T>.Shared.Return(tempBuffer);
+            s_pool.Return(workspace);
         }
-
-        // Update buffer's shape to NCHW
-        buffer.Shape = [shape[0], shape[3], shape[1], shape[2]];
     }
 }

@@ -139,18 +139,14 @@ public class TensorOpsTests
     {
         // Arrange: 1x2x3x1 tensor (N=1, H=2, W=3, C=1)
         var data = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f };
-        var buffer = new Buffer<float>([1, 2, 3, 1]);
-        data.CopyTo(buffer.AsSpan());
+        nint[] shape = [1, 2, 3, 1]; // NHWC shape
 
         // Act
-        TensorOps.NhwcToNchw(buffer);
+        TensorOps.NhwcToNchw(data, shape);
 
-        // Assert
-        Assert.Equal([1, 1, 2, 3], buffer.Shape); // NCHW shape
-
-        // Data should remain the same for single channel
+        // Assert - Data should remain the same for single channel
         var expected = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f };
-        Assert.Equal(expected, buffer.AsSpan().ToArray());
+        Assert.Equal(expected, data);
     }
 
     [Fact]
@@ -170,15 +166,12 @@ public class TensorOpsTests
             10.0f, 11.0f, 12.0f
         };
 
-        var buffer = new Buffer<float>([1, 2, 2, 3]);
-        data.CopyTo(buffer.AsSpan());
+        nint[] shape = [1, 2, 2, 3]; // NHWC shape
 
         // Act
-        TensorOps.NhwcToNchw(buffer);
+        TensorOps.NhwcToNchw(data, shape);
 
         // Assert
-        Assert.Equal([1, 3, 2, 2], buffer.Shape); // NCHW shape
-
         // NCHW layout should be: [batch][channel][height][width]
         // Red channel (all R values), then Green channel (all G values), then Blue channel (all B values)
         var expected = new float[]
@@ -194,7 +187,7 @@ public class TensorOpsTests
             9.0f, 12.0f    // Row 1: pixels (1,0) and (1,1)
         };
 
-        Assert.Equal(expected, buffer.AsSpan().ToArray());
+        Assert.Equal(expected, data);
     }
 
     [Fact]
@@ -212,15 +205,12 @@ public class TensorOpsTests
             7.0f, 8.0f    // Pixel (0,1): C0=7, C1=8
         };
 
-        var buffer = new Buffer<float>([2, 1, 2, 2]);
-        data.CopyTo(buffer.AsSpan());
+        nint[] shape = [2, 1, 2, 2]; // NHWC shape
 
         // Act
-        TensorOps.NhwcToNchw(buffer);
+        TensorOps.NhwcToNchw(data, shape);
 
         // Assert
-        Assert.Equal([2, 2, 1, 2], buffer.Shape); // NCHW shape
-
         var expected = new float[]
         {
             // Batch 0
@@ -232,132 +222,53 @@ public class TensorOpsTests
             6.0f, 8.0f    // Channel 1
         };
 
-        Assert.Equal(expected, buffer.AsSpan().ToArray());
+        Assert.Equal(expected, data);
     }
 
-    [Fact]
-    public void NhwcToNchw_LargerTensor_MaintainsDataIntegrity()
-    {
-        // Arrange: 1x3x4x2 tensor (N=1, H=3, W=4, C=2)
-        var data = new float[24]; // 1*3*4*2 = 24 elements
-
-        // Fill with incrementing values for easy verification
-        for (int i = 0; i < data.Length; i++)
-        {
-            data[i] = i + 1.0f;
-        }
-
-        var buffer = new Buffer<float>([1, 3, 4, 2]);
-        data.CopyTo(buffer.AsSpan());
-
-        // Act
-        TensorOps.NhwcToNchw(buffer);
-
-        // Assert
-        Assert.Equal([1, 2, 3, 4], buffer.Shape); // NCHW shape
-
-        // Verify that all original values are present
-        var result = buffer.AsSpan().ToArray();
-        Array.Sort(result);
-        Array.Sort(data);
-        Assert.Equal(data, result);
-
-        // Verify specific channel groupings
-        var actualBuffer = buffer.AsSpan();
-        var tensor = buffer.AsTensor();
-
-        // Check that channel 0 contains all the even-indexed original values
-        // Check that channel 1 contains all the odd-indexed original values
-        for (int h = 0; h < 3; h++)
-        {
-            for (int w = 0; w < 4; w++)
-            {
-                // Original NHWC index calculation: n*H*W*C + h*W*C + w*C + c
-                int originalC0Index = 0 * 3 * 4 * 2 + h * 4 * 2 + w * 2 + 0;
-                int originalC1Index = 0 * 3 * 4 * 2 + h * 4 * 2 + w * 2 + 1;
-
-                float expectedC0Value = originalC0Index + 1.0f;
-                float expectedC1Value = originalC1Index + 1.0f;
-
-                Assert.Equal(expectedC0Value, tensor[[0, 0, h, w]]); // Channel 0
-                Assert.Equal(expectedC1Value, tensor[[0, 1, h, w]]); // Channel 1
-            }
-        }
-    }
 
     [Fact]
     public void NhwcToNchw_InvalidDimensions_ThrowsArgumentException()
     {
         // Test 3D tensor
-        var buffer3D = new Buffer<float>([2, 3, 1]);
-        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(buffer3D));
+        var data3D = new float[6];
+        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(data3D, [2, 3, 1]));
 
         // Test 5D tensor
-        var buffer5D = new Buffer<float>([1, 1, 1, 2, 3]);
-        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(buffer5D));
+        var data5D = new float[6];
+        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(data5D, [1, 1, 1, 2, 3]));
 
         // Test 2D tensor
-        var buffer2D = new Buffer<float>([2, 3]);
-        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(buffer2D));
+        var data2D = new float[6];
+        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(data2D, [2, 3]));
     }
 
     [Fact]
     public void NhwcToNchw_EdgeCases_HandlesCorrectly()
     {
         // Test with 1x1x1x1 tensor (minimal valid case)
-        var buffer1x1 = new Buffer<float>([1, 1, 1, 1]);
-        buffer1x1.AsSpan()[0] = 42.0f;
+        var data1x1 = new float[] { 42.0f };
+        nint[] shape1x1 = [1, 1, 1, 1];
 
-        TensorOps.NhwcToNchw(buffer1x1);
+        TensorOps.NhwcToNchw(data1x1, shape1x1);
 
-        Assert.Equal([1, 1, 1, 1], buffer1x1.Shape);
-        Assert.Equal(42.0f, buffer1x1.AsSpan()[0]);
+        Assert.Equal(42.0f, data1x1[0]);
 
         // Test with large channel count
-        var bufferManyChannels = new Buffer<float>([1, 2, 2, 8]); // 8 channels
+        var dataManyChannels = new float[32]; // 1x2x2x8 = 32 elements 
         for (int i = 0; i < 32; i++)
         {
-            bufferManyChannels.AsSpan()[i] = i;
+            dataManyChannels[i] = i;
         }
+        nint[] shapeManyChannels = [1, 2, 2, 8]; // 8 channels
 
-        TensorOps.NhwcToNchw(bufferManyChannels);
-
-        Assert.Equal([1, 8, 2, 2], bufferManyChannels.Shape);
+        TensorOps.NhwcToNchw(dataManyChannels, shapeManyChannels);
 
         // Verify data is still present (though reordered)
         var sortedOriginal = Enumerable.Range(0, 32).Select(i => (float)i).OrderBy(x => x).ToArray();
-        var sortedResult = bufferManyChannels.AsSpan().ToArray().OrderBy(x => x).ToArray();
+        var sortedResult = dataManyChannels.OrderBy(x => x).ToArray();
         Assert.Equal(sortedOriginal, sortedResult);
     }
 
-    [Fact]
-    public void NhwcToNchw_IntegerTypes_WorksWithDifferentDataTypes()
-    {
-        // Test with byte data (common for image processing)
-        var byteData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-        var byteBuffer = new Buffer<byte>([1, 2, 2, 2]);
-        byteData.CopyTo(byteBuffer.AsSpan());
-
-        TensorOps.NhwcToNchw(byteBuffer);
-
-        Assert.Equal([1, 2, 2, 2], byteBuffer.Shape);
-
-        // Test with int data
-        var intData = new int[] { 10, 20, 30, 40 };
-        var intBuffer = new Buffer<int>([1, 1, 2, 2]);
-        intData.CopyTo(intBuffer.AsSpan());
-
-        TensorOps.NhwcToNchw(intBuffer);
-
-        Assert.Equal([1, 2, 1, 2], intBuffer.Shape);
-
-        // Verify the reordering worked correctly for integers
-        var intTensor = intBuffer.AsTensor();
-        Assert.Equal(10, intTensor[[0, 0, 0, 0]]); // First channel, position (0,0)
-        Assert.Equal(30, intTensor[[0, 0, 0, 1]]); // First channel, position (0,1)
-        Assert.Equal(20, intTensor[[0, 1, 0, 0]]); // Second channel, position (0,0)
-        Assert.Equal(40, intTensor[[0, 1, 0, 1]]); // Second channel, position (0,1)
-    }
 
     private static Buffer<float> CreateBufferFromTensor(System.Numerics.Tensors.Tensor<float> tensor)
     {
