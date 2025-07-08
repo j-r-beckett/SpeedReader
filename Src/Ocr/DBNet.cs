@@ -11,33 +11,29 @@ public static class DBNet
 {
     private const float BinarizationThreshold = 0.2f;
 
-    public static Buffer<float> PreProcess(Image<Rgb24>[] batch)
+
+    public static float[] PreProcessSingle(Image<Rgb24> image)
     {
-        if (batch.Length == 0)
-        {
-            throw new ArgumentException("Batch cannot be empty", nameof(batch));
-        }
-
-        (int width, int height) = CalculateDimensions(batch);
-
-        var buffer = new Buffer<float>([batch.Length, height, width, 3]);
-
-        for (int i = 0; i < batch.Length; i++)
-        {
-            var dest = buffer.AsSpan().Slice(i * width * height * 3, width * height * 3);
-            Resampling.AspectResizeInto(batch[i], dest, width, height);
-        }
-
-        // Convert to NCHW in place and update Shape
+        // Use fixed dimensions for all images
+        const int fixedWidth = 1344;  // 1333 rounded up to multiple of 32
+        const int fixedHeight = 736;  // Already a multiple of 32
+        
+        // Create a buffer to match the batch preprocessing approach
+        var buffer = new Buffer<float>([1, fixedHeight, fixedWidth, 3]);
+        
+        // Resize image to fixed dimensions
+        Resampling.AspectResizeInto(image, buffer.AsSpan(), fixedWidth, fixedHeight);
+        
+        // Convert to NCHW in place and update Shape (just like batch preprocessing)
         TensorOps.NhwcToNchw(buffer);
-
-        // Normalize each channel using tensor operations
+        
+        // Apply normalization using tensor operations (just like batch preprocessing)
         var tensor = buffer.AsTensor();
         var tensorSpan = tensor.AsTensorSpan();
-
+        
         float[] means = [123.675f, 116.28f, 103.53f];
         float[] stds = [58.395f, 57.12f, 57.375f];
-
+        
         for (int channel = 0; channel < 3; channel++)
         {
             // Range over a single color channel
@@ -47,15 +43,18 @@ public static class DBNet
                 NRange.All,                           // All heights
                 NRange.All                            // All widths
             ];
-
+            
             var channelSlice = tensorSpan[channelRange];
-
+            
             // Subtract mean and divide by std in place
             Tensor.Subtract(channelSlice, means[channel], channelSlice);
             Tensor.Divide(channelSlice, stds[channel], channelSlice);
         }
-
-        return buffer;
+        
+        // Return as float array
+        var result = buffer.AsSpan().ToArray();
+        buffer.Dispose();
+        return result;
     }
 
     internal static List<Rectangle> PostProcess(Span2D<float> probabilityMap, int originalWidth, int originalHeight)
@@ -86,6 +85,18 @@ public static class DBNet
         }
 
         return boundingBoxes;
+    }
+
+    public static List<Rectangle> PostProcessSingle(float[] processedImage, int originalWidth, int originalHeight)
+    {
+        // Fixed dimensions match PreProcessSingle
+        const int fixedWidth = 1344;
+        const int fixedHeight = 736;
+        
+        // Create span2D from the processed image data
+        var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(fixedHeight, fixedWidth);
+        
+        return PostProcess(probabilityMapSpan, originalWidth, originalHeight);
     }
 
     private static void Scale(List<(int X, int Y)> polygon, double scale)
@@ -122,22 +133,6 @@ public static class DBNet
         return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
 
-    internal static (int width, int height) CalculateDimensions(Image<Rgb24>[] batch)
-    {
-        int maxWidth = -1;
-        int maxHeight = -1;
-
-        foreach (var image in batch)
-        {
-            var (fittedWidth, fittedHeight) = CalculateFittedDimensions(image.Width, image.Height);
-            int paddedWidth = (fittedWidth + 31) / 32 * 32;
-            int paddedHeight = (fittedHeight + 31) / 32 * 32;
-            maxWidth = Math.Max(maxWidth, paddedWidth);
-            maxHeight = Math.Max(maxHeight, paddedHeight);
-        }
-
-        return (maxWidth, maxHeight);
-    }
 
     private static (int width, int height) CalculateFittedDimensions(int originalWidth, int originalHeight)
     {
