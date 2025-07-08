@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 using Models;
 using SixLabors.Fonts;
@@ -169,27 +170,27 @@ public class TextDetection
 
     private static List<Rectangle>[] RunTextDetection(Image<Rgb24>[] images)
     {
-        var buffer = DBNet.PreProcess(images);
-        var tensor = buffer.AsTensor();
-        var rawResults = ModelRunner.Run(ModelZoo.GetInferenceSession(Model.DbNet18), tensor);
-
-        // Binarize for connected component analysis
-        Algorithms.Thresholding.BinarizeInPlace(rawResults.AsTensor(), 0.2f);
-
-        int height = (int)rawResults.Shape[1];
-        int width = (int)rawResults.Shape[2];
-        int imageSize = height * width;
-
         var results = new List<Rectangle>[images.Length];
+        var session = ModelZoo.GetInferenceSession(Model.DbNet18);
 
         for (int i = 0; i < images.Length; i++)
         {
-            var probabilityMap = rawResults.AsSpan().Slice(i * imageSize, imageSize).AsSpan2D(height, width);
-            results[i] = DBNet.PostProcess(probabilityMap, images[i].Width, images[i].Height);
+            // Use individual preprocessing
+            var processedImage = DBNet.PreProcessSingle(images[i]);
+            
+            // Create tensor and run model
+            var inputTensor = Tensor.Create(processedImage, [1, 3, 736, 1344]);
+            var rawResult = ModelRunner.Run(session, inputTensor);
+            
+            // Binarize for connected component analysis (same as before)
+            Algorithms.Thresholding.BinarizeInPlace(rawResult.AsTensor(), 0.2f);
+            
+            // Extract output data and use individual postprocessing
+            var outputData = rawResult.AsSpan().ToArray();
+            results[i] = DBNet.PostProcessSingle(outputData, images[i].Width, images[i].Height);
+            
+            rawResult.Dispose();
         }
-
-        buffer.Dispose();
-        rawResults.Dispose();
 
         return results;
     }

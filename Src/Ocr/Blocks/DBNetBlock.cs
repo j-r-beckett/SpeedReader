@@ -1,4 +1,5 @@
 using System.Threading.Tasks.Dataflow;
+using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Visualization;
@@ -9,77 +10,54 @@ namespace Ocr.Blocks;
 
 public static class DBNetBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<Rectangle>, VizBuilder)> Create(InferenceSession session)
+    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (List<Rectangle>, Image<Rgb24>, VizBuilder)> Create(InferenceSession session)
     {
-        var batchBlock = CreateAdaptiveBatchBlock<(Image<Rgb24>, VizBuilder)>();
         var preProcessingBlock = CreatePreProcessingBlock();
         var modelRunnerBlock = CreateModelRunnerBlock(session);
         var postProcessingBlock = CreatePostProcessingBlock();
 
-        batchBlock.LinkTo(preProcessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
         preProcessingBlock.LinkTo(modelRunnerBlock, new DataflowLinkOptions { PropagateCompletion = true });
         modelRunnerBlock.LinkTo(postProcessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-        return DataflowBlock.Encapsulate(batchBlock, postProcessingBlock);
+        return DataflowBlock.Encapsulate(preProcessingBlock, postProcessingBlock);
     }
 
-    private static TransformBlock<T, T[]> CreateAdaptiveBatchBlock<T>()
+
+    private static TransformBlock<(Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreatePreProcessingBlock()
     {
-        return new TransformBlock<T, T[]>(data => [data]);
+        return new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input
+            => (DBNet.PreProcessSingle(input.Image), input.Image, input.VizBuilder));
     }
 
-    private static TransformBlock<(Image<Rgb24>, VizBuilder)[], (Buffer<float>, (Image<Rgb24>, VizBuilder)[])> CreatePreProcessingBlock()
+    private static TransformBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
     {
-        return new TransformBlock<(Image<Rgb24>, VizBuilder)[], (Buffer<float>, (Image<Rgb24>, VizBuilder)[])>(batch =>
+        return new TransformBlock<(float[] ProcessedImage, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input =>
         {
-            var images = batch.Select(b => b.Item1).ToArray();
-            var buffer = DBNet.PreProcess(images);
-            return (buffer, batch);
+            // Model input should be [1, 3, 736, 1344] - batch size 1, 3 channels, height 736, width 1344
+            var inputTensor = Tensor.Create(input.ProcessedImage, [ 1, 3, 736, 1344 ]);
+
+            var outputBuffer = ModelRunner.Run(session, inputTensor);
+
+            // Model output should be [1, 1, 736, 1344] - single channel probability map
+            float[] outputData = outputBuffer.AsSpan().ToArray();
+            outputBuffer.Dispose();
+
+            input.VizBuilder.AddProbabilityMap(outputData.AsSpan().AsSpan2D(736, 1344));
+
+            return (outputData, input.OriginalImage, input.VizBuilder);
         });
     }
 
-    private static TransformBlock<(Buffer<float>, (Image<Rgb24>, VizBuilder)[]), (Buffer<float>, (Image<Rgb24>, VizBuilder)[])> CreateModelRunnerBlock(InferenceSession session)
+    private static TransformBlock<(float[], Image<Rgb24>, VizBuilder), (List<Rectangle>, Image<Rgb24>, VizBuilder)> CreatePostProcessingBlock()
     {
-        return new TransformBlock<(Buffer<float> Buffer, (Image<Rgb24>, VizBuilder)[] Batch), (Buffer<float>, (Image<Rgb24>, VizBuilder)[])>(data =>
+        return new TransformBlock<(float[] RawResult, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (List<Rectangle>, Image<Rgb24>, VizBuilder)>(input =>
         {
-            var result = ModelRunner.Run(session, data.Buffer.AsTensor());
-            data.Buffer.Dispose();
-            return (result, data.Batch);
-        });
-    }
+            var rectangles = DBNet.PostProcessSingle(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 
-    private static TransformManyBlock<(Buffer<float>, (Image<Rgb24>, VizBuilder)[]), (Image<Rgb24>, List<Rectangle>, VizBuilder)> CreatePostProcessingBlock()
-    {
-        return new TransformManyBlock<(Buffer<float> Buffer, (Image<Rgb24>, VizBuilder)[] Batch), (Image<Rgb24>, List<Rectangle>, VizBuilder)>(data =>
-        {
-            // Get dimensions from buffer
-            int height = (int)data.Buffer.Shape[1];
-            int width = (int)data.Buffer.Shape[2];
-            int imageSize = height * width;
+            input.VizBuilder.AddProbabilityMap(input.RawResult.AsSpan().AsSpan2D(736, 1344));
+            input.VizBuilder.AddRectangles(rectangles);
 
-            // Binarize for connected component analysis
-            // Algorithms.Thresholding.BinarizeInPlace(data.Buffer.AsTensor(), 0.2f);
-
-            var results = new List<(Image<Rgb24>, List<Rectangle>, VizBuilder)>();
-
-            for (int i = 0; i < data.Batch.Length; i++)
-            {
-                var (originalImage, vizBuilder) = data.Batch[i];
-
-                var probabilityMapSlice = data.Buffer.AsSpan().Slice(i * imageSize, imageSize).AsSpan2D(height, width);
-
-                vizBuilder.AddProbabilityMap(probabilityMapSlice);
-
-                // mutates probability map
-                var rectangles = DBNet.PostProcess(probabilityMapSlice, originalImage.Width, originalImage.Height);
-
-                vizBuilder.AddRectangles(rectangles);
-
-                results.Add((originalImage, rectangles, vizBuilder));
-            }
-
-            data.Buffer.Dispose();
-            return results;
+            return (rectangles, input.OriginalImage, input.VizBuilder);
         });
     }
 }
