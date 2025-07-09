@@ -94,17 +94,17 @@ public class TextRecognition
     private static string[] RunTextRecognition(Image<Rgb24> image, List<Rectangle> boundingBoxes)
     {
         // Use individual preprocessing
-        var processedRegions = SVTRv2.PreProcessSingle(image, boundingBoxes);
-        
+        var processedRegions = SVTRv2.PreProcess(image, boundingBoxes);
+
         // Create tensor and run model
         int numRectangles = boundingBoxes.Count;
         var inputTensor = Tensor.Create(processedRegions, [numRectangles, 3, 48, 320]);
         var rawResult = ModelRunner.Run(ModelZoo.GetInferenceSession(Model.SVTRv2), inputTensor);
-        
+
         // Extract output data and use individual postprocessing
         var outputData = rawResult.AsSpan().ToArray();
-        var results = SVTRv2.PostProcessSingle(outputData, numRectangles);
-        
+        var results = SVTRv2.PostProcess(outputData, numRectangles);
+
         rawResult.Dispose();
         return results;
     }

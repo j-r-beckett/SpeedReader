@@ -25,7 +25,7 @@ public static class SVTRBlock
     private static TransformBlock<(List<Rectangle>, Image<Rgb24>, VizBuilder), (float[], List<Rectangle>, Image<Rgb24>, VizBuilder)> CreatePreProcessingBlock()
     {
         return new TransformBlock<(List<Rectangle> Rectangles, Image<Rgb24> Image, VizBuilder VizBuilder), (float[], List<Rectangle>, Image<Rgb24>, VizBuilder)>(input
-            => (SVTRv2.PreProcessSingle(input.Image, input.Rectangles), input.Rectangles, input.Image, input.VizBuilder));
+            => (SVTRv2.PreProcess(input.Image, input.Rectangles), input.Rectangles, input.Image, input.VizBuilder));
     }
 
     private static TransformBlock<(float[], List<Rectangle>, Image<Rgb24>, VizBuilder), (float[], List<Rectangle>, Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
@@ -49,10 +49,10 @@ public static class SVTRBlock
     {
         return new TransformBlock<(float[] RawResult, List<Rectangle> Rectangles, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(input =>
         {
-            var recognizedTexts = SVTRv2.PostProcessSingle(input.RawResult, input.Rectangles.Count);
-            
+            var recognizedTexts = SVTRv2.PostProcess(input.RawResult, input.Rectangles.Count);
+
             input.VizBuilder.AddRecognitionResults(recognizedTexts.ToList());
-            
+
             return (input.OriginalImage, input.Rectangles, recognizedTexts.ToList(), input.VizBuilder);
         });
     }

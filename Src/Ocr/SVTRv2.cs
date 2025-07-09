@@ -11,18 +11,17 @@ public static class SVTRv2
     private const int MinWidth = 12;
     private const int MaxWidth = 320;
 
-
-
-    public static float[] PreProcessSingle(Image<Rgb24> image, List<Rectangle> rectangles)
+    public static float[] PreProcess(Image<Rgb24> image, List<Rectangle> rectangles)
     {
         // Use fixed dimensions for all text regions
         const int fixedHeight = 48;
         const int fixedWidth = 320;  // Maximum width
 
         int totalRectangles = rectangles.Count;
+        int itemSize = fixedHeight * fixedWidth * 3;
 
-        // Allocate array directly in NHWC format
-        float[] nhwcData = new float[totalRectangles * fixedHeight * fixedWidth * 3];
+        // Allocate array directly in HWC format (no batch dimension, just concatenated items)
+        float[] data = new float[totalRectangles * itemSize];
 
         // Process each rectangle
         for (int i = 0; i < rectangles.Count; i++)
@@ -30,27 +29,30 @@ public static class SVTRv2
             var rect = rectangles[i];
             int targetWidth = CalculateTargetWidth(rect);
 
-            var dest = nhwcData.AsSpan().Slice(i * fixedHeight * fixedWidth * 3, fixedHeight * fixedWidth * 3);
+            var dest = data.AsSpan().Slice(i * itemSize, itemSize);
             Resampling.CropResizeInto(image, rect, dest, fixedWidth, fixedHeight, targetWidth);
+
+            // Convert this item to CHW format in place
+            TensorOps.NhwcToNchw(dest, [fixedHeight, fixedWidth, 3]);
+
+            // Apply SVTRv2 normalization: [0,255] → [-1,1] for each channel
+            for (int channel = 0; channel < 3; channel++)
+            {
+                int channelOffset = i * itemSize + channel * fixedHeight * fixedWidth;
+                var channelTensor = Tensor.Create(data, channelOffset, [fixedHeight, fixedWidth], default);
+
+                Tensor.Divide(channelTensor, 127.5f, channelTensor);
+                Tensor.Subtract(channelTensor, 1.0f, channelTensor);
+            }
         }
 
-        // Convert to NCHW format in place
-        TensorOps.NhwcToNchw(nhwcData, [totalRectangles, fixedHeight, fixedWidth, 3]);
-
-        // Apply SVTRv2 normalization: [0,255] → [-1,1] using tensor operations
-        var nchwTensor = Tensor.Create(nhwcData, [totalRectangles, 3, fixedHeight, fixedWidth]);
-        var tensorSpan = nchwTensor.AsTensorSpan();
-        
-        Tensor.Divide(tensorSpan, 127.5f, tensorSpan);
-        Tensor.Subtract(tensorSpan, 1.0f, tensorSpan);
-
-        return nhwcData;  // This is now mutated to NCHW format
+        return data;  // Each item is now in CHW format
     }
 
-    public static string[] PostProcessSingle(float[] modelOutput, int numRectangles)
+    public static string[] PostProcess(float[] modelOutput, int numRectangles)
     {
         // Model output dimensions from SVTRv2
-        int sequenceLength = (int)modelOutput.Length / numRectangles / 6625;  // Assuming 6625 vocab size
+        int sequenceLength = modelOutput.Length / numRectangles / 6625;  // Assuming 6625 vocab size
         int numClasses = 6625;
 
         var results = new List<string>();

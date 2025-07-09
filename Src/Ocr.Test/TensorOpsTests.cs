@@ -137,9 +137,9 @@ public class TensorOpsTests
     [Fact]
     public void NhwcToNchw_SingleBatchSingleChannel_ConvertsCorrectly()
     {
-        // Arrange: 1x2x3x1 tensor (N=1, H=2, W=3, C=1)
+        // Arrange: 2x3x1 tensor (H=2, W=3, C=1)
         var data = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f };
-        nint[] shape = [1, 2, 3, 1]; // NHWC shape
+        nint[] shape = [2, 3, 1]; // HWC shape
 
         // Act
         TensorOps.NhwcToNchw(data, shape);
@@ -152,8 +152,8 @@ public class TensorOpsTests
     [Fact]
     public void NhwcToNchw_SingleBatchMultipleChannels_ReordersCorrectly()
     {
-        // Arrange: 1x2x2x3 tensor (N=1, H=2, W=2, C=3)
-        // NHWC layout: [batch][height][width][channel]
+        // Arrange: 2x2x3 tensor (H=2, W=2, C=3)
+        // HWC layout: [height][width][channel]
         var data = new float[]
         {
             // Pixel (0,0): R=1, G=2, B=3
@@ -166,13 +166,13 @@ public class TensorOpsTests
             10.0f, 11.0f, 12.0f
         };
 
-        nint[] shape = [1, 2, 2, 3]; // NHWC shape
+        nint[] shape = [2, 2, 3]; // HWC shape
 
         // Act
         TensorOps.NhwcToNchw(data, shape);
 
         // Assert
-        // NCHW layout should be: [batch][channel][height][width]
+        // CHW layout should be: [channel][height][width]
         // Red channel (all R values), then Green channel (all G values), then Blue channel (all B values)
         var expected = new float[]
         {
@@ -190,48 +190,14 @@ public class TensorOpsTests
         Assert.Equal(expected, data);
     }
 
-    [Fact]
-    public void NhwcToNchw_MultipleBatches_ProcessesEachBatchIndependently()
-    {
-        // Arrange: 2x1x2x2 tensor (N=2, H=1, W=2, C=2)
-        var data = new float[]
-        {
-            // Batch 0: 1x2x2 image with 2 channels
-            1.0f, 2.0f,   // Pixel (0,0): C0=1, C1=2
-            3.0f, 4.0f,   // Pixel (0,1): C0=3, C1=4
-            
-            // Batch 1: 1x2x2 image with 2 channels  
-            5.0f, 6.0f,   // Pixel (0,0): C0=5, C1=6
-            7.0f, 8.0f    // Pixel (0,1): C0=7, C1=8
-        };
-
-        nint[] shape = [2, 1, 2, 2]; // NHWC shape
-
-        // Act
-        TensorOps.NhwcToNchw(data, shape);
-
-        // Assert
-        var expected = new float[]
-        {
-            // Batch 0
-            1.0f, 3.0f,   // Channel 0
-            2.0f, 4.0f,   // Channel 1
-            
-            // Batch 1
-            5.0f, 7.0f,   // Channel 0
-            6.0f, 8.0f    // Channel 1
-        };
-
-        Assert.Equal(expected, data);
-    }
 
 
     [Fact]
     public void NhwcToNchw_InvalidDimensions_ThrowsArgumentException()
     {
-        // Test 3D tensor
-        var data3D = new float[6];
-        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(data3D, [2, 3, 1]));
+        // Test 4D tensor (old format)
+        var data4D = new float[6];
+        Assert.Throws<ArgumentException>(() => TensorOps.NhwcToNchw(data4D, [1, 2, 3, 1]));
 
         // Test 5D tensor
         var data5D = new float[6];
@@ -245,21 +211,21 @@ public class TensorOpsTests
     [Fact]
     public void NhwcToNchw_EdgeCases_HandlesCorrectly()
     {
-        // Test with 1x1x1x1 tensor (minimal valid case)
+        // Test with 1x1x1 tensor (minimal valid case)
         var data1x1 = new float[] { 42.0f };
-        nint[] shape1x1 = [1, 1, 1, 1];
+        nint[] shape1x1 = [1, 1, 1]; // HWC shape
 
         TensorOps.NhwcToNchw(data1x1, shape1x1);
 
         Assert.Equal(42.0f, data1x1[0]);
 
         // Test with large channel count
-        var dataManyChannels = new float[32]; // 1x2x2x8 = 32 elements 
+        var dataManyChannels = new float[32]; // 2x2x8 = 32 elements 
         for (int i = 0; i < 32; i++)
         {
             dataManyChannels[i] = i;
         }
-        nint[] shapeManyChannels = [1, 2, 2, 8]; // 8 channels
+        nint[] shapeManyChannels = [2, 2, 8]; // HWC: H=2, W=2, C=8
 
         TensorOps.NhwcToNchw(dataManyChannels, shapeManyChannels);
 

@@ -11,52 +11,41 @@ public static class DBNet
 {
     private const float BinarizationThreshold = 0.2f;
 
+    private const int Width = 1344;
+    private const int Height = 736;
 
-    public static float[] PreProcessSingle(Image<Rgb24> image)
+    public static float[] PreProcess(Image<Rgb24> image)
     {
-        // Use fixed dimensions for all images
-        const int fixedWidth = 1344;  // 1333 rounded up to multiple of 32
-        const int fixedHeight = 736;  // Already a multiple of 32
-        
-        // Allocate array directly in NHWC format
-        float[] nhwcData = new float[1 * fixedHeight * fixedWidth * 3];
-        
-        // Resize image to fixed dimensions
-        Resampling.AspectResizeInto(image, nhwcData, fixedWidth, fixedHeight);
-        
-        // Convert to NCHW format in place
-        TensorOps.NhwcToNchw(nhwcData, [1, fixedHeight, fixedWidth, 3]);
-        
-        // Apply normalization using tensor operations
-        var nchwTensor = Tensor.Create(nhwcData, [1, 3, fixedHeight, fixedWidth]);
-        var tensorSpan = nchwTensor.AsTensorSpan();
-        
+        float[] data = new float[Height * Width * 3];
+
+        // Resize
+        Resampling.AspectResizeInto(image, data, Width, Height);
+
+        // Convert to CHW format
+        TensorOps.NhwcToNchw(data, [Height, Width, 3]);
+
+        // Apply ImageNet normalization
         float[] means = [123.675f, 116.28f, 103.53f];
         float[] stds = [58.395f, 57.12f, 57.375f];
-        
+
         for (int channel = 0; channel < 3; channel++)
         {
-            // Range over a single color channel
-            ReadOnlySpan<NRange> channelRange = [
-                NRange.All,                           // All batches
-                new (channel, channel + 1),     // One channel
-                NRange.All,                           // All heights
-                NRange.All                            // All widths
-            ];
-            
-            var channelSlice = tensorSpan[channelRange];
-            
+            var tensor = Tensor.Create(data, channel * Height * Width, [Height, Width], default);
+
             // Subtract mean and divide by std in place
-            Tensor.Subtract(channelSlice, means[channel], channelSlice);
-            Tensor.Divide(channelSlice, stds[channel], channelSlice);
+            Tensor.Subtract(tensor, means[channel], tensor);
+            Tensor.Divide(tensor, stds[channel], tensor);
         }
-        
-        return nhwcData;  // This is now mutated to NCHW format
+
+        return data;
     }
 
-    internal static List<Rectangle> PostProcess(Span2D<float> probabilityMap, int originalWidth, int originalHeight)
+    public static List<Rectangle> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
     {
-        var components = ConnectedComponents.FindComponents(probabilityMap, 0.2f);
+        // Create span2D from the processed image data
+        var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(Height, Width);
+
+        var components = ConnectedComponents.FindComponents(probabilityMapSpan, 0.2f);
         List<Rectangle> boundingBoxes = [];
 
         foreach (var connectedComponent in components)
@@ -67,33 +56,20 @@ public static class DBNet
                 continue;
             }
 
+            // Construct convex hull
             var polygon = ConvexHull.GrahamScan(connectedComponent);
 
             // Dilate the polygon
             var dilatedPolygon = Dilation.DilatePolygon(polygon);
-            if (dilatedPolygon.Count == 0)
-            {
-                continue;
-            }
 
-            double scale = Math.Max((double)originalWidth / probabilityMap.Width, (double)originalHeight / probabilityMap.Height);
+            // Convert back to original coordinate system
+            double scale = Math.Max((double)originalWidth / probabilityMapSpan.Width, (double)originalHeight / probabilityMapSpan.Height);
             Scale(dilatedPolygon, scale);
+
             boundingBoxes.Add(GetBoundingBox(dilatedPolygon, originalWidth, originalHeight));
         }
 
         return boundingBoxes;
-    }
-
-    public static List<Rectangle> PostProcessSingle(float[] processedImage, int originalWidth, int originalHeight)
-    {
-        // Fixed dimensions match PreProcessSingle
-        const int fixedWidth = 1344;
-        const int fixedHeight = 736;
-        
-        // Create span2D from the processed image data
-        var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(fixedHeight, fixedWidth);
-        
-        return PostProcess(probabilityMapSpan, originalWidth, originalHeight);
     }
 
     private static void Scale(List<(int X, int Y)> polygon, double scale)
@@ -128,14 +104,5 @@ public static class DBNet
         maxY = Math.Min(imageHeight - 1, maxY);
 
         return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
-    }
-
-
-    private static (int width, int height) CalculateFittedDimensions(int originalWidth, int originalHeight)
-    {
-        double scale = Math.Min((double)1333 / originalWidth, (double)736 / originalHeight);
-        int fittedWidth = (int)Math.Round(originalWidth * scale);
-        int fittedHeight = (int)Math.Round(originalHeight * scale);
-        return (fittedWidth, fittedHeight);
     }
 }

@@ -26,7 +26,7 @@ public static class DBNetBlock
     private static TransformBlock<(Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreatePreProcessingBlock()
     {
         return new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input
-            => (DBNet.PreProcessSingle(input.Image), input.Image, input.VizBuilder));
+            => (DBNet.PreProcess(input.Image), input.Image, input.VizBuilder));
     }
 
     private static TransformBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
@@ -34,6 +34,7 @@ public static class DBNetBlock
         return new TransformBlock<(float[] ProcessedImage, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input =>
         {
             // Model input should be [1, 3, 736, 1344] - batch size 1, 3 channels, height 736, width 1344
+            // ProcessedImage is now in CHW format [3, 736, 1344], so we add batch dimension
             var inputTensor = Tensor.Create(input.ProcessedImage, [ 1, 3, 736, 1344 ]);
 
             var outputBuffer = ModelRunner.Run(session, inputTensor);
@@ -52,7 +53,7 @@ public static class DBNetBlock
     {
         return new TransformBlock<(float[] RawResult, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (List<Rectangle>, Image<Rgb24>, VizBuilder)>(input =>
         {
-            var rectangles = DBNet.PostProcessSingle(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
+            var rectangles = DBNet.PostProcess(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 
             input.VizBuilder.AddProbabilityMap(input.RawResult.AsSpan().AsSpan2D(736, 1344));
             input.VizBuilder.AddRectangles(rectangles);
