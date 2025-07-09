@@ -176,19 +176,19 @@ public class TextDetection
         for (int i = 0; i < images.Length; i++)
         {
             // Use individual preprocessing
-            var processedImage = DBNet.PreProcessSingle(images[i]);
-            
+            var processedImage = DBNet.PreProcess(images[i]);
+
             // Create tensor and run model
             var inputTensor = Tensor.Create(processedImage, [1, 3, 736, 1344]);
             var rawResult = ModelRunner.Run(session, inputTensor);
-            
+
             // Binarize for connected component analysis (same as before)
             Algorithms.Thresholding.BinarizeInPlace(rawResult.AsTensor(), 0.2f);
-            
+
             // Extract output data and use individual postprocessing
             var outputData = rawResult.AsSpan().ToArray();
-            results[i] = DBNet.PostProcessSingle(outputData, images[i].Width, images[i].Height);
-            
+            results[i] = DBNet.PostProcess(outputData, images[i].Width, images[i].Height);
+
             rawResult.Dispose();
         }
 
