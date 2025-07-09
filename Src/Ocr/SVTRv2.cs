@@ -2,23 +2,19 @@ using System.Numerics.Tensors;
 using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace Ocr;
 
 public static class SVTRv2
 {
-    private const int TargetHeight = 48;
-    private const int MinWidth = 12;
-    private const int MaxWidth = 320;
+    private const int ModelHeight = 48;
+    private const int ModelWidth = 320;
 
     public static float[] PreProcess(Image<Rgb24> image, List<Rectangle> rectangles)
     {
-        // Use fixed dimensions for all text regions
-        const int fixedHeight = 48;
-        const int fixedWidth = 320;  // Maximum width
-
         int totalRectangles = rectangles.Count;
-        int itemSize = fixedHeight * fixedWidth * 3;
+        int itemSize = ModelHeight * ModelWidth * 3;
 
         // Allocate array directly in HWC format (no batch dimension, just concatenated items)
         float[] data = new float[totalRectangles * itemSize];
@@ -27,19 +23,21 @@ public static class SVTRv2
         for (int i = 0; i < rectangles.Count; i++)
         {
             var rect = rectangles[i];
-            int targetWidth = CalculateTargetWidth(rect);
+
+            // Crop the rectangle from the image
+            using var croppedImage = image.Clone(x => x.Crop(rect));
 
             var dest = data.AsSpan().Slice(i * itemSize, itemSize);
-            Resampling.CropResizeInto(image, rect, dest, fixedWidth, fixedHeight, targetWidth);
+            Resampling.AspectResizeInto(croppedImage, dest, ModelWidth, ModelHeight, 127.5f);
 
             // Convert this item to CHW format in place
-            TensorOps.NhwcToNchw(dest, [fixedHeight, fixedWidth, 3]);
+            TensorOps.NhwcToNchw(dest, [ModelHeight, ModelWidth, 3]);
 
             // Apply SVTRv2 normalization: [0,255] → [-1,1] for each channel
             for (int channel = 0; channel < 3; channel++)
             {
-                int channelOffset = i * itemSize + channel * fixedHeight * fixedWidth;
-                var channelTensor = Tensor.Create(data, channelOffset, [fixedHeight, fixedWidth], default);
+                int channelOffset = i * itemSize + channel * ModelHeight * ModelWidth;
+                var channelTensor = Tensor.Create(data, channelOffset, [ModelHeight, ModelWidth], default);
 
                 Tensor.Divide(channelTensor, 127.5f, channelTensor);
                 Tensor.Subtract(channelTensor, 1.0f, channelTensor);
@@ -51,30 +49,18 @@ public static class SVTRv2
 
     public static string[] PostProcess(float[] modelOutput, int numRectangles)
     {
-        // Model output dimensions from SVTRv2
-        int sequenceLength = modelOutput.Length / numRectangles / 6625;  // Assuming 6625 vocab size
-        int numClasses = 6625;
+        int numClasses = CharacterDictionary.Count;
+        int sequenceLength = modelOutput.Length / numRectangles / numClasses;  // All CTC sequences are the same length
 
         var results = new List<string>();
 
         for (int i = 0; i < numRectangles; i++)
         {
-            // Each rectangle's output data: [sequence_length, num_classes]
-            var regionSpan = modelOutput.AsSpan().Slice(i * sequenceLength * numClasses, sequenceLength * numClasses);
-            string text = CTC.DecodeSingleSequence(regionSpan, sequenceLength, numClasses);
-            results.Add(text);
+            var region = Tensor.Create(modelOutput, i * sequenceLength * numClasses, [sequenceLength, numClasses], default);
+            results.Add(CTC.DecodeSingleSequence(region));
         }
 
         return results.ToArray();
     }
 
-    internal static int CalculateTargetWidth(Rectangle rect)
-    {
-        // Calculate target width maintaining aspect ratio of the cropped region
-        double aspectRatio = (double)rect.Width / rect.Height;
-        int targetWidth = (int)Math.Round(aspectRatio * TargetHeight);
-
-        // Clamp to reasonable bounds
-        return Math.Max(MinWidth, Math.Min(MaxWidth, targetWidth));
-    }
 }
