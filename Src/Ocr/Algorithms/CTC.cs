@@ -1,41 +1,31 @@
+using System.Numerics.Tensors;
+using System.Text;
+
 namespace Ocr.Algorithms;
 
 public static class CTC
 {
-    public static string DecodeSingleSequence(Span<float> sequenceSpan, int seqLen, int numClasses)
+    public static string DecodeSingleSequence(Tensor<float> sequence)
     {
-        var decoded = new List<char>();
+        var decoded = new StringBuilder();
         int prevIndex = -1;
 
-        for (int t = 0; t < seqLen; t++)
+        int numSteps = Convert.ToInt32(sequence.Lengths[0]);
+        for (int step = 0; step < numSteps; step++)
         {
-            // Find argmax at spatial position t (left-to-right across text image)
-            int maxIndex = 0;
-            float maxValue = float.MinValue;
-
-            for (int c = 0; c < numClasses; c++)
-            {
-                // Calculate flat index for [t, c] in the sequence span
-                int flatIndex = t * numClasses + c;
-                float value = sequenceSpan[flatIndex];
-                if (value > maxValue)
-                {
-                    maxValue = value;
-                    maxIndex = c;
-                }
-            }
+            var probabilities = sequence[[step..(step + 1), Range.All]];
+            int maxIndex = Convert.ToInt32(Tensor.IndexOfMax<float>(probabilities));
 
             // CTC greedy decoding rule: only add if different from previous and not blank
-            // TODO: use beam search
             if (maxIndex != prevIndex && maxIndex != CharacterDictionary.Blank)
             {
                 char character = CharacterDictionary.IndexToChar(maxIndex);
-                decoded.Add(character);
+                decoded.Append(character);
             }
 
             prevIndex = maxIndex;
         }
 
-        return new string(decoded.ToArray());
+        return decoded.ToString();
     }
 }

@@ -39,8 +39,7 @@ public static class CharacterDictionary
         _indexToChar[6624] = ' ';
     }
 
-    public static char IndexToChar(int index)
-    {
-        return _indexToChar.TryGetValue(index, out char c) ? c : '?';
-    }
+    public static char IndexToChar(int index) => _indexToChar.GetValueOrDefault(index, '?');
+
+    public static int Count => _indexToChar.Count;
 }
