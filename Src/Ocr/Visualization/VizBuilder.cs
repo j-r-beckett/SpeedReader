@@ -21,6 +21,8 @@ public abstract class VizBuilder
 
     public virtual void AddMergedResults(List<Rectangle> mergedRectangles, List<string> mergedTexts) { }
 
+    public virtual void AddPolygons(List<List<(int X, int Y)>> polygons) { }
+
     public abstract Image<Rgb24> Render();
 
     public static VizBuilder Create(VizMode mode, Image<Rgb24> sourceImage)

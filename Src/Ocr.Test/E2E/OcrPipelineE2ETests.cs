@@ -122,7 +122,7 @@ public class OcrPipelineE2ETests
         var resultsDict = new Dictionary<Image<Rgb24>, List<(Rectangle Box, string Text)>>();
         var resultsLock = new object();
 
-        var resultCollector = new ActionBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(data =>
+        var resultCollector = new ActionBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)>(data =>
         {
             var imageResults = new List<(Rectangle Box, string Text)>();
 
@@ -132,7 +132,7 @@ public class OcrPipelineE2ETests
                 var cleanedText = new string(data.Item3[i].Where(c => c <= 127).ToArray()).Trim();
                 if (!string.IsNullOrEmpty(cleanedText))
                 {
-                    imageResults.Add((data.Item2[i], cleanedText));
+                    imageResults.Add((data.Item2[i].AARectangle, cleanedText));
                 }
             }
 
