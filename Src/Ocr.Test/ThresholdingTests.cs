@@ -24,7 +24,7 @@ public class ThresholdingTests
         var tensor = Tensor.Create<float>(probabilityData, [3, 3]);
 
         // Act
-        Thresholding.BinarizeInPlace(tensor, 0.2f);
+        Thresholding.BinarizeInPlace(probabilityData, 0.2f);
 
         // Assert: Values > 0.2 should be 1.0f, <= 0.2 should be 0.0f
         Assert.Equal(0.0f, tensor[0, 0]); // 0.1 <= 0.2
@@ -52,7 +52,7 @@ public class ThresholdingTests
         var tensor = Tensor.Create<float>(probabilityData, [2, 2]);
 
         // Act
-        Thresholding.BinarizeInPlace(tensor, 0.2f);
+        Thresholding.BinarizeInPlace(probabilityData, 0.2f);
 
         // Assert: Test exact threshold boundary and negative values
         Assert.Equal(0.0f, tensor[0, 0]); // Exactly 0.2 should be 0.0f
@@ -65,12 +65,14 @@ public class ThresholdingTests
     public void BinarizeProbabilityMap_PreservesMapDimensions()
     {
         // Arrange: Create maps of different sizes
-        var smallTensor = Tensor.Create<float>(new float[2 * 3], [2, 3]);
-        var largeTensor = Tensor.Create<float>(new float[100 * 200], [100, 200]);
+        var smallData = new float[2 * 3];
+        var largeData = new float[100 * 200];
+        var smallTensor = Tensor.Create<float>(smallData, [2, 3]);
+        var largeTensor = Tensor.Create<float>(largeData, [100, 200]);
 
         // Act
-        Thresholding.BinarizeInPlace(smallTensor, 0.2f);
-        Thresholding.BinarizeInPlace(largeTensor, 0.2f);
+        Thresholding.BinarizeInPlace(smallData, 0.2f);
+        Thresholding.BinarizeInPlace(largeData, 0.2f);
 
         // Assert: Dimensions should be preserved
         Assert.Equal(2, smallTensor.Lengths[0]);
@@ -84,12 +86,14 @@ public class ThresholdingTests
     public void BinarizeProbabilityMap_HandlesSinglePixel()
     {
         // Arrange: Single pixel probability maps
-        var highTensor = Tensor.Create<float>([0.9f], [1, 1]);
-        var lowTensor = Tensor.Create<float>([0.1f], [1, 1]);
+        var highData = new float[] { 0.9f };
+        var lowData = new float[] { 0.1f };
+        var highTensor = Tensor.Create<float>(highData, [1, 1]);
+        var lowTensor = Tensor.Create<float>(lowData, [1, 1]);
 
         // Act
-        Thresholding.BinarizeInPlace(highTensor, 0.2f);
-        Thresholding.BinarizeInPlace(lowTensor, 0.2f);
+        Thresholding.BinarizeInPlace(highData, 0.2f);
+        Thresholding.BinarizeInPlace(lowData, 0.2f);
 
         // Assert
         Assert.Equal(1.0f, highTensor[0, 0]);
