@@ -5,7 +5,7 @@ namespace Ocr.Algorithms;
 
 public static class Thresholding
 {
-    public static void BinarizeInPlace(Tensor<float> probabilityMap, float threshold)
+    public static void BinarizeInPlace(float[] probabilityMap, float threshold)
     {
         Debug.Assert(probabilityMap.Min() >= 0 && probabilityMap.Max() <= 1);
         Tensor.Subtract(probabilityMap, threshold, probabilityMap);
