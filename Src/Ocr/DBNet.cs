@@ -44,19 +44,19 @@ public static class DBNet
     {
         Thresholding.BinarizeInPlace(processedImage, 0.2f);
         var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(Height, Width);
-        var components = ConnectedComponents.FindComponents(probabilityMapSpan);
+        var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan);
         List<Rectangle> boundingBoxes = [];
 
-        foreach (var connectedComponent in components)
+        foreach (var boundary in boundaries)
         {
-            // Skip very small components
-            if (connectedComponent.Length < 10)
+            // Skip very small boundaries
+            if (boundary.Length < 10)
             {
                 continue;
             }
 
             // Construct convex hull
-            var polygon = ConvexHull.GrahamScan(connectedComponent);
+            var polygon = ConvexHull.GrahamScan(boundary);
 
             // Dilate the polygon
             var dilatedPolygon = Dilation.DilatePolygon(polygon);
