@@ -11,18 +11,18 @@ public static class SVTRv2
     private const int ModelHeight = 48;
     private const int ModelWidth = 320;
 
-    public static float[] PreProcess(Image<Rgb24> image, List<Rectangle> rectangles)
+    public static float[] PreProcess(Image<Rgb24> image, List<TextBoundary> textBoundaries)
     {
-        int totalRectangles = rectangles.Count;
+        int totalRectangles = textBoundaries.Count;
         int itemSize = ModelHeight * ModelWidth * 3;
 
         // Allocate array directly in HWC format (no batch dimension, just concatenated items)
         float[] data = new float[totalRectangles * itemSize];
 
-        // Process each rectangle
-        for (int i = 0; i < rectangles.Count; i++)
+        // Process each text boundary
+        for (int i = 0; i < textBoundaries.Count; i++)
         {
-            var rect = rectangles[i];
+            var rect = textBoundaries[i].AARectangle;
 
             // Crop the rectangle from the image
             using var croppedImage = image.Clone(x => x.Crop(rect));

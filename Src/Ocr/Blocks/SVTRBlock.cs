@@ -9,7 +9,7 @@ namespace Ocr.Blocks;
 
 public static class SVTRBlock
 {
-    public static IPropagatorBlock<(List<Rectangle>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)> Create(InferenceSession session)
+    public static IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)> Create(InferenceSession session)
     {
         var preProcessingBlock = CreatePreProcessingBlock();
         var modelRunnerBlock = CreateModelRunnerBlock(session);
@@ -22,18 +22,18 @@ public static class SVTRBlock
     }
 
 
-    private static TransformBlock<(List<Rectangle>, Image<Rgb24>, VizBuilder), (float[], List<Rectangle>, Image<Rgb24>, VizBuilder)> CreatePreProcessingBlock()
+    private static TransformBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (float[], List<TextBoundary>, Image<Rgb24>, VizBuilder)> CreatePreProcessingBlock()
     {
-        return new TransformBlock<(List<Rectangle> Rectangles, Image<Rgb24> Image, VizBuilder VizBuilder), (float[], List<Rectangle>, Image<Rgb24>, VizBuilder)>(input
-            => (SVTRv2.PreProcess(input.Image, input.Rectangles), input.Rectangles, input.Image, input.VizBuilder));
+        return new TransformBlock<(List<TextBoundary> TextBoundaries, Image<Rgb24> Image, VizBuilder VizBuilder), (float[], List<TextBoundary>, Image<Rgb24>, VizBuilder)>(input
+            => (SVTRv2.PreProcess(input.Image, input.TextBoundaries), input.TextBoundaries, input.Image, input.VizBuilder));
     }
 
-    private static TransformBlock<(float[], List<Rectangle>, Image<Rgb24>, VizBuilder), (float[], List<Rectangle>, Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
+    private static TransformBlock<(float[], List<TextBoundary>, Image<Rgb24>, VizBuilder), (float[], List<TextBoundary>, Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
     {
-        return new TransformBlock<(float[] ProcessedRegions, List<Rectangle> Rectangles, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (float[], List<Rectangle>, Image<Rgb24>, VizBuilder)>(input =>
+        return new TransformBlock<(float[] ProcessedRegions, List<TextBoundary> TextBoundaries, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (float[], List<TextBoundary>, Image<Rgb24>, VizBuilder)>(input =>
         {
             // Model input should be [num_rectangles, 3, 48, 320] - rectangles, 3 channels, height 48, width 320
-            int numRectangles = input.Rectangles.Count;
+            int numRectangles = input.TextBoundaries.Count;
             var inputTensor = Tensor.Create(input.ProcessedRegions, [ numRectangles, 3, 48, 320 ]);
 
             var outputBuffer = ModelRunner.Run(session, inputTensor);
@@ -41,19 +41,19 @@ public static class SVTRBlock
             float[] outputData = outputBuffer.AsSpan().ToArray();
             outputBuffer.Dispose();
 
-            return (outputData, input.Rectangles, input.OriginalImage, input.VizBuilder);
+            return (outputData, input.TextBoundaries, input.OriginalImage, input.VizBuilder);
         });
     }
 
-    private static TransformBlock<(float[], List<Rectangle>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)> CreatePostProcessingBlock()
+    private static TransformBlock<(float[], List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)> CreatePostProcessingBlock()
     {
-        return new TransformBlock<(float[] RawResult, List<Rectangle> Rectangles, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder)>(input =>
+        return new TransformBlock<(float[] RawResult, List<TextBoundary> TextBoundaries, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)>(input =>
         {
-            var recognizedTexts = SVTRv2.PostProcess(input.RawResult, input.Rectangles.Count);
+            var recognizedTexts = SVTRv2.PostProcess(input.RawResult, input.TextBoundaries.Count);
 
             input.VizBuilder.AddRecognitionResults(recognizedTexts.ToList());
 
-            return (input.OriginalImage, input.Rectangles, recognizedTexts.ToList(), input.VizBuilder);
+            return (input.OriginalImage, input.TextBoundaries, recognizedTexts.ToList(), input.VizBuilder);
         });
     }
 }

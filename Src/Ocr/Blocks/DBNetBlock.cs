@@ -10,7 +10,7 @@ namespace Ocr.Blocks;
 
 public static class DBNetBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (List<Rectangle>, Image<Rgb24>, VizBuilder)> Create(InferenceSession session)
+    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> Create(InferenceSession session)
     {
         var preProcessingBlock = CreatePreProcessingBlock();
         var modelRunnerBlock = CreateModelRunnerBlock(session);
@@ -49,16 +49,19 @@ public static class DBNetBlock
         });
     }
 
-    private static TransformBlock<(float[], Image<Rgb24>, VizBuilder), (List<Rectangle>, Image<Rgb24>, VizBuilder)> CreatePostProcessingBlock()
+    private static TransformBlock<(float[], Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> CreatePostProcessingBlock()
     {
-        return new TransformBlock<(float[] RawResult, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (List<Rectangle>, Image<Rgb24>, VizBuilder)>(input =>
+        return new TransformBlock<(float[] RawResult, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)>(input =>
         {
-            var rectangles = DBNet.PostProcess(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
-
+            // Add raw probability map to visualization BEFORE binarization
             input.VizBuilder.AddProbabilityMap(input.RawResult.AsSpan().AsSpan2D(736, 1344));
-            input.VizBuilder.AddRectangles(rectangles);
+            
+            var textBoundaries = DBNet.PostProcess(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 
-            return (rectangles, input.OriginalImage, input.VizBuilder);
+            input.VizBuilder.AddRectangles(textBoundaries.Select(tb => tb.AARectangle).ToList());
+            input.VizBuilder.AddPolygons(textBoundaries.Select(tb => tb.Polygon).ToList());
+
+            return (textBoundaries, input.OriginalImage, input.VizBuilder);
         });
     }
 }

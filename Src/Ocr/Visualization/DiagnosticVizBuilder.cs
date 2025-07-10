@@ -2,6 +2,7 @@ using System.Diagnostics;
 using CommunityToolkit.HighPerformance;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -13,6 +14,7 @@ public class DiagnosticVizBuilder : BasicVizBuilder
     private List<Rectangle> _rectangles = new();
     private List<string> _recognitionTexts = new();
     private Image<L8>? _probabilityMap;
+    private List<List<(int X, int Y)>> _detectionPolygons = [];
 
     public DiagnosticVizBuilder(Image<Rgb24> sourceImage) : base(sourceImage) { }
 
@@ -61,6 +63,11 @@ public class DiagnosticVizBuilder : BasicVizBuilder
         _recognitionTexts = texts;
     }
 
+    public override void AddPolygons(List<List<(int X, int Y)>> polygons)
+    {
+        _detectionPolygons = polygons;
+    }
+
     public override Image<Rgb24> Render()
     {
         // Start with the basic visualization
@@ -103,14 +110,25 @@ public class DiagnosticVizBuilder : BasicVizBuilder
                 ctx.DrawImage(overlayImage, 1.0f);
             }
 
-            // 2. Draw unmerged bounding boxes in green
+            // 2. Draw detection polygons in purple
+            foreach (var polygon in _detectionPolygons)
+            {
+                if (polygon.Count >= 3) // Need at least 3 points for a polygon
+                {
+                    var points = polygon.Select(p => new PointF(p.X, p.Y)).ToArray();
+                    var path = new Polygon(new LinearLineSegment(points));
+                    ctx.Draw(Pens.Solid(Color.Purple, 1), path);
+                }
+            }
+
+            // 3. Draw unmerged bounding boxes in green
             foreach (var rect in _rectangles)
             {
                 var boundingRect = new RectangleF(rect.X, rect.Y, rect.Width, rect.Height);
                 ctx.Draw(Pens.Solid(Color.Green, 1), boundingRect);
             }
 
-            // 3. Draw unmerged text labels in green
+            // 4. Draw unmerged text labels in green
             for (int i = 0; i < _rectangles.Count && i < _recognitionTexts.Count; i++)
             {
                 var rect = _rectangles[i];

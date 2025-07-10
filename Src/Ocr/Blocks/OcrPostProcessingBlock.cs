@@ -8,20 +8,24 @@ namespace Ocr.Blocks;
 
 public static class OcrPostProcessingBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<Rectangle>, List<string>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create()
+    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create()
     {
-        return new TransformBlock<(Image<Rgb24> Image, List<Rectangle> Rectangles, List<string> Texts, VizBuilder VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(data =>
+        return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, VizBuilder VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(data =>
         {
-            Debug.Assert(data.Rectangles.Count == data.Texts.Count);
+            Debug.Assert(data.TextBoundaries.Count == data.Texts.Count);
+
+            // Extract rectangles for processing
+            var rectangles = data.TextBoundaries.Select(tb => tb.AARectangle).ToList();
 
             // Step 1: Filter out empty text
-            var (filteredRectangles, filteredTexts) = FilterEmptyText(data.Rectangles, data.Texts);
+            var (filteredTextBoundaries, filteredTexts) = FilterEmptyText(data.TextBoundaries, data.Texts);
+            var filteredRectangles = filteredTextBoundaries.Select(tb => tb.AARectangle).ToList();
 
             // Step 2: Create lines from words
             var lines = CreateLines(filteredRectangles, filteredTexts);
 
             // Step 3: Convert to OcrResult
-            var ocrResults = ConvertToOcrResults(filteredRectangles, filteredTexts, lines, data.Image);
+            var ocrResults = ConvertToOcrResults(filteredTextBoundaries, filteredTexts, lines, data.Image);
 
             // Add merged results for visualization
             var mergedRectangles = lines.Select(line => line.bounds).ToList();
@@ -32,9 +36,9 @@ public static class OcrPostProcessingBlock
         });
     }
 
-    private static (List<Rectangle>, List<string>) FilterEmptyText(List<Rectangle> rectangles, List<string> texts)
+    private static (List<TextBoundary>, List<string>) FilterEmptyText(List<TextBoundary> textBoundaries, List<string> texts)
     {
-        var filteredRectangles = new List<Rectangle>();
+        var filteredTextBoundaries = new List<TextBoundary>();
         var filteredTexts = new List<string>();
 
         for (int i = 0; i < texts.Count; i++)
@@ -42,12 +46,12 @@ public static class OcrPostProcessingBlock
             var cleanedText = new string(texts[i].Where(c => c <= 127).ToArray()).Trim();
             if (cleanedText != string.Empty)
             {
-                filteredRectangles.Add(rectangles[i]);
+                filteredTextBoundaries.Add(textBoundaries[i]);
                 filteredTexts.Add(cleanedText);
             }
         }
 
-        return (filteredRectangles, filteredTexts);
+        return (filteredTextBoundaries, filteredTexts);
     }
 
 
@@ -110,7 +114,7 @@ public static class OcrPostProcessingBlock
     }
 
     private static OcrResult ConvertToOcrResults(
-        List<Rectangle> wordRectangles,
+        List<TextBoundary> wordTextBoundaries,
         List<string> wordTexts,
         List<(string text, Rectangle bounds, List<int> wordIndices)> lines,
         Image<Rgb24> image)
@@ -125,12 +129,12 @@ public static class OcrPostProcessingBlock
         };
 
         // Create Word objects
-        for (int i = 0; i < wordRectangles.Count; i++)
+        for (int i = 0; i < wordTextBoundaries.Count; i++)
         {
             result.Words.Add(new Word
             {
                 Id = $"word_{i}",
-                BoundingBox = CreateBoundingBox(wordRectangles[i], image.Width, image.Height),
+                BoundingBox = CreateBoundingBox(wordTextBoundaries[i], image.Width, image.Height),
                 Confidence = Math.Round(1.0, 2), // TODO
                 Text = wordTexts[i]
             });
@@ -234,6 +238,47 @@ public static class OcrPostProcessingBlock
     }
 
 
+    private static BoundingBox CreateBoundingBox(TextBoundary textBoundary, int imageWidth, int imageHeight)
+    {
+        var rect = textBoundary.AARectangle;
+        
+        // Create normalized coordinates (0-1 range) with 6 decimal digits
+        double normalizedX = Math.Round((double)rect.X / imageWidth, 6);
+        double normalizedY = Math.Round((double)rect.Y / imageHeight, 6);
+        double normalizedWidth = Math.Round((double)rect.Width / imageWidth, 6);
+        double normalizedHeight = Math.Round((double)rect.Height / imageHeight, 6);
+
+        // Create polygon from TextBoundary (normalized)
+        var polygon = textBoundary.Polygon.Select(p => new JsonPoint
+        {
+            X = Math.Round((double)p.X / imageWidth, 6),
+            Y = Math.Round((double)p.Y / imageHeight, 6)
+        }).ToList();
+
+        // Create oriented rectangle from TextBoundary (normalized)
+        var oRectangle = textBoundary.ORectangle.Select(p => new JsonPoint
+        {
+            X = Math.Round((double)p.X / imageWidth, 6),
+            Y = Math.Round((double)p.Y / imageHeight, 6)
+        }).ToList();
+
+        // Create axis-aligned rectangle
+        var aaRectangle = new AARectangle
+        {
+            X = normalizedX,
+            Y = normalizedY,
+            Width = normalizedWidth,
+            Height = normalizedHeight
+        };
+
+        return new BoundingBox
+        {
+            Polygon = polygon,
+            ORectangle = oRectangle,
+            AARectangle = aaRectangle
+        };
+    }
+
     private static BoundingBox CreateBoundingBox(Rectangle rect, int imageWidth, int imageHeight)
     {
         // Create normalized coordinates (0-1 range) with 6 decimal digits
@@ -251,8 +296,11 @@ public static class OcrPostProcessingBlock
             new() { X = normalizedX, Y = Math.Round(normalizedY + normalizedHeight, 6) } // Bottom-left
         };
 
+        // For lines, oriented rectangle is same as polygon (axis-aligned)
+        var oRectangle = new List<JsonPoint>(polygon);
+
         // Create axis-aligned rectangle
-        var rectangle = new JsonRectangle
+        var aaRectangle = new AARectangle
         {
             X = normalizedX,
             Y = normalizedY,
@@ -263,7 +311,8 @@ public static class OcrPostProcessingBlock
         return new BoundingBox
         {
             Polygon = polygon,
-            Rectangle = rectangle
+            ORectangle = oRectangle,
+            AARectangle = aaRectangle
         };
     }
 }

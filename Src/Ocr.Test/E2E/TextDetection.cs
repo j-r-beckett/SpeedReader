@@ -146,12 +146,12 @@ public class TextDetection
             for (int j = 0; j < expectedBoundingBoxes[i].Count; j++)
             {
                 var expected = expectedBoundingBoxes[i][j];
-                var closestActual = actuals.MinBy(r => CalculateCloseness(r, expected));
+                var closestActual = actuals.MinBy(tb => CalculateCloseness(tb.AARectangle, expected));
                 actuals.Remove(closestActual);
-                Assert.True(Pad(closestActual, 2).Contains(expected));
+                Assert.True(Pad(closestActual.AARectangle, 2).Contains(expected));
 
-                Assert.True(closestActual.Width * 0.5 < expected.Width);
-                Assert.True(closestActual.Height * 0.5 < expected.Height);
+                Assert.True(closestActual.AARectangle.Width * 0.5 < expected.Width);
+                Assert.True(closestActual.AARectangle.Height * 0.5 < expected.Height);
             }
         }
     }
@@ -168,9 +168,9 @@ public class TextDetection
             (int)Math.Ceiling(Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2)));
     }
 
-    private static List<Rectangle>[] RunTextDetection(Image<Rgb24>[] images)
+    private static List<TextBoundary>[] RunTextDetection(Image<Rgb24>[] images)
     {
-        var results = new List<Rectangle>[images.Length];
+        var results = new List<TextBoundary>[images.Length];
         var session = ModelZoo.GetInferenceSession(Model.DbNet18);
 
         for (int i = 0; i < images.Length; i++)
@@ -200,7 +200,7 @@ public class TextDetection
         return new Rectangle(x, y, (int)Math.Ceiling(textRect.Width), (int)Math.Ceiling(textRect.Height));
     }
 
-    private async Task SaveDebugImage(Image originalImage, IEnumerable<Rectangle> expectedBoundingBoxes, IEnumerable<Rectangle> actualBoundingBoxes)
+    private async Task SaveDebugImage(Image originalImage, IEnumerable<Rectangle> expectedBoundingBoxes, IEnumerable<TextBoundary> actualBoundingBoxes)
     {
         var debugImage = originalImage.Clone(ctx =>
         {
@@ -208,9 +208,9 @@ public class TextDetection
             {
                 ctx.Draw(Pens.Dash(Color.Green, 1), bbox);
             }
-            foreach (var bbox in actualBoundingBoxes)
+            foreach (var textBoundary in actualBoundingBoxes)
             {
-                ctx.Draw(Pens.Solid(Color.Red, 1), bbox);
+                ctx.Draw(Pens.Solid(Color.Red, 1), textBoundary.AARectangle);
             }
         });
         await _imageSaver.PublishAsync(debugImage);
