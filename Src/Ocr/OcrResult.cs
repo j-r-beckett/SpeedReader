@@ -22,8 +22,11 @@ namespace Ocr
         [JsonPropertyName("polygon")]
         public List<JsonPoint> Polygon { get; init; } = new();
 
-        [JsonPropertyName("rectangle")]
-        public JsonRectangle Rectangle { get; init; }
+        [JsonPropertyName("aarectangle")]
+        public required AARectangle AARectangle { get; init; }
+
+        [JsonPropertyName("orectangle")]
+        public List<JsonPoint> ORectangle { get; init; } = new();
     }
 
     public record JsonPoint
@@ -35,7 +38,7 @@ namespace Ocr
         public double Y { get; init; }
     }
 
-    public record JsonRectangle
+    public record AARectangle
     {
         [JsonPropertyName("x")]
         public double X { get; init; }
@@ -56,7 +59,7 @@ namespace Ocr
         public string Id { get; init; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public BoundingBox BoundingBox { get; init; }
+        public required BoundingBox BoundingBox { get; init; }
 
         [JsonPropertyName("confidence")]
         public double Confidence { get; init; }
@@ -71,7 +74,7 @@ namespace Ocr
         public string Id { get; init; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public BoundingBox BoundingBox { get; init; }
+        public required BoundingBox BoundingBox { get; init; }
 
         [JsonPropertyName("confidence")]
         public double Confidence { get; init; }
@@ -89,7 +92,7 @@ namespace Ocr
         public string Id { get; init; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public BoundingBox BoundingBox { get; init; }
+        public required BoundingBox BoundingBox { get; init; }
 
         [JsonPropertyName("confidence")]
         public double Confidence { get; init; }

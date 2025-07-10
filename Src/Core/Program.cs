@@ -139,6 +139,7 @@ public class Program
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Stack trace: {ex}");
             Environment.Exit(1);
         }
     }

@@ -40,12 +40,12 @@ public static class DBNet
         return data;
     }
 
-    public static List<Rectangle> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
+    public static List<TextBoundary> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
     {
         Thresholding.BinarizeInPlace(processedImage, 0.2f);
         var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(Height, Width);
         var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan);
-        List<Rectangle> boundingBoxes = [];
+        List<TextBoundary> textBoundaries = [];
 
         foreach (var boundary in boundaries)
         {
@@ -61,14 +61,23 @@ public static class DBNet
             // Dilate the polygon
             var dilatedPolygon = Dilation.DilatePolygon(polygon);
 
+            // Skip polygons that were filtered out during dilation (too small area, etc.)
+            if (dilatedPolygon.Count == 0)
+            {
+                continue;
+            }
+
             // Convert back to original coordinate system
             double scale = Math.Max((double)originalWidth / probabilityMapSpan.Width, (double)originalHeight / probabilityMapSpan.Height);
             Scale(dilatedPolygon, scale);
 
-            boundingBoxes.Add(GetBoundingBox(dilatedPolygon, originalWidth, originalHeight));
+            // Clamp coordinates to image bounds
+            ClampToImageBounds(dilatedPolygon, originalWidth, originalHeight);
+
+            textBoundaries.Add(TextBoundary.Create(dilatedPolygon));
         }
 
-        return boundingBoxes;
+        return textBoundaries;
     }
 
     private static void Scale(List<(int X, int Y)> polygon, double scale)
@@ -78,6 +87,16 @@ public static class DBNet
             int originalX = (int)Math.Round(polygon[i].X * scale);
             int originalY = (int)Math.Round(polygon[i].Y * scale);
             polygon[i] = (originalX, originalY);
+        }
+    }
+
+    private static void ClampToImageBounds(List<(int X, int Y)> polygon, int imageWidth, int imageHeight)
+    {
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            int clampedX = Math.Max(0, Math.Min(imageWidth - 1, polygon[i].X));
+            int clampedY = Math.Max(0, Math.Min(imageHeight - 1, polygon[i].Y));
+            polygon[i] = (clampedX, clampedY);
         }
     }
 
