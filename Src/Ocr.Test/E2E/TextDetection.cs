@@ -182,11 +182,9 @@ public class TextDetection
             var inputTensor = Tensor.Create(processedImage, [1, 3, 736, 1344]);
             var rawResult = ModelRunner.Run(session, inputTensor);
 
-            // Binarize for connected component analysis (same as before)
-            Algorithms.Thresholding.BinarizeInPlace(rawResult.AsTensor(), 0.2f);
-
-            // Extract output data and use individual postprocessing
+            // Extract output data and binarize for connected component analysis
             var outputData = rawResult.AsSpan().ToArray();
+            Algorithms.Thresholding.BinarizeInPlace(outputData, 0.2f);
             results[i] = DBNet.PostProcess(outputData, images[i].Width, images[i].Height);
 
             rawResult.Dispose();

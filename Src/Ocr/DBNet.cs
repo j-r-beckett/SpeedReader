@@ -42,10 +42,9 @@ public static class DBNet
 
     public static List<Rectangle> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
     {
-        // Create span2D from the processed image data
+        Thresholding.BinarizeInPlace(processedImage, 0.2f);
         var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(Height, Width);
-
-        var components = ConnectedComponents.FindComponents(probabilityMapSpan, 0.2f);
+        var components = ConnectedComponents.FindComponents(probabilityMapSpan);
         List<Rectangle> boundingBoxes = [];
 
         foreach (var connectedComponent in components)
