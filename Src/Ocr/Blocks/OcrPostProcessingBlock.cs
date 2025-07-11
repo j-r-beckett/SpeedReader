@@ -8,24 +8,25 @@ namespace Ocr.Blocks;
 
 public static class OcrPostProcessingBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create()
+    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create()
     {
-        return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, VizBuilder VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(data =>
+        return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, List<double> Confidences, VizBuilder VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(data =>
         {
             Debug.Assert(data.TextBoundaries.Count == data.Texts.Count);
+            Debug.Assert(data.TextBoundaries.Count == data.Confidences.Count);
 
             // Extract rectangles for processing
             var rectangles = data.TextBoundaries.Select(tb => tb.AARectangle).ToList();
 
             // Step 1: Filter out empty text
-            var (filteredTextBoundaries, filteredTexts) = FilterEmptyText(data.TextBoundaries, data.Texts);
+            var (filteredTextBoundaries, filteredTexts, filteredConfidences) = FilterEmptyText(data.TextBoundaries, data.Texts, data.Confidences);
             var filteredRectangles = filteredTextBoundaries.Select(tb => tb.AARectangle).ToList();
 
             // Step 2: Create lines from words
             var lines = CreateLines(filteredRectangles, filteredTexts);
 
             // Step 3: Convert to OcrResult
-            var ocrResults = ConvertToOcrResults(filteredTextBoundaries, filteredTexts, lines, data.Image);
+            var ocrResults = ConvertToOcrResults(filteredTextBoundaries, filteredTexts, filteredConfidences, lines, data.Image);
 
             // Add merged results for visualization
             var mergedRectangles = lines.Select(line => line.bounds).ToList();
@@ -36,10 +37,11 @@ public static class OcrPostProcessingBlock
         });
     }
 
-    private static (List<TextBoundary>, List<string>) FilterEmptyText(List<TextBoundary> textBoundaries, List<string> texts)
+    private static (List<TextBoundary>, List<string>, List<double>) FilterEmptyText(List<TextBoundary> textBoundaries, List<string> texts, List<double> confidences)
     {
         var filteredTextBoundaries = new List<TextBoundary>();
         var filteredTexts = new List<string>();
+        var filteredConfidences = new List<double>();
 
         for (int i = 0; i < texts.Count; i++)
         {
@@ -48,10 +50,11 @@ public static class OcrPostProcessingBlock
             {
                 filteredTextBoundaries.Add(textBoundaries[i]);
                 filteredTexts.Add(cleanedText);
+                filteredConfidences.Add(confidences[i]);
             }
         }
 
-        return (filteredTextBoundaries, filteredTexts);
+        return (filteredTextBoundaries, filteredTexts, filteredConfidences);
     }
 
 
@@ -116,6 +119,7 @@ public static class OcrPostProcessingBlock
     private static OcrResult ConvertToOcrResults(
         List<TextBoundary> wordTextBoundaries,
         List<string> wordTexts,
+        List<double> wordConfidences,
         List<(string text, Rectangle bounds, List<int> wordIndices)> lines,
         Image<Rgb24> image)
     {
@@ -135,7 +139,7 @@ public static class OcrPostProcessingBlock
             {
                 Id = $"word_{i}",
                 BoundingBox = CreateBoundingBox(wordTextBoundaries[i], image.Width, image.Height),
-                Confidence = Math.Round(1.0, 2), // TODO
+                Confidence = Math.Round(wordConfidences[i], 6),
                 Text = wordTexts[i]
             });
         }
@@ -145,11 +149,17 @@ public static class OcrPostProcessingBlock
         {
             var (text, bounds, wordIndices) = lines[i];
 
+            // Calculate line confidence as geometric mean of word confidences
+            var lineWordConfidences = wordIndices.Select(idx => wordConfidences[idx]).ToList();
+            var lineConfidence = lineWordConfidences.Count > 0 
+                ? Math.Pow(lineWordConfidences.Aggregate(1.0, (a, b) => a * b), 1.0 / lineWordConfidences.Count)
+                : 0.0;
+
             result.Lines.Add(new Line
             {
                 Id = $"line_{i}",
                 BoundingBox = CreateBoundingBox(bounds, image.Width, image.Height),
-                Confidence = Math.Round(1.0, 2), // TODO
+                Confidence = Math.Round(lineConfidence, 6),
                 Text = text,
                 WordIds = wordIndices.Select(idx => $"word_{idx}").ToList()
             });

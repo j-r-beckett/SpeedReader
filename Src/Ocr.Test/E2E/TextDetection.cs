@@ -146,7 +146,7 @@ public class TextDetection
             for (int j = 0; j < expectedBoundingBoxes[i].Count; j++)
             {
                 var expected = expectedBoundingBoxes[i][j];
-                var closestActual = actuals.MinBy(tb => CalculateCloseness(tb.AARectangle, expected));
+                var closestActual = actuals.MinBy(tb => CalculateCloseness(tb.AARectangle, expected))!;
                 actuals.Remove(closestActual);
                 Assert.True(Pad(closestActual.AARectangle, 2).Contains(expected));
 

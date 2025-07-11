@@ -112,7 +112,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Confidence score with 2 decimal digits of accuracy"
+          "description": "Confidence score with 6 decimal digits of accuracy"
         },
         "lineIds": {
           "type": "array",
@@ -139,7 +139,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Confidence score with 2 decimal digits of accuracy"
+          "description": "Confidence score with 6 decimal digits of accuracy"
         },
         "text": {
           "type": "string",
@@ -170,7 +170,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Confidence score with 2 decimal digits of accuracy"
+          "description": "Confidence score with 6 decimal digits of accuracy"
         },
         "text": {
           "type": "string",
