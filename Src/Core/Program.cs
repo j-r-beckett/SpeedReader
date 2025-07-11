@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Models;
 using Ocr;
 using Ocr.Blocks;
@@ -152,6 +154,16 @@ public class Program
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
+        
+        // Configure Kestrel to use only HTTP/2 and HTTP/3
+        builder.Services.Configure<KestrelServerOptions>(options =>
+        {
+            options.ConfigureEndpointDefaults(listenOptions =>
+            {
+                listenOptions.Protocols = HttpProtocols.Http2 | HttpProtocols.Http3;
+            });
+        });
+        
         var app = builder.Build();
 
         // Serve homepage at root if specified
