@@ -4,69 +4,70 @@ namespace Ocr.Blocks;
 
 public class DataflowBridge<TIn, TOut> : IAsyncDisposable
 {
-    private readonly TransformBlock<(TIn Input, TaskCompletionSource<TOut> Tcs), TIn> _in;
-    private readonly ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>> _out;
+    private readonly TransformBlock<(TIn Input, TaskCompletionSource<TOut> Tcs), TIn> _origin;
+    private readonly ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>> _terminus;
 
     // Block MUST maintain an ordered 1-1 correspondence between inputs and outputs
-    public DataflowBridge(IPropagatorBlock<TIn, TOut> block)
+    public DataflowBridge(IPropagatorBlock<TIn, TOut> primary)
     {
-        var completions = new BufferBlock<TaskCompletionSource<TOut>>();
+        var secondary = new BufferBlock<TaskCompletionSource<TOut>>();
 
-        _in = new TransformBlock<(TIn Input, TaskCompletionSource<TOut> Tcs), TIn>(data =>
+        _origin = new TransformBlock<(TIn Input, TaskCompletionSource<TOut> Tcs), TIn>(item =>
         {
-            if (!completions.Post(data.Tcs))
+            if (!secondary.Post(item.Tcs))
             {
-                // completions is unbounded, if this happens something has gone wrong
-                throw new InvalidOperationException($"{nameof(completions)} declined input");
+                // secondary is unbounded, if this happens something has gone wrong
+                throw new InvalidOperationException($"{nameof(secondary)} declined input");
             }
 
-            return data.Input;
+            return item.Input;
         }, new ExecutionDataflowBlockOptions
         {
             BoundedCapacity = Environment.ProcessorCount
         });
 
-        _in.LinkTo(block, new DataflowLinkOptions
+        _origin.LinkTo(primary, new DataflowLinkOptions
         {
             PropagateCompletion = true
         });
 
-        var join = new JoinBlock<TOut, TaskCompletionSource<TOut>>(new GroupingDataflowBlockOptions
+        var joiner = new JoinBlock<TOut, TaskCompletionSource<TOut>>(new GroupingDataflowBlockOptions
         {
             Greedy = false
         });
 
-        block.LinkTo(join.Target1);
-        completions.LinkTo(join.Target2);
+        primary.LinkTo(joiner.Target1);
+        secondary.LinkTo(joiner.Target2);
 
-        block.Completion.ContinueWith(t =>
-        {
-            if (t.IsFaulted)
-            {
-                var cleanupBlock = new ActionBlock<TaskCompletionSource<TOut>>(tcs => tcs.SetException(new DataflowBridgeException("Dataflow mesh completed unexpectedly", t.Exception)));
-                completions.LinkTo(cleanupBlock, new DataflowLinkOptions { PropagateCompletion = true });
-            }
+        _terminus = new ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>>(pair => pair.Item2.SetResult(pair.Item1));
 
-            completions.Complete();
-            join.Complete();
-        });
-
-        _out = new ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>>(data => data.Item2.SetResult(data.Item1));
-
-        join.LinkTo(_out, new DataflowLinkOptions
+        joiner.LinkTo(_terminus, new DataflowLinkOptions
         {
             PropagateCompletion = true
+        });
+
+        primary.Completion.ContinueWith(primaryCompletionTask =>
+        {
+            if (primaryCompletionTask.IsFaulted)
+            {
+                var orphanedCompletionHandler = new ActionBlock<TaskCompletionSource<TOut>>(orphanedCompletion => 
+                    orphanedCompletion.SetException(new DataflowBridgeException("Dataflow mesh completed unexpectedly", primaryCompletionTask.Exception)));
+                secondary.LinkTo(orphanedCompletionHandler, new DataflowLinkOptions { PropagateCompletion = true });
+            }
+
+            secondary.Complete();
+            joiner.Complete();
         });
     }
 
     public bool ProcessAsync(TIn input, out Task<TOut> result)
     {
-        ObjectDisposedException.ThrowIf(_in.Completion.IsCompleted, this);
+        ObjectDisposedException.ThrowIf(_origin.Completion.IsCompleted, this);
 
-        var tcs = new TaskCompletionSource<TOut>();
-        if (_in.Post((input, tcs)))
+        var completionSource = new TaskCompletionSource<TOut>();
+        if (_origin.Post((input, completionSource)))
         {
-            result = tcs.Task;
+            result = completionSource.Task;
             return true;
         }
 
@@ -76,10 +77,10 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        _in.Complete();
-        await _out.Completion;
+        _origin.Complete();
+        await _terminus.Completion;
         GC.SuppressFinalize(this);
     }
 }
 
-public class DataflowBridgeException(string message, Exception inner) : Exception;
+public class DataflowBridgeException(string message, Exception inner) : Exception(message, inner);
