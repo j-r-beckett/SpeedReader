@@ -122,7 +122,7 @@ public class OcrPipelineE2ETests
         var resultsDict = new Dictionary<Image<Rgb24>, List<(Rectangle Box, string Text)>>();
         var resultsLock = new object();
 
-        var resultCollector = new ActionBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)>(data =>
+        var resultCollector = new ActionBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(data =>
         {
             var imageResults = new List<(Rectangle Box, string Text)>();
 

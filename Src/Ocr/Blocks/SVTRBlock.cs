@@ -9,7 +9,7 @@ namespace Ocr.Blocks;
 
 public static class SVTRBlock
 {
-    public static IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)> Create(InferenceSession session)
+    public static IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> Create(InferenceSession session)
     {
         var preProcessingBlock = CreatePreProcessingBlock();
         var modelRunnerBlock = CreateModelRunnerBlock(session);
@@ -45,15 +45,15 @@ public static class SVTRBlock
         });
     }
 
-    private static TransformBlock<(float[], List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)> CreatePostProcessingBlock()
+    private static TransformBlock<(float[], List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> CreatePostProcessingBlock()
     {
-        return new TransformBlock<(float[] RawResult, List<TextBoundary> TextBoundaries, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, VizBuilder)>(input =>
+        return new TransformBlock<(float[] RawResult, List<TextBoundary> TextBoundaries, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(input =>
         {
-            var recognizedTexts = SVTRv2.PostProcess(input.RawResult, input.TextBoundaries.Count);
+            var (recognizedTexts, confidences) = SVTRv2.PostProcessWithConfidence(input.RawResult, input.TextBoundaries.Count);
 
             input.VizBuilder.AddRecognitionResults(recognizedTexts.ToList());
 
-            return (input.OriginalImage, input.TextBoundaries, recognizedTexts.ToList(), input.VizBuilder);
+            return (input.OriginalImage, input.TextBoundaries, recognizedTexts.ToList(), confidences.ToList(), input.VizBuilder);
         });
     }
 }
