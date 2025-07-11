@@ -99,22 +99,18 @@ public class Program
             var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
             var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
+            await using var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
 
-            var results = new List<(Image<Rgb24>, OcrResult, VizBuilder)>();
-            var resultCollector =
-                new ActionBlock<(Image<Rgb24>, OcrResult, VizBuilder)>(
-                    data => results.Add(data));
-
-            ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
-
-            // Create VizBuilder and send to pipeline
+            // Create VizBuilder and process through bridge
             var vizBuilder = VizBuilder.Create(vizMode, image);
-            await ocrBlock.SendAsync((image, vizBuilder));
-            ocrBlock.Complete();
-            await resultCollector.Completion;
+            var success = ocrBridge.ProcessAsync((image, vizBuilder), out var resultTask);
+            if (!success)
+            {
+                throw new InvalidOperationException("Failed to submit image for processing");
+            }
 
-            // Get results
-            var result = results[0];
+            // Get result
+            var result = await resultTask;
 
             // Update page number
             var ocrResults = result.Item2 with { PageNumber = 0 };
@@ -152,17 +148,16 @@ public class Program
         var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
         var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
+        // Create singleton OCR bridge
+        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
+        var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
+
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
         
-        // Configure Kestrel to use only HTTP/2 and HTTP/3
-        builder.Services.Configure<KestrelServerOptions>(options =>
-        {
-            options.ConfigureEndpointDefaults(listenOptions =>
-            {
-                listenOptions.Protocols = HttpProtocols.Http2 | HttpProtocols.Http3;
-            });
-        });
+        
+        // Register OCR bridge as singleton
+        builder.Services.AddSingleton(ocrBridge);
         
         var app = builder.Build();
 
@@ -184,7 +179,7 @@ public class Program
 
         app.MapGet("/health", () => "Healthy");
 
-        app.MapPost("api/ocr", async context =>
+        app.MapPost("api/ocr", async (HttpContext context, DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
         {
             try
             {
@@ -196,24 +191,18 @@ public class Program
                 // Load image
                 using var image = await Image.LoadAsync<Rgb24>(memoryStream);
 
-                // Create per-request OCR pipeline
-                var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
-
-                var results = new List<(Image<Rgb24>, OcrResult, VizBuilder)>();
-                var resultCollector =
-                    new ActionBlock<(Image<Rgb24>, OcrResult, VizBuilder)>(
-                        data => results.Add(data));
-
-                ocrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
-
-                // Create VizBuilder and send to pipeline (always VizMode.None for server)
+                // Create VizBuilder and process through bridge (always VizMode.None for server)
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                await ocrBlock.SendAsync((image, vizBuilder));
-                ocrBlock.Complete();
-                await resultCollector.Completion;
+                var success = ocrBridge.ProcessAsync((image, vizBuilder), out var resultTask);
+                if (!success)
+                {
+                    context.Response.StatusCode = 503;
+                    await context.Response.WriteAsync("Service temporarily unavailable - too many concurrent requests");
+                    return;
+                }
 
-                // Get results
-                var result = results[0];
+                // Get result
+                var result = await resultTask;
 
                 // Update page number
                 var ocrResults = result.Item2 with { PageNumber = 0 };
