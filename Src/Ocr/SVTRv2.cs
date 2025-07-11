@@ -49,18 +49,26 @@ public static class SVTRv2
 
     public static string[] PostProcess(float[] modelOutput, int numRectangles)
     {
+        var (texts, _) = PostProcessWithConfidence(modelOutput, numRectangles);
+        return texts;
+    }
+
+    public static (string[] texts, double[] confidences) PostProcessWithConfidence(float[] modelOutput, int numRectangles)
+    {
         int numClasses = CharacterDictionary.Count;
         int sequenceLength = modelOutput.Length / numRectangles / numClasses;  // All CTC sequences are the same length
 
-        var results = new List<string>();
+        var texts = new List<string>();
+        var confidences = new List<double>();
 
         for (int i = 0; i < numRectangles; i++)
         {
             var region = Tensor.Create(modelOutput, i * sequenceLength * numClasses, [sequenceLength, numClasses], default);
-            results.Add(CTC.DecodeSingleSequence(region));
+            var (text, confidence) = CTC.DecodeSingleSequenceWithConfidence(region);
+            texts.Add(text);
+            confidences.Add(confidence);
         }
 
-        return results.ToArray();
+        return (texts.ToArray(), confidences.ToArray());
     }
-
 }
