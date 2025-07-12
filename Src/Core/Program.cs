@@ -1,7 +1,9 @@
 using System.CommandLine;
 using System.Text.Json;
+using System.Threading.Channels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Models;
 using Ocr;
@@ -206,7 +208,86 @@ public class Program
             }
         });
 
+        app.MapPost("api/ocr/stream", async (HttpContext context, DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
+        {
+            var boundary = context.Request.GetMultipartBoundary();
+            var reader = new MultipartReader(boundary, context.Request.Body);
+            var imageCount = 0;
+
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync("[");
+
+            // Create unbounded channel for OCR tasks - DataflowBridge handles backpressure
+            var channel = Channel.CreateUnbounded<(Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)> OcrTask, int PageNumber)>();
+
+            // Background task to process results as they complete
+            var backgroundTask = Task.Run(async () =>
+            {
+                var responseWritten = false;
+                await foreach (var (ocrTask, pageNumber) in channel.Reader.ReadAllAsync())
+                {
+                    try
+                    {
+                        var (image, result, _) = await ocrTask;
+                        var ocrResults = result with { PageNumber = pageNumber };
+
+                        if (responseWritten) await context.Response.WriteAsync(",");
+                        responseWritten = true;
+
+                        var json = JsonSerializer.Serialize(ocrResults, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                        await context.Response.WriteAsync(json);
+                        await context.Response.Body.FlushAsync();
+
+                        // Dispose image after processing is complete
+                        image.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error but continue processing other images
+                        Console.WriteLine($"Error processing image: {ex.Message}");
+                    }
+                }
+            });
+
+            // Process multipart sections and queue OCR tasks
+            while (await reader.ReadNextSectionAsync() is { } section)
+            {
+                var contentDisposition = section.GetContentDispositionHeader();
+
+                if (contentDisposition?.FileName != null)
+                {
+                    var image = await Image.LoadAsync<Rgb24>(section.Body);
+                    var vizBuilder = VizBuilder.Create(VizMode.None, image);
+
+                    // Start OCR processing asynchronously and add to channel
+                    var ocrTask = ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+                    await channel.Writer.WriteAsync((ocrTask, imageCount));
+
+                    imageCount++;
+                }
+            }
+
+            // Complete the channel and wait for background task
+            channel.Writer.Complete();
+            await backgroundTask;
+
+            await context.Response.WriteAsync("]");
+        });
+
         Console.WriteLine("Starting SpeedReader server...");
         await app.RunAsync();
+    }
+}
+
+public static class HttpRequestExtensions
+{
+    public static string GetMultipartBoundary(this HttpRequest request)
+    {
+        var contentType = request.ContentType ?? throw new InvalidOperationException("No Content-Type header");
+        var boundaryIndex = contentType.IndexOf("boundary=");
+        if (boundaryIndex == -1) throw new InvalidOperationException("No boundary found");
+
+        var boundary = contentType.Substring(boundaryIndex + 9).Split(';')[0].Trim(' ', '"');
+        return boundary;
     }
 }
