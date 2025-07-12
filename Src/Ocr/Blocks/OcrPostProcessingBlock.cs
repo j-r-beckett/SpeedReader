@@ -151,7 +151,7 @@ public static class OcrPostProcessingBlock
 
             // Calculate line confidence as geometric mean of word confidences
             var lineWordConfidences = wordIndices.Select(idx => wordConfidences[idx]).ToList();
-            var lineConfidence = lineWordConfidences.Count > 0 
+            var lineConfidence = lineWordConfidences.Count > 0
                 ? Math.Pow(lineWordConfidences.Aggregate(1.0, (a, b) => a * b), 1.0 / lineWordConfidences.Count)
                 : 0.0;
 
@@ -251,7 +251,7 @@ public static class OcrPostProcessingBlock
     private static BoundingBox CreateBoundingBox(TextBoundary textBoundary, int imageWidth, int imageHeight)
     {
         var rect = textBoundary.AARectangle;
-        
+
         // Create normalized coordinates (0-1 range) with 6 decimal digits
         double normalizedX = Math.Round((double)rect.X / imageWidth, 6);
         double normalizedY = Math.Round((double)rect.Y / imageHeight, 6);

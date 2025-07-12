@@ -1,6 +1,4 @@
 using System.Buffers;
-using System.Diagnostics.CodeAnalysis;
-using System.Numerics.Tensors;
 
 namespace Ocr.Algorithms;
 
@@ -39,16 +37,16 @@ public static class TensorOps
         {
             // Write tensor to workspace, converting to CHW as we go
             for (int h = 0; h < H; h++)
-            for (int w = 0; w < W; w++)
-            for (int c = 0; c < C; c++)
-            {
-                int hwcIndex = h * W * C + w * C + c;
-                int chwIndex = c * H * W + h * W + w;
-                workspace[chwIndex] = tensor[hwcIndex];
-            }
+                for (int w = 0; w < W; w++)
+                    for (int c = 0; c < C; c++)
+                    {
+                        int hwcIndex = h * W * C + w * C + c;
+                        int chwIndex = c * H * W + h * W + w;
+                        workspace[chwIndex] = tensor[hwcIndex];
+                    }
 
             // Copy workspace back to tensor slice
-            workspace.AsSpan()[.. workspaceSize].CopyTo(tensor);
+            workspace.AsSpan()[..workspaceSize].CopyTo(tensor);
         }
         finally
         {

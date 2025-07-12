@@ -1,5 +1,5 @@
-using System.Threading.Tasks.Dataflow;
 using System.Numerics.Tensors;
+using System.Threading.Tasks.Dataflow;
 using CommunityToolkit.HighPerformance;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Visualization;
@@ -35,7 +35,7 @@ public static class DBNetBlock
         {
             // Model input should be [1, 3, 736, 1344] - batch size 1, 3 channels, height 736, width 1344
             // ProcessedImage is now in CHW format [3, 736, 1344], so we add batch dimension
-            var inputTensor = Tensor.Create(input.ProcessedImage, [ 1, 3, 736, 1344 ]);
+            var inputTensor = Tensor.Create(input.ProcessedImage, [1, 3, 736, 1344]);
 
             var outputBuffer = ModelRunner.Run(session, inputTensor);
 
@@ -55,7 +55,7 @@ public static class DBNetBlock
         {
             // Add raw probability map to visualization BEFORE binarization
             input.VizBuilder.AddProbabilityMap(input.RawResult.AsSpan().AsSpan2D(736, 1344));
-            
+
             var textBoundaries = DBNet.PostProcess(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 
             input.VizBuilder.AddRectangles(textBoundaries.Select(tb => tb.AARectangle).ToList());

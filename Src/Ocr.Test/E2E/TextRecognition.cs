@@ -94,14 +94,15 @@ public class TextRecognition
     private static string[] RunTextRecognition(Image<Rgb24> image, List<Rectangle> boundingBoxes)
     {
         // Convert rectangles to TextBoundary objects
-        var textBoundaries = boundingBoxes.Select(r => {
+        var textBoundaries = boundingBoxes.Select(r =>
+        {
             var polygon = new List<(int X, int Y)>
             {
                 (r.X, r.Y), (r.Right, r.Y), (r.Right, r.Bottom), (r.X, r.Bottom)
             };
             return TextBoundary.Create(polygon);
         }).ToList();
-        
+
         // Use individual preprocessing
         var processedRegions = SVTRv2.PreProcess(image, textBoundaries);
 

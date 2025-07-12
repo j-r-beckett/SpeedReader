@@ -15,18 +15,18 @@ public static class CTC
     {
         var decoded = new StringBuilder();
         var characterConfidences = new List<double>();
-        
+
         int prevIndex = -1;
         double currentCharMaxProb = 0.0;
         int currentCharIndex = -1;
-        
+
         int numSteps = Convert.ToInt32(sequence.Lengths[0]);
         for (int step = 0; step < numSteps; step++)
         {
             var probabilities = sequence[[step..(step + 1), Range.All]];
             int maxIndex = Convert.ToInt32(Tensor.IndexOfMax<float>(probabilities));
             double maxProb = probabilities[0, maxIndex];
-            
+
             // CTC greedy decoding rule: only add if different from previous and not blank
             if (maxIndex != prevIndex && maxIndex != CharacterDictionary.Blank)
             {
@@ -35,7 +35,7 @@ public static class CTC
                 {
                     characterConfidences.Add(currentCharMaxProb);
                 }
-                
+
                 // Start new character
                 char character = CharacterDictionary.IndexToChar(maxIndex);
                 decoded.Append(character);
@@ -47,21 +47,21 @@ public static class CTC
                 // Same character as current, update max probability for this character
                 currentCharMaxProb = Math.Max(currentCharMaxProb, maxProb);
             }
-            
+
             prevIndex = maxIndex;
         }
-        
+
         // Don't forget the last character's confidence
         if (decoded.Length > 0)
         {
             characterConfidences.Add(currentCharMaxProb);
         }
-        
+
         // Calculate geometric mean for sequence-level confidence
-        double geometricMean = characterConfidences.Count > 0 
+        double geometricMean = characterConfidences.Count > 0
             ? Math.Pow(characterConfidences.Aggregate(1.0, (a, b) => a * b), 1.0 / characterConfidences.Count)
             : 0.0;
-        
+
         return (decoded.ToString(), geometricMean);
     }
 }
