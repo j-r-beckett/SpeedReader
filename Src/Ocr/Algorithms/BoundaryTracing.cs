@@ -103,13 +103,13 @@ public static class BoundaryTracing
     private static (int X, int Y)[] TraceMooreBoundary(int startX, int startY, Span2D<float> probabilityMap)
     {
         List<(int X, int Y)> boundary = [];
-        
+
         int currentX = startX, currentY = startY;
         int firstX = startX, firstY = startY;
-        
+
         // Find initial direction by looking for first background neighbor
         int direction = FindInitialDirection(currentX, currentY, probabilityMap);
-        if (direction == -1) 
+        if (direction == -1)
         {
             // Single pixel component
             return [(startX, startY)];
@@ -118,7 +118,7 @@ public static class BoundaryTracing
         do
         {
             boundary.Add((currentX, currentY));
-            
+
             // Find next boundary pixel using Moore neighborhood
             var next = FindNextBoundaryPixel(currentX, currentY, direction, probabilityMap);
             if (next.HasValue)
@@ -131,19 +131,19 @@ public static class BoundaryTracing
             {
                 break; // No next pixel found
             }
-            
+
             // Jacob's stopping criterion: stop when we return to start with same approach direction
             if (currentX == firstX && currentY == firstY && boundary.Count > 2)
             {
                 break;
             }
-            
+
             // Safety check to prevent infinite loops
             if (boundary.Count > probabilityMap.Width * probabilityMap.Height)
             {
                 break;
             }
-            
+
         } while (true);
 
         return boundary.ToArray();
@@ -172,20 +172,20 @@ public static class BoundaryTracing
     {
         // Start searching from the direction opposite to where we came from
         int searchStart = (startDirection + 6) % 8; // Back up 2 positions (opposite direction)
-        
+
         for (int i = 0; i < 8; i++)
         {
             int dir = (searchStart + i) % 8;
             var (dx, dy) = Directions[dir];
             int nextX = currentX + dx;
             int nextY = currentY + dy;
-            
+
             if (IsForeground(nextX, nextY, probabilityMap) && IsBoundaryPixel(nextX, nextY, probabilityMap))
             {
                 return (nextX, nextY, dir);
             }
         }
-        
+
         return null; // No next boundary pixel found
     }
 
@@ -196,19 +196,19 @@ public static class BoundaryTracing
     {
         var stack = new Stack<(int x, int y)>();
         stack.Push((startX, startY));
-        
+
         while (stack.Count > 0)
         {
             var (x, y) = stack.Pop();
-            
+
             // Skip if out of bounds or already processed/background
-            if (x < 0 || x >= probabilityMap.Width || y < 0 || y >= probabilityMap.Height || 
+            if (x < 0 || x >= probabilityMap.Width || y < 0 || y >= probabilityMap.Height ||
                 probabilityMap[y, x] <= 0)
                 continue;
-                
+
             // Mark as processed
             probabilityMap[y, x] = -1;
-            
+
             // Add all 8-connected foreground neighbors
             foreach (var (dx, dy) in Directions)
             {

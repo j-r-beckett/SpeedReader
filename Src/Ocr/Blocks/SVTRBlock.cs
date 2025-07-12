@@ -1,5 +1,5 @@
-using System.Threading.Tasks.Dataflow;
 using System.Numerics.Tensors;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
@@ -34,7 +34,7 @@ public static class SVTRBlock
         {
             // Model input should be [num_rectangles, 3, 48, 320] - rectangles, 3 channels, height 48, width 320
             int numRectangles = input.TextBoundaries.Count;
-            var inputTensor = Tensor.Create(input.ProcessedRegions, [ numRectangles, 3, 48, 320 ]);
+            var inputTensor = Tensor.Create(input.ProcessedRegions, [numRectangles, 3, 48, 320]);
 
             var outputBuffer = ModelRunner.Run(session, inputTensor);
 
