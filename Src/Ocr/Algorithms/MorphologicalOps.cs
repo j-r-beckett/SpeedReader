@@ -21,20 +21,20 @@ public static class MorphologicalOps
     {
         var temp = new float[image.Height * image.Width];
         var tempSpan = temp.AsSpan().AsSpan2D(image.Height, image.Width);
-        
+
         for (int y = 0; y < image.Height; y++)
         {
             for (int x = 0; x < image.Width; x++)
             {
                 // Erosion: pixel is foreground only if ALL neighbors are foreground
                 bool allNeighborsForeground = image[y, x] >= threshold;
-                
+
                 if (allNeighborsForeground)
                 {
                     foreach (var (dx, dy) in StructuringElement)
                     {
                         int nx = x + dx, ny = y + dy;
-                        if (nx < 0 || nx >= image.Width || ny < 0 || ny >= image.Height || 
+                        if (nx < 0 || nx >= image.Width || ny < 0 || ny >= image.Height ||
                             image[ny, nx] < threshold)
                         {
                             allNeighborsForeground = false;
@@ -42,11 +42,11 @@ public static class MorphologicalOps
                         }
                     }
                 }
-                
+
                 tempSpan[y, x] = allNeighborsForeground ? 1.0f : 0.0f;
             }
         }
-        
+
         // Copy result back to original
         for (int y = 0; y < image.Height; y++)
         {
@@ -67,20 +67,20 @@ public static class MorphologicalOps
     {
         var temp = new float[image.Height * image.Width];
         var tempSpan = temp.AsSpan().AsSpan2D(image.Height, image.Width);
-        
+
         for (int y = 0; y < image.Height; y++)
         {
             for (int x = 0; x < image.Width; x++)
             {
                 // Dilation: pixel is foreground if ANY neighbor is foreground
                 bool anyNeighborForeground = image[y, x] >= threshold;
-                
+
                 if (!anyNeighborForeground)
                 {
                     foreach (var (dx, dy) in StructuringElement)
                     {
                         int nx = x + dx, ny = y + dy;
-                        if (nx >= 0 && nx < image.Width && ny >= 0 && ny < image.Height && 
+                        if (nx >= 0 && nx < image.Width && ny >= 0 && ny < image.Height &&
                             image[ny, nx] >= threshold)
                         {
                             anyNeighborForeground = true;
@@ -88,11 +88,11 @@ public static class MorphologicalOps
                         }
                     }
                 }
-                
+
                 tempSpan[y, x] = anyNeighborForeground ? 1.0f : 0.0f;
             }
         }
-        
+
         // Copy result back to original
         for (int y = 0; y < image.Height; y++)
         {

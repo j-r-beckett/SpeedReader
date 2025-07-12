@@ -25,10 +25,10 @@ public class MorphologicalBoundaryTracingTests
 
         Assert.Single(boundaries);
         var boundary = boundaries[0];
-        
+
         // Should have ordered boundary pixels forming a polygon
         Assert.True(boundary.Length >= 4); // At least some boundary pixels
-        
+
         // Verify boundary forms a connected sequence
         VerifyBoundaryConnectivity(boundary);
     }
@@ -56,14 +56,14 @@ public class MorphologicalBoundaryTracingTests
 
         // Should find multiple separate components (at least 2)
         Assert.True(boundaries.Count >= 1, $"Expected at least 1 boundary, got {boundaries.Count}");
-        
+
         // Each boundary should be connected
         foreach (var boundary in boundaries)
         {
             Assert.True(boundary.Length > 0);
             VerifyBoundaryConnectivity(boundary);
         }
-        
+
         // No duplicate points across different boundaries
         var allPoints = boundaries.SelectMany(b => b).ToList();
         var uniquePoints = allPoints.ToHashSet();
@@ -90,18 +90,18 @@ public class MorphologicalBoundaryTracingTests
 
         // Should find the rectangle
         Assert.True(boundaries.Count >= 1, $"Expected at least 1 boundary, got {boundaries.Count}");
-        
+
         if (boundaries.Count > 0)
         {
             var boundary = boundaries[0];
             Assert.True(boundary.Length > 0);
-            
+
             var boundarySet = boundary.ToHashSet();
-            
+
             // Should include left edge pixels (adjacent to virtual background)
             bool hasLeftEdge = boundarySet.Any(p => p.X == 0);
             Assert.True(hasLeftEdge, "Should have left edge pixels");
-            
+
             VerifyBoundaryConnectivity(boundary);
         }
     }
@@ -152,7 +152,7 @@ public class MorphologicalBoundaryTracingTests
         // Just verify no duplicate pixels and reasonable bounds
         var boundarySet = boundary.ToArray().ToHashSet();
         Assert.Equal(boundary.Length, boundarySet.Count); // No duplicates
-        
+
         // Verify all pixels are within reasonable bounds
         foreach (var (x, y) in boundary)
         {
