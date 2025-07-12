@@ -11,11 +11,8 @@ public class DataflowBridgeTests
         var transform = new TransformBlock<int, string>(x => x.ToString());
         await using var bridge = new DataflowBridge<int, string>(transform);
 
-        var result1 = bridge.ProcessAsync(42, out var task1);
-        var result2 = bridge.ProcessAsync(100, out var task2);
-
-        Assert.True(result1);
-        Assert.True(result2);
+        var task1 = bridge.ProcessAsync(42, CancellationToken.None, CancellationToken.None);
+        var task2 = bridge.ProcessAsync(100, CancellationToken.None, CancellationToken.None);
 
         var output1 = await task1;
         var output2 = await task2;
@@ -34,9 +31,9 @@ public class DataflowBridgeTests
         });
         await using var bridge = new DataflowBridge<int, string>(transform);
 
-        bridge.ProcessAsync(100, out var task1);
-        bridge.ProcessAsync(50, out var task2);
-        bridge.ProcessAsync(10, out var task3);
+        var task1 = bridge.ProcessAsync(100, CancellationToken.None, CancellationToken.None);
+        var task2 = bridge.ProcessAsync(50, CancellationToken.None, CancellationToken.None);
+        var task3 = bridge.ProcessAsync(10, CancellationToken.None, CancellationToken.None);
 
         var results = await Task.WhenAll(task1, task2, task3);
 
@@ -44,32 +41,22 @@ public class DataflowBridgeTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenAtCapacity_ReturnsFalse()
+    public async Task ProcessAsync_HandlesMultipleConcurrentOperations()
     {
-        var blockingSemaphore = new SemaphoreSlim(0);
-        var transform = new TransformBlock<int, string>(async x =>
-        {
-            await blockingSemaphore.WaitAsync();
-            return x.ToString();
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+        var transform = new TransformBlock<int, string>(x => Task.FromResult(x.ToString()));
 
         await using var bridge = new DataflowBridge<int, string>(transform);
 
-        var results = new List<bool>();
-        var tasks = new List<Task<string>>();
+        // Start multiple operations concurrently
+        var tasks = Enumerable.Range(0, 10)
+            .Select(i => bridge.ProcessAsync(i, CancellationToken.None, CancellationToken.None))
+            .ToList();
 
-        for (int i = 0; i < Environment.ProcessorCount + 5; i++)
-        {
-            var posted = bridge.ProcessAsync(i, out var task);
-            results.Add(posted);
-            if (posted) tasks.Add(task);
-        }
+        // Wait for all to complete
+        var results = await Task.WhenAll(tasks);
 
-        Assert.True(results.Count(r => r) > 0);
-        Assert.Contains(false, results);
-
-        blockingSemaphore.Release(results.Count(r => r));
-        await Task.WhenAll(tasks);
+        // Verify results maintain order
+        Assert.Equal(Enumerable.Range(0, 10).Select(i => i.ToString()), results);
     }
 
     [Fact]
@@ -78,8 +65,8 @@ public class DataflowBridgeTests
         var transform = new TransformBlock<int, string>(x => x.ToString());
         var bridge = new DataflowBridge<int, string>(transform);
 
-        bridge.ProcessAsync(1, out var task1);
-        bridge.ProcessAsync(2, out var task2);
+        var task1 = bridge.ProcessAsync(1, CancellationToken.None, CancellationToken.None);
+        var task2 = bridge.ProcessAsync(2, CancellationToken.None, CancellationToken.None);
 
         await bridge.DisposeAsync();
 
@@ -98,7 +85,7 @@ public class DataflowBridgeTests
 
         await bridge.DisposeAsync();
 
-        Assert.Throws<ObjectDisposedException>(() => bridge.ProcessAsync(1, out _));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await bridge.ProcessAsync(1, CancellationToken.None, CancellationToken.None));
     }
 
     [Fact]
@@ -113,9 +100,9 @@ public class DataflowBridgeTests
 
         await using var bridge = new DataflowBridge<int, string>(transform);
 
-        bridge.ProcessAsync(1, out var task1);
-        bridge.ProcessAsync(42, out var task2);
-        bridge.ProcessAsync(3, out var task3);
+        var task1 = bridge.ProcessAsync(1, CancellationToken.None, CancellationToken.None);
+        var task2 = bridge.ProcessAsync(42, CancellationToken.None, CancellationToken.None);
+        var task3 = bridge.ProcessAsync(3, CancellationToken.None, CancellationToken.None);
 
         var result1 = await task1;
         Assert.Equal("1", result1);
@@ -126,5 +113,175 @@ public class DataflowBridgeTests
         Assert.Contains(innerEx!.InnerExceptions, e => e is InvalidOperationException && e.Message == "Cannot process 42");
 
         await Assert.ThrowsAsync<DataflowBridgeException>(async () => await task3);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WithCancelledBridgeToken_ThrowsOperationCanceledException()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new DataflowBridge<int, string>(transform);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(async () =>
+            await bridge.ProcessAsync(42, cts.Token, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ProcessAsync_CancellingTokenAfterAcceptance_DoesNotCancelProcessing()
+    {
+        var processingStarted = new TaskCompletionSource();
+        var allowProcessingToComplete = new TaskCompletionSource();
+
+        var transform = new TransformBlock<int, string>(async x =>
+        {
+            processingStarted.SetResult();
+            await allowProcessingToComplete.Task;
+            return x.ToString();
+        });
+
+        await using var bridge = new DataflowBridge<int, string>(transform);
+
+        using var cts = new CancellationTokenSource();
+        var processTask = bridge.ProcessAsync(42, cts.Token, CancellationToken.None);
+
+        await processingStarted.Task;
+        cts.Cancel();
+        allowProcessingToComplete.SetResult();
+
+        var result = await processTask;
+        Assert.Equal("42", result);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenTransformerFaultsWithPendingOperations_PropagatesFaultToOrphanedCompletions()
+    {
+        var faultAfterFirstItem = new TaskCompletionSource();
+        var itemCount = 0;
+
+        var transform = new TransformBlock<int, string>(async x =>
+        {
+            if (Interlocked.Increment(ref itemCount) == 2)
+            {
+                await faultAfterFirstItem.Task;
+                throw new InvalidOperationException("Transformer fault");
+            }
+            return x.ToString();
+        });
+
+        await using var bridge = new DataflowBridge<int, string>(transform);
+
+        var task1 = bridge.ProcessAsync(1, CancellationToken.None, CancellationToken.None);
+        var task2 = bridge.ProcessAsync(2, CancellationToken.None, CancellationToken.None);
+        var task3 = bridge.ProcessAsync(3, CancellationToken.None, CancellationToken.None);
+
+        var result1 = await task1;
+        Assert.Equal("1", result1);
+
+        faultAfterFirstItem.SetResult();
+
+        await Assert.ThrowsAsync<DataflowBridgeException>(async () => await task2);
+        await Assert.ThrowsAsync<DataflowBridgeException>(async () => await task3);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenTransformerCancelledWithPendingOperations_PropagatesCancellationToOrphanedCompletions()
+    {
+        using var transformerCts = new CancellationTokenSource();
+        var cancelAfterFirstItem = new TaskCompletionSource();
+        var itemCount = 0;
+
+        var transform = new TransformBlock<int, string>(async x =>
+        {
+            if (Interlocked.Increment(ref itemCount) == 2)
+            {
+                await cancelAfterFirstItem.Task;
+                transformerCts.Token.ThrowIfCancellationRequested();
+            }
+            return x.ToString();
+        }, new ExecutionDataflowBlockOptions
+        {
+            CancellationToken = transformerCts.Token
+        });
+
+        await using var bridge = new DataflowBridge<int, string>(transform);
+
+        var task1 = bridge.ProcessAsync(1, CancellationToken.None, CancellationToken.None);
+        var task2 = bridge.ProcessAsync(2, CancellationToken.None, CancellationToken.None);
+        var task3 = bridge.ProcessAsync(3, CancellationToken.None, CancellationToken.None);
+
+        var result1 = await task1;
+        Assert.Equal("1", result1);
+
+        transformerCts.Cancel();
+        cancelAfterFirstItem.SetResult();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await task2);
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await task3);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_CancellingDuringBackpressure_CancelsBlockedSendAsync()
+    {
+        var releaseTransformer = new TaskCompletionSource();
+
+        var transform = new TransformBlock<int, string>(async x =>
+        {
+            await releaseTransformer.Task;
+            return x.ToString();
+        }, new ExecutionDataflowBlockOptions
+        {
+            BoundedCapacity = 1
+        });
+
+        await using var bridge = new DataflowBridge<int, string>(transform);
+
+        var processorCount = Environment.ProcessorCount;
+        var successfulTasks = new List<Task<string>>();
+
+        // Fill the pipeline: ProcessorCount + 1 items (1 in transformer, ProcessorCount in origin)
+        for (int i = 0; i < processorCount + 1; i++)
+        {
+            successfulTasks.Add(bridge.ProcessAsync(i, CancellationToken.None, CancellationToken.None));
+        }
+
+        await Task.Delay(100); // Let the pipeline fill up
+
+        using var cts = new CancellationTokenSource();
+        var cancelledTask = bridge.ProcessAsync(998, cts.Token, CancellationToken.None);
+        var blockedTask = bridge.ProcessAsync(999, CancellationToken.None, CancellationToken.None);
+
+        await Task.Delay(100);
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await cancelledTask);
+
+        releaseTransformer.SetResult();
+
+        // Verify all ProcessorCount + 1 items complete successfully
+        var results = await Task.WhenAll(successfulTasks);
+        Assert.Equal(processorCount + 1, results.Length);
+        for (int i = 0; i < processorCount + 1; i++)
+        {
+            Assert.Equal(i.ToString(), results[i]);
+        }
+
+        // The non-cancelled blocked task should complete successfully once pipeline is unblocked
+        var blockedResult = await blockedTask;
+        Assert.Equal("999", blockedResult);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WithCancelledTransformerToken_ThrowsOperationCanceledException()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new DataflowBridge<int, string>(transform);
+
+        using var transformerCts = new CancellationTokenSource();
+        transformerCts.Cancel();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(async () =>
+            await bridge.ProcessAsync(42, CancellationToken.None, transformerCts.Token));
     }
 }

@@ -103,14 +103,7 @@ public class Program
 
             // Create VizBuilder and process through bridge
             var vizBuilder = VizBuilder.Create(vizMode, image);
-            var success = ocrBridge.ProcessAsync((image, vizBuilder), out var resultTask);
-            if (!success)
-            {
-                throw new InvalidOperationException("Failed to submit image for processing");
-            }
-
-            // Get result
-            var result = await resultTask;
+            var result = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
 
             // Update page number
             var ocrResults = result.Item2 with { PageNumber = 0 };
@@ -154,11 +147,11 @@ public class Program
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
-        
-        
+
+
         // Register OCR bridge as singleton
         builder.Services.AddSingleton(ocrBridge);
-        
+
         var app = builder.Build();
 
         // Serve homepage at root if specified
@@ -193,16 +186,7 @@ public class Program
 
                 // Create VizBuilder and process through bridge (always VizMode.None for server)
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var success = ocrBridge.ProcessAsync((image, vizBuilder), out var resultTask);
-                if (!success)
-                {
-                    context.Response.StatusCode = 503;
-                    await context.Response.WriteAsync("Service temporarily unavailable - too many concurrent requests");
-                    return;
-                }
-
-                // Get result
-                var result = await resultTask;
+                var result = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
 
                 // Update page number
                 var ocrResults = result.Item2 with { PageNumber = 0 };

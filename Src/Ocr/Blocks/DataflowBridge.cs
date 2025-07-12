@@ -7,7 +7,8 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
     private readonly TransformBlock<(TIn Input, TaskCompletionSource<TOut> Tcs), TIn> _origin;
     private readonly ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>> _terminus;
 
-    // Transformer block MUST maintain an ordered 1-1 correspondence between inputs and outputs
+    // Transformer block MUST maintain an ordered 1-1 correspondence between inputs and outputs.
+    // For best results, the transformer should be capable of emitting backpressure.
     public DataflowBridge(IPropagatorBlock<TIn, TOut> transformer)
     {
         var completionSources = new BufferBlock<TaskCompletionSource<TOut>>();
@@ -39,7 +40,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
         transformer.LinkTo(joiner.Target1);
         completionSources.LinkTo(joiner.Target2);
 
-        _terminus = new ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>>(pair => pair.Item2.SetResult(pair.Item1));
+        _terminus = new ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>>(pair => pair.Item2.TrySetResult(pair.Item1));
 
         joiner.LinkTo(_terminus, new DataflowLinkOptions
         {
@@ -48,10 +49,23 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
 
         transformer.Completion.ContinueWith(primaryCompletionTask =>
         {
-            if (primaryCompletionTask.IsFaulted)
+            if (!primaryCompletionTask.IsCompletedSuccessfully)
             {
-                var orphanedCompletionHandler = new ActionBlock<TaskCompletionSource<TOut>>(orphanedCompletion =>
-                    orphanedCompletion.SetException(new DataflowBridgeException("Dataflow mesh completed unexpectedly", primaryCompletionTask.Exception)));
+                Action<TaskCompletionSource<TOut>> handler;
+
+                if (primaryCompletionTask.IsFaulted)
+                {
+                    handler = orphanedCompletion =>
+                        orphanedCompletion.TrySetException(
+                            new DataflowBridgeException("Dataflow mesh faulted",
+                                primaryCompletionTask.Exception));
+                }
+                else
+                {
+                    handler = orphanedCompletion => orphanedCompletion.TrySetCanceled();
+                }
+
+                var orphanedCompletionHandler = new ActionBlock<TaskCompletionSource<TOut>>(handler);
                 completionSources.LinkTo(orphanedCompletionHandler, new DataflowLinkOptions { PropagateCompletion = true });
             }
 
@@ -60,19 +74,22 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
         });
     }
 
-    public bool ProcessAsync(TIn input, out Task<TOut> result)
+    public async Task<TOut> ProcessAsync(TIn input, CancellationToken bridgeCancellationToken, CancellationToken transformerCancellationToken)
     {
         ObjectDisposedException.ThrowIf(_origin.Completion.IsCompleted, this);
 
         var completionSource = new TaskCompletionSource<TOut>();
-        if (_origin.Post((input, completionSource)))
+
+        // This is just for the convenience of the caller; once the input is in the pipeline we are unable to truly
+        // cancel it.
+        transformerCancellationToken.Register(() => completionSource.TrySetCanceled(transformerCancellationToken));
+
+        if (await _origin.SendAsync((input, completionSource), bridgeCancellationToken))
         {
-            result = completionSource.Task;
-            return true;
+            return await completionSource.Task;
         }
 
-        result = default!;
-        return false;
+        throw new InvalidOperationException($"{nameof(_origin)} declined input");
     }
 
     public async ValueTask DisposeAsync()
