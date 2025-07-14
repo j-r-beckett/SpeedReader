@@ -1,0 +1,26 @@
+name: speedreader-dev
+services:
+  app:
+    image: 192.168.0.12:4000/speedreader:0.3.0.dev
+    ports:
+      - "5002:5001"
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5001
+    deploy:
+      resources:
+        limits:
+          cpus: "6.0"
+          memory: 8G
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    restart: unless-stopped

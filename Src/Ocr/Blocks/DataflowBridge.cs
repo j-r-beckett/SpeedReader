@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Tasks.Dataflow;
 
 namespace Ocr.Blocks;
@@ -74,7 +75,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
         });
     }
 
-    public async Task<TOut> ProcessAsync(TIn input, CancellationToken bridgeCancellationToken, CancellationToken transformerCancellationToken)
+    public async Task<Task<TOut>> ProcessAsync(TIn input, CancellationToken bridgeCancellationToken, CancellationToken transformerCancellationToken)
     {
         ObjectDisposedException.ThrowIf(_origin.Completion.IsCompleted, this);
 
@@ -86,7 +87,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
 
         if (await _origin.SendAsync((input, completionSource), bridgeCancellationToken))
         {
-            return await completionSource.Task;
+            return completionSource.Task;
         }
 
         throw new InvalidOperationException($"{nameof(_origin)} declined input");
