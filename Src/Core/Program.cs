@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.Builder;
@@ -9,6 +10,7 @@ using Models;
 using Ocr;
 using Ocr.Blocks;
 using Ocr.Visualization;
+using Prometheus;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -94,11 +96,15 @@ public class Program
             // Load input image
             using var image = await Image.LoadAsync<Rgb24>(input.FullName);
 
+            // Initialize metrics
+            var meter = new Meter("SpeedReader.Ocr");
+
+
             // Create OCR pipeline
             var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
             var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
-            var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
+            var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, meter);
             await using var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
 
             // Create VizBuilder and process through bridge
@@ -137,17 +143,19 @@ public class Program
 
     private static async Task RunServer(FileInfo? homepage)
     {
+        // Initialize metrics
+        var meter = new Meter("SpeedReader.Ocr");
+
         // Create shared inference sessions
         var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
         var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
         // Create singleton OCR bridge
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession);
+        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, meter);
         var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
-
 
         // Register OCR bridge as singleton
         builder.Services.AddSingleton(ocrBridge);
@@ -273,6 +281,9 @@ public class Program
 
             await context.Response.WriteAsync("]");
         });
+
+        // Add Prometheus metrics endpoint (automatic)
+        app.UseMetricServer();
 
         Console.WriteLine("Starting SpeedReader server...");
         await app.RunAsync();

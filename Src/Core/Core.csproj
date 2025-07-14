@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />
+    <PackageReference Include="prometheus-net.AspNetCore" />
   </ItemGroup>
   
   <ItemGroup>

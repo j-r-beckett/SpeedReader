@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
@@ -8,8 +9,10 @@ namespace Ocr.Blocks;
 
 public static class OcrPostProcessingBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create()
+    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create(Meter meter)
     {
+        var postProcessingCounter = meter.CreateCounter<long>("ocr_postprocessing_completed", description: "Number of completed OCR post-processing operations");
+        
         return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, List<double> Confidences, VizBuilder VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(data =>
         {
             Debug.Assert(data.TextBoundaries.Count == data.Texts.Count);
@@ -33,6 +36,7 @@ public static class OcrPostProcessingBlock
             var mergedTexts = lines.Select(line => line.text).ToList();
             data.VizBuilder.AddMergedResults(mergedRectangles, mergedTexts);
 
+            postProcessingCounter.Add(1);
             return (data.Image, ocrResults, data.VizBuilder);
         });
     }

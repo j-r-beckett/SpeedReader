@@ -10,11 +10,12 @@ public static class OcrBlock
 {
     public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create(
         InferenceSession dbnetSession,
-        InferenceSession svtrSession)
+        InferenceSession svtrSession,
+        System.Diagnostics.Metrics.Meter meter)
     {
         var dbNetBlock = DBNetBlock.Create(dbnetSession);
         var svtrBlock = SVTRBlock.Create(svtrSession);
-        var postProcessingBlock = OcrPostProcessingBlock.Create();
+        var postProcessingBlock = OcrPostProcessingBlock.Create(meter);
 
         dbNetBlock.LinkTo(svtrBlock, new DataflowLinkOptions { PropagateCompletion = true });
         svtrBlock.LinkTo(postProcessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
