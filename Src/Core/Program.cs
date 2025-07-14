@@ -109,7 +109,8 @@ public class Program
 
             // Create VizBuilder and process through bridge
             var vizBuilder = VizBuilder.Create(vizMode, image);
-            var result = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+            var resultTask = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+            var result = await resultTask;
 
             // Update page number
             var ocrResults = result.Item2 with { PageNumber = 0 };
@@ -194,7 +195,8 @@ public class Program
 
                 // Create VizBuilder and process through bridge (always VizMode.None for server)
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var result = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+                var resultTask = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+                var result = await resultTask;
 
                 // Update page number
                 var ocrResults = result.Item2 with { PageNumber = 0 };
@@ -268,8 +270,8 @@ public class Program
                     var vizBuilder = VizBuilder.Create(VizMode.None, image);
 
                     // Start OCR processing asynchronously and add to channel
-                    var ocrTask = ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
-                    await channel.Writer.WriteAsync((ocrTask, imageCount));
+                    var ocrTaskWrapper = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+                    await channel.Writer.WriteAsync((ocrTaskWrapper, imageCount));
 
                     imageCount++;
                 }
