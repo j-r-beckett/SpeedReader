@@ -66,3 +66,10 @@ Supported platforms: linux-x64, win-x64, osx-arm64
 dotnet publish -c Release -r <platform> Src/Core
 ```
 The `speedread` binary will be in `Src/Core/bin/Release/net10.0/<platform>/publish/`
+
+## Benchmarks
+
+| Date      | Commit | CPU (Cores) | RAM (Gb) | GPU | Throughput (Items / Sec) |
+|-----------|--------|-------------|----------| --- |--------------------------|
+| 2025-7-14 | ecba50ed7d7b | 6           | 8        | - | 0.5 |
+
