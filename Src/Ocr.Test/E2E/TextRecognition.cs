@@ -103,20 +103,28 @@ public class TextRecognition
             return TextBoundary.Create(polygon);
         }).ToList();
 
-        // Use individual preprocessing
-        var processedRegions = SVTRv2.PreProcess(image, textBoundaries);
+        var results = new List<string>();
 
-        // Create tensor and run model
-        int numRectangles = boundingBoxes.Count;
-        var inputTensor = Tensor.Create(processedRegions, [numRectangles, 3, 48, 320]);
-        var rawResult = ModelRunner.Run(ModelZoo.GetInferenceSession(Model.SVTRv2), inputTensor);
+        // Process each text boundary individually
+        using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        foreach (var textBoundary in textBoundaries)
+        {
+            // Individual preprocessing
+            var processedRegion = SVTRv2.PreProcess(image, textBoundary);
 
-        // Extract output data and use individual postprocessing
-        var outputData = rawResult.AsSpan().ToArray();
-        var results = SVTRv2.PostProcess(outputData, numRectangles);
+            // Create tensor and run model for single item
+            var inputTensor = Tensor.Create(processedRegion, [1, 3, 48, 320]);
+            var rawResult = ModelRunner.Run(session, inputTensor);
 
-        rawResult.Dispose();
-        return results;
+            // Extract output data and use individual postprocessing
+            var outputData = rawResult.AsSpan().ToArray();
+            var (text, _) = SVTRv2.PostProcess(outputData);
+
+            results.Add(text);
+            rawResult.Dispose();
+        }
+
+        return results.ToArray();
     }
 
     private Rectangle DrawText(Image image, string text, int x, int y)

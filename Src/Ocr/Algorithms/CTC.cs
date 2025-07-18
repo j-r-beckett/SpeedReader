@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics.Tensors;
 using System.Text;
 
@@ -5,14 +6,13 @@ namespace Ocr.Algorithms;
 
 public static class CTC
 {
-    public static string DecodeSingleSequence(Tensor<float> sequence)
+    public static (string text, double confidence) DecodeSingleSequence(float[] sequence, int numClasses)
     {
-        var (text, _) = DecodeSingleSequenceWithConfidence(sequence);
-        return text;
-    }
+        Debug.Assert(sequence.Length % numClasses == 0);
 
-    public static (string text, double confidence) DecodeSingleSequenceWithConfidence(Tensor<float> sequence)
-    {
+        // Convert to tensor so we can use vectorized IndexOfMax
+        var tensor = Tensor.Create(sequence, [sequence.Length / numClasses, numClasses], default);
+
         var decoded = new StringBuilder();
         var characterConfidences = new List<double>();
 
@@ -20,10 +20,10 @@ public static class CTC
         double currentCharMaxProb = 0.0;
         int currentCharIndex = -1;
 
-        int numSteps = Convert.ToInt32(sequence.Lengths[0]);
+        int numSteps = Convert.ToInt32(tensor.Lengths[0]);
         for (int step = 0; step < numSteps; step++)
         {
-            var probabilities = sequence[[step..(step + 1), Range.All]];
+            var probabilities = tensor[[step..(step + 1), Range.All]];
             int maxIndex = Convert.ToInt32(Tensor.IndexOfMax<float>(probabilities));
             double maxProb = probabilities[0, maxIndex];
 
