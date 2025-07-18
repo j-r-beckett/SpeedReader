@@ -1,4 +1,3 @@
-using System.Numerics.Tensors;
 using System.Threading.Tasks.Dataflow;
 using CommunityToolkit.HighPerformance;
 using Microsoft.ML.OnnxRuntime;
@@ -29,24 +28,25 @@ public static class DBNetBlock
             => (DBNet.PreProcess(input.Image), input.Image, input.VizBuilder));
     }
 
-    private static TransformBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
+    private static IPropagatorBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
     {
-        return new TransformBlock<(float[] ProcessedImage, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input =>
-        {
-            // Model input should be [1, 3, 736, 1344] - batch size 1, 3 channels, height 736, width 1344
-            // ProcessedImage is now in CHW format [3, 736, 1344], so we add batch dimension
-            var inputTensor = Tensor.Create(input.ProcessedImage, [1, 3, 736, 1344]);
+        var splitBlock = new SplitBlock<(float[], Image<Rgb24>, VizBuilder), float[], (Image<Rgb24>, VizBuilder)>(
+            input => (input.Item1, (input.Item2, input.Item3)));
 
-            var outputBuffer = ModelRunner.Run(session, inputTensor);
+        var inferenceBlock = new InferenceBlock(session, [3, 736, 1344]);
 
-            // Model output should be [1, 1, 736, 1344] - single channel probability map
-            float[] outputData = outputBuffer.AsSpan().ToArray();
-            outputBuffer.Dispose();
+        var mergeBlock = new MergeBlock<float[], (Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(
+            (result, passthrough) => 
+            {
+                passthrough.Item2.AddProbabilityMap(result.AsSpan().AsSpan2D(736, 1344));
+                return (result, passthrough.Item1, passthrough.Item2);
+            });
 
-            input.VizBuilder.AddProbabilityMap(outputData.AsSpan().AsSpan2D(736, 1344));
+        splitBlock.LeftSource.LinkTo(inferenceBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
+        splitBlock.RightSource.LinkTo(mergeBlock.RightTarget, new DataflowLinkOptions { PropagateCompletion = true });
+        inferenceBlock.Target.LinkTo(mergeBlock.LeftTarget, new DataflowLinkOptions { PropagateCompletion = true });
 
-            return (outputData, input.OriginalImage, input.VizBuilder);
-        });
+        return DataflowBlock.Encapsulate(splitBlock.Target, mergeBlock.Source);
     }
 
     private static TransformBlock<(float[], Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> CreatePostProcessingBlock()

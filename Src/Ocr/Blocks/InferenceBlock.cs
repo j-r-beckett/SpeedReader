@@ -12,7 +12,7 @@ public class InferenceBlock
     {
         Debug.Assert(elementShape.Length == 3, "Each element should have three dimensions");
 
-        var batchBlock = new AdaptiveEagerBatchBlock<float[]>(4, -1);
+        var batchBlock = new AdaptiveEagerBatchBlock<float[]>(1, -1);
 
         var preprocessingBlock = new TransformBlock<float[][], OrtValue>(inputs =>
         {
@@ -39,13 +39,13 @@ public class InferenceBlock
         var postprocessingBlock = new TransformManyBlock<OrtValue, float[]>(tensor =>
         {
             long[] shape = tensor.GetTensorTypeAndShape().Shape;
-            Debug.Assert(shape.Length == 4);
+            Debug.Assert(shape.Length == 3 || shape.Length == 4);
 
             // Span slicing requires ints, so we can have at most intMax = 2^31 - 1 floats in a batch.
             // That's only 4 Gb worth of floats, so we better check for overflow
             checked
             {
-                int elementSize = (int)(shape[1] * shape[2] * shape[3]);
+                int elementSize = (int)(shape[1] * shape[2] * (shape.Length == 4 ? shape[3] : 1));
                 float[][] results = new float[shape[0]][];
                 var tensorSpan = tensor.GetTensorDataAsSpan<float>();
                 for (int i = 0; i < results.Length; i++)
