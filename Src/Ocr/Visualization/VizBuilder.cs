@@ -17,7 +17,7 @@ public abstract class VizBuilder
 
     public virtual void AddProbabilityMap(Span2D<float> probabilityMap) { }
 
-    public virtual void AddRecognitionResults(List<string> texts) { }
+    public virtual void AddRecognitionResult(string text, TextBoundary boundary) { }
 
     public virtual void AddMergedResults(List<Rectangle> mergedRectangles, List<string> mergedTexts) { }
 
