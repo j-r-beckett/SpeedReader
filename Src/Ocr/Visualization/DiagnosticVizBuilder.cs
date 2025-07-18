@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using CommunityToolkit.HighPerformance;
 using SixLabors.Fonts;
@@ -12,7 +13,7 @@ namespace Ocr.Visualization;
 public class DiagnosticVizBuilder : BasicVizBuilder
 {
     private List<Rectangle> _rectangles = new();
-    private List<string> _recognitionTexts = new();
+    private readonly ConcurrentBag<(string text, Rectangle bounds)> _individualRecognitionResults = new();
     private Image<L8>? _probabilityMap;
     private List<List<(int X, int Y)>> _detectionPolygons = [];
 
@@ -56,11 +57,9 @@ public class DiagnosticVizBuilder : BasicVizBuilder
         probImage.Dispose();
     }
 
-    public override void AddRecognitionResults(List<string> texts)
+    public override void AddRecognitionResult(string text, TextBoundary boundary)
     {
-        Debug.Assert(_rectangles.Count == texts.Count,
-            $"Number of rectangles ({_rectangles.Count}) should match number of recognition results ({texts.Count})");
-        _recognitionTexts = texts;
+        _individualRecognitionResults.Add((text, boundary.AARectangle));
     }
 
     public override void AddPolygons(List<List<(int X, int Y)>> polygons)
@@ -128,25 +127,22 @@ public class DiagnosticVizBuilder : BasicVizBuilder
                 ctx.Draw(Pens.Solid(Color.Green, 1), boundingRect);
             }
 
-            // 4. Draw unmerged text labels in green
-            for (int i = 0; i < _rectangles.Count && i < _recognitionTexts.Count; i++)
+            // 4. Draw individual recognition results from concurrent processing in blue
+            foreach (var (text, bounds) in _individualRecognitionResults)
             {
-                var rect = _rectangles[i];
-                var text = _recognitionTexts[i].Trim();
-
-                if (!string.IsNullOrEmpty(text))
+                if (!string.IsNullOrEmpty(text.Trim()))
                 {
                     // Position text below the rectangle
-                    var textPosition = new PointF(rect.X, rect.Bottom + 2);
+                    var textPosition = new PointF(bounds.X, bounds.Bottom + 2);
 
                     // Draw with white background for readability
-                    var textSize = TextMeasurer.MeasureAdvance(text, new TextOptions(smallFont));
+                    var textSize = TextMeasurer.MeasureAdvance(text.Trim(), new TextOptions(smallFont));
                     var backgroundRect = new RectangleF(textPosition.X - 1, textPosition.Y - 1,
                         textSize.Width + 2, textSize.Height + 2);
                     ctx.Fill(Color.White.WithAlpha(0.8f), backgroundRect);
 
-                    // Draw the text
-                    ctx.DrawText(text, smallFont, Color.Green, textPosition);
+                    // Draw the text in blue to distinguish from batch results
+                    ctx.DrawText(text.Trim(), smallFont, Color.Blue, textPosition);
                 }
             }
         });
