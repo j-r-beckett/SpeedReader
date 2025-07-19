@@ -10,13 +10,13 @@ namespace Ocr.Blocks;
 
 public static class SVTRBlock
 {
-    public static IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> Create(InferenceSession session)
+    public static IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> Create(InferenceSession session, SVTRv2 svtr)
     {
         var aggregatorBlock = new AggregatorBlock<(string, double, TextBoundary, Image<Rgb24>, VizBuilder)>();
         var splitterBlock = CreateSplitterBlock(aggregatorBlock);
-        var preProcessingBlock = CreatePreProcessingBlock();
-        var modelRunnerBlock = CreateModelRunnerBlock(session);
-        var postProcessingBlock = CreatePostProcessingBlock();
+        var preProcessingBlock = CreatePreProcessingBlock(svtr);
+        var modelRunnerBlock = CreateModelRunnerBlock(session, svtr);
+        var postProcessingBlock = CreatePostProcessingBlock(svtr);
         var reconstructorBlock = CreateReconstructorBlock();
 
         splitterBlock.LinkTo(preProcessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
@@ -44,18 +44,18 @@ public static class SVTRBlock
         });
     }
 
-    private static TransformBlock<(TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)> CreatePreProcessingBlock()
+    private static TransformBlock<(TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)> CreatePreProcessingBlock(SVTRv2 svtr)
     {
         return new TransformBlock<(TextBoundary TextBoundary, Image<Rgb24> Image, VizBuilder VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)>(input
-            => (SVTRv2.PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image, input.VizBuilder));
+            => (svtr.PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image, input.VizBuilder));
     }
 
-    private static TransformBlock<(float[], TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
+    private static TransformBlock<(float[], TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session, SVTRv2 svtr)
     {
         return new TransformBlock<(float[] ProcessedRegion, TextBoundary TextBoundary, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)>(input =>
         {
-            // Model input should be [1, 3, 48, 320] - single rectangle, 3 channels, height 48, width 320
-            var inputTensor = Tensor.Create(input.ProcessedRegion, [1, 3, 48, 320]);
+            // Model input should be [1, 3, height, width] - single rectangle, 3 channels, configured dimensions
+            var inputTensor = Tensor.Create(input.ProcessedRegion, [1, 3, svtr.Height, svtr.Width]);
 
             var outputBuffer = ModelRunner.Run(session, inputTensor);
 
@@ -66,11 +66,11 @@ public static class SVTRBlock
         });
     }
 
-    private static TransformBlock<(float[], TextBoundary, Image<Rgb24>, VizBuilder), (string, double, TextBoundary, Image<Rgb24>, VizBuilder)> CreatePostProcessingBlock()
+    private static TransformBlock<(float[], TextBoundary, Image<Rgb24>, VizBuilder), (string, double, TextBoundary, Image<Rgb24>, VizBuilder)> CreatePostProcessingBlock(SVTRv2 svtr)
     {
         return new TransformBlock<(float[] RawResult, TextBoundary TextBoundary, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (string, double, TextBoundary, Image<Rgb24>, VizBuilder)>(input =>
         {
-            var (recognizedText, confidence) = SVTRv2.PostProcess(input.RawResult);
+            var (recognizedText, confidence) = svtr.PostProcess(input.RawResult);
 
             // Add individual recognition result using thread-safe method
             input.VizBuilder.AddRecognitionResult(recognizedText, input.TextBoundary);

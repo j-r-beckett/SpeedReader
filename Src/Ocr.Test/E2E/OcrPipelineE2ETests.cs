@@ -117,8 +117,10 @@ public class OcrPipelineE2ETests
         using var meter = new Meter("Ocr.Test");
 
         // Create pipeline without post-processing merging
-        var dbNetBlock = DBNetBlock.Create(dbnetSession, meter);
-        var svtrBlock = SVTRBlock.Create(svtrSession);
+        var dbNet = new DBNet(new DbNetConfiguration());
+        var svtr = new SVTRv2(new SvtrConfiguration());
+        var dbNetBlock = DBNetBlock.Create(dbnetSession, dbNet, meter);
+        var svtrBlock = SVTRBlock.Create(svtrSession, svtr);
 
         // Use a dictionary to maintain order
         var resultsDict = new Dictionary<Image<Rgb24>, List<(Rectangle Box, string Text)>>();
@@ -273,9 +275,9 @@ public class OcrPipelineE2ETests
         expectedTexts[2].Add("hello");
         boundingBoxes[2].Add(DrawText(images[2], "world", 175, 200));
         expectedTexts[2].Add("world");
-        boundingBoxes[2].Add(DrawText(images[2], "hello", 100, 300));
+        boundingBoxes[2].Add(DrawText(images[2], "hello", 95, 300));
         expectedTexts[2].Add("hello");
-        boundingBoxes[2].Add(DrawText(images[2], "world", 150, 300));
+        boundingBoxes[2].Add(DrawText(images[2], "world", 155, 300));
         expectedTexts[2].Add("world");
         boundingBoxes[2].Add(DrawText(images[2], "goodbye", 500, 100));
         expectedTexts[2].Add("goodbye");
