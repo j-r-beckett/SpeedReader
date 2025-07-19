@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Models;
 using Ocr.Blocks;
@@ -113,9 +114,10 @@ public class OcrPipelineE2ETests
     {
         using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
         using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        using var meter = new Meter("Ocr.Test");
 
         // Create pipeline without post-processing merging
-        var dbNetBlock = DBNetBlock.Create(dbnetSession);
+        var dbNetBlock = DBNetBlock.Create(dbnetSession, meter);
         var svtrBlock = SVTRBlock.Create(svtrSession);
 
         // Use a dictionary to maintain order

@@ -13,7 +13,7 @@ public static class OcrBlock
         InferenceSession svtrSession,
         System.Diagnostics.Metrics.Meter meter)
     {
-        var dbNetBlock = DBNetBlock.Create(dbnetSession);
+        var dbNetBlock = DBNetBlock.Create(dbnetSession, meter);
         var svtrBlock = SVTRBlock.Create(svtrSession);
         var postProcessingBlock = OcrPostProcessingBlock.Create(meter);
 

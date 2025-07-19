@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using CommunityToolkit.HighPerformance;
 using Microsoft.ML.OnnxRuntime;
@@ -9,10 +10,10 @@ namespace Ocr.Blocks;
 
 public static class DBNetBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> Create(InferenceSession session)
+    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> Create(InferenceSession session, Meter meter)
     {
         var preProcessingBlock = CreatePreProcessingBlock();
-        var modelRunnerBlock = CreateModelRunnerBlock(session);
+        var modelRunnerBlock = CreateModelRunnerBlock(session, meter);
         var postProcessingBlock = CreatePostProcessingBlock();
 
         preProcessingBlock.LinkTo(modelRunnerBlock, new DataflowLinkOptions { PropagateCompletion = true });
@@ -28,12 +29,12 @@ public static class DBNetBlock
             => (DBNet.PreProcess(input.Image), input.Image, input.VizBuilder));
     }
 
-    private static IPropagatorBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session)
+    private static IPropagatorBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> CreateModelRunnerBlock(InferenceSession session, Meter meter)
     {
         var splitBlock = new SplitBlock<(float[], Image<Rgb24>, VizBuilder), float[], (Image<Rgb24>, VizBuilder)>(
             input => (input.Item1, (input.Item2, input.Item3)));
 
-        var inferenceBlock = new InferenceBlock(session, [3, 736, 1344]);
+        var inferenceBlock = new InferenceBlock(session, [3, 736, 1344], meter);
 
         var mergeBlock = new MergeBlock<float[], (Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(
             (result, passthrough) => 
