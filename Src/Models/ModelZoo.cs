@@ -7,7 +7,10 @@ public class ModelZoo
 {
     private static readonly Lock s_lock = new();
 
-    public static InferenceSession GetInferenceSession(Model model) => GetInferenceSession(model, new SessionOptions());
+    public static InferenceSession GetInferenceSession(Model model) => GetInferenceSession(model, new SessionOptions
+    {
+        IntraOpNumThreads = Environment.ProcessorCount / 2
+    });
 
     public static InferenceSession GetInferenceSession(Model model, SessionOptions options)
     {
