@@ -6,22 +6,30 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr;
 
-public static class DBNet
+public class DBNet
 {
     private const float BinarizationThreshold = 0.2f;
+    private readonly int _width;
+    private readonly int _height;
 
-    private const int Width = 1344;
-    private const int Height = 736;
-
-    public static float[] PreProcess(Image<Rgb24> image)
+    public DBNet(DbNetConfiguration config)
     {
-        float[] data = new float[Height * Width * 3];
+        _width = config.Width;
+        _height = config.Height;
+    }
+
+    public int Width => _width;
+    public int Height => _height;
+
+    public float[] PreProcess(Image<Rgb24> image)
+    {
+        float[] data = new float[_height * _width * 3];
 
         // Resize
-        Resampling.AspectResizeInto(image, data, Width, Height);
+        Resampling.AspectResizeInto(image, data, _width, _height);
 
         // Convert to CHW format
-        TensorOps.NhwcToNchw(data, [Height, Width, 3]);
+        TensorOps.NhwcToNchw(data, [_height, _width, 3]);
 
         // Apply ImageNet normalization
         float[] means = [123.675f, 116.28f, 103.53f];
@@ -29,7 +37,7 @@ public static class DBNet
 
         for (int channel = 0; channel < 3; channel++)
         {
-            var tensor = Tensor.Create(data, channel * Height * Width, [Height, Width], default);
+            var tensor = Tensor.Create(data, channel * _height * _width, [_height, _width], default);
 
             // Subtract mean and divide by std in place
             Tensor.Subtract(tensor, means[channel], tensor);
@@ -39,10 +47,10 @@ public static class DBNet
         return data;
     }
 
-    public static List<TextBoundary> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
+    public List<TextBoundary> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
     {
         Thresholding.BinarizeInPlace(processedImage, 0.2f);
-        var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(Height, Width);
+        var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(_height, _width);
         var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan);
         List<TextBoundary> textBoundaries = [];
 

@@ -107,18 +107,19 @@ public class TextRecognition
 
         // Process each text boundary individually
         using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        var svtr = new SVTRv2(new SvtrConfiguration());
         foreach (var textBoundary in textBoundaries)
         {
             // Individual preprocessing
-            var processedRegion = SVTRv2.PreProcess(image, textBoundary);
+            var processedRegion = svtr.PreProcess(image, textBoundary);
 
             // Create tensor and run model for single item
-            var inputTensor = Tensor.Create(processedRegion, [1, 3, 48, 320]);
+            var inputTensor = Tensor.Create(processedRegion, [1, 3, svtr.Height, svtr.Width]);
             var rawResult = ModelRunner.Run(session, inputTensor);
 
             // Extract output data and use individual postprocessing
             var outputData = rawResult.AsSpan().ToArray();
-            var (text, _) = SVTRv2.PostProcess(outputData);
+            var (text, _) = svtr.PostProcess(outputData);
 
             results.Add(text);
             rawResult.Dispose();
