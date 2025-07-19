@@ -20,7 +20,7 @@ public class AdaptiveEagerBatchBlock<T>
         var inBlock = new ActionBlock<T>(async input =>
         {
             batchBuilder.Add(input);
-            if (batchBuilder.Count > _softMax)
+            if (batchBuilder.Count >= _softMax)
             {
                 await outBlock.SendAsync(batchBuilder.ToArray());
                 batchBuilder.Clear();
@@ -29,7 +29,10 @@ public class AdaptiveEagerBatchBlock<T>
 
         inBlock.Completion.ContinueWith(async t =>
         {
-            await outBlock.SendAsync(batchBuilder.ToArray());
+            if (batchBuilder.Count > 0)
+            {
+                await outBlock.SendAsync(batchBuilder.ToArray());
+            }
 
             if (t.IsFaulted)
             {
