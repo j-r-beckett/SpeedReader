@@ -69,8 +69,9 @@ The `speedread` binary will be in `Src/Core/bin/Release/net10.0/<platform>/publi
 
 ## Benchmarks
 
-| Date      | Commit | CPU (Cores) | RAM (Gb) | GPU | Throughput (Items / Sec) | Notes |
-|-----------|--------|-------------|----------| --- |--------------------------| ----- |
-| 2025-7-14 | ecba50ed7d7b | 6           | 8        | - | 0.5 | - |
+| Date      | Commit | CPU (Cores) | RAM (Gb) | GPU | Throughput (Items / Sec) | Notes                                               |
+|-----------|--------|-------------|----------| --- |--------------------------|-----------------------------------------------------|
+| 2025-7-14 | ecba50ed7d7b | 6           | 8        | - | 0.5 | -                                                   |
 | 2025-7-18 | 5ccfc1a4d7cb | 6 | 8 | - | 1.1 | DBNet inference w/ size 640x640 instead of 1344x736 |
+| 2025-7-18 | 2ee550e49bb6 | 6 | 8 | - | 5.8 | Turn on ONNX intra-operation parallelism            |
 
