@@ -74,8 +74,8 @@ public class TextDetection
         boundingBoxes[2].Add(DrawText(images[2], "world", 200, 100));
         boundingBoxes[2].Add(DrawText(images[2], "hello", 100, 200));
         boundingBoxes[2].Add(DrawText(images[2], "world", 175, 200));
-        boundingBoxes[2].Add(DrawText(images[2], "hello", 100, 300));
-        boundingBoxes[2].Add(DrawText(images[2], "world", 150, 300));
+        boundingBoxes[2].Add(DrawText(images[2], "hello", 95, 300));
+        boundingBoxes[2].Add(DrawText(images[2], "world", 155, 300));
         boundingBoxes[2].Add(DrawText(images[2], "goodbye", 500, 100));
         boundingBoxes[2].Add(DrawText(images[2], "planet", 500, 200));
         boundingBoxes[2].Add(DrawText(images[2], "goodbye", 600, 100));
@@ -105,21 +105,21 @@ public class TextDetection
         boundingBoxes[0].Add(DrawText(images[0], "side", 100, 650));
         boundingBoxes[0].Add(DrawText(images[0], "edge", 650, 100));
 
-        // Long and short rectangle
-        images[1] = new Image<Rgb24>(2400, 400, Color.White);
+        // Long and short rectangle (3:1 aspect ratio)
+        images[1] = new Image<Rgb24>(1200, 400, Color.White);
         boundingBoxes[1].Add(DrawText(images[1], "wide", 100, 100));
-        boundingBoxes[1].Add(DrawText(images[1], "long", 800, 200));
-        boundingBoxes[1].Add(DrawText(images[1], "stretch", 2000, 100));
-        boundingBoxes[1].Add(DrawText(images[1], "span", 400, 300));
-        boundingBoxes[1].Add(DrawText(images[1], "broad", 1200, 300));
+        boundingBoxes[1].Add(DrawText(images[1], "long", 400, 200));
+        boundingBoxes[1].Add(DrawText(images[1], "stretch", 900, 100));
+        boundingBoxes[1].Add(DrawText(images[1], "span", 300, 300));
+        boundingBoxes[1].Add(DrawText(images[1], "broad", 600, 300));
 
-        // Tall and thin rectangle
-        images[2] = new Image<Rgb24>(400, 1600, Color.White);
+        // Tall and thin rectangle (1:3 aspect ratio)
+        images[2] = new Image<Rgb24>(400, 1200, Color.White);
         boundingBoxes[2].Add(DrawText(images[2], "tall", 100, 100));
-        boundingBoxes[2].Add(DrawText(images[2], "thin", 200, 400));
-        boundingBoxes[2].Add(DrawText(images[2], "high", 100, 800));
-        boundingBoxes[2].Add(DrawText(images[2], "long", 200, 1200));
-        boundingBoxes[2].Add(DrawText(images[2], "slim", 100, 1500));
+        boundingBoxes[2].Add(DrawText(images[2], "thin", 200, 300));
+        boundingBoxes[2].Add(DrawText(images[2], "high", 100, 600));
+        boundingBoxes[2].Add(DrawText(images[2], "long", 200, 900));
+        boundingBoxes[2].Add(DrawText(images[2], "slim", 100, 1100));
 
         await TestTextDetection(images, boundingBoxes);
     }
@@ -171,20 +171,21 @@ public class TextDetection
     {
         var results = new List<TextBoundary>[images.Length];
         var session = ModelZoo.GetInferenceSession(Model.DbNet18);
+        var dbNet = new DBNet(new DbNetConfiguration());
 
         for (int i = 0; i < images.Length; i++)
         {
             // Use individual preprocessing
-            var processedImage = DBNet.PreProcess(images[i]);
+            var processedImage = dbNet.PreProcess(images[i]);
 
             // Create tensor and run model
-            var inputTensor = Tensor.Create(processedImage, [1, 3, 736, 1344]);
+            var inputTensor = Tensor.Create(processedImage, [1, 3, dbNet.Height, dbNet.Width]);
             var rawResult = ModelRunner.Run(session, inputTensor);
 
             // Extract output data and binarize for connected component analysis
             var outputData = rawResult.AsSpan().ToArray();
             Algorithms.Thresholding.BinarizeInPlace(outputData, 0.2f);
-            results[i] = DBNet.PostProcess(outputData, images[i].Width, images[i].Height);
+            results[i] = dbNet.PostProcess(outputData, images[i].Width, images[i].Height);
 
             rawResult.Dispose();
         }

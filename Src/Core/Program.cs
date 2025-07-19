@@ -104,7 +104,7 @@ public class Program
             var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
             var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
-            var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, meter);
+            var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
             await using var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
 
             // Create VizBuilder and process through bridge
@@ -152,7 +152,7 @@ public class Program
         var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
 
         // Create singleton OCR bridge
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, meter);
+        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
         var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
 
         // Create minimal web app
