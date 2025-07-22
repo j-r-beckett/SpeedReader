@@ -118,7 +118,7 @@ public class OcrPipelineE2ETests
 
         // Create pipeline without post-processing merging
         var dbNetBlock = new DBNetBlock(dbnetSession, new DbNetConfiguration(), meter);
-        var svtrBlock = new SVTRBlock(svtrSession, new SvtrConfiguration());
+        var svtrBlock = new SVTRBlock(svtrSession, new SvtrConfiguration(), meter);
 
         // Use a dictionary to maintain order
         var resultsDict = new Dictionary<Image<Rgb24>, List<(Rectangle Box, string Text)>>();

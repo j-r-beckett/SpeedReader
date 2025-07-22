@@ -15,7 +15,7 @@ public static class OcrBlock
         System.Diagnostics.Metrics.Meter meter)
     {
         var dbNetBlock = new DBNetBlock(dbnetSession, config.DbNet, meter);
-        var svtrBlock = new SVTRBlock(svtrSession, config.Svtr);
+        var svtrBlock = new SVTRBlock(svtrSession, config.Svtr, meter);
         var postProcessingBlock = OcrPostProcessingBlock.Create(meter);
 
         dbNetBlock.Target.LinkTo(svtrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });

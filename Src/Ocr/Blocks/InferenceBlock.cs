@@ -9,16 +9,16 @@ public class InferenceBlock
 {
     public IPropagatorBlock<float[], float[]> Target;
 
-    public InferenceBlock(InferenceSession onnxSession, nint[] elementShape, Meter meter)
+    public InferenceBlock(InferenceSession onnxSession, nint[] elementShape, Meter meter, string modelPrefix)
     {
         Debug.Assert(elementShape.Length == 3, "Each element should have three dimensions");
 
         // Turn batching on here
         var batchBlock = new AdaptiveEagerBatchBlock<float[]>(1, -1);
 
-        var inferenceTimeHistogram = meter.CreateHistogram<double>("inference_time_ms", "ms", "Time spent in ONNX inference");
-        var batchSizeHistogram = meter.CreateHistogram<int>("inference_batch_size", description: "Number of items processed in each inference batch");
-        var itemsProcessedCounter = meter.CreateCounter<long>("inference_items_processed", description: "Total number of items processed through inference");
+        var inferenceTimeHistogram = meter.CreateHistogram<double>($"{modelPrefix}_inference_time_ms", "ms", $"Time spent in {modelPrefix.ToUpper()} ONNX inference");
+        var batchSizeHistogram = meter.CreateHistogram<int>($"{modelPrefix}_inference_batch_size", description: $"Number of items processed in each {modelPrefix.ToUpper()} inference batch");
+        var itemsProcessedCounter = meter.CreateCounter<long>($"{modelPrefix}_inference_items_processed", description: $"Total number of items processed through {modelPrefix.ToUpper()} inference");
 
         var preprocessingBlock = new TransformBlock<float[][], OrtValue>(inputs =>
         {

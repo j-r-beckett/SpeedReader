@@ -1,4 +1,4 @@
-using System.Numerics.Tensors;
+using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
 using SixLabors.ImageSharp;
@@ -9,29 +9,22 @@ namespace Ocr.Blocks;
 
 public class SVTRModelRunnerBlock
 {
-    private readonly int _width;
-    private readonly int _height;
-    private readonly InferenceSession _session;
-
     public IPropagatorBlock<(float[], TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)> Target { get; }
 
-    public SVTRModelRunnerBlock(InferenceSession session, SvtrConfiguration config)
+    public SVTRModelRunnerBlock(InferenceSession session, SvtrConfiguration config, Meter meter)
     {
-        _session = session;
-        _width = config.Width;
-        _height = config.Height;
+        var splitBlock = new SplitBlock<(float[], TextBoundary, Image<Rgb24>, VizBuilder), float[], (TextBoundary, Image<Rgb24>, VizBuilder)>(
+            input => (input.Item1, (input.Item2, input.Item3, input.Item4)));
 
-        Target = new TransformBlock<(float[] ProcessedRegion, TextBoundary TextBoundary, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)>(input =>
-        {
-            // Model input should be [1, 3, height, width] - single rectangle, 3 channels, configured dimensions
-            var inputTensor = Tensor.Create(input.ProcessedRegion, [1, 3, _height, _width]);
+        var inferenceBlock = new InferenceBlock(session, [3, config.Height, config.Width], meter, "svtr");
 
-            var outputBuffer = ModelRunner.Run(_session, inputTensor);
+        var mergeBlock = new MergeBlock<float[], (TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)>(
+            (result, passthrough) => (result, passthrough.Item1, passthrough.Item2, passthrough.Item3));
 
-            float[] outputData = outputBuffer.AsSpan().ToArray();
-            outputBuffer.Dispose();
+        splitBlock.LeftSource.LinkTo(inferenceBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
+        splitBlock.RightSource.LinkTo(mergeBlock.RightTarget, new DataflowLinkOptions { PropagateCompletion = true });
+        inferenceBlock.Target.LinkTo(mergeBlock.LeftTarget, new DataflowLinkOptions { PropagateCompletion = true });
 
-            return (outputData, input.TextBoundary, input.OriginalImage, input.VizBuilder);
-        });
+        Target = DataflowBlock.Encapsulate(splitBlock.Target, mergeBlock.Source);
     }
 }
