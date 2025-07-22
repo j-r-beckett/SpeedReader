@@ -1,53 +1,39 @@
-using System.Numerics.Tensors;
+using System.Threading.Tasks.Dataflow;
 using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Ocr.Visualization;
 
-namespace Ocr;
+namespace Ocr.Blocks;
 
-public class DBNet
+public class DBNetPostprocessingBlock
 {
-    private const float BinarizationThreshold = 0.2f;
     private readonly int _width;
     private readonly int _height;
 
-    public DBNet(DbNetConfiguration config)
+    public IPropagatorBlock<(float[], Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> Target { get; }
+
+    public DBNetPostprocessingBlock(DbNetConfiguration config)
     {
         _width = config.Width;
         _height = config.Height;
-    }
 
-    public int Width => _width;
-    public int Height => _height;
-
-    public float[] PreProcess(Image<Rgb24> image)
-    {
-        float[] data = new float[_height * _width * 3];
-
-        // Resize
-        Resampling.AspectResizeInto(image, data, _width, _height);
-
-        // Convert to CHW format
-        TensorOps.NhwcToNchw(data, [_height, _width, 3]);
-
-        // Apply ImageNet normalization
-        float[] means = [123.675f, 116.28f, 103.53f];
-        float[] stds = [58.395f, 57.12f, 57.375f];
-
-        for (int channel = 0; channel < 3; channel++)
+        Target = new TransformBlock<(float[] RawResult, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)>(input =>
         {
-            var tensor = Tensor.Create(data, channel * _height * _width, [_height, _width], default);
+            // Add raw probability map to visualization BEFORE binarization
+            input.VizBuilder.AddProbabilityMap(input.RawResult.AsSpan().AsSpan2D(_height, _width));
 
-            // Subtract mean and divide by std in place
-            Tensor.Subtract(tensor, means[channel], tensor);
-            Tensor.Divide(tensor, stds[channel], tensor);
-        }
+            var textBoundaries = PostProcess(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 
-        return data;
+            input.VizBuilder.AddRectangles(textBoundaries.Select(tb => tb.AARectangle).ToList());
+            input.VizBuilder.AddPolygons(textBoundaries.Select(tb => tb.Polygon).ToList());
+
+            return (textBoundaries, input.OriginalImage, input.VizBuilder);
+        });
     }
 
-    public List<TextBoundary> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
+    private List<TextBoundary> PostProcess(float[] processedImage, int originalWidth, int originalHeight)
     {
         Thresholding.BinarizeInPlace(processedImage, 0.2f);
         var probabilityMapSpan = processedImage.AsSpan().AsSpan2D(_height, _width);
@@ -105,29 +91,5 @@ public class DBNet
             int clampedY = Math.Max(0, Math.Min(imageHeight - 1, polygon[i].Y));
             polygon[i] = (clampedX, clampedY);
         }
-    }
-
-    internal static Rectangle GetBoundingBox(List<(int X, int Y)> polygon, int imageWidth, int imageHeight)
-    {
-        int maxX = int.MinValue;
-        int maxY = int.MinValue;
-        int minX = int.MaxValue;
-        int minY = int.MaxValue;
-
-        foreach ((int x, int y) in polygon)
-        {
-            maxX = Math.Max(maxX, x);
-            maxY = Math.Max(maxY, y);
-            minX = Math.Min(minX, x);
-            minY = Math.Min(minY, y);
-        }
-
-        // Clamp coordinates to image bounds
-        minX = Math.Max(0, minX);
-        minY = Math.Max(0, minY);
-        maxX = Math.Min(imageWidth - 1, maxX);
-        maxY = Math.Min(imageHeight - 1, maxY);
-
-        return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
 }

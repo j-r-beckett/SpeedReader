@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Numerics.Tensors;
 using Models;
+using Ocr.Blocks;
+using Ocr.Visualization;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -128,7 +131,7 @@ public class TextDetection
     {
         Debug.Assert(images.Length == expectedBoundingBoxes.Length);
 
-        var actualBoundingBoxes = RunTextDetection(images);
+        var actualBoundingBoxes = await RunTextDetection(images);
 
         for (int i = 0; i < images.Length; i++)
         {
@@ -167,30 +170,30 @@ public class TextDetection
             (int)Math.Ceiling(Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2)));
     }
 
-    private static List<TextBoundary>[] RunTextDetection(Image<Rgb24>[] images)
+    private static async Task<List<TextBoundary>[]> RunTextDetection(Image<Rgb24>[] images)
     {
-        var results = new List<TextBoundary>[images.Length];
-        var session = ModelZoo.GetInferenceSession(Model.DbNet18);
-        var dbNet = new DBNet(new DbNetConfiguration());
+        using var session = ModelZoo.GetInferenceSession(Model.DbNet18);
+        using var meter = new Meter("TextDetection.Test");
+        
+        var dbNetBlock = new DBNetBlock(session, new DbNetConfiguration(), meter);
+        await using var bridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)>(dbNetBlock.Target);
 
+        var tasks = new Task<Task<(List<TextBoundary>, Image<Rgb24>, VizBuilder)>>[images.Length];
+        
         for (int i = 0; i < images.Length; i++)
         {
-            // Use individual preprocessing
-            var processedImage = dbNet.PreProcess(images[i]);
-
-            // Create tensor and run model
-            var inputTensor = Tensor.Create(processedImage, [1, 3, dbNet.Height, dbNet.Width]);
-            var rawResult = ModelRunner.Run(session, inputTensor);
-
-            // Extract output data and binarize for connected component analysis
-            var outputData = rawResult.AsSpan().ToArray();
-            Algorithms.Thresholding.BinarizeInPlace(outputData, 0.2f);
-            results[i] = dbNet.PostProcess(outputData, images[i].Width, images[i].Height);
-
-            rawResult.Dispose();
+            var vizBuilder = VizBuilder.Create(VizMode.None, images[i]);
+            tasks[i] = bridge.ProcessAsync((images[i], vizBuilder), CancellationToken.None, CancellationToken.None);
         }
 
-        return results;
+        var innerTasks = new Task<(List<TextBoundary>, Image<Rgb24>, VizBuilder)>[images.Length];
+        for (int i = 0; i < images.Length; i++)
+        {
+            innerTasks[i] = await tasks[i];
+        }
+        
+        var results = await Task.WhenAll(innerTasks);
+        return results.Select(r => r.Item1).ToArray();
     }
 
     private Rectangle DrawText(Image image, string text, int x, int y)
