@@ -117,10 +117,8 @@ public class OcrPipelineE2ETests
         using var meter = new Meter("Ocr.Test");
 
         // Create pipeline without post-processing merging
-        var dbNet = new DBNet(new DbNetConfiguration());
-        var svtr = new SVTRv2(new SvtrConfiguration());
-        var dbNetBlock = DBNetBlock.Create(dbnetSession, dbNet, meter);
-        var svtrBlock = SVTRBlock.Create(svtrSession, svtr);
+        var dbNetBlock = new DBNetBlock(dbnetSession, new DbNetConfiguration(), meter);
+        var svtrBlock = new SVTRBlock(svtrSession, new SvtrConfiguration());
 
         // Use a dictionary to maintain order
         var resultsDict = new Dictionary<Image<Rgb24>, List<(Rectangle Box, string Text)>>();
@@ -146,18 +144,18 @@ public class OcrPipelineE2ETests
             }
         });
 
-        dbNetBlock.LinkTo(svtrBlock, new DataflowLinkOptions { PropagateCompletion = true });
-        svtrBlock.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
+        dbNetBlock.Target.LinkTo(svtrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
+        svtrBlock.Target.LinkTo(resultCollector, new DataflowLinkOptions { PropagateCompletion = true });
 
         // Send all images through the pipeline
         foreach (var image in images)
         {
             // Create VizBuilder and send to pipeline (same pattern as CLI)
             var vizBuilder = VizBuilder.Create(VizMode.None, image);
-            await dbNetBlock.SendAsync((image, vizBuilder));
+            await dbNetBlock.Target.SendAsync((image, vizBuilder));
         }
 
-        dbNetBlock.Complete();
+        dbNetBlock.Target.Complete();
         await resultCollector.Completion;
 
         // Return results in the same order as input images
