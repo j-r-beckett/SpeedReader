@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Numerics.Tensors;
 using Models;
 using Ocr.Blocks;
@@ -106,8 +107,9 @@ public class TextRecognition
         }).ToList();
 
         using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        using var meter = new Meter("TextRecognition.Test");
         
-        var svtrBlock = new SVTRBlock(session, new SvtrConfiguration());
+        var svtrBlock = new SVTRBlock(session, new SvtrConfiguration(), meter);
         await using var bridge = new DataflowBridge<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
 
         var vizBuilder = VizBuilder.Create(VizMode.None, image);

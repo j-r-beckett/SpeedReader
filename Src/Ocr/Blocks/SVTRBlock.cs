@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Visualization;
@@ -11,12 +12,12 @@ public class SVTRBlock
 {
     public IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> Target { get; }
 
-    public SVTRBlock(InferenceSession session, SvtrConfiguration config)
+    public SVTRBlock(InferenceSession session, SvtrConfiguration config, Meter meter)
     {
         var aggregatorBlock = new AggregatorBlock<(string, double, TextBoundary, Image<Rgb24>, VizBuilder)>();
         var splitterBlock = CreateSplitterBlock(aggregatorBlock);
         var preprocessingBlock = new SVTRPreprocessingBlock(config);
-        var modelRunnerBlock = new SVTRModelRunnerBlock(session, config);
+        var modelRunnerBlock = new SVTRModelRunnerBlock(session, config, meter);
         var postprocessingBlock = new SVTRPostprocessingBlock();
         var reconstructorBlock = CreateReconstructorBlock();
 
