@@ -14,16 +14,13 @@ public static class OcrBlock
         OcrConfiguration config,
         System.Diagnostics.Metrics.Meter meter)
     {
-        var dbNet = new DBNet(config.DbNet);
-        var svtr = new SVTRv2(config.Svtr);
-        
-        var dbNetBlock = DBNetBlock.Create(dbnetSession, dbNet, meter);
-        var svtrBlock = SVTRBlock.Create(svtrSession, svtr);
+        var dbNetBlock = new DBNetBlock(dbnetSession, config.DbNet, meter);
+        var svtrBlock = new SVTRBlock(svtrSession, config.Svtr);
         var postProcessingBlock = OcrPostProcessingBlock.Create(meter);
 
-        dbNetBlock.LinkTo(svtrBlock, new DataflowLinkOptions { PropagateCompletion = true });
-        svtrBlock.LinkTo(postProcessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
+        dbNetBlock.Target.LinkTo(svtrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
+        svtrBlock.Target.LinkTo(postProcessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-        return DataflowBlock.Encapsulate(dbNetBlock, postProcessingBlock);
+        return DataflowBlock.Encapsulate(dbNetBlock.Target, postProcessingBlock);
     }
 }

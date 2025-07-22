@@ -1,26 +1,30 @@
 using System.Numerics.Tensors;
+using System.Threading.Tasks.Dataflow;
 using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Ocr.Visualization;
 
-namespace Ocr;
+namespace Ocr.Blocks;
 
-public class SVTRv2
+public class SVTRPreprocessingBlock
 {
     private readonly int _width;
     private readonly int _height;
 
-    public SVTRv2(SvtrConfiguration config)
+    public IPropagatorBlock<(TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)> Target { get; }
+
+    public SVTRPreprocessingBlock(SvtrConfiguration config)
     {
         _width = config.Width;
         _height = config.Height;
+
+        Target = new TransformBlock<(TextBoundary TextBoundary, Image<Rgb24> Image, VizBuilder VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)>(input
+            => (PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image, input.VizBuilder));
     }
 
-    public int Width => _width;
-    public int Height => _height;
-
-    public float[] PreProcess(Image<Rgb24> image, TextBoundary textBoundary)
+    private float[] PreProcess(Image<Rgb24> image, TextBoundary textBoundary)
     {
         float[] data = new float[_height * _width * 3];
 
@@ -42,11 +46,5 @@ public class SVTRv2
         }
 
         return data;
-    }
-
-
-    public (string text, double confidence) PostProcess(float[] modelOutput)
-    {
-        return CTC.DecodeSingleSequence(modelOutput, CharacterDictionary.Count);
     }
 }

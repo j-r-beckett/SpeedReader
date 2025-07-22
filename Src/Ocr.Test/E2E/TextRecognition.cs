@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 using Models;
+using Ocr.Blocks;
+using Ocr.Visualization;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -79,7 +81,7 @@ public class TextRecognition
     {
         Debug.Assert(boundingBoxes.Count == expectedTexts.Count);
 
-        var actualTexts = RunTextRecognition(image, boundingBoxes);
+        var actualTexts = await RunTextRecognition(image, boundingBoxes);
 
         await SaveDebugImage(image, boundingBoxes, actualTexts);
 
@@ -91,7 +93,7 @@ public class TextRecognition
         }
     }
 
-    private static string[] RunTextRecognition(Image<Rgb24> image, List<Rectangle> boundingBoxes)
+    private static async Task<string[]> RunTextRecognition(Image<Rgb24> image, List<Rectangle> boundingBoxes)
     {
         // Convert rectangles to TextBoundary objects
         var textBoundaries = boundingBoxes.Select(r =>
@@ -103,29 +105,16 @@ public class TextRecognition
             return TextBoundary.Create(polygon);
         }).ToList();
 
-        var results = new List<string>();
-
-        // Process each text boundary individually
         using var session = ModelZoo.GetInferenceSession(Model.SVTRv2);
-        var svtr = new SVTRv2(new SvtrConfiguration());
-        foreach (var textBoundary in textBoundaries)
-        {
-            // Individual preprocessing
-            var processedRegion = svtr.PreProcess(image, textBoundary);
+        
+        var svtrBlock = new SVTRBlock(session, new SvtrConfiguration());
+        await using var bridge = new DataflowBridge<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
 
-            // Create tensor and run model for single item
-            var inputTensor = Tensor.Create(processedRegion, [1, 3, svtr.Height, svtr.Width]);
-            var rawResult = ModelRunner.Run(session, inputTensor);
-
-            // Extract output data and use individual postprocessing
-            var outputData = rawResult.AsSpan().ToArray();
-            var (text, _) = svtr.PostProcess(outputData);
-
-            results.Add(text);
-            rawResult.Dispose();
-        }
-
-        return results.ToArray();
+        var vizBuilder = VizBuilder.Create(VizMode.None, image);
+        var processTask = bridge.ProcessAsync((textBoundaries, image, vizBuilder), CancellationToken.None, CancellationToken.None);
+        
+        var result = await (await processTask);
+        return result.Item3.ToArray();
     }
 
     private Rectangle DrawText(Image image, string text, int x, int y)
