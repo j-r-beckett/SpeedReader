@@ -11,12 +11,12 @@ public class DBNetModelRunnerBlock
 {
     public IPropagatorBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> Target { get; }
 
-    public DBNetModelRunnerBlock(InferenceSession session, DbNetConfiguration config, Meter meter)
+    public DBNetModelRunnerBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {
         var splitBlock = new SplitBlock<(float[], Image<Rgb24>, VizBuilder), float[], (Image<Rgb24>, VizBuilder)>(
             input => (input.Item1, (input.Item2, input.Item3)));
 
-        var inferenceBlock = new InferenceBlock(session, [3, config.Height, config.Width], meter, "dbnet");
+        var inferenceBlock = new InferenceBlock(session, [3, config.DbNet.Height, config.DbNet.Width], meter, "dbnet", config.CacheFirstInference);
 
         var mergeBlock = new MergeBlock<float[], (Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(
             (result, passthrough) => (result, passthrough.Item1, passthrough.Item2));
