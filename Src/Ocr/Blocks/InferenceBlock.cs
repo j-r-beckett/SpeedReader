@@ -9,7 +9,7 @@ public class InferenceBlock
 {
     public IPropagatorBlock<float[], float[]> Target;
 
-    public InferenceBlock(InferenceSession onnxSession, nint[] elementShape, Meter meter, string modelPrefix)
+    public InferenceBlock(InferenceSession onnxSession, nint[] elementShape, Meter meter, string modelPrefix, bool cacheFirstInference = false)
     {
         Debug.Assert(elementShape.Length == 3, "Each element should have three dimensions");
 
@@ -19,6 +19,10 @@ public class InferenceBlock
         var inferenceTimeHistogram = meter.CreateHistogram<double>($"{modelPrefix}_inference_time_ms", "ms", $"Time spent in {modelPrefix.ToUpper()} ONNX inference");
         var batchSizeHistogram = meter.CreateHistogram<int>($"{modelPrefix}_inference_batch_size", description: $"Number of items processed in each {modelPrefix.ToUpper()} inference batch");
         var itemsProcessedCounter = meter.CreateCounter<long>($"{modelPrefix}_inference_items_processed", description: $"Total number of items processed through {modelPrefix.ToUpper()} inference");
+
+        // Cache state for first inference result
+        float[]? cachedData = null;
+        long[]? cachedShape = null;
 
         var preprocessingBlock = new TransformBlock<float[][], OrtValue>(inputs =>
         {
@@ -41,9 +45,29 @@ public class InferenceBlock
 
             var stopwatch = Stopwatch.StartNew();
 
-            var inputs = new Dictionary<string, OrtValue> { { "input", input } };
-            using var runOptions = new RunOptions();
-            var outputs = onnxSession.Run(runOptions, inputs, onnxSession.OutputNames);
+            OrtValue output;
+
+            if (cachedData != null)
+            {
+                float[] outputData = (float[])cachedData.Clone();
+                long[] outputShape = (long[])cachedShape!.Clone();
+                output = OrtValue.CreateTensorValueFromMemory(outputData, outputShape);
+            }
+            else
+            {
+                // Create output tensor by calling onnxSession.Run()
+                var inputs = new Dictionary<string, OrtValue> { { "input", input } };
+                using var runOptions = new RunOptions();
+                var outputs = onnxSession.Run(runOptions, inputs, onnxSession.OutputNames);
+                output = outputs[0];
+
+                // Cache first result if caching is enabled
+                if (cacheFirstInference)
+                {
+                    cachedData = output.GetTensorDataAsSpan<float>().ToArray();
+                    cachedShape = (long[])output.GetTensorTypeAndShape().Shape.Clone();
+                }
+            }
 
             stopwatch.Stop();
             var inferenceTimeMs = stopwatch.Elapsed.TotalMilliseconds;
@@ -51,7 +75,7 @@ public class InferenceBlock
 
             itemsProcessedCounter.Add(batchSize);
 
-            return outputs[0];  // One output b/c input dict has one element
+            return output;
         });
 
         var postprocessingBlock = new TransformManyBlock<OrtValue, float[]>(tensor =>

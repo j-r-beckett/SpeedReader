@@ -12,11 +12,11 @@ public class SVTRBlock
 {
     public IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> Target { get; }
 
-    public SVTRBlock(InferenceSession session, SvtrConfiguration config, Meter meter)
+    public SVTRBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {
         var aggregatorBlock = new AggregatorBlock<(string, double, TextBoundary, Image<Rgb24>, VizBuilder)>();
         var splitterBlock = CreateSplitterBlock(aggregatorBlock);
-        var preprocessingBlock = new SVTRPreprocessingBlock(config);
+        var preprocessingBlock = new SVTRPreprocessingBlock(config.Svtr);
         var modelRunnerBlock = new SVTRModelRunnerBlock(session, config, meter);
         var postprocessingBlock = new SVTRPostprocessingBlock();
         var reconstructorBlock = CreateReconstructorBlock();
