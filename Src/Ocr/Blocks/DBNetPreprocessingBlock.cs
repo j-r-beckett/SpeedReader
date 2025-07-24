@@ -21,7 +21,10 @@ public class DBNetPreprocessingBlock
         _height = config.Height;
 
         Target = new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input
-            => (PreProcess(input.Image), input.Image, input.VizBuilder));
+            => (PreProcess(input.Image), input.Image, input.VizBuilder), new ExecutionDataflowBlockOptions
+        {
+            BoundedCapacity = Environment.ProcessorCount
+        });
     }
 
     private float[] PreProcess(Image<Rgb24> image)

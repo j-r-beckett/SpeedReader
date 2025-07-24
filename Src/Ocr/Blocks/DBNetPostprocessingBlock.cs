@@ -30,6 +30,9 @@ public class DBNetPostprocessingBlock
             input.VizBuilder.AddPolygons(textBoundaries.Select(tb => tb.Polygon).ToList());
 
             return (textBoundaries, input.OriginalImage, input.VizBuilder);
+        }, new ExecutionDataflowBlockOptions
+        {
+            BoundedCapacity = Environment.ProcessorCount
         });
     }
 
