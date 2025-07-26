@@ -1,3 +1,4 @@
+using Resources;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -20,19 +21,7 @@ public class OcrE2ETests
 
     private static Font GetTestFont()
     {
-        if (!SystemFonts.TryGet("Arial", out var fontFamily))
-        {
-            var defaultFontFamily = SystemFonts.Families.FirstOrDefault();
-            if (defaultFontFamily != default)
-            {
-                fontFamily = defaultFontFamily;
-            }
-            else
-            {
-                throw new Exception("Failed to load font");
-            }
-        }
-        return fontFamily.CreateFont(18);
+        return Fonts.GetFont(fontSize: 24f);
     }
 
     private Rectangle DrawText(Image image, string text, int x, int y)
