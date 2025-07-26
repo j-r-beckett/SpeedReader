@@ -33,12 +33,12 @@ public class ModelProvider : IDisposable
     public void Dispose()
     {
         if (_disposed) return;
-        
+
         foreach (var session in _sessions.Values)
         {
             session.Dispose();
         }
-        
+
         _sessions.Clear();
         _disposed = true;
     }

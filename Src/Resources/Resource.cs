@@ -15,14 +15,14 @@ public static class Resource
     private static byte[] LoadResource(string resourceName)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        
+
         using var stream = assembly.GetManifestResourceStream($"Resources.{resourceName}");
         if (stream == null)
             throw new FileNotFoundException($"Embedded resource 'Resources.{resourceName}' not found");
 
         var bytes = new byte[stream.Length];
         stream.ReadExactly(bytes);
-        
+
         return bytes;
     }
 }

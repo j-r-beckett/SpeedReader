@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
-using Resources;
 using Ocr;
 using Ocr.Blocks;
 using Ocr.Visualization;
 using Prometheus;
+using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
