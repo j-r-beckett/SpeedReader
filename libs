@@ -1,0 +1,19 @@
+
+    ca-certificates
+    libc6
+    libgcc1 (for 16.x and 18.x)
+    libgcc-s1 (for 20.x or later)
+    libgssapi-krb5-2
+    libicu55 (for 16.x)
+    libicu60 (for 18.x)
+    libicu66 (for 20.x)
+    libicu70 (for 22.04)
+    libicu72 (for 23.10)
+    libicu74 (for 24.04 or later)
+    liblttng-ust1 (for 22.x or later)
+    libssl1.0.0 (for 16.x)
+    libssl1.1 (for 18.x, 20.x)
+    libssl3 (for 22.x or later)
+    libstdc++6
+    zlib1g
+
