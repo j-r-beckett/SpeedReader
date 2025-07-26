@@ -6,7 +6,7 @@ obj/
 Src/Resources/models/
 
 # Generated ffmpeg binaries
-Src/Core/binaries
+Src/Resources/binaries/
 
 # Rider
 .idea/

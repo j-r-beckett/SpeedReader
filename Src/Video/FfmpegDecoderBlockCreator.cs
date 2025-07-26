@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CliWrap;
+using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -14,9 +15,9 @@ public class FfmpegDecoderBlockCreator
 {
     private readonly string _binaryPath;
 
-    public FfmpegDecoderBlockCreator(string binaryPath)
+    public FfmpegDecoderBlockCreator()
     {
-        _binaryPath = binaryPath;
+        _binaryPath = FFmpegBinaries.GetFFmpegPath();
     }
 
     public ISourceBlock<Image<Rgb24>> CreateFfmpegDecoderBlock(Stream videoData, int sampleRate, CancellationToken cancellationToken)
@@ -30,7 +31,7 @@ public class FfmpegDecoderBlockCreator
         {
             try
             {
-                var (width, height) = await new FFProbe().GetVideoDimensions(videoData, cancellationToken);
+                var (width, height) = await new FFProbe(FFmpegBinaries.GetFFprobePath()).GetVideoDimensions(videoData, cancellationToken);
                 videoData.Seek(0, SeekOrigin.Begin);
 
                 var streamingTarget = new StreamingPipeTarget();

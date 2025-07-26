@@ -1,30 +1,47 @@
 using System.Diagnostics;
-using System.Reflection;
 
-namespace Core;
+namespace Resources;
 
-public static class FFmpegResolver
+public static class FFmpegBinaries
 {
-    private static string? _ffmpegPath;
-    private static string? _ffprobePath;
+    public static string GetFFmpegPath() => BinaryResolver.GetBinaryPath(FFmpegBinary.FFmpeg);
+    public static string GetFFprobePath() => BinaryResolver.GetBinaryPath(FFmpegBinary.FFprobe);
+}
 
-    public static string GetFFmpegPath()
+public enum FFmpegBinary 
+{
+    FFmpeg,
+    FFprobe
+}
+
+internal static class BinaryResolver
+{
+    private static readonly Dictionary<FFmpegBinary, string> _cachedPaths = new();
+    private static readonly Lock _lock = new();
+
+    public static string GetBinaryPath(FFmpegBinary binary)
     {
-        if (_ffmpegPath != null)
-            return _ffmpegPath;
+        if (_cachedPaths.TryGetValue(binary, out var cachedPath))
+            return cachedPath;
 
-        _ffmpegPath = ResolveBinary("ffmpeg");
-        return _ffmpegPath;
+        lock (_lock)
+        {
+            // Double-check after acquiring lock
+            if (_cachedPaths.TryGetValue(binary, out cachedPath))
+                return cachedPath;
+
+            var resolvedPath = ResolveBinary(GetBinaryName(binary));
+            _cachedPaths[binary] = resolvedPath;
+            return resolvedPath;
+        }
     }
 
-    public static string GetFFprobePath()
+    private static string GetBinaryName(FFmpegBinary binary) => binary switch
     {
-        if (_ffprobePath != null)
-            return _ffprobePath;
-
-        _ffprobePath = ResolveBinary("ffprobe");
-        return _ffprobePath;
-    }
+        FFmpegBinary.FFmpeg => "ffmpeg",
+        FFmpegBinary.FFprobe => "ffprobe",
+        _ => throw new ArgumentException($"Unknown binary {binary}")
+    };
 
     private static string ResolveBinary(string binaryName)
     {
@@ -140,14 +157,8 @@ public static class FFmpegResolver
 
     private static void ExtractEmbeddedBinary(string binaryName, string targetPath)
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        var resourceName = $"Core.binaries.{binaryName}";
-
-        using var stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream == null)
-        {
-            throw new FileNotFoundException($"Embedded resource '{resourceName}' not found");
-        }
+        var resourceName = $"binaries.{binaryName}";
+        var data = Resource.GetBytes(resourceName);
 
         // Ensure target directory exists
         var targetDir = Path.GetDirectoryName(targetPath);
@@ -157,8 +168,7 @@ public static class FFmpegResolver
         }
 
         // Extract binary to target path
-        using var fileStream = File.Create(targetPath);
-        stream.CopyTo(fileStream);
+        File.WriteAllBytes(targetPath, data);
 
         // Make executable on Unix systems
         if (Environment.OSVersion.Platform == PlatformID.Unix)
