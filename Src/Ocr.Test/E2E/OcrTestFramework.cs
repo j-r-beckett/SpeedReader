@@ -1,5 +1,5 @@
 using System.Diagnostics.Metrics;
-using Models;
+using Resources;
 using Ocr.Blocks;
 using Ocr.Visualization;
 using SixLabors.Fonts;

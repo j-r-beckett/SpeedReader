@@ -3,7 +3,7 @@ bin/
 obj/
 
 # Generated models
-Src/Models/models/
+Src/Resources/models/
 
 # Generated ffmpeg binaries
 Src/Core/binaries
