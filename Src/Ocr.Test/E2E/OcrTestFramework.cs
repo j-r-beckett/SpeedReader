@@ -1,8 +1,8 @@
 using System.Diagnostics.Metrics;
 using Core;
-using Resources;
 using Ocr.Blocks;
 using Ocr.Visualization;
+using Resources;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;

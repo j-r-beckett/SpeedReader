@@ -36,7 +36,7 @@ public class SVTRBlock
         {
             // Send batch size to aggregator
             await aggregatorBlock.BatchSizeTarget.SendAsync(input.TextBoundaries.Count);
-            
+
             var results = new List<(TextBoundary, Image<Rgb24>, VizBuilder)>();
             foreach (var boundary in input.TextBoundaries)
             {
@@ -70,7 +70,7 @@ public class SVTRBlock
                 // Verify all items share the same Image and VizBuilder references
                 Debug.Assert(ReferenceEquals(item.Image, image), "All items must share the same Image reference");
                 Debug.Assert(ReferenceEquals(item.VizBuilder, vizBuilder), "All items must share the same VizBuilder reference");
-                
+
                 texts.Add(item.Text);
                 confidences.Add(item.Confidence);
                 boundaries.Add(item.TextBoundary);
