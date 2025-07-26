@@ -4,8 +4,11 @@ namespace Resources;
 
 public static class FFmpegBinaries
 {
-    public static string GetFFmpegPath() => BinaryResolver.GetBinaryPath(FFmpegBinary.FFmpeg);
-    public static string GetFFprobePath() => BinaryResolver.GetBinaryPath(FFmpegBinary.FFprobe);
+    public static string GetFFmpegPath() => GetFFmpegPath(useSystemPath: true);
+    public static string GetFFprobePath() => GetFFprobePath(useSystemPath: true);
+    
+    public static string GetFFmpegPath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFmpeg, useSystemPath);
+    public static string GetFFprobePath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFprobe, useSystemPath);
 }
 
 public enum FFmpegBinary 
@@ -16,22 +19,26 @@ public enum FFmpegBinary
 
 internal static class BinaryResolver
 {
-    private static readonly Dictionary<FFmpegBinary, string> _cachedPaths = new();
+    private static readonly Dictionary<(FFmpegBinary, bool), string> _cachedPaths = new();
     private static readonly Lock _lock = new();
 
-    public static string GetBinaryPath(FFmpegBinary binary)
+    public static string GetBinaryPath(FFmpegBinary binary, bool useSystemPath)
     {
-        if (_cachedPaths.TryGetValue(binary, out var cachedPath))
+        var cacheKey = (binary, useSystemPath);
+        
+        // Check cache first
+        if (_cachedPaths.TryGetValue(cacheKey, out var cachedPath))
             return cachedPath;
 
         lock (_lock)
         {
             // Double-check after acquiring lock
-            if (_cachedPaths.TryGetValue(binary, out cachedPath))
+            if (_cachedPaths.TryGetValue(cacheKey, out cachedPath))
                 return cachedPath;
 
-            var resolvedPath = ResolveBinary(GetBinaryName(binary));
-            _cachedPaths[binary] = resolvedPath;
+            // Cache miss - resolve the path
+            var resolvedPath = ResolveBinary(GetBinaryName(binary), useSystemPath);
+            _cachedPaths[cacheKey] = resolvedPath;
             return resolvedPath;
         }
     }
@@ -43,13 +50,16 @@ internal static class BinaryResolver
         _ => throw new ArgumentException($"Unknown binary {binary}")
     };
 
-    private static string ResolveBinary(string binaryName)
+    private static string ResolveBinary(string binaryName, bool useSystemPath)
     {
-        // 1. Try system binary first
-        var systemPath = FindSystemBinary(binaryName);
-        if (systemPath != null)
+        // 1. Try system binary first (if enabled)
+        if (useSystemPath)
         {
-            return systemPath;
+            var systemPath = FindSystemBinary(binaryName);
+            if (systemPath != null)
+            {
+                return systemPath;
+            }
         }
 
         // 2. Check deterministic location
@@ -74,10 +84,11 @@ internal static class BinaryResolver
         }
 
         // 4. Fail gracefully with clear error message
+        var searchedMethods = useSystemPath ? "system PATH, deterministic location, and embedded resource" : "deterministic location and embedded resource";
         throw new FileNotFoundException(
             $"Could not locate {binaryName} binary. " +
-            $"Tried system PATH, deterministic location ({deterministicPath}), " +
-            $"and extracting embedded resource.");
+            $"Searched: {searchedMethods}. " +
+            $"Deterministic path attempted: {deterministicPath}");
     }
 
     private static string? FindSystemBinary(string binaryName)
