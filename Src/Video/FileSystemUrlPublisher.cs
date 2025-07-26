@@ -19,7 +19,7 @@ public class FileSystemUrlPublisher<T> : IUrlPublisher<T>
     public FileSystemUrlPublisher(string baseDirectory, ILogger<T> logger, string? urlPrefix = null)
     {
         _baseDirectory = baseDirectory;
-        _urlPrefix = urlPrefix ?? "file://wsl$/Ubuntu";
+        _urlPrefix = urlPrefix ?? "file://";
         _logger = logger;
 
         if (!Directory.Exists(_baseDirectory))
