@@ -72,18 +72,7 @@ public class DiagnosticVizBuilder : BasicVizBuilder
         // Start with the basic visualization
         var result = RenderBasicViz();
 
-        // Get font for unmerged text
-        FontFamily fontFamily;
-        if (!SystemFonts.TryGet("Arial", out fontFamily))
-        {
-            fontFamily = SystemFonts.Families.FirstOrDefault();
-            if (fontFamily == default)
-            {
-                return result;
-            }
-        }
-
-        var smallFont = fontFamily.CreateFont(10, FontStyle.Regular);
+        var smallFont = Resources.Fonts.GetFont(fontSize: 10f, fontStyle: FontStyle.Regular);
 
         result.Mutate(ctx =>
         {

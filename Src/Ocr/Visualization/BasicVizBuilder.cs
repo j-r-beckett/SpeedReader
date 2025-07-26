@@ -33,18 +33,7 @@ public class BasicVizBuilder : VizBuilder
             return result;
         }
 
-        // Get font - try Arial first, then fallback to system default
-        if (!SystemFonts.TryGet("Arial", out var fontFamily))
-        {
-            fontFamily = SystemFonts.Families.FirstOrDefault();
-            if (fontFamily == default)
-            {
-                // No fonts available, return image without text annotations
-                return result;
-            }
-        }
-
-        var font = fontFamily.CreateFont(14, FontStyle.Bold);
+        var font = Resources.Fonts.GetFont(fontSize: 14f, fontStyle: FontStyle.Bold);
 
         result.Mutate(ctx =>
         {
