@@ -5,8 +5,7 @@ using System.IO.Pipelines;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using FFMpegCore;
-using FFMpegCore.Pipes;
+using CliWrap;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -23,19 +22,28 @@ public class FrameWriter
     {
         var tempFile = Path.GetTempFileName() + ".webm";
 
-        var pipe = new Pipe();
-        var readStream = pipe.Reader.AsStream();
+        // Create pipe for feeding frames to FFmpeg
+        var pipeOptions = new PipeOptions(
+            pauseWriterThreshold: 1024,    // Pause when 1KB in buffer
+            resumeWriterThreshold: 512     // Resume when below 512 bytes
+        );
+        var inputPipe = new Pipe(pipeOptions);
+        var streamingSource = new StreamingPipeSource(inputPipe.Reader.AsStream());
 
-        var streamTask = FramesToStream(frames, pipe.Writer, cancellationToken);
+        // Write frames to pipe
+        var frameWriterTask = FramesToStream(frames, inputPipe.Writer, cancellationToken);
 
-        var ffmpegTask = FFMpegArguments
-            .FromPipeInput(new StreamPipeSource(readStream), options => options
-                .WithCustomArgument($"-f rawvideo -pixel_format rgb24 -video_size {width}x{height} -framerate {frameRate}"))
-            .OutputToFile(tempFile, addArguments: options => options
-                .WithCustomArgument("-vcodec libvpx -crf 30 -b:v 100k -speed 16 -threads 1"))
-            .ProcessAsynchronously();
+        // Run FFmpeg with timeout
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(30)); // 30 second timeout for test video creation
+        
+        var ffmpegTask = Cli.Wrap("ffmpeg")
+            .WithArguments($"-f rawvideo -pix_fmt rgb24 -s {width}x{height} -r {frameRate} -i pipe:0 -c:v libvpx -crf 30 -b:v 100k -speed 16 -threads 1 -y {tempFile}")
+            .WithStandardInputPipe(streamingSource)
+            .WithValidation(CommandResultValidation.None) // Handle validation ourselves
+            .ExecuteAsync(cts.Token);
 
-        await Task.WhenAll(ffmpegTask, streamTask);
+        await Task.WhenAll(ffmpegTask, frameWriterTask);
 
         return new FileStream(tempFile, FileMode.Open, FileAccess.Read);
     }

@@ -1,3 +1,5 @@
+set -e
+
 echo "Building models..."
 
 # Require outDir parameter
