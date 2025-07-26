@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using CliWrap;
+using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -14,9 +15,9 @@ public class FfmpegEncoderBlockCreator
 {
     private readonly string _binaryPath;
 
-    public FfmpegEncoderBlockCreator(string binaryPath)
+    public FfmpegEncoderBlockCreator()
     {
-        _binaryPath = binaryPath;
+        _binaryPath = FFmpegBinaries.GetFFmpegPath();
     }
 
     public ITargetBlock<Image<Rgb24>> CreateFfmpegEncoderBlock(
