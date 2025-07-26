@@ -1,9 +1,9 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
+using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Ocr.Visualization;
 
 namespace Ocr.Blocks;
 

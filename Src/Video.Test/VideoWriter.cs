@@ -36,7 +36,7 @@ public class FrameWriter
         // Run FFmpeg with timeout
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(30)); // 30 second timeout for test video creation
-        
+
         var ffmpegTask = Cli.Wrap("ffmpeg")
             .WithArguments($"-f rawvideo -pix_fmt rgb24 -s {width}x{height} -r {frameRate} -i pipe:0 -c:v libvpx -crf 30 -b:v 100k -speed 16 -threads 1 -y {tempFile}")
             .WithStandardInputPipe(streamingSource)

@@ -1,9 +1,9 @@
 using System.Threading.Tasks.Dataflow;
 using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
+using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Ocr.Visualization;
 
 namespace Ocr.Blocks;
 

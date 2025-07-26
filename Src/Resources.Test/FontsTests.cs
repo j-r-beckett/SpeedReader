@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Resources;
 using SixLabors.Fonts;
 
 namespace Resources.Test;
@@ -42,7 +41,7 @@ public class FontsTests
     {
         var fontNames = Enum.GetValues<FontName>();
         var sizes = new[] { 8f, 12f, 14f, 18f, 24f, 36f };
-        
+
         foreach (var fontName in fontNames)
         {
             foreach (var size in sizes)
@@ -56,7 +55,7 @@ public class FontsTests
     {
         var fontNames = Enum.GetValues<FontName>();
         var styles = new[] { FontStyle.Regular, FontStyle.Bold, FontStyle.Italic, FontStyle.BoldItalic };
-        
+
         foreach (var fontName in fontNames)
         {
             foreach (var style in styles)

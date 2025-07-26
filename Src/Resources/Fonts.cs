@@ -12,7 +12,7 @@ public static class Fonts
     public static Font GetFont(FontName fontName = FontName.Arial, float fontSize = 14f, FontStyle fontStyle = FontStyle.Regular)
     {
         EnsureInitialized(fontName);
-        
+
         var familyName = GetFamilyName(fontName);
         var family = _collection.Get(familyName);
         return family.CreateFont(fontSize, fontStyle);
@@ -21,16 +21,16 @@ public static class Fonts
     private static void EnsureInitialized(FontName fontName)
     {
         if (_loadedFonts.ContainsKey(fontName)) return;
-        
+
         lock (_lock)
         {
             if (_loadedFonts.ContainsKey(fontName)) return;
-            
+
             var resourceName = GetResourceName(fontName);
             var fontBytes = Resource.GetBytes(resourceName);
             using var stream = new MemoryStream(fontBytes);
             _collection.Add(stream);
-            
+
             _loadedFonts[fontName] = true;
         }
     }

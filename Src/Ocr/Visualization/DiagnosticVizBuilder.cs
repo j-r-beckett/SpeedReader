@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using CommunityToolkit.HighPerformance;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;

@@ -1,10 +1,9 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Core;
-using Resources;
 using Ocr.Blocks;
 using Ocr.Visualization;
-using SixLabors.Fonts;
+using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;

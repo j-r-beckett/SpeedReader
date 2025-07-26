@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.ML.OnnxRuntime;
-using Resources;
 
 namespace Resources.Test;
 
@@ -16,7 +15,7 @@ public class ModelsTests
         var modelBytes = Models.GetModelBytes(model);
         Assert.NotNull(modelBytes);
         Assert.True(modelBytes.Length > 0);
-        
+
         // Verify it's a valid ONNX model by constructing an InferenceSession
         using var session = new InferenceSession(modelBytes);
         Assert.NotNull(session);
