@@ -1,6 +1,6 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
-using Models;
+using Resources;
 using Ocr.Blocks;
 using Ocr.Visualization;
 using SixLabors.Fonts;

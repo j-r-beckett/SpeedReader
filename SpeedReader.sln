@@ -9,9 +9,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Video", "Src\Video\Video.cs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Video.Test", "Src\Video.Test\Video.Test.csproj", "{1EB8C93E-EC07-4D4B-8DDB-40C27FB02C7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "Src\Models\Models.csproj", "{B501A4B2-154E-49F8-AD69-CA7CBFFC09FF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources", "Src\Resources\Resources.csproj", "{B501A4B2-154E-49F8-AD69-CA7CBFFC09FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models.Test", "Src\Models.Test\Models.Test.csproj", "{5C2552A6-4D67-402D-9005-4C5A4D06C819}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources.Test", "Src\Resources.Test\Resources.Test.csproj", "{5C2552A6-4D67-402D-9005-4C5A4D06C819}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ocr", "Src\Ocr\Ocr.csproj", "{D21CCEEE-5064-4478-98CE-DF8E8FB34C6C}"
 EndProject

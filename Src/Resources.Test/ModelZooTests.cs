@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.ML.OnnxRuntime;
+using Resources;
 
-namespace Models.Test;
+namespace Resources.Test;
 
 public class ModelZooTests
 {

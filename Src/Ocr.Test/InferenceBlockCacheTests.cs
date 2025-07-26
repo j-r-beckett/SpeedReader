@@ -4,7 +4,7 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Models;
+using Resources;
 using Ocr;
 using Ocr.Blocks;
 using Ocr.Visualization;
