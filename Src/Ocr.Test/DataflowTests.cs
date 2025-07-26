@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
+using Core;
 using Resources;
 using Ocr.Blocks;
 using Ocr.Visualization;
@@ -17,8 +18,9 @@ public class DataflowTests
     public async Task OcrBlock_Complete_AwaitsCompletionWithTimeout()
     {
         // Arrange
-        using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
-        using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        using var modelProvider = new ModelProvider();
+        var dbnetSession = modelProvider.GetSession(Model.DbNet18);
+        var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         using var meter = new Meter("DataflowTests");
 
         var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
@@ -44,8 +46,9 @@ public class DataflowTests
     public async Task OcrBlock_BackpressureStopsInputAcceptance()
     {
         // Arrange
-        using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
-        using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        using var modelProvider = new ModelProvider();
+        var dbnetSession = modelProvider.GetSession(Model.DbNet18);
+        var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         using var meter = new Meter("DataflowTests");
 
         var config = new OcrConfiguration { CacheFirstInference = true };

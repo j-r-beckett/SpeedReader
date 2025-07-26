@@ -4,6 +4,7 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Core;
 using Resources;
 using Ocr;
 using Ocr.Blocks;
@@ -36,7 +37,8 @@ public class InferenceBlockCacheTests : IDisposable
     public async Task CacheFirstInference_TwoDifferentInputs_ReturnsIdenticalWords()
     {
         // Arrange
-        using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        using var modelProvider = new ModelProvider();
+        var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration { CacheFirstInference = true };
         var svtrBlock = new SVTRBlock(svtrSession, config, _meter);
         await using var bridge = new DataflowBridge<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
@@ -60,7 +62,8 @@ public class InferenceBlockCacheTests : IDisposable
     public async Task CacheFirstInference_Disabled_TwoDifferentInputs_ReturnsDifferentWords()
     {
         // Arrange
-        using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        using var modelProvider = new ModelProvider();
+        var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration { CacheFirstInference = false };
         var svtrBlock = new SVTRBlock(svtrSession, config, _meter);
         await using var bridge = new DataflowBridge<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
