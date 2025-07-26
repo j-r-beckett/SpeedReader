@@ -1,4 +1,5 @@
 using System.Diagnostics.Metrics;
+using Core;
 using Resources;
 using Ocr.Blocks;
 using Ocr.Visualization;
@@ -42,8 +43,9 @@ public class OcrTestFramework
 
     public async Task<OcrTestResult> RunOcrTest(OcrTestScenario scenario)
     {
-        using var dbnetSession = ModelZoo.GetInferenceSession(Model.DbNet18);
-        using var svtrSession = ModelZoo.GetInferenceSession(Model.SVTRv2);
+        using var modelProvider = new ModelProvider();
+        var dbnetSession = modelProvider.GetSession(Model.DbNet18);
+        var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         using var meter = new Meter("OcrTestFramework");
 
         var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);

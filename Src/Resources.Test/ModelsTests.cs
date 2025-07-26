@@ -7,14 +7,18 @@ using Resources;
 
 namespace Resources.Test;
 
-public class ModelZooTests
+public class ModelsTests
 {
     [Theory]
     [MemberData(nameof(GetAllModels))]
-    public void CanRetrieveSession(Model model)
+    public void CanGetModelBytes(Model model)
     {
-        // Constructing an InferenceSession will throw an exception if the model file doesn't exist or isn't in ONNX format
-        using var session = ModelZoo.GetInferenceSession(model);
+        var modelBytes = Models.GetModelBytes(model);
+        Assert.NotNull(modelBytes);
+        Assert.True(modelBytes.Length > 0);
+        
+        // Verify it's a valid ONNX model by constructing an InferenceSession
+        using var session = new InferenceSession(modelBytes);
         Assert.NotNull(session);
     }
 
