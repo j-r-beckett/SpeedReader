@@ -1,7 +1,7 @@
 using System.Reflection;
 using Microsoft.ML.OnnxRuntime;
 
-namespace Models;
+namespace Resources;
 
 public class ModelZoo
 {
@@ -39,7 +39,7 @@ public class ModelZoo
             _ => throw new ArgumentException($"Unknown model {model}")
         };
 
-        return $"Models.models.{modelName}.end2end.onnx";
+        return $"Resources.models.{modelName}.end2end.onnx";
     }
 }
 
