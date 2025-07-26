@@ -25,8 +25,5 @@
     <ProjectReference Include="..\Resources\Resources.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="CharacterDictionary.Data.txt" />
-  </ItemGroup>
 
 </Project>

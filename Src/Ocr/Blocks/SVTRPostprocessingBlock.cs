@@ -1,6 +1,7 @@
 using System.Threading.Tasks.Dataflow;
 using Ocr.Algorithms;
 using Ocr.Visualization;
+using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 

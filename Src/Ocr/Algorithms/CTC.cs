@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 using System.Text;
+using Resources;
 
 namespace Ocr.Algorithms;
 

@@ -27,6 +27,7 @@
     <EmbeddedResource Include="models/**/*.onnx" />
     <EmbeddedResource Include="models/**/*.json" />
     <EmbeddedResource Include="arial.ttf" />
+    <EmbeddedResource Include="CharacterDictionary.Data.txt" />
   </ItemGroup>
 
   <Target Name="CleanModels" BeforeTargets="BeforeClean">
