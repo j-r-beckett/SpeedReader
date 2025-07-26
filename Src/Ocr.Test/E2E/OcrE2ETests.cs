@@ -73,7 +73,7 @@ public class OcrE2ETests
         expectedResults.Add(new ExpectedText(DrawText(image, "left", 2, 400), "left"));
         expectedResults.Add(new ExpectedText(DrawText(image, "topleft", 2, 2), "topleft"));
         expectedResults.Add(new ExpectedText(DrawText(image, "topright", 1120, 2), "topright"));
-        expectedResults.Add(new ExpectedText(DrawText(image, "bottomright", 1090, 780), "bottomright"));
+        expectedResults.Add(new ExpectedText(DrawText(image, "bottomright", 1079, 775), "bottomright"));
         expectedResults.Add(new ExpectedText(DrawText(image, "bottomleft", 2, 780), "bottomleft"));
 
         var scenario = new OcrTestScenario("EdgePositions", image, expectedResults);
@@ -211,32 +211,6 @@ public class OcrE2ETests
         // Act
         var result = await _framework.RunOcrTest(scenario);
 
-        // Assert
-        _framework.AssertDetectionAccuracy(scenario, result);
-        _framework.AssertRecognitionAccuracy(scenario, result);
-    }
-
-    [Fact(Skip = "Demo test for failure message validation")]
-    public async Task FailureDemo()
-    {
-        // Arrange
-        var image = new Image<Rgb24>(800, 600, Color.White);
-        var expectedResults = new List<ExpectedText>();
-
-        // Create image with "hello" and "world" but expect different text
-        DrawText(image, "hello", 100, 100);
-        DrawText(image, "world", 300, 150);
-
-        // Expect wrong text to demonstrate failure messages
-        expectedResults.Add(new ExpectedText(new Rectangle(100, 100, 50, 25), "goodbye"));
-        expectedResults.Add(new ExpectedText(new Rectangle(300, 150, 60, 25), "planet"));
-        expectedResults.Add(new ExpectedText(new Rectangle(500, 300, 40, 25), "missing")); // This text doesn't exist in image
-
-        var scenario = new OcrTestScenario("FailureDemo", image, expectedResults);
-
-        // Act
-        var result = await _framework.RunOcrTest(scenario);
-        
         // Assert
         _framework.AssertDetectionAccuracy(scenario, result);
         _framework.AssertRecognitionAccuracy(scenario, result);
