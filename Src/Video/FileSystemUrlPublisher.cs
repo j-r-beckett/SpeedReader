@@ -112,7 +112,7 @@ public class FileSystemUrlPublisher<T> : IUrlPublisher<T>
             <canvas id=""chart""></canvas>
         </div>
     </div>
-    
+
     <script>
         const ctx = document.getElementById('chart').getContext('2d');
         const chart = new Chart(ctx, {{
