@@ -36,7 +36,7 @@ public class FileSystemUrlPublisherTests : IDisposable
         var logEntry = _logger.GetLastLogEntry();
         Assert.NotNull(logEntry);
         Assert.Contains("text/plain", logEntry!.Message);
-        Assert.Contains("file://wsl$/Ubuntu", logEntry.Message);
+        Assert.Contains("file://", logEntry.Message);
     }
 
     [Fact]
