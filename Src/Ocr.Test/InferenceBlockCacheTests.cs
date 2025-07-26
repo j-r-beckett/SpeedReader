@@ -28,25 +28,9 @@ public class InferenceBlockCacheTests : IDisposable
     public InferenceBlockCacheTests()
     {
         _meter = new Meter("InferenceBlockCacheTests");
-        _testFont = GetTestFont();
+        _testFont = Fonts.GetFont(fontSize: 18f);
     }
     
-    private static Font GetTestFont()
-    {
-        if (!SystemFonts.TryGet("Arial", out var fontFamily))
-        {
-            var defaultFontFamily = SystemFonts.Families.FirstOrDefault();
-            if (defaultFontFamily != default)
-            {
-                fontFamily = defaultFontFamily;
-            }
-            else
-            {
-                throw new Exception("Failed to load font");
-            }
-        }
-        return fontFamily.CreateFont(18);
-    }
 
     [Fact]
     public async Task CacheFirstInference_TwoDifferentInputs_ReturnsIdenticalWords()

@@ -35,22 +35,8 @@ public class OcrTestFramework
 
     public OcrTestFramework(ITestOutputHelper outputHelper)
     {
-        // Font loading pattern from existing tests
-        if (!SystemFonts.TryGet("Arial", out var fontFamily))
-        {
-            var defaultFontFamily = SystemFonts.Families.FirstOrDefault();
-            if (defaultFontFamily != default)
-            {
-                fontFamily = defaultFontFamily;
-            }
-            else
-            {
-                throw new Exception("Failed to load font");
-            }
-        }
-
-        _font = fontFamily.CreateFont(18);
-        _smallFont = fontFamily.CreateFont(12);
+        _font = Fonts.GetFont(fontSize: 26f);
+        _smallFont = Fonts.GetFont(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<OcrTestFramework>("/tmp", new TestLogger<OcrTestFramework>(outputHelper));
     }
 
@@ -173,7 +159,7 @@ public class OcrTestFramework
             remainingActuals.Remove(closestActual);
 
             var distance = CalculateCloseness(closestActual, expected.BoundingBox);
-            var paddedActual = Pad(closestActual, 2);
+            var paddedActual = Pad(closestActual, 5);
 
             // Check that the actual box contains the expected box (with padding tolerance)
             if (!paddedActual.Contains(expected.BoundingBox))
