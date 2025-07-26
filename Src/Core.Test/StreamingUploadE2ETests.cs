@@ -21,21 +21,7 @@ public class StreamingUploadE2ETests : IAsyncDisposable
 
     public StreamingUploadE2ETests(ITestOutputHelper outputHelper)
     {
-        // Setup font for generating test images
-        if (!SystemFonts.TryGet("Arial", out var fontFamily))
-        {
-            var defaultFontFamily = SystemFonts.Families.FirstOrDefault();
-            if (defaultFontFamily != default)
-            {
-                fontFamily = defaultFontFamily;
-            }
-            else
-            {
-                throw new Exception("Failed to load font");
-            }
-        }
-
-        _font = fontFamily.CreateFont(18);
+        _font = Resources.Fonts.GetFont(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<StreamingUploadE2ETests>("/tmp", new TestLogger<StreamingUploadE2ETests>(outputHelper));
 
         // Find available port
