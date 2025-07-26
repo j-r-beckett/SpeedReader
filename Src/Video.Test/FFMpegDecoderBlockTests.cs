@@ -38,7 +38,7 @@ public class FFMpegDecoderBlockTests
 
         await WithVideoStream(videoStream, async stream =>
         {
-            var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+            var decoder = new FfmpegDecoderBlockCreator();
             var sourceBlock = decoder.CreateFfmpegDecoderBlock(stream, 1, default);
             var frames = await CollectAllFrames(sourceBlock);
 
@@ -72,7 +72,7 @@ public class FFMpegDecoderBlockTests
 
         _logger.LogInformation("Created large video: {totalSize} bytes", totalVideoSize);
 
-        var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+        var decoder = new FfmpegDecoderBlockCreator();
         var sourceBlock = decoder.CreateFfmpegDecoderBlock(largeVideoStream, 1, default);
 
         var expectedConsumption = 262144;
@@ -110,7 +110,7 @@ public class FFMpegDecoderBlockTests
 
         try
         {
-            var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+            var decoder = new FfmpegDecoderBlockCreator();
             var sourceBlock = decoder.CreateFfmpegDecoderBlock(videoStream, 1, default);
 
             // Wait for backpressure to engage
@@ -175,7 +175,7 @@ public class FFMpegDecoderBlockTests
 
         using var cts = new CancellationTokenSource();
 
-        var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+        var decoder = new FfmpegDecoderBlockCreator();
         var sourceBlock = decoder.CreateFfmpegDecoderBlock(videoStream, 1, cts.Token);
 
         var frameCount = 0;
@@ -220,7 +220,7 @@ public class FFMpegDecoderBlockTests
 
         await WithVideoStream(videoStream, async stream =>
         {
-            var decoder = new FfmpegDecoderBlockCreator("ffmpeg");
+            var decoder = new FfmpegDecoderBlockCreator();
             var sourceBlock = decoder.CreateFfmpegDecoderBlock(stream, 2, default);
             var frames = await CollectAllFrames(sourceBlock);
 

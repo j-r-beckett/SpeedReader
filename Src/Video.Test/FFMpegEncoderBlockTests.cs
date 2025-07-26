@@ -35,7 +35,7 @@ public class FFMpegEncoderBlockTests
         _outputHelper.WriteLine($"Generated {frames.Count} test frames");
 
         // Create encoder block
-        var encoder = new FfmpegEncoderBlockCreator("ffmpeg");
+        var encoder = new FfmpegEncoderBlockCreator();
         var encoderBlock = encoder.CreateFfmpegEncoderBlock(
             Width, Height, frameRate: 5.0,
             out var encodedOutput,
@@ -84,7 +84,7 @@ public class FFMpegEncoderBlockTests
         const int frameCount = 3000;
 
         // Create encoder block but don't consume output to trigger backpressure
-        var encoder = new FfmpegEncoderBlockCreator("ffmpeg");
+        var encoder = new FfmpegEncoderBlockCreator();
         var encoderBlock = encoder.CreateFfmpegEncoderBlock(
             Width, Height, frameRate: 30.0,
             out var encodedOutput,

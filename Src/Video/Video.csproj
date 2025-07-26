@@ -12,4 +12,8 @@
     <PackageReference Include="Sixlabors.Imagesharp" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Resources\Resources.csproj" />
+  </ItemGroup>
+
 </Project>
