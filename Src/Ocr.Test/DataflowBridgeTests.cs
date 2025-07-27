@@ -109,7 +109,9 @@ public class DataflowBridgeTests
         await using var bridge = new DataflowBridge<int, string>(transform);
 
         var task1 = bridge.ProcessAsync(1, CancellationToken.None, CancellationToken.None);
+        await Task.Delay(50);
         var task2 = bridge.ProcessAsync(42, CancellationToken.None, CancellationToken.None);
+        await Task.Delay(50);
         var task3 = bridge.ProcessAsync(3, CancellationToken.None, CancellationToken.None);
 
         var result1 = await (await task1);
@@ -120,7 +122,8 @@ public class DataflowBridgeTests
         var innerEx = ex2.InnerException as AggregateException;
         Assert.Contains(innerEx!.InnerExceptions, e => e is InvalidOperationException && e.Message == "Cannot process 42");
 
-        await Assert.ThrowsAsync<DataflowBridgeException>(async () => await (await task3));
+        // Pipeline should be shut down after throw an exception for item 2
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await (await task3));
     }
 
     [Fact]
