@@ -91,7 +91,7 @@ public class FFmpegBinariesTests
     {
         // Arrange - Get system binary path for comparison
         var systemPath = await FindSystemBinaryPath(binaryType);
-        
+
         // Arrange - explicitly skip system PATH to force embedded resource extraction
         var binaryPath = binaryType switch
         {
@@ -111,10 +111,10 @@ public class FFmpegBinariesTests
         Assert.NotEmpty(result.StandardOutput);
         Assert.Contains("version", result.StandardOutput, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(binaryType, result.StandardOutput, StringComparison.OrdinalIgnoreCase);
-        
+
         // Verify the binary was extracted to expected location (not system PATH)
         Assert.False(binaryPath.StartsWith("/usr/") || binaryPath.StartsWith("/bin/"));
-        
+
         // Verify the embedded binary path is different from system binary path
         Assert.NotEqual(systemPath, binaryPath);
     }
