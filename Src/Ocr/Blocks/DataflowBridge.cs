@@ -6,6 +6,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
 {
     private readonly TransformBlock<(TIn Input, TaskCompletionSource<TOut> Tcs), TIn> _origin;
     private readonly ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>> _terminus;
+    private bool _disposed;
 
     // Transformer block MUST maintain an ordered 1-1 correspondence between inputs and outputs.
     // For best results, the transformer should be capable of emitting backpressure.
@@ -27,10 +28,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
             BoundedCapacity = Environment.ProcessorCount
         });
 
-        _origin.LinkTo(transformer, new DataflowLinkOptions
-        {
-            PropagateCompletion = true
-        });
+        _origin.LinkTo(transformer);
 
         var joiner = new JoinBlock<TOut, TaskCompletionSource<TOut>>(new GroupingDataflowBlockOptions
         {
@@ -69,14 +67,20 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
                 completionSources.LinkTo(orphanedCompletionHandler, new DataflowLinkOptions { PropagateCompletion = true });
             }
 
+            _origin.Complete();
+        });
+
+        _origin.Completion.ContinueWith(async _ =>
+        {
             completionSources.Complete();
+            await completionSources.Completion;
             joiner.Complete();
         });
     }
 
     public async Task<Task<TOut>> ProcessAsync(TIn input, CancellationToken bridgeCancellationToken, CancellationToken transformerCancellationToken)
     {
-        ObjectDisposedException.ThrowIf(_origin.Completion.IsCompleted, this);
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var completionSource = new TaskCompletionSource<TOut>();
 
@@ -96,6 +100,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
     {
         _origin.Complete();
         await _terminus.Completion;
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 }
