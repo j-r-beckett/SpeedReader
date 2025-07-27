@@ -6,12 +6,12 @@ public static class FFmpegBinaries
 {
     public static string GetFFmpegPath() => GetFFmpegPath(useSystemPath: true);
     public static string GetFFprobePath() => GetFFprobePath(useSystemPath: true);
-    
+
     public static string GetFFmpegPath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFmpeg, useSystemPath);
     public static string GetFFprobePath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFprobe, useSystemPath);
 }
 
-public enum FFmpegBinary 
+public enum FFmpegBinary
 {
     FFmpeg,
     FFprobe
@@ -25,7 +25,7 @@ internal static class BinaryResolver
     public static string GetBinaryPath(FFmpegBinary binary, bool useSystemPath)
     {
         var cacheKey = (binary, useSystemPath);
-        
+
         // Check cache first
         if (_cachedPaths.TryGetValue(cacheKey, out var cachedPath))
             return cachedPath;
