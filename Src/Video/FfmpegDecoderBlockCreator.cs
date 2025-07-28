@@ -79,19 +79,12 @@ public class FfmpegDecoderBlockCreator
                     // Extract one frame
                     var frameData = buffer.Slice(0, frameSize);
 
-                    // Copy to our frame buffer - handle single or multiple segments
-                    if (frameData.IsSingleSegment)
+                    // Copy to the frame buffer - handle single or multiple segments
+                    var position = 0;
+                    foreach (var segment in frameData)
                     {
-                        frameData.FirstSpan.CopyTo(frameBuffer);
-                    }
-                    else
-                    {
-                        var position = 0;
-                        foreach (var segment in frameData)
-                        {
-                            segment.Span.CopyTo(frameBuffer.AsSpan(position));
-                            position += segment.Length;
-                        }
+                        segment.Span.CopyTo(frameBuffer.AsSpan(position));
+                        position += segment.Length;
                     }
 
                     // Create image and send to output
