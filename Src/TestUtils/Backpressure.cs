@@ -14,7 +14,7 @@ public class Backpressure
         {
             inputCount++;
             return input;
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1});
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         inputProducer.LinkTo(inputCounter);
 
