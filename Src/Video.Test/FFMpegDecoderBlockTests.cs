@@ -80,7 +80,7 @@ public class FFMpegDecoderBlockTests
         await Task.Delay(1000);
 
         var consumedBytes1 = largeVideoStream.Position;
-        
+
         // Verify that not all input was consumed
         Assert.True(consumedBytes1 > 0, "Expected some initial data consumption");
         Assert.True(consumedBytes1 < totalVideoSize,
