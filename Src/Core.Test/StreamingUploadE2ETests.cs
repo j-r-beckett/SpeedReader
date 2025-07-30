@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using CliWrap;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -10,12 +11,13 @@ using Xunit.Abstractions;
 
 namespace Core.Test;
 
-public class StreamingUploadE2ETests : IAsyncDisposable
+public class StreamingUploadE2ETests : IDisposable
 {
     private readonly Font _font;
     private readonly FileSystemUrlPublisher<StreamingUploadE2ETests> _imageSaver;
     private readonly HttpClient _httpClient;
-    private readonly Process? _serverProcess;
+    private readonly CancellationTokenSource _serverCancellation;
+    private readonly Task _serverTask;
     private readonly int _serverPort;
 
     public StreamingUploadE2ETests(ITestOutputHelper outputHelper)
@@ -26,8 +28,9 @@ public class StreamingUploadE2ETests : IAsyncDisposable
         // Find available port
         _serverPort = GetAvailablePort();
 
-        // Start server process
-        _serverProcess = StartServerProcess();
+        // Start server process using CliWrap
+        _serverCancellation = new CancellationTokenSource();
+        _serverTask = StartServerAsync(_serverCancellation.Token);
 
         // Wait for server to start
         WaitForServerReady();
@@ -48,24 +51,14 @@ public class StreamingUploadE2ETests : IAsyncDisposable
         return port;
     }
 
-    private Process StartServerProcess()
+    private Task StartServerAsync(CancellationToken cancellationToken)
     {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = $"run --project {GetCoreProjectPath()} -- serve",
-            Environment = { ["ASPNETCORE_URLS"] = $"http://localhost:{_serverPort}" },
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
+        var command = Cli.Wrap("dotnet")
+            .WithArguments($"run --project {GetCoreProjectPath()} -- serve")
+            .WithEnvironmentVariables(env => env.Set("ASPNETCORE_URLS", $"http://localhost:{_serverPort}"))
+            .WithValidation(CommandResultValidation.None); // Don't throw on non-zero exit codes
 
-        var process = Process.Start(startInfo);
-        if (process == null)
-            throw new Exception("Failed to start server process");
-
-        return process;
+        return command.ExecuteAsync(cancellationToken);
     }
 
     private string GetCoreProjectPath()
@@ -191,15 +184,25 @@ public class StreamingUploadE2ETests : IAsyncDisposable
         Assert.Contains("world", secondAllText.ToLower());
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
-        _httpClient?.Dispose();
+        _httpClient.Dispose();
 
-        if (_serverProcess != null && !_serverProcess.HasExited)
+        // Cancel the server process
+        _serverCancellation.Cancel();
+
+        try
         {
-            _serverProcess.Kill();
-            await _serverProcess.WaitForExitAsync();
-            _serverProcess.Dispose();
+            // Wait for server to shut down gracefully
+            _serverTask.Wait(TimeSpan.FromSeconds(5));
+        }
+        catch (AggregateException)
+        {
+            // Expected when cancellation occurs
+        }
+        finally
+        {
+            _serverCancellation.Dispose();
         }
     }
 }
