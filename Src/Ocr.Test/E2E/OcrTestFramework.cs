@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Video;
-using Video.Test;
+using TestUtils;
 using Xunit.Abstractions;
 
 namespace Ocr.Test.E2E;

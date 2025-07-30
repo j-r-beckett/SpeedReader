@@ -2,7 +2,7 @@ using System;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Video.Test;
+namespace TestUtils;
 
 public class TestLogger : ILogger
 {

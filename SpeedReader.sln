@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Src\Core\Core.csproj", "{DA43D58F-4F67-4ECC-81C3-A3DAFC2FBE64}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Test", "Src\Core.Test\Core.Test.csproj", "{1068EC1F-D716-4AC6-9191-A9C45EB8CDB2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "Src\TestUtils\TestUtils.csproj", "{C177F9BD-E951-4E61-BFD3-E691F03AC174}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -127,6 +129,18 @@ Global
 		{1068EC1F-D716-4AC6-9191-A9C45EB8CDB2}.Release|x64.Build.0 = Release|Any CPU
 		{1068EC1F-D716-4AC6-9191-A9C45EB8CDB2}.Release|x86.ActiveCfg = Release|Any CPU
 		{1068EC1F-D716-4AC6-9191-A9C45EB8CDB2}.Release|x86.Build.0 = Release|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Debug|x64.Build.0 = Debug|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Debug|x86.Build.0 = Debug|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Release|x64.ActiveCfg = Release|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Release|x64.Build.0 = Release|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Release|x86.ActiveCfg = Release|Any CPU
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -140,5 +154,6 @@ Global
 		{518F4325-05E9-4B83-932B-B589B1E5D07C} = {F755A031-F1DA-4DBB-A2BD-FAE509288FAA}
 		{DA43D58F-4F67-4ECC-81C3-A3DAFC2FBE64} = {F755A031-F1DA-4DBB-A2BD-FAE509288FAA}
 		{1068EC1F-D716-4AC6-9191-A9C45EB8CDB2} = {F755A031-F1DA-4DBB-A2BD-FAE509288FAA}
+		{C177F9BD-E951-4E61-BFD3-E691F03AC174} = {F755A031-F1DA-4DBB-A2BD-FAE509288FAA}
 	EndGlobalSection
 EndGlobal
