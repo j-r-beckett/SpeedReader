@@ -1,12 +1,11 @@
 using System.Threading.Tasks.Dataflow;
+using Xunit;
 
-namespace Ocr.Test;
+namespace TestUtils;
 
-public class BackpressureTests
+public class Backpressure
 {
-
-
-    private async Task TestBackpressure<TIn, TOut>(IPropagatorBlock<TIn, TOut> sut, ISourceBlock<TIn> inputProducer,
+    public async Task TestBackpressure<TIn, TOut>(IPropagatorBlock<TIn, TOut> sut, ISourceBlock<TIn> inputProducer,
         TimeSpan initialDelay)
     {
         int inputCount = 0;

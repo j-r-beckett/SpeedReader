@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Video\Video.csproj" />
+    <ProjectReference Include="..\TestUtils\TestUtils.csproj" />
   </ItemGroup>
 
 </Project>

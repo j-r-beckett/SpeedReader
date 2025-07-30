@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 
-namespace Video.Test;
+namespace TestUtils;
 
 public class CapturingLogger<T> : ILogger<T>
 {
