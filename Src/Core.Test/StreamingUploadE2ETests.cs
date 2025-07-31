@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using System.Text.Json;
-using CliWrap;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -18,75 +16,41 @@ public class StreamingUploadE2ETests : IDisposable
     private readonly HttpClient _httpClient;
     private readonly CancellationTokenSource _serverCancellation;
     private readonly Task _serverTask;
-    private readonly int _serverPort;
 
     public StreamingUploadE2ETests(ITestOutputHelper outputHelper)
     {
         _font = Resources.Fonts.GetFont(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<StreamingUploadE2ETests>("/tmp", new TestLogger<StreamingUploadE2ETests>(outputHelper));
 
-        // Find available port
-        _serverPort = GetAvailablePort();
-
-        // Start server process using CliWrap
+        // Start server in background
         _serverCancellation = new CancellationTokenSource();
-        _serverTask = StartServerAsync(_serverCancellation.Token);
+        _serverTask = Task.Run(async () =>
+        {
+            await Program.Main(["serve"]);
+        }, _serverCancellation.Token);
 
-        // Wait for server to start
+        // Wait for server to be ready
         WaitForServerReady();
 
         // Create HTTP client
         _httpClient = new HttpClient
         {
-            BaseAddress = new Uri($"http://localhost:{_serverPort}")
+            BaseAddress = new Uri("http://localhost:5000")
         };
     }
 
-    private int GetAvailablePort()
-    {
-        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-        return port;
-    }
-
-    private Task StartServerAsync(CancellationToken cancellationToken)
-    {
-        var command = Cli.Wrap("dotnet")
-            .WithArguments($"run --project {GetCoreProjectPath()} -- serve")
-            .WithEnvironmentVariables(env => env.Set("ASPNETCORE_URLS", $"http://localhost:{_serverPort}"))
-            .WithValidation(CommandResultValidation.None); // Don't throw on non-zero exit codes
-
-        return command.ExecuteAsync(cancellationToken);
-    }
-
-    private string GetCoreProjectPath()
-    {
-        // Navigate up from test directory to find Core project
-        var currentDir = Directory.GetCurrentDirectory();
-        while (currentDir != null && !File.Exists(Path.Combine(currentDir, "SpeedReader.sln")))
-        {
-            currentDir = Directory.GetParent(currentDir)?.FullName;
-        }
-
-        if (currentDir == null)
-            throw new Exception("Could not find SpeedReader.sln");
-
-        return Path.Combine(currentDir, "Src", "Core");
-    }
 
     private void WaitForServerReady()
     {
-        var timeout = TimeSpan.FromSeconds(30);
-        var stopwatch = Stopwatch.StartNew();
+        var timeout = TimeSpan.FromSeconds(10);
+        var startTime = DateTime.UtcNow;
 
-        while (stopwatch.Elapsed < timeout)
+        while (DateTime.UtcNow - startTime < timeout)
         {
             try
             {
                 using var client = new HttpClient();
-                var response = client.GetAsync($"http://localhost:{_serverPort}/health").Result;
+                var response = client.GetAsync("http://localhost:5000/health").Result;
                 if (response.IsSuccessStatusCode)
                 {
                     return;
@@ -97,7 +61,13 @@ public class StreamingUploadE2ETests : IDisposable
                 // Server not ready yet
             }
 
-            Thread.Sleep(500);
+            // Check if server task has failed
+            if (_serverTask.IsFaulted)
+            {
+                throw new Exception("Server failed to start", _serverTask.Exception);
+            }
+
+            Thread.Sleep(100);
         }
 
         throw new Exception($"Server failed to start within {timeout}");
@@ -188,7 +158,7 @@ public class StreamingUploadE2ETests : IDisposable
     {
         _httpClient.Dispose();
 
-        // Cancel the server process
+        // Cancel the server
         _serverCancellation.Cancel();
 
         try
@@ -196,9 +166,9 @@ public class StreamingUploadE2ETests : IDisposable
             // Wait for server to shut down gracefully
             _serverTask.Wait(TimeSpan.FromSeconds(5));
         }
-        catch (AggregateException)
+        catch
         {
-            // Expected when cancellation occurs
+            // Expected when server is cancelled
         }
         finally
         {
