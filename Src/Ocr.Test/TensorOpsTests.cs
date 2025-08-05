@@ -1,4 +1,5 @@
 using Ocr.Algorithms;
+using System.Numerics.Tensors;
 using NumericsTensor = System.Numerics.Tensors.Tensor;
 
 namespace Ocr.Test;
@@ -14,8 +15,7 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        using var buffer = CreateBufferFromTensor(tensor);
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Single(result);
@@ -43,8 +43,7 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        using var buffer = CreateBufferFromTensor(tensor);
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Equal(2, result.Length);
@@ -79,8 +78,7 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        using var buffer = CreateBufferFromTensor(tensor);
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Single(result);
@@ -114,8 +112,7 @@ public class TensorOpsTests
         var tensor = NumericsTensor.Create(tensorData, shape);
 
         // Act
-        using var buffer = CreateBufferFromTensor(tensor);
-        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(buffer);
+        var result = TensorTestUtils.ExtractProbabilityMapsForTesting(tensor);
 
         // Assert
         Assert.Equal(3, result.Length); // 3 batches
@@ -233,13 +230,5 @@ public class TensorOpsTests
         var sortedOriginal = Enumerable.Range(0, 32).Select(i => (float)i).OrderBy(x => x).ToArray();
         var sortedResult = dataManyChannels.OrderBy(x => x).ToArray();
         Assert.Equal(sortedOriginal, sortedResult);
-    }
-
-
-    private static Buffer<float> CreateBufferFromTensor(System.Numerics.Tensors.Tensor<float> tensor)
-    {
-        var buffer = new Buffer<float>(tensor.Lengths.ToArray());
-        tensor.FlattenTo(buffer.AsSpan());
-        return buffer;
     }
 }
