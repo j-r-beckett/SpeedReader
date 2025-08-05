@@ -1,4 +1,5 @@
 using CommunityToolkit.HighPerformance;
+using System.Numerics.Tensors;
 
 namespace Ocr.Test;
 
@@ -8,9 +9,8 @@ public static class TensorTestUtils
     /// Extracts probability maps from NHW tensor format for testing purposes.
     /// Creates new arrays and copies data from spans.
     /// </summary>
-    public static float[][,] ExtractProbabilityMapsForTesting(Buffer<float> buffer)
+    public static float[][,] ExtractProbabilityMapsForTesting(Tensor<float> tensor)
     {
-        var tensor = buffer.AsTensor();
         var shape = tensor.Lengths;
 
         if (shape.Length != 3)
