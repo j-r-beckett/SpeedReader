@@ -1,6 +1,7 @@
 using System.Diagnostics.Metrics;
 using Core;
 using Ocr.Blocks;
+using Ocr.Blocks.SVTR;
 using Ocr.Visualization;
 using Resources;
 using SixLabors.Fonts;

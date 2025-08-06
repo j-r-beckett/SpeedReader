@@ -73,13 +73,20 @@ public class DataflowBridgeTests
         var transform = new TransformBlock<int, string>(x => x.ToString());
         var bridge = new DataflowBridge<int, string>(transform);
 
+        // Submit operations before disposal
         var task1 = bridge.ProcessAsync(1, CancellationToken.None, CancellationToken.None);
         var task2 = bridge.ProcessAsync(2, CancellationToken.None, CancellationToken.None);
 
+        // Get the inner tasks before disposal
+        var innerTask1 = await task1;
+        var innerTask2 = await task2;
+
+        // Now dispose
         await bridge.DisposeAsync();
 
-        var result1 = await (await task1);
-        var result2 = await (await task2);
+        // The operations that were already accepted should complete
+        var result1 = await innerTask1;
+        var result2 = await innerTask2;
 
         Assert.Equal("1", result1);
         Assert.Equal("2", result2);

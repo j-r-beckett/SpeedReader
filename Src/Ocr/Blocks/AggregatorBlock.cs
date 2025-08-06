@@ -16,7 +16,8 @@ public class AggregatorBlock<T>
     {
         var channel = Channel.CreateUnbounded<T>();
 
-        _inBuffer = new ActionBlock<T>(async item => await channel.Writer.WriteAsync(item));
+        _inBuffer = new ActionBlock<T>(async item => await channel.Writer.WriteAsync(item),
+            new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         List<T> resultBuilder = [];
 
@@ -30,7 +31,7 @@ public class AggregatorBlock<T>
             T[] result = resultBuilder.ToArray();
             resultBuilder.Clear();
             return result;
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         _inBuffer.Completion.ContinueWith(t =>
         {

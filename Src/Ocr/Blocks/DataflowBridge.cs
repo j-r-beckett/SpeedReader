@@ -23,10 +23,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
             }
 
             return item.Input;
-        }, new ExecutionDataflowBlockOptions
-        {
-            BoundedCapacity = Environment.ProcessorCount
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         _origin.LinkTo(transformer);
 
@@ -40,10 +37,7 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
 
         _terminus = new ActionBlock<Tuple<TOut, TaskCompletionSource<TOut>>>(pair => pair.Item2.TrySetResult(pair.Item1));
 
-        joiner.LinkTo(_terminus, new DataflowLinkOptions
-        {
-            PropagateCompletion = true
-        });
+        joiner.LinkTo(_terminus, new DataflowLinkOptions { PropagateCompletion = true });
 
         transformer.Completion.ContinueWith(primaryCompletionTask =>
         {
@@ -93,14 +87,16 @@ public class DataflowBridge<TIn, TOut> : IAsyncDisposable
             return completionSource.Task;
         }
 
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         throw new InvalidOperationException($"{nameof(_origin)} declined input");
     }
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         _origin.Complete();
         await _terminus.Completion;
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 }

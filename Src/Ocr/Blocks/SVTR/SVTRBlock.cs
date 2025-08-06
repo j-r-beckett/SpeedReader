@@ -6,7 +6,7 @@ using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Blocks;
+namespace Ocr.Blocks.SVTR;
 
 public class SVTRBlock
 {
@@ -43,7 +43,7 @@ public class SVTRBlock
                 results.Add((boundary, input.Image, input.VizBuilder));
             }
             return results;
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
     }
 
 
@@ -77,6 +77,6 @@ public class SVTRBlock
             }
 
             return (image, boundaries, texts, confidences, vizBuilder);
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
     }
 }

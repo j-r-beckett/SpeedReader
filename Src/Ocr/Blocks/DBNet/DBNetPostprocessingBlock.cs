@@ -5,7 +5,7 @@ using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Blocks;
+namespace Ocr.Blocks.DBNet;
 
 public class DBNetPostprocessingBlock
 {
@@ -32,7 +32,8 @@ public class DBNetPostprocessingBlock
             return (textBoundaries, input.OriginalImage, input.VizBuilder);
         }, new ExecutionDataflowBlockOptions
         {
-            BoundedCapacity = Environment.ProcessorCount
+            BoundedCapacity = Environment.ProcessorCount,
+            MaxDegreeOfParallelism = Environment.ProcessorCount
         });
     }
 

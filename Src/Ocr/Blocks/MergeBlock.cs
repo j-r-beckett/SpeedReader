@@ -8,11 +8,12 @@ public class MergeBlock<TInLeft, TInRight, TOut>
     public readonly ITargetBlock<TInRight> RightTarget;
     public readonly ISourceBlock<TOut> Source;
 
-    public MergeBlock(Func<TInLeft, TInRight, TOut> merger)
+    public MergeBlock(Func<TInLeft, TInRight, TOut> merge)
     {
         var joinBlock = new JoinBlock<TInLeft, TInRight>(new GroupingDataflowBlockOptions { Greedy = false });
 
-        var source = new TransformBlock<Tuple<TInLeft, TInRight>, TOut>(input => merger(input.Item1, input.Item2));
+        var source = new TransformBlock<Tuple<TInLeft, TInRight>, TOut>(input => merge(input.Item1, input.Item2),
+            new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         joinBlock.LinkTo(source, new DataflowLinkOptions { PropagateCompletion = true });
 

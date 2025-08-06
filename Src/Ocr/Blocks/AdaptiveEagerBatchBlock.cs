@@ -13,7 +13,7 @@ public class AdaptiveEagerBatchBlock<T>
         _softMax = initialSoftMax;
         _hardMax = initialHardMax;
 
-        var outBlock = new BufferBlock<T[]>();
+        var outBlock = new BufferBlock<T[]>(new DataflowBlockOptions { BoundedCapacity = 1 });
 
         List<T> batchBuilder = [];
 
@@ -25,7 +25,7 @@ public class AdaptiveEagerBatchBlock<T>
                 await outBlock.SendAsync(batchBuilder.ToArray());
                 batchBuilder.Clear();
             }
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         inBlock.Completion.ContinueWith(async t =>
         {
