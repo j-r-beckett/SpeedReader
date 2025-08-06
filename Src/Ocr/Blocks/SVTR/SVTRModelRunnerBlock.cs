@@ -5,7 +5,7 @@ using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Blocks;
+namespace Ocr.Blocks.SVTR;
 
 public class SVTRModelRunnerBlock
 {

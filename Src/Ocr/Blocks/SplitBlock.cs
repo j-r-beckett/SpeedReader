@@ -10,23 +10,15 @@ public class SplitBlock<TIn, TOutLeft, TOutRight>
 
     public SplitBlock(Func<TIn, (TOutLeft, TOutRight)> splitter)
     {
-        var leftSource = new BufferBlock<TOutLeft>(new GroupingDataflowBlockOptions
-        {
-            BoundedCapacity = Environment.ProcessorCount
-        });
-        var rightSource = new BufferBlock<TOutRight>(new GroupingDataflowBlockOptions
-        {
-            BoundedCapacity = Environment.ProcessorCount
-        });
+        var leftSource = new BufferBlock<TOutLeft>(new GroupingDataflowBlockOptions { BoundedCapacity = 1 });
+
+        var rightSource = new BufferBlock<TOutRight>(new GroupingDataflowBlockOptions { BoundedCapacity = 1 });
 
         Target = new ActionBlock<TIn>(async item =>
         {
             (TOutLeft left, TOutRight right) = splitter(item);
             await Task.WhenAll(leftSource.SendAsync(left), rightSource.SendAsync(right));
-        }, new ExecutionDataflowBlockOptions
-        {
-            BoundedCapacity = Environment.ProcessorCount
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         Target.Completion.ContinueWith(t =>
         {

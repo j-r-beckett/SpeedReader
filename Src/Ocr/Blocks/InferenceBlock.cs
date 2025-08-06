@@ -36,7 +36,7 @@ public class InferenceBlock
             }
 
             return OrtValue.CreateTensorValueFromMemory(result, [inputs.Length, elementShape[0], elementShape[1], elementShape[2]]);
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         var modelRunnerBlock = new TransformBlock<OrtValue, OrtValue>(input =>
         {
@@ -76,7 +76,7 @@ public class InferenceBlock
             itemsProcessedCounter.Add(batchSize);
 
             return output;
-        });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         var postprocessingBlock = new TransformManyBlock<OrtValue, float[]>(tensor =>
         {
@@ -98,7 +98,7 @@ public class InferenceBlock
 
                 return results;
             }
-        });
+        }, new ExecutionDataflowBlockOptions {  BoundedCapacity = 1 });
 
         batchBlock.Target.LinkTo(preprocessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
         preprocessingBlock.LinkTo(modelRunnerBlock, new DataflowLinkOptions { PropagateCompletion = true });

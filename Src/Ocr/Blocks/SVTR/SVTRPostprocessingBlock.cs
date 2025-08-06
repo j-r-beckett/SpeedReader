@@ -5,7 +5,7 @@ using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Blocks;
+namespace Ocr.Blocks.SVTR;
 
 public class SVTRPostprocessingBlock
 {
@@ -15,17 +15,16 @@ public class SVTRPostprocessingBlock
     {
         Target = new TransformBlock<(float[] RawResult, TextBoundary TextBoundary, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (string, double, TextBoundary, Image<Rgb24>, VizBuilder)>(input =>
         {
-            var (recognizedText, confidence) = PostProcess(input.RawResult);
+            var (recognizedText, confidence) = CTC.DecodeSingleSequence(input.RawResult, CharacterDictionary.Count);
 
             // Add individual recognition result using thread-safe method
             input.VizBuilder.AddRecognitionResult(recognizedText, input.TextBoundary);
 
             return (recognizedText, confidence, input.TextBoundary, input.OriginalImage, input.VizBuilder);
+        }, new ExecutionDataflowBlockOptions
+        {
+            BoundedCapacity = Environment.ProcessorCount,
+            MaxDegreeOfParallelism = Environment.ProcessorCount
         });
-    }
-
-    private static (string text, double confidence) PostProcess(float[] modelOutput)
-    {
-        return CTC.DecodeSingleSequence(modelOutput, CharacterDictionary.Count);
     }
 }

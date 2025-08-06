@@ -6,7 +6,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace Ocr.Blocks;
+namespace Ocr.Blocks.SVTR;
 
 public class SVTRPreprocessingBlock
 {
@@ -21,7 +21,12 @@ public class SVTRPreprocessingBlock
         _height = config.Height;
 
         Target = new TransformBlock<(TextBoundary TextBoundary, Image<Rgb24> Image, VizBuilder VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)>(input
-            => (PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image, input.VizBuilder));
+            => (PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image, input.VizBuilder),
+            new ExecutionDataflowBlockOptions
+            {
+                BoundedCapacity = Environment.ProcessorCount,
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            });
     }
 
     private float[] PreProcess(Image<Rgb24> image, TextBoundary textBoundary)
