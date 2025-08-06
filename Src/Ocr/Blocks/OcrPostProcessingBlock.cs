@@ -38,6 +38,10 @@ public static class OcrPostProcessingBlock
 
             postProcessingCounter.Add(1);
             return (data.Image, ocrResults, data.VizBuilder);
+        }, new ExecutionDataflowBlockOptions
+        {
+            BoundedCapacity = Environment.ProcessorCount,
+            MaxDegreeOfParallelism = Environment.ProcessorCount
         });
     }
 

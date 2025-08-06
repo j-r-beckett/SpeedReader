@@ -1,5 +1,7 @@
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
+using Ocr.Blocks.DBNet;
+using Ocr.Blocks.SVTR;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

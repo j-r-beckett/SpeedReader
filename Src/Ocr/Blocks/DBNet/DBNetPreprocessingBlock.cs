@@ -5,7 +5,7 @@ using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Blocks;
+namespace Ocr.Blocks.DBNet;
 
 public class DBNetPreprocessingBlock
 {
@@ -22,7 +22,8 @@ public class DBNetPreprocessingBlock
         Target = new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input
             => (PreProcess(input.Image), input.Image, input.VizBuilder), new ExecutionDataflowBlockOptions
             {
-                BoundedCapacity = Environment.ProcessorCount
+                BoundedCapacity = Environment.ProcessorCount,
+                MaxDegreeOfParallelism = Environment.ProcessorCount
             });
     }
 
