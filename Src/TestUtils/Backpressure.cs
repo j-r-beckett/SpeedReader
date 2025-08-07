@@ -30,15 +30,15 @@ public class Backpressure
 
         int count = inputCount;
 
-        await Task.Delay(initialDelay / 4);
+        await Task.Delay(initialDelay);
 
-        Assert.True(count == inputCount, $"{nameof(sut)} continued to consume input after backpressure should have been engaged");
+        Assert.True(count == inputCount, $"{nameof(sut)} continued to consume input after backpressure should have been engaged, {inputCount} items consumed");
 
         var outputBucket = new BufferBlock<TOut>(new DataflowBlockOptions { BoundedCapacity = 100 });
 
         outputConsumer.LinkTo(outputBucket);
 
-        await Task.Delay(initialDelay / 4);
+        await Task.Delay(initialDelay);
 
         Assert.True(count < inputCount, $"{nameof(sut)} did not consume any input after backpressure was released");
     }

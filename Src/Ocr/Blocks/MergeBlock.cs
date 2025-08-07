@@ -10,7 +10,7 @@ public class MergeBlock<TInLeft, TInRight, TOut>
 
     public MergeBlock(Func<TInLeft, TInRight, TOut> merge)
     {
-        var joinBlock = new JoinBlock<TInLeft, TInRight>(new GroupingDataflowBlockOptions { Greedy = false });
+        var joinBlock = new JoinBlock<TInLeft, TInRight>(new GroupingDataflowBlockOptions { Greedy = false, BoundedCapacity = 1 });
 
         var source = new TransformBlock<Tuple<TInLeft, TInRight>, TOut>(input => merge(input.Item1, input.Item2),
             new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });

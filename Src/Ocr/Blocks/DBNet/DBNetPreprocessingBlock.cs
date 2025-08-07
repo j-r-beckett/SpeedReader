@@ -22,8 +22,7 @@ public class DBNetPreprocessingBlock
         Target = new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input
             => (PreProcess(input.Image), input.Image, input.VizBuilder), new ExecutionDataflowBlockOptions
             {
-                BoundedCapacity = Environment.ProcessorCount,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
+                BoundedCapacity = 1
             });
     }
 

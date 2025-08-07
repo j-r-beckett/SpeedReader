@@ -23,8 +23,7 @@ public class SVTRPostprocessingBlock
             return (recognizedText, confidence, input.TextBoundary, input.OriginalImage, input.VizBuilder);
         }, new ExecutionDataflowBlockOptions
         {
-            BoundedCapacity = Environment.ProcessorCount,
-            MaxDegreeOfParallelism = Environment.ProcessorCount
+            BoundedCapacity = 1
         });
     }
 }

@@ -18,7 +18,10 @@ public class SplitBlock<TIn, TOutLeft, TOutRight>
         {
             (TOutLeft left, TOutRight right) = splitter(item);
             await Task.WhenAll(leftSource.SendAsync(left), rightSource.SendAsync(right));
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+        }, new ExecutionDataflowBlockOptions
+        {
+            BoundedCapacity = 1
+        });
 
         Target.Completion.ContinueWith(t =>
         {
