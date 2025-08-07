@@ -32,8 +32,8 @@ public class DBNetPostprocessingBlock
             return (textBoundaries, input.OriginalImage, input.VizBuilder);
         }, new ExecutionDataflowBlockOptions
         {
-            BoundedCapacity = Environment.ProcessorCount,
-            MaxDegreeOfParallelism = Environment.ProcessorCount
+            BoundedCapacity = 1,
+            MaxDegreeOfParallelism = 1
         });
     }
 
