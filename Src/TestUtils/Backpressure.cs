@@ -5,20 +5,47 @@ namespace TestUtils;
 
 public class Backpressure
 {
-    public async Task TestBackpressure<TIn, TOut>(IPropagatorBlock<TIn, TOut> sut, ISourceBlock<TIn> inputProducer,
+    public async Task TestBackpressure<TIn, TOut>(IPropagatorBlock<TIn, TOut> sut, Func<TIn> inputCreator,
         TimeSpan initialDelay)
     {
         int inputCount = 0;
 
-        var inputCounter = new TransformBlock<TIn, TIn>(input =>
+        var inputProducer = new BufferBlock<TIn>(new DataflowBlockOptions { BoundedCapacity = 1 });
+
+        var cts = new CancellationTokenSource();
+        var inputProducerTask = Task.Run(async () =>
         {
-            inputCount++;
-            return input;
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+            try
+            {
+                while (true)
+                {
+                    await inputProducer.SendAsync(inputCreator(), cts.Token);
+                    inputCount++;
+                    cts.Token.ThrowIfCancellationRequested();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // do nothing
+            }
+        }, cts.Token);
 
-        inputProducer.LinkTo(inputCounter);
+        sut.Completion.ContinueWith(async _ =>
+        {
+            cts.Cancel();
+            try
+            {
+                await inputProducerTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // do nothing
+            }
+            inputProducer.Complete();
+            await inputProducer.Completion;
+        });
 
-        inputCounter.LinkTo(sut);
+        inputProducer.LinkTo(sut);
 
         var outputConsumer = new BufferBlock<TOut>(new DataflowBlockOptions { BoundedCapacity = 1 });
 

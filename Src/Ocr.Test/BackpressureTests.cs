@@ -37,35 +37,18 @@ public class BackpressureTests : IAsyncDisposable
             elementShape: [3, 64, 64],
             _meter,
             "test",
-            cacheFirstInference: false
+            cacheFirstInference: true
         );
         _blockUnderTest = inferenceBlock.Target;
-
-        // Create input source that continuously sends data
-        var inputSource = new BufferBlock<float[]>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                await inputSource.SendAsync(new float[3 * 64 * 64]);
-            }
-        });
 
         // Act & Assert
         var tester = new Backpressure();
         await tester.TestBackpressure(
             inferenceBlock.Target,
-            inputSource,
-            initialDelay: TimeSpan.FromMilliseconds(1000)
+            () => new float[3 * 64 * 64],
+            initialDelay: TimeSpan.FromMilliseconds(500)
         );
-
-        inputSource.Complete();
     }
-
 
     [Fact]
     public async Task SplitBlock_Backpressure()
@@ -81,30 +64,14 @@ public class BackpressureTests : IAsyncDisposable
         var encapsulated = DataflowBlock.Encapsulate(splitBlock.Target, joinBlock);
         _blockUnderTest = encapsulated;
 
-        // Create input source
-        var inputSource = new BufferBlock<int>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        // Feed continuous stream
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 100000; i++)
-            {
-                await inputSource.SendAsync(i);
-            }
-        });
-
         // Act & Assert
+        var counter = 0;
         var tester = new Backpressure();
         await tester.TestBackpressure(
             encapsulated,
-            inputSource,
+            () => counter++,
             initialDelay: TimeSpan.FromMilliseconds(100)
         );
-
-        inputSource.Complete();
     }
 
 
@@ -122,27 +89,12 @@ public class BackpressureTests : IAsyncDisposable
         var encapsulated = DataflowBlock.Encapsulate(splitBlock.Target, mergeBlock.Source);
         _blockUnderTest = encapsulated;
 
-        // Create input source
-        var inputSource = new BufferBlock<int>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        // Feed continuous stream
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 100000; i++)
-            {
-                await inputSource.SendAsync(i);
-            }
-            inputSource.Complete();
-        });
-
         // Act & Assert
+        var counter = 0;
         var tester = new Backpressure();
         await tester.TestBackpressure(
             encapsulated,
-            inputSource,
+            () => counter++,
             initialDelay: TimeSpan.FromMilliseconds(100)
         );
     }
@@ -159,38 +111,24 @@ public class BackpressureTests : IAsyncDisposable
                 Width = 640,
                 Height = 640
             },
-            CacheFirstInference = false
+            CacheFirstInference = true
         };
         var modelRunnerBlock = new DBNetModelRunnerBlock(session, config, _meter);
         _blockUnderTest = modelRunnerBlock.Target;
-
-        // Create input source that continuously sends data
-        var inputSource = new BufferBlock<(float[], Image<Rgb24>, VizBuilder)>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        // Feed continuous stream of processed data
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                var image = new Image<Rgb24>(640, 640, Color.White);
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var floatData = new float[3 * 640 * 640];  // CHW format
-                await inputSource.SendAsync((floatData, image, vizBuilder));
-            }
-        });
 
         // Act & Assert
         var tester = new Backpressure();
         await tester.TestBackpressure(
             modelRunnerBlock.Target,
-            inputSource,
-            initialDelay: TimeSpan.FromMilliseconds(1000)
+            () =>
+            {
+                var image = new Image<Rgb24>(640, 640, Color.White);
+                var vizBuilder = VizBuilder.Create(VizMode.None, image);
+                var floatData = new float[3 * 640 * 640];  // CHW format
+                return (floatData, image, vizBuilder);
+            },
+            initialDelay: TimeSpan.FromMilliseconds(500)
         );
-
-        inputSource.Complete();
     }
 
 
@@ -202,21 +140,16 @@ public class BackpressureTests : IAsyncDisposable
         var config = new OcrConfiguration
         {
             Svtr = new SvtrConfiguration(),
-            CacheFirstInference = false
+            CacheFirstInference = true
         };
         var svtrBlock = new SVTRBlock(session, config, _meter);
         _blockUnderTest = svtrBlock.Target;
 
-        // Create input source that continuously sends data
-        var inputSource = new BufferBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder)>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        // Feed continuous stream of text boundaries with images
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 10000; i++)
+        // Act & Assert
+        var tester = new Backpressure();
+        await tester.TestBackpressure(
+            svtrBlock.Target,
+            () =>
             {
                 var image = new Image<Rgb24>(640, 480, Color.White);
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
@@ -237,19 +170,10 @@ public class BackpressureTests : IAsyncDisposable
                         (110, 50)
                     })
                 };
-                await inputSource.SendAsync((boundaries, image, vizBuilder));
-            }
-        });
-
-        // Act & Assert
-        var tester = new Backpressure();
-        await tester.TestBackpressure(
-            svtrBlock.Target,
-            inputSource,
-            initialDelay: TimeSpan.FromMilliseconds(1000)
+                return (boundaries, image, vizBuilder);
+            },
+            initialDelay: TimeSpan.FromMilliseconds(500)
         );
-
-        inputSource.Complete();
     }
 
     [Fact]
@@ -260,21 +184,16 @@ public class BackpressureTests : IAsyncDisposable
         var config = new OcrConfiguration
         {
             Svtr = new SvtrConfiguration(),
-            CacheFirstInference = false
+            CacheFirstInference = true
         };
         var svtrModelRunnerBlock = new SVTRModelRunnerBlock(session, config, _meter);
         _blockUnderTest = svtrModelRunnerBlock.Target;
 
-        // Create input source that continuously sends data
-        var inputSource = new BufferBlock<(float[], TextBoundary, Image<Rgb24>, VizBuilder)>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        // Feed continuous stream of preprocessed SVTR data
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 100; i++)
+        // Act & Assert
+        var tester = new Backpressure();
+        await tester.TestBackpressure(
+            svtrModelRunnerBlock.Target,
+            () =>
             {
                 var image = new Image<Rgb24>(config.Svtr.Width, config.Svtr.Height, Color.White);
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
@@ -286,19 +205,10 @@ public class BackpressureTests : IAsyncDisposable
                     (90, 40),
                     (10, 40)
                 });
-                await inputSource.SendAsync((floatData, boundary, image, vizBuilder));
-            }
-        });
-
-        // Act & Assert
-        var tester = new Backpressure();
-        await tester.TestBackpressure(
-            svtrModelRunnerBlock.Target,
-            inputSource,
-            initialDelay: TimeSpan.FromMilliseconds(1000)
+                return (floatData, boundary, image, vizBuilder);
+            },
+            initialDelay: TimeSpan.FromMilliseconds(500)
         );
-
-        inputSource.Complete();
     }
 
     [Fact]
@@ -311,38 +221,24 @@ public class BackpressureTests : IAsyncDisposable
         {
             DbNet = new DbNetConfiguration(),
             Svtr = new SvtrConfiguration(),
-            CacheFirstInference = false
+            CacheFirstInference = true
         };
         var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, config, _meter);
         _blockUnderTest = ocrBlock;
-
-        // Create input source that continuously sends data
-        var inputSource = new BufferBlock<(Image<Rgb24>, VizBuilder)>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        // Feed continuous stream of images
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                var image = new Image<Rgb24>(640, 640, Color.White);
-                image.Mutate(ctx => ctx.DrawText("test", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                await inputSource.SendAsync((image, vizBuilder));
-            }
-        });
 
         // Act & Assert
         var tester = new Backpressure();
         await tester.TestBackpressure(
             ocrBlock,
-            inputSource,
-            initialDelay: TimeSpan.FromMilliseconds(5000)
+            () =>
+            {
+                var image = new Image<Rgb24>(640, 640, Color.White);
+                image.Mutate(ctx => ctx.DrawText("test", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
+                var vizBuilder = VizBuilder.Create(VizMode.None, image);
+                return (image, vizBuilder);
+            },
+            initialDelay: TimeSpan.FromMilliseconds(500)
         );
-
-        inputSource.Complete();
     }
 
     [Fact]
@@ -357,38 +253,24 @@ public class BackpressureTests : IAsyncDisposable
                 Width = 640,
                 Height = 640
             },
-            CacheFirstInference = false
+            CacheFirstInference = true
         };
         var dbNetBlock = new DBNetBlock(session, config, _meter);
         _blockUnderTest = dbNetBlock.Target;
-
-        // Create input source that continuously sends data
-        var inputSource = new BufferBlock<(Image<Rgb24>, VizBuilder)>(new DataflowBlockOptions
-        {
-            BoundedCapacity = DataflowBlockOptions.Unbounded
-        });
-
-        // Feed continuous stream of 640x640 white images with void visualization
-        _ = Task.Run(async () =>
-        {
-            for (int i = 0; i < 1000; i++)
-            {
-                var image = new Image<Rgb24>(640, 640, Color.Black);
-                image.Mutate(ctx => ctx.DrawText("hello", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                await inputSource.SendAsync((image, vizBuilder));
-            }
-        });
 
         // Act & Assert
         var tester = new Backpressure();
         await tester.TestBackpressure(
             dbNetBlock.Target,
-            inputSource,
-            initialDelay: TimeSpan.FromMilliseconds(1000)
+            () =>
+            {
+                var image = new Image<Rgb24>(640, 640, Color.Black);
+                image.Mutate(ctx => ctx.DrawText("hello", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
+                var vizBuilder = VizBuilder.Create(VizMode.None, image);
+                return (image, vizBuilder);
+            },
+            initialDelay: TimeSpan.FromMilliseconds(500)
         );
-
-        inputSource.Complete();
     }
 
     public async ValueTask DisposeAsync()
