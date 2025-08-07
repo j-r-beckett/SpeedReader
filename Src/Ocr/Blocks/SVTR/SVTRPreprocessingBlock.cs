@@ -24,8 +24,7 @@ public class SVTRPreprocessingBlock
             => (PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image, input.VizBuilder),
             new ExecutionDataflowBlockOptions
             {
-                BoundedCapacity = Environment.ProcessorCount,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
+                BoundedCapacity = 1
             });
     }
 
