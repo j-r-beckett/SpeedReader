@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Threading.Channels;
 using CliWrap;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
