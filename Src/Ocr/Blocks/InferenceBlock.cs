@@ -98,7 +98,7 @@ public class InferenceBlock
 
                 return results;
             }
-        }, new ExecutionDataflowBlockOptions {  BoundedCapacity = 1 });
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         batchBlock.Target.LinkTo(preprocessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
         preprocessingBlock.LinkTo(modelRunnerBlock, new DataflowLinkOptions { PropagateCompletion = true });

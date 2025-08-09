@@ -1,5 +1,4 @@
 using Ocr.Algorithms;
-using System.Numerics.Tensors;
 using NumericsTensor = System.Numerics.Tensors.Tensor;
 
 namespace Ocr.Test;

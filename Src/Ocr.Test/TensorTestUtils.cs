@@ -1,5 +1,5 @@
-using CommunityToolkit.HighPerformance;
 using System.Numerics.Tensors;
+using CommunityToolkit.HighPerformance;
 
 namespace Ocr.Test;
 
