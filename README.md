@@ -1,6 +1,6 @@
 # SpeedReader
 
-Ultra-fast OCR with first-class video support.
+An OCR pipeline written in C# with video support.
 
 ## Quickstart
 
