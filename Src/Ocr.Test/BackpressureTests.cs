@@ -237,7 +237,7 @@ public class BackpressureTests : IAsyncDisposable
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 return (image, vizBuilder);
             },
-            initialDelay: TimeSpan.FromMilliseconds(500)
+            initialDelay: TimeSpan.FromMilliseconds(1000)
         );
     }
 

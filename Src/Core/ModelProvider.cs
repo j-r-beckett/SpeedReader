@@ -12,7 +12,8 @@ public class ModelProvider : IDisposable
 
     public InferenceSession GetSession(Model model) => GetSession(model, new SessionOptions
     {
-        IntraOpNumThreads = Environment.ProcessorCount / 2
+        IntraOpNumThreads = 1,
+        InterOpNumThreads = 1
     });
 
     public InferenceSession GetSession(Model model, SessionOptions options)
