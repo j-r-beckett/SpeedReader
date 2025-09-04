@@ -38,6 +38,8 @@ public class InferenceBlock
             return OrtValue.CreateTensorValueFromMemory(result, [inputs.Length, elementShape[0], elementShape[1], elementShape[2]]);
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
+        var modelRunnerParallelism = 6;
+
         var modelRunnerBlock = new TransformBlock<OrtValue, OrtValue>(input =>
         {
             var batchSize = (int)input.GetTensorTypeAndShape().Shape[0];
@@ -76,7 +78,11 @@ public class InferenceBlock
             itemsProcessedCounter.Add(batchSize);
 
             return output;
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+        }, new ExecutionDataflowBlockOptions
+        {
+            BoundedCapacity = modelRunnerParallelism,
+            MaxDegreeOfParallelism = modelRunnerParallelism
+        });
 
         var postprocessingBlock = new TransformManyBlock<OrtValue, float[]>(tensor =>
         {
