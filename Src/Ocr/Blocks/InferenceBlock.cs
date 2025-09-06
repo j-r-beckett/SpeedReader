@@ -38,7 +38,7 @@ public class InferenceBlock
             return OrtValue.CreateTensorValueFromMemory(result, [inputs.Length, elementShape[0], elementShape[1], elementShape[2]]);
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
-        var modelRunnerParallelism = 6;
+        var modelRunnerParallelism = 4;
 
         var modelRunnerBlock = new TransformBlock<OrtValue, OrtValue>(input =>
         {
@@ -54,6 +54,7 @@ public class InferenceBlock
                 float[] outputData = (float[])cachedData.Clone();
                 long[] outputShape = (long[])cachedShape!.Clone();
                 output = OrtValue.CreateTensorValueFromMemory(outputData, outputShape);
+                Thread.Sleep(134);
             }
             else
             {

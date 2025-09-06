@@ -43,7 +43,7 @@ public class OcrTestFramework
     public async Task<OcrTestResult> RunOcrTest(OcrTestScenario scenario)
     {
         using var modelProvider = new ModelProvider();
-        var dbnetSession = modelProvider.GetSession(Model.DbNet18);
+        var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         using var meter = new Meter("OcrTestFramework");
 

@@ -102,7 +102,7 @@ public class Program
 
             // Create OCR pipeline
             using var modelProvider = new ModelProvider();
-            var dbnetSession = modelProvider.GetSession(Model.DbNet18);
+            var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
             var svtrSession = modelProvider.GetSession(Model.SVTRv2);
 
             var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
@@ -150,7 +150,7 @@ public class Program
 
         // Create shared inference sessions
         using var modelProvider = new ModelProvider();
-        var dbnetSession = modelProvider.GetSession(Model.DbNet18);
+        var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
 
         // Create singleton OCR bridge

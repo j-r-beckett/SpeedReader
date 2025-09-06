@@ -2,13 +2,15 @@ namespace Resources;
 
 public static class Models
 {
-    public static byte[] GetModelBytes(Model model)
+    public static byte[] GetModelBytes(Model model) => GetModelBytes(model, ModelPrecision.FP32);
+    
+    public static byte[] GetModelBytes(Model model, ModelPrecision precision)
     {
-        string resourceName = GetResourceName(model);
+        string resourceName = GetResourceName(model, precision);
         return Resource.GetBytes(resourceName);
     }
 
-    private static string GetResourceName(Model model)
+    private static string GetResourceName(Model model, ModelPrecision precision)
     {
         string modelName = model switch
         {
@@ -17,7 +19,14 @@ public static class Models
             _ => throw new ArgumentException($"Unknown model {model}")
         };
 
-        return $"models.{modelName}.end2end.onnx";
+        string fileName = precision switch
+        {
+            ModelPrecision.FP32 => "end2end.onnx",
+            ModelPrecision.INT8 => "end2end_int8.onnx",
+            _ => throw new ArgumentException($"Unknown precision {precision}")
+        };
+
+        return $"models.{modelName}.{fileName}";
     }
 }
 
@@ -25,4 +34,10 @@ public enum Model
 {
     DbNet18,
     SVTRv2
+}
+
+public enum ModelPrecision
+{
+    FP32,
+    INT8
 }

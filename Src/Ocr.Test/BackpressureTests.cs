@@ -31,7 +31,7 @@ public class BackpressureTests : IAsyncDisposable
     public async Task InferenceBlock_Backpressure()
     {
         // Arrange
-        var session = _modelProvider.GetSession(Model.DbNet18);
+        var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var inferenceBlock = new InferenceBlock(
             session,
             elementShape: [3, 64, 64],
@@ -103,7 +103,7 @@ public class BackpressureTests : IAsyncDisposable
     public async Task DBNetModelRunnerBlock_Backpressure()
     {
         // Arrange
-        var session = _modelProvider.GetSession(Model.DbNet18);
+        var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var config = new OcrConfiguration
         {
             DbNet = new DbNetConfiguration
@@ -215,7 +215,7 @@ public class BackpressureTests : IAsyncDisposable
     public async Task OcrBlock_Backpressure()
     {
         // Arrange
-        var dbnetSession = _modelProvider.GetSession(Model.DbNet18);
+        var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var svtrSession = _modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration
         {
@@ -245,7 +245,7 @@ public class BackpressureTests : IAsyncDisposable
     public async Task DBNetBlock_Backpressure()
     {
         // Arrange
-        var session = _modelProvider.GetSession(Model.DbNet18);
+        var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var config = new OcrConfiguration
         {
             DbNet = new DbNetConfiguration

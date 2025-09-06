@@ -50,6 +50,12 @@ RUN python3 mmdeploy/tools/deploy.py \
     --log-level INFO \
     --dump-info
 
+# Prepare ICDAR 2015 calibration dataset
+RUN cd mmocr && \
+    python3 tools/dataset_converters/prepare_dataset.py icdar2015 --task textdet && \
+    mkdir -p /calibration_data && \
+    cp data/icdar2015/textdet_imgs/train/* /calibration_data/
+
 # SVTRv2 Text Recognition
 RUN git clone https://github.com/Topdu/OpenOCR.git && \
     cd OpenOCR && \
