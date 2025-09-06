@@ -20,7 +20,7 @@
           Inputs="@(ModelBuilderFiles)"
           Outputs="models/.built">
     <RemoveDir Directories="models" Condition="Exists('models')" />
-    <Exec Command="bash buildModels.sh ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
+    <Exec Command="uv run build_models.py ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
     <Touch Files="models/.built" AlwaysCreate="true" />
   </Target>
 
