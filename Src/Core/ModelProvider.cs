@@ -6,27 +6,29 @@ namespace Core;
 
 public class ModelProvider : IDisposable
 {
-    private readonly ConcurrentDictionary<Model, InferenceSession> _sessions = new();
+    private readonly ConcurrentDictionary<(Model, ModelPrecision), InferenceSession> _sessions = new();
     private readonly Lock _lock = new();
     private bool _disposed;
 
-    public InferenceSession GetSession(Model model) => GetSession(model, new SessionOptions
+    public InferenceSession GetSession(Model model) => GetSession(model, ModelPrecision.FP32);
+
+    public InferenceSession GetSession(Model model, ModelPrecision precision) => GetSession(model, precision, new SessionOptions
     {
         IntraOpNumThreads = 1,
         InterOpNumThreads = 1
     });
 
-    public InferenceSession GetSession(Model model, SessionOptions options)
+    public InferenceSession GetSession(Model model, ModelPrecision precision, SessionOptions options)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _sessions.GetOrAdd(model, _ => CreateSessionInternal(model, options));
+        return _sessions.GetOrAdd((model, precision), _ => CreateSessionInternal(model, precision, options));
     }
 
-    private InferenceSession CreateSessionInternal(Model model, SessionOptions options)
+    private InferenceSession CreateSessionInternal(Model model, ModelPrecision precision, SessionOptions options)
     {
         lock (_lock)
         {
-            var modelBytes = Models.GetModelBytes(model);
+            var modelBytes = Models.GetModelBytes(model, precision);
             return new InferenceSession(modelBytes, options);
         }
     }

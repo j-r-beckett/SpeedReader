@@ -10,19 +10,10 @@
     <PackageReference Include="SixLabors.Fonts" />
   </ItemGroup>
 
+
   <ItemGroup>
-    <ModelBuilderFiles Include="$(MSBuildProjectDirectory)/modelBuilder/**/*" />
     <BinaryBuilderFiles Include="$(MSBuildProjectDirectory)/downloadBinaries.sh" />
   </ItemGroup>
-
-  <Target Name="BuildModels"
-          BeforeTargets="BeforeBuild"
-          Inputs="@(ModelBuilderFiles)"
-          Outputs="models/.built">
-    <RemoveDir Directories="models" Condition="Exists('models')" />
-    <Exec Command="uv run build_models.py ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
-    <Touch Files="models/.built" AlwaysCreate="true" />
-  </Target>
 
   <Target Name="DownloadBinaries"
           BeforeTargets="BeforeBuild"

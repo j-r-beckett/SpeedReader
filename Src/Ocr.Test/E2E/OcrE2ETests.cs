@@ -74,7 +74,7 @@ public class OcrE2ETests
         expectedResults.Add(new ExpectedText(DrawText(image, "topleft", 2, 2), "topleft"));
         expectedResults.Add(new ExpectedText(DrawText(image, "topright", 1120, 2), "topright"));
         expectedResults.Add(new ExpectedText(DrawText(image, "bottomright", 1079, 775), "bottomright"));
-        expectedResults.Add(new ExpectedText(DrawText(image, "bottomleft", 2, 780), "bottomleft"));
+        expectedResults.Add(new ExpectedText(DrawText(image, "bottomleft", 2, 775), "bottomleft"));
 
         var scenario = new OcrTestScenario("EdgePositions", image, expectedResults);
 
