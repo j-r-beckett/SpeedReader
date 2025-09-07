@@ -392,6 +392,11 @@
 
                 const data = await response.json();
 
+                // API now returns an array of results
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error('No OCR results returned from server');
+                }
+
                 // Display results
                 showStatus(`Successfully processed ${file.name}`, 'success');
                 displayResults(data);
@@ -422,19 +427,18 @@
             }
         }
 
-        function displayResults(data) {
-            // Store current JSON data
-            currentJsonData = data;
+        function displayResults(dataArray) {
+            // Store current JSON data (full array)
+            currentJsonData = dataArray;
 
-            // Create a copy without pageNumber for display
-            const displayData = { ...data };
-            delete displayData.pageNumber;
+            // Get first result for visualization 
+            const firstResult = dataArray[0];
 
-            // Clear previous JSON viewer content
+            // Display the full array in JSON viewer
             jsonViewer.innerHTML = '';
 
-            // Create interactive JSON viewer
-            const jsonHTML = createJSONViewer(displayData, 'root', 1);
+            // Create interactive JSON viewer for the full array
+            const jsonHTML = createJSONViewer(dataArray, 'root', 1);
             jsonViewer.innerHTML = jsonHTML;
 
             // Add click handlers for toggles
@@ -452,9 +456,9 @@
             isAllExpanded = false;
             expandAllBtn.textContent = 'Expand All';
 
-            // Visualize the results
-            if (currentImageData && data.lines) {
-                visualizeOCRResults(data);
+            // Visualize the first result
+            if (currentImageData && firstResult && firstResult.lines) {
+                visualizeOCRResults(firstResult);
             }
 
             // resultsContainer.style.display = 'block';

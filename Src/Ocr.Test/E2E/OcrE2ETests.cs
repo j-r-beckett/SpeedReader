@@ -215,4 +215,21 @@ public class OcrE2ETests
         _framework.AssertDetectionAccuracy(scenario, result);
         _framework.AssertRecognitionAccuracy(scenario, result);
     }
+
+    [Fact(Skip = "Known bug: SVTR pipeline crashes on empty text detection arrays")]
+    public async Task NoTextDetected_ShouldReturnEmptyResult()
+    {
+        // Arrange - Create an image with no detectable text (solid blue background)
+        var image = new Image<Rgb24>(800, 600, Color.White);
+        var expectedResults = new List<ExpectedText>(); // Empty list - expect no text to be detected
+
+        var scenario = new OcrTestScenario("NoTextDetected", image, expectedResults);
+
+        // Act & Assert - This should NOT throw an exception
+        var result = await _framework.RunOcrTest(scenario);
+
+        // Assert - Should return empty result gracefully
+        Assert.NotNull(result);
+        Assert.Empty(result.DetectedBoxes);
+    }
 }
