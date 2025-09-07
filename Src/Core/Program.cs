@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics.Metrics;
 using System.Text.Json;
-using System.Threading.Channels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
@@ -12,6 +11,7 @@ using Ocr.Visualization;
 using Prometheus;
 using Resources;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Core;
@@ -163,105 +163,45 @@ public class Program
 
         app.MapPost("api/ocr", async (HttpContext context, DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
         {
-            try
+            var tasks = new List<Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)>>();
+
+            await foreach (var image in ParseImagesFromRequest(context.Request))
             {
-                // Read image from request body
-                using var memoryStream = new MemoryStream();
-                await context.Request.Body.CopyToAsync(memoryStream);
-                memoryStream.Position = 0;
-
-                // Load image
-                using var image = await Image.LoadAsync<Rgb24>(memoryStream);
-
-                // Create VizBuilder and process through bridge (always VizMode.None for server)
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var resultTask = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
-                var result = await resultTask;
-
-                // Update page number
-                var ocrResults = result.Item2 with { PageNumber = 0 };
-
-                // Return JSON response
-                context.Response.ContentType = "application/json";
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-                var json = JsonSerializer.Serialize(ocrResults, jsonOptions);
-                await context.Response.WriteAsync(json);
+                var ocrTask = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+                tasks.Add(ocrTask);
             }
-            catch (Exception ex)
+
+            if (tasks.Count == 0)
             {
-                context.Response.StatusCode = 400;
-                await context.Response.WriteAsync($"Error processing image: {ex.Message}");
+                throw new BadHttpRequestException("No images found in request");
             }
-        });
 
-        app.MapPost("api/ocr/stream", async (HttpContext context, DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
-        {
-            var boundary = context.Request.GetMultipartBoundary();
-            var reader = new MultipartReader(boundary, context.Request.Body);
-            var imageCount = 0;
+            // Await all tasks - fail fast if any fail
+            var results = await Task.WhenAll(tasks);
 
+            // Process results and create response
+            var ocrResults = new List<OcrResult>();
+            for (int i = 0; i < results.Length; i++)
+            {
+                var (image, result, _) = results[i];
+                ocrResults.Add(result with { PageNumber = i });
+
+                // Dispose image after processing
+                image.Dispose();
+            }
+
+            // Return JSON response
             context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync("[");
-
-            // Create unbounded channel for OCR tasks - DataflowBridge handles backpressure
-            var channel = Channel.CreateUnbounded<(Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)> OcrTask, int PageNumber)>();
-
-            // Background task to process results as they complete
-            var backgroundTask = Task.Run(async () =>
+            var jsonOptions = new JsonSerializerOptions
             {
-                var responseWritten = false;
-                await foreach (var (ocrTask, pageNumber) in channel.Reader.ReadAllAsync())
-                {
-                    try
-                    {
-                        var (image, result, _) = await ocrTask;
-                        var ocrResults = result with { PageNumber = pageNumber };
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
 
-                        if (responseWritten) await context.Response.WriteAsync(",");
-                        responseWritten = true;
-
-                        var json = JsonSerializer.Serialize(ocrResults, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-                        await context.Response.WriteAsync(json);
-                        await context.Response.Body.FlushAsync();
-
-                        // Dispose image after processing is complete
-                        image.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log error but continue processing other images
-                        Console.WriteLine($"Error processing image: {ex.Message}");
-                    }
-                }
-            });
-
-            // Process multipart sections and queue OCR tasks
-            while (await reader.ReadNextSectionAsync() is { } section)
-            {
-                var contentDisposition = section.GetContentDispositionHeader();
-
-                if (contentDisposition?.FileName != null)
-                {
-                    var image = await Image.LoadAsync<Rgb24>(section.Body);
-                    var vizBuilder = VizBuilder.Create(VizMode.None, image);
-
-                    // Start OCR processing asynchronously and add to channel
-                    var ocrTaskWrapper = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
-                    await channel.Writer.WriteAsync((ocrTaskWrapper, imageCount));
-
-                    imageCount++;
-                }
-            }
-
-            // Complete the channel and wait for background task
-            channel.Writer.Complete();
-            await backgroundTask;
-
-            await context.Response.WriteAsync("]");
+            // Always return array for consistent API
+            var json = JsonSerializer.Serialize(ocrResults, jsonOptions);
+            await context.Response.WriteAsync(json);
         });
 
         // Add Prometheus metrics endpoint (automatic)
@@ -270,15 +210,101 @@ public class Program
         Console.WriteLine("Starting SpeedReader server...");
         await app.RunAsync();
     }
+
+    private static async IAsyncEnumerable<Image<Rgb24>> ParseImagesFromRequest(HttpRequest request)
+    {
+        var contentType = request.ContentType ?? "";
+
+        // ImageSharp decoder options; used in multipart and single image flows
+        var config = Configuration.Default.Clone();
+        config.PreferContiguousImageBuffers = true;
+        var decoderOptions = new DecoderOptions { Configuration = config };
+
+        if (contentType.StartsWith("multipart/"))
+        {
+            var boundary = request.GetMultipartBoundary();
+            var reader = new MultipartReader(boundary, request.Body);
+
+            await foreach (var section in request.ExtractSectionsAsync())
+            {
+                var contentDisposition = section.GetContentDispositionHeader();
+
+                if (contentDisposition?.FileName != null)
+                {
+                    Image<Rgb24> image;
+                    try
+                    {
+                        image = await Image.LoadAsync<Rgb24>(decoderOptions, section.Body);
+                    }
+                    catch (UnknownImageFormatException ex)
+                    {
+                        throw new BadHttpRequestException(
+                            $"Invalid image format in file '{contentDisposition.FileName}': {ex.Message}");
+                    }
+
+                    yield return image;
+                }
+            }
+        }
+        else if (contentType.StartsWith("application/") || contentType.StartsWith("image/") || string.IsNullOrEmpty(contentType))
+        {
+            using var memoryStream = new MemoryStream();
+            await request.Body.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            Image<Rgb24> image;
+            try
+            {
+                image = await Image.LoadAsync<Rgb24>(decoderOptions, memoryStream);
+            }
+            catch (UnknownImageFormatException ex)
+            {
+                throw new BadHttpRequestException($"Invalid image format: {ex.Message}");
+            }
+            yield return image;
+        }
+        else
+        {
+            throw new BadHttpRequestException($"Unsupported content type: {contentType}");
+        }
+    }
 }
 
 public static class HttpRequestExtensions
 {
+    public static async IAsyncEnumerable<MultipartSection> ExtractSectionsAsync(this  HttpRequest request)
+    {
+        var boundary = request.GetMultipartBoundary();
+        var reader = new MultipartReader(boundary, request.Body);
+
+        // We can't wrap the while loop in a try/catch because you can't yield return from inside a try/catch, so we
+        // need this awkward while(true) construct
+        while (true)
+        {
+            MultipartSection? section;
+            try
+            {
+                section = await reader.ReadNextSectionAsync();
+            }
+            catch (IOException)
+            {
+                section = null;
+            }
+
+            if (section is null)
+            {
+                break;
+            }
+
+            yield return section;
+        }
+    }
+
     public static string GetMultipartBoundary(this HttpRequest request)
     {
-        var contentType = request.ContentType ?? throw new InvalidOperationException("No Content-Type header");
+        var contentType = request.ContentType ?? throw new BadHttpRequestException("No Content-Type header");
         var boundaryIndex = contentType.IndexOf("boundary=");
-        if (boundaryIndex == -1) throw new InvalidOperationException("No boundary found");
+        if (boundaryIndex == -1) throw new BadHttpRequestException("No boundary found in Content-Type header");
 
         var boundary = contentType.Substring(boundaryIndex + 9).Split(';')[0].Trim(' ', '"');
         return boundary;
