@@ -1,16 +1,27 @@
 name: speedreader-dev
 services:
   app:
-    image: 192.168.0.12:4000/speedreader:0.3.0.dev
-    ports:
-      - "5002:5001"
+    image: ${SPEEDREADER_IMAGE}
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:5001
+    volumes:
+      - ./demo.html:/srv/demo.html:ro
     deploy:
       resources:
         limits:
           cpus: "6.0"
           memory: 8G
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "${CADDY_PORT}:${CADDY_PORT}"
+    environment:
+      - CADDY_HOST
+      - CADDY_PORT
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./demo.html:/srv/demo.html:ro
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest

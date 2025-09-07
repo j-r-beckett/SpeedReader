@@ -54,16 +54,10 @@ public class Program
         // Create serve subcommand
         var serveCommand = new Command("serve", "Run as HTTP server");
 
-        var homepageOption = new Option<FileInfo?>(
-            name: "--homepage",
-            description: "HTML file to serve at root path");
-
-        serveCommand.AddOption(homepageOption);
-
-        serveCommand.SetHandler(async (homepage) =>
+        serveCommand.SetHandler(async () =>
         {
-            await RunServer(homepage);
-        }, homepageOption);
+            await RunServer();
+        });
 
         // Add subcommands to root
         rootCommand.AddCommand(processCommand);
@@ -143,7 +137,7 @@ public class Program
         }
     }
 
-    private static async Task RunServer(FileInfo? homepage)
+    private static async Task RunServer()
     {
         // Initialize metrics
         var meter = new Meter("SpeedReader.Ocr");
@@ -165,23 +159,7 @@ public class Program
 
         var app = builder.Build();
 
-        // Serve homepage at root if specified
-        if (homepage != null)
-        {
-            if (!homepage.Exists)
-            {
-                Console.Error.WriteLine($"Error: Homepage file '{homepage.FullName}' not found.");
-                Environment.Exit(1);
-            }
-
-            app.MapGet("/", async context =>
-            {
-                context.Response.ContentType = "text/html";
-                await context.Response.SendFileAsync(homepage.FullName);
-            });
-        }
-
-        app.MapGet("/health", () => "Healthy");
+        app.MapGet("/api/health", () => "Healthy");
 
         app.MapPost("api/ocr", async (HttpContext context, DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
         {
