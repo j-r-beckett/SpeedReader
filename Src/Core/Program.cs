@@ -35,16 +35,21 @@ public class Program
             description: "Visualization mode",
             getDefaultValue: () => VizMode.None);
 
+        var jsonOption = new Option<bool>(
+            name: "--json",
+            description: "Full JSON output with detailed metadata and confidence scores");
+
         rootCommand.AddArgument(inputArgument);
         rootCommand.AddOption(serveOption);
         rootCommand.AddOption(vizOption);
+        rootCommand.AddOption(jsonOption);
 
-        rootCommand.SetHandler(async (inputs, serve, vizMode) =>
+        rootCommand.SetHandler(async (inputs, serve, vizMode, jsonOutput) =>
         {
             // Validate arguments
-            if (serve && (inputs.Length > 0 || vizMode != VizMode.None))
+            if (serve && (inputs.Length > 0 || vizMode != VizMode.None || jsonOutput))
             {
-                Console.Error.WriteLine("Error: --serve cannot be used with input files or --viz option.");
+                Console.Error.WriteLine("Error: --serve cannot be used with input files, --viz option, or --json option.");
                 Environment.Exit(1);
             }
 
@@ -60,20 +65,26 @@ public class Program
                     Environment.Exit(1);
                 }
 
-                await ProcessFiles(inputs, vizMode);
+                await ProcessFiles(inputs, vizMode, jsonOutput);
             }
-        }, inputArgument, serveOption, vizOption);
+        }, inputArgument, serveOption, vizOption, jsonOption);
 
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode)
+    private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode, bool jsonOutput)
     {
         // Initialize metrics
         var meter = new Meter("SpeedReader.Ocr");
 
         // Create CLI OCR pipeline
-        var cliOcrBlock = new CliOcrBlock(vizMode, meter);
+        var config = new CliOcrBlock.Config
+        {
+            VizMode = vizMode,
+            JsonOutput = jsonOutput,
+            Meter = meter
+        };
+        var cliOcrBlock = new CliOcrBlock(config);
 
         // Send all filenames to the pipeline
         foreach (var input in inputs)
