@@ -17,50 +17,71 @@ public class Program
         // Create root command
         var rootCommand = new RootCommand("SpeedReader - Blazing fast OCR");
 
-        // Create process subcommand
-        var processCommand = new Command("process", "Process a single image file");
-
-        var inputArgument = new Argument<FileInfo>(
-            name: "input",
-            description: "Input image file");
-
-        var outputArgument = new Argument<FileInfo?>(
-            name: "output",
-            description: "Output image file")
+        // Add arguments and options
+        var inputArgument = new Argument<FileInfo[]>(
+            name: "inputs",
+            description: "Input image files")
         {
-            Arity = ArgumentArity.ZeroOrOne
+            Arity = ArgumentArity.ZeroOrMore
         };
+
+        var serveOption = new Option<bool>(
+            name: "--serve",
+            description: "Run as HTTP server");
 
         var vizOption = new Option<VizMode>(
             name: "--viz",
             description: "Visualization mode",
-            getDefaultValue: () => VizMode.Basic);
+            getDefaultValue: () => VizMode.None);
 
-        processCommand.AddArgument(inputArgument);
-        processCommand.AddArgument(outputArgument);
-        processCommand.AddOption(vizOption);
+        rootCommand.AddArgument(inputArgument);
+        rootCommand.AddOption(serveOption);
+        rootCommand.AddOption(vizOption);
 
-        processCommand.SetHandler(async (input, output, vizMode) =>
+        rootCommand.SetHandler(async (inputs, serve, vizMode) =>
         {
-            await ProcessFile(input, output, vizMode);
-        }, inputArgument, outputArgument, vizOption);
+            // Validate arguments
+            if (serve && (inputs.Length > 0 || vizMode != VizMode.None))
+            {
+                Console.Error.WriteLine("Error: --serve cannot be used with input files or --viz option.");
+                Environment.Exit(1);
+            }
 
-        // Create serve subcommand
-        var serveCommand = new Command("serve", "Run as HTTP server");
+            if (serve)
+            {
+                await Serve.RunServer();
+            }
+            else
+            {
+                if (inputs.Length == 0)
+                {
+                    Console.Error.WriteLine("Error: No input files specified.");
+                    Environment.Exit(1);
+                }
 
-        serveCommand.SetHandler(async () =>
-        {
-            await Serve.RunServer();
-        });
-
-        // Add subcommands to root
-        rootCommand.AddCommand(processCommand);
-        rootCommand.AddCommand(serveCommand);
+                await ProcessFiles(inputs, vizMode);
+            }
+        }, inputArgument, serveOption, vizOption);
 
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static async Task ProcessFile(FileInfo input, FileInfo? output, VizMode vizMode)
+    private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode)
+    {
+        foreach (var input in inputs)
+        {
+            // Generate output filename with _viz suffix
+            var inputDir = Path.GetDirectoryName(input.FullName) ?? ".";
+            var inputName = Path.GetFileNameWithoutExtension(input.FullName);
+            var inputExt = Path.GetExtension(input.FullName);
+            var outputPath = Path.Combine(inputDir, $"{inputName}_viz{inputExt}");
+            var output = new FileInfo(outputPath);
+
+            await ProcessFile(input, output, vizMode);
+        }
+    }
+
+    private static async Task ProcessFile(FileInfo input, FileInfo output, VizMode vizMode)
     {
         try
         {
@@ -69,16 +90,6 @@ public class Program
             {
                 Console.Error.WriteLine($"Error: Input file '{input.FullName}' not found.");
                 Environment.Exit(1);
-            }
-
-            // Generate output filename if not specified
-            if (output == null)
-            {
-                var inputDir = Path.GetDirectoryName(input.FullName) ?? ".";
-                var inputName = Path.GetFileNameWithoutExtension(input.FullName);
-                var inputExt = Path.GetExtension(input.FullName);
-                var outputPath = Path.Combine(inputDir, $"{inputName}_viz{inputExt}");
-                output = new FileInfo(outputPath);
             }
 
             // Load input image
