@@ -12,28 +12,39 @@ namespace Core;
 
 public class CliOcrBlock
 {
+    public class Config
+    {
+        public VizMode VizMode { get; init; } = VizMode.None;
+        public bool JsonOutput { get; init; } = false;
+        public Meter Meter { get; init; } = new Meter("SpeedReader.Ocr");
+    }
+
     public readonly ITargetBlock<string> Target;
     public readonly Task Completion;
 
-    public CliOcrBlock(VizMode vizMode, Meter meter)
+    private readonly Config _config;
+
+    public CliOcrBlock(Config config)
     {
+        _config = config;
+
         // Create the pipeline components
         var fileReaderBlock = CreateFileReaderBlock();
         var splitBlock = new SplitBlock<(Image<Rgb24> Image, string Filename), (Image<Rgb24> Image, VizBuilder VizBuilder), string>(
-            input => ((input.Image, VizBuilder.Create(vizMode, input.Image)), input.Filename)
+            input => ((input.Image, VizBuilder.Create(_config.VizMode, input.Image)), input.Filename)
         );
-        
+
         // Create OCR block
         var modelProvider = new ModelProvider();
         var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        
+        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), _config.Meter);
+
         var mergeBlock = new MergeBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder), string, (Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)>(
             (ocrResult, filename) => (ocrResult.Image, ocrResult.Result, ocrResult.VizBuilder, filename)
         );
-        
-        var outputEmitterBlock = CreateOutputEmitterBlock(vizMode);
+
+        var outputEmitterBlock = CreateOutputEmitterBlock();
 
         // Link the pipeline
         fileReaderBlock.LinkTo(splitBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
@@ -43,14 +54,17 @@ public class CliOcrBlock
         mergeBlock.Source.LinkTo(outputEmitterBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
         Target = fileReaderBlock;
-        Completion = outputEmitterBlock.Completion.ContinueWith(_ => 
+        Completion = outputEmitterBlock.Completion.ContinueWith(_ =>
         {
-            Console.WriteLine("\n]");
+            if (_config.JsonOutput)
+            {
+                Console.WriteLine("\n]");
+            }
             modelProvider.Dispose();
         });
     }
 
-    private static TransformBlock<string, (Image<Rgb24> Image, string Filename)> CreateFileReaderBlock()
+    private TransformBlock<string, (Image<Rgb24> Image, string Filename)> CreateFileReaderBlock()
     {
         return new TransformBlock<string, (Image<Rgb24> Image, string Filename)>(async filename =>
         {
@@ -75,14 +89,14 @@ public class CliOcrBlock
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
     }
 
-    private static ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)> CreateOutputEmitterBlock(VizMode vizMode)
+    private ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)> CreateOutputEmitterBlock()
     {
         int pageNumber = 0;
-        
+
         return new ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)>(async output =>
         {
             var (image, ocrResult, vizBuilder, filename) = output;
-            
+
             try
             {
                 // Update page number
@@ -90,7 +104,7 @@ public class CliOcrBlock
 
                 // Generate viz file path if applicable
                 string? vizFilePath = null;
-                if (vizMode != VizMode.None)
+                if (_config.VizMode != VizMode.None)
                 {
                     var inputDir = Path.GetDirectoryName(filename) ?? ".";
                     var inputName = Path.GetFileNameWithoutExtension(filename);
@@ -104,34 +118,46 @@ public class CliOcrBlock
                     WriteIndented = true,
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
-                
+
                 // Serialize OcrResult to JsonElement
                 var ocrElement = JsonSerializer.SerializeToElement(resultWithPageNumber, jsonOptions);
                 var ocrDict = ocrElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value);
-                
+
                 // Add CLI-specific fields
                 ocrDict["sourceFile"] = JsonSerializer.SerializeToElement(filename, jsonOptions);
                 if (vizFilePath != null)
                 {
                     ocrDict["vizFile"] = JsonSerializer.SerializeToElement(vizFilePath, jsonOptions);
                 }
-                
+
                 var json = JsonSerializer.Serialize(ocrDict, jsonOptions);
-                
-                // Add proper indentation and comma formatting for array
-                var indentedJson = string.Join('\n', json.Split('\n').Select(line => "  " + line));
-                
-                if (pageNumber == 0)
+
+                if (_config.JsonOutput)
                 {
-                    Console.WriteLine("[");
-                    Console.Write(indentedJson);
+                    // Add proper indentation and comma formatting for array
+                    var indentedJson = string.Join('\n', json.Split('\n').Select(line => "  " + line));
+
+                    if (pageNumber == 0)
+                    {
+                        Console.WriteLine("[");
+                        Console.Write(indentedJson);
+                    }
+                    else
+                    {
+                        Console.WriteLine(",");
+                        Console.Write(indentedJson);
+                    }
                 }
                 else
                 {
-                    Console.WriteLine(",");
-                    Console.Write(indentedJson);
+                    // Pipe-separated output: filename|line1|line2|line3...
+                    var lines = ocrResult.Lines
+                        .Select(line => line.Text.Replace('|', ' ').Replace('\t', ' ').Replace('\n', ' ').Replace('\r', ' ').Trim())
+                        .Where(line => line != string.Empty);
+                    var pipeOutput = string.Join(" | ", new[] { filename.Replace('|', ' ') }.Concat(lines));
+                    Console.WriteLine(pipeOutput);
                 }
-                
+
                 pageNumber++;
 
                 // Generate visualization if configured
