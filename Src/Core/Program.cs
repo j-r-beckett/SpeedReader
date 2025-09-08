@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Diagnostics.Metrics;
 using System.Text.Json;
+using System.Threading.Tasks.Dataflow;
 using Ocr;
 using Ocr.Blocks;
 using Ocr.Visualization;
@@ -68,78 +69,22 @@ public class Program
 
     private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode)
     {
+        // Initialize metrics
+        var meter = new Meter("SpeedReader.Ocr");
+
+        // Create CLI OCR pipeline
+        var cliOcrBlock = new CliOcrBlock(vizMode, meter);
+
+        // Send all filenames to the pipeline
         foreach (var input in inputs)
         {
-            // Generate output filename with _viz suffix
-            var inputDir = Path.GetDirectoryName(input.FullName) ?? ".";
-            var inputName = Path.GetFileNameWithoutExtension(input.FullName);
-            var inputExt = Path.GetExtension(input.FullName);
-            var outputPath = Path.Combine(inputDir, $"{inputName}_viz{inputExt}");
-            var output = new FileInfo(outputPath);
-
-            await ProcessFile(input, output, vizMode);
+            await cliOcrBlock.Target.SendAsync(input.FullName);
         }
+
+        // Complete the pipeline and await completion
+        cliOcrBlock.Target.Complete();
+        await cliOcrBlock.Completion;
     }
 
-    private static async Task ProcessFile(FileInfo input, FileInfo output, VizMode vizMode)
-    {
-        try
-        {
-            // Validate input file exists
-            if (!input.Exists)
-            {
-                Console.Error.WriteLine($"Error: Input file '{input.FullName}' not found.");
-                Environment.Exit(1);
-            }
-
-            // Load input image
-            using var image = await Image.LoadAsync<Rgb24>(input.FullName);
-
-            // Initialize metrics
-            var meter = new Meter("SpeedReader.Ocr");
-
-
-            // Create OCR pipeline
-            using var modelProvider = new ModelProvider();
-            var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
-            var svtrSession = modelProvider.GetSession(Model.SVTRv2);
-
-            var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-            await using var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
-
-            // Create VizBuilder and process through bridge
-            var vizBuilder = VizBuilder.Create(vizMode, image);
-            var resultTask = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
-            var result = await resultTask;
-
-            // Update page number
-            var ocrResults = result.Item2 with { PageNumber = 0 };
-
-            // Output JSON to stdout
-            var jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-            var json = JsonSerializer.Serialize(ocrResults, jsonOptions);
-            Console.WriteLine(json);
-
-            // Generate visualization using VizBuilder
-            if (vizMode != VizMode.None)
-            {
-                var outputImage = result.Item3.Render();
-
-                // Save output image
-                await outputImage.SaveAsync(output.FullName);
-                Console.WriteLine($"OCR visualization saved to: {output.FullName}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            Console.Error.WriteLine($"Stack trace: {ex}");
-            Environment.Exit(1);
-        }
-    }
 
 }
