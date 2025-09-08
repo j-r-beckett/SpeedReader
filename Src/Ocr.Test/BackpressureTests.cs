@@ -172,7 +172,7 @@ public class BackpressureTests : IAsyncDisposable
                 };
                 return (boundaries, image, vizBuilder);
             },
-            initialDelay: TimeSpan.FromMilliseconds(500)
+            initialDelay: TimeSpan.FromMilliseconds(1000)
         );
     }
 
@@ -237,7 +237,36 @@ public class BackpressureTests : IAsyncDisposable
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 return (image, vizBuilder);
             },
-            initialDelay: TimeSpan.FromMilliseconds(1000)
+            initialDelay: TimeSpan.FromMilliseconds(2000)
+        );
+    }
+
+    [Fact]
+    public async Task OcrBlock_NoDetectedText_Backpressure()
+    {
+        // Arrange
+        var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
+        var svtrSession = _modelProvider.GetSession(Model.SVTRv2);
+        var config = new OcrConfiguration
+        {
+            DbNet = new DbNetConfiguration(),
+            Svtr = new SvtrConfiguration(),
+            CacheFirstInference = true
+        };
+        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, config, _meter);
+        _blockUnderTest = ocrBlock;
+
+        // Act & Assert
+        var tester = new Backpressure();
+        await tester.TestBackpressure(
+            ocrBlock,
+            () =>
+            {
+                var image = new Image<Rgb24>(640, 640, Color.White);
+                var vizBuilder = VizBuilder.Create(VizMode.None, image);
+                return (image, vizBuilder);
+            },
+            initialDelay: TimeSpan.FromMilliseconds(2000)
         );
     }
 

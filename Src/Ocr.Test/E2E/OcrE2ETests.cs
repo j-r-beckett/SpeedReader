@@ -216,7 +216,7 @@ public class OcrE2ETests
         _framework.AssertRecognitionAccuracy(scenario, result);
     }
 
-    [Fact(Skip = "Known bug: SVTR pipeline crashes on empty text detection arrays")]
+    [Fact]
     public async Task NoTextDetected_ShouldReturnEmptyResult()
     {
         // Arrange - Create an image with no detectable text (solid blue background)

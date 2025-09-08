@@ -1,9 +1,12 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Threading.Channels;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr.Blocks.SVTR;
@@ -27,8 +30,88 @@ public class SVTRBlock
         postprocessingBlock.Target.LinkTo(aggregatorBlock.InputTarget, new DataflowLinkOptions { PropagateCompletion = true });
         aggregatorBlock.OutputTarget.LinkTo(reconstructorBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-        Target = DataflowBlock.Encapsulate(splitterBlock, reconstructorBlock);
+        var svtrPipeline = DataflowBlock.Encapsulate(splitterBlock, reconstructorBlock);
+
+        // TODO: once max parallelism is made configurable, use the appropriate value here
+        var (anabranchStartBlock, anabranchBufferBlock) = CreateAnabranchStartBlock(svtrPipeline, 10);
+        var anabranchEndBlock = CreateAnabranchEndBlock(svtrPipeline, anabranchBufferBlock);
+
+        Target = DataflowBlock.Encapsulate(anabranchStartBlock, anabranchEndBlock);
     }
+
+    private static (ITargetBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder)>, BufferBlock<(Image<Rgb24>, VizBuilder)?>) CreateAnabranchStartBlock(
+        ITargetBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder)> svtrPipeline, int svtrPipelineMaxParallelism)
+    {
+        // We need to put a backpressure limit here so that we don't blow up under a deluge of images without detected text.
+        // But we want that backpressure limit to be strictly higher than the max parallelism of the svtr flow, or else
+        // it will artificially limit it.
+        var buffer = new BufferBlock<(Image<Rgb24>, VizBuilder)?>(new DataflowBlockOptions
+        {
+            BoundedCapacity = svtrPipelineMaxParallelism * 2
+        });
+
+        var anabranchStartBlock = new TransformBlock<(List<TextBoundary> TextBoundaries, Image<Rgb24> Image, VizBuilder VizBuilder), (Image<Rgb24>, VizBuilder)?>(async input =>
+        {
+            if (input.TextBoundaries.Count == 0)
+            {
+                return (input.Image, input.VizBuilder);
+            }
+
+            await svtrPipeline.SendAsync(input);
+            return null;
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+
+        anabranchStartBlock.LinkTo(buffer, new DataflowLinkOptions { PropagateCompletion = true });
+
+        return (anabranchStartBlock, buffer);
+    }
+
+    private static ISourceBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> CreateAnabranchEndBlock(
+        ISourceBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> svtrPipeline,
+        BufferBlock<(Image<Rgb24>, VizBuilder)?> buffer)
+    {
+        Channel<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> svtrChannel = Channel.CreateBounded<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(1);
+
+        var svtrChannelFeeder = new ActionBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(async input =>
+        {
+            await svtrChannel.Writer.WriteAsync(input);
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+
+        svtrPipeline.LinkTo(svtrChannelFeeder, new DataflowLinkOptions { PropagateCompletion = true });
+
+        var anabranchEndBlock = new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder)?, (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(async input =>
+        {
+            if (input != null)
+            {
+                return (input.Value.Image, [], [], [], input.Value.VizBuilder);
+            }
+
+            await svtrChannel.Reader.WaitToReadAsync();
+            if (svtrChannel.Reader.TryRead(out var result))
+            {
+                return result;
+            }
+
+            throw new UnexpectedFlowException($"Race condition in {nameof(svtrChannel)}");
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+
+        buffer.LinkTo(anabranchEndBlock, new DataflowLinkOptions { PropagateCompletion = true });
+
+        svtrChannelFeeder.Completion.ContinueWith(t =>
+        {
+            if (t.IsFaulted)
+            {
+                ((IDataflowBlock)anabranchEndBlock).Fault(t.Exception);
+            }
+            else
+            {
+                anabranchEndBlock.Complete();
+            }
+        });
+
+        return anabranchEndBlock;
+    }
+
 
     private static TransformManyBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (TextBoundary, Image<Rgb24>, VizBuilder)> CreateSplitterBlock(AggregatorBlock<(string, double, TextBoundary, Image<Rgb24>, VizBuilder)> aggregatorBlock)
     {
@@ -45,7 +128,6 @@ public class SVTRBlock
             return results;
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
     }
-
 
     private static TransformBlock<(string, double, TextBoundary, Image<Rgb24>, VizBuilder)[], (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> CreateReconstructorBlock()
     {
@@ -78,5 +160,10 @@ public class SVTRBlock
 
             return (image, boundaries, texts, confidences, vizBuilder);
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+    }
+
+    public class UnexpectedFlowException : Exception
+    {
+        public UnexpectedFlowException(string message) : base(message) { }
     }
 }

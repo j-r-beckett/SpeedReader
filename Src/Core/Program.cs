@@ -222,9 +222,6 @@ public class Program
 
         if (contentType.StartsWith("multipart/"))
         {
-            var boundary = request.GetMultipartBoundary();
-            var reader = new MultipartReader(boundary, request.Body);
-
             await foreach (var section in request.ExtractSectionsAsync())
             {
                 var contentDisposition = section.GetContentDispositionHeader();
