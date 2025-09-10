@@ -105,9 +105,9 @@ public class DeduplicatorBlock
 
     public static int LevenshteinDistance(string s1, string s2)
     {
-        (int m, int n)  = (s1.Length, s2.Length);
+        (int m, int n) = (s1.Length, s2.Length);
 
-        int[,] dp =  new int[m + 1, n + 1];
+        int[,] dp = new int[m + 1, n + 1];
 
         for (int i = 0; i <= m; i++)
         {

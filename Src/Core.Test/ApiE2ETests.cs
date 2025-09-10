@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using CliWrap;
-using CliWrap.Buffered;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;

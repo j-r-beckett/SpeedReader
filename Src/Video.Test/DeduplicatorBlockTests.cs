@@ -277,7 +277,7 @@ public class DeduplicatorBlockTests
         Assert.Equal("hell", result.Words[0].Text);
     }
 
-    [Fact] 
+    [Fact]
     public async Task ProcessAsync_OneOldWordMatchesMultipleNew_FirstMatchWinsOthersGetNewIds()
     {
         await using var bridge = CreateBridge(maxLevDist: 5);

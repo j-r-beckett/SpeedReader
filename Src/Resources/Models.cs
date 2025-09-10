@@ -3,7 +3,7 @@ namespace Resources;
 public static class Models
 {
     public static byte[] GetModelBytes(Model model) => GetModelBytes(model, ModelPrecision.FP32);
-    
+
     public static byte[] GetModelBytes(Model model, ModelPrecision precision)
     {
         string resourceName = GetResourceName(model, precision);
