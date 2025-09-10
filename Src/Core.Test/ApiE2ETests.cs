@@ -321,7 +321,7 @@ public class ServerFixture : IDisposable
         var serverDll = Path.Combine(AppContext.BaseDirectory, "speedread.dll");
 
         var serverCommand = Cli.Wrap("dotnet")
-            .WithArguments($"{serverDll} serve")
+            .WithArguments($"{serverDll} --serve")
             .WithEnvironmentVariables(env => env.Set("ASPNETCORE_URLS", $"http://localhost:{_serverPort}"))
             .WithStandardOutputPipe(PipeTarget.ToStringBuilder(_stdOutBuffer))
             .WithStandardErrorPipe(PipeTarget.ToStringBuilder(_stdErrBuffer))
