@@ -89,7 +89,7 @@ namespace Ocr
     public record Word
     {
         [JsonPropertyName("id")]
-        public string Id { get; init; } = string.Empty;
+        public string Id { get; set; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
         public required BoundingBox BoundingBox { get; init; }
