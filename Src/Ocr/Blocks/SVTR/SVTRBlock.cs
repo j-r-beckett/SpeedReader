@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Threading.Channels;
@@ -6,7 +5,6 @@ using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr.Blocks.SVTR;

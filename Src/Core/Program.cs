@@ -1,13 +1,7 @@
 using System.CommandLine;
 using System.Diagnostics.Metrics;
-using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
-using Ocr;
-using Ocr.Blocks;
 using Ocr.Visualization;
-using Resources;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace Core;
 
