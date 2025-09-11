@@ -8,9 +8,11 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr.Blocks;
 
-public static class OcrBlock
+public class OcrBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create(
+    public readonly IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Block;
+
+    public OcrBlock(
         InferenceSession dbnetSession,
         InferenceSession svtrSession,
         OcrConfiguration config,
@@ -23,6 +25,6 @@ public static class OcrBlock
         dbNetBlock.Target.LinkTo(svtrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
         svtrBlock.Target.LinkTo(postProcessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-        return DataflowBlock.Encapsulate(dbNetBlock.Target, postProcessingBlock);
+        Block = DataflowBlock.Encapsulate(dbNetBlock.Target, postProcessingBlock);
     }
 }

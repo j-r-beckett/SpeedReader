@@ -47,8 +47,8 @@ public class OcrTestFramework
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         using var meter = new Meter("OcrTestFramework");
 
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        await using var bridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
+        await using var bridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
 
         var vizBuilder = VizBuilder.Create(VizMode.None, scenario.Image);
         var processTask = await bridge.ProcessAsync((scenario.Image, vizBuilder), CancellationToken.None, CancellationToken.None);

@@ -223,13 +223,13 @@ public class BackpressureTests : IAsyncDisposable
             Svtr = new SvtrConfiguration(),
             CacheFirstInference = true
         };
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, config, _meter);
-        _blockUnderTest = ocrBlock;
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, config, _meter);
+        _blockUnderTest = ocrBlock.Block;
 
         // Act & Assert
         var tester = new Backpressure();
         await tester.TestBackpressure(
-            ocrBlock,
+            ocrBlock.Block,
             () =>
             {
                 var image = new Image<Rgb24>(640, 640, Color.White);
@@ -253,13 +253,13 @@ public class BackpressureTests : IAsyncDisposable
             Svtr = new SvtrConfiguration(),
             CacheFirstInference = true
         };
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, config, _meter);
-        _blockUnderTest = ocrBlock;
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, config, _meter);
+        _blockUnderTest = ocrBlock.Block;
 
         // Act & Assert
         var tester = new Backpressure();
         await tester.TestBackpressure(
-            ocrBlock,
+            ocrBlock.Block,
             () =>
             {
                 var image = new Image<Rgb24>(640, 640, Color.White);

@@ -38,7 +38,7 @@ public class CliOcrBlock
         var modelProvider = new ModelProvider();
         var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), _config.Meter);
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), _config.Meter);
 
         var mergeBlock = new MergeBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder), string, (Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)>(
             (ocrResult, filename) => (ocrResult.Image, ocrResult.Result, ocrResult.VizBuilder, filename)
@@ -48,9 +48,9 @@ public class CliOcrBlock
 
         // Link the pipeline
         fileReaderBlock.LinkTo(splitBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
-        splitBlock.LeftSource.LinkTo(ocrBlock, new DataflowLinkOptions { PropagateCompletion = true });
+        splitBlock.LeftSource.LinkTo(ocrBlock.Block, new DataflowLinkOptions { PropagateCompletion = true });
         splitBlock.RightSource.LinkTo(mergeBlock.RightTarget, new DataflowLinkOptions { PropagateCompletion = true });
-        ocrBlock.LinkTo(mergeBlock.LeftTarget, new DataflowLinkOptions { PropagateCompletion = true });
+        ocrBlock.Block.LinkTo(mergeBlock.LeftTarget, new DataflowLinkOptions { PropagateCompletion = true });
         mergeBlock.Source.LinkTo(outputEmitterBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
         Target = fileReaderBlock;

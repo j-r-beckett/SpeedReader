@@ -28,8 +28,8 @@ public static class Serve
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
 
         // Create singleton OCR bridge
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
+        var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
