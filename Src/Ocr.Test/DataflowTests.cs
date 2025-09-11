@@ -22,23 +22,23 @@ public class DataflowTests
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         using var meter = new Meter("DataflowTests");
 
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, new OcrConfiguration(), meter);
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
 
         // Act
-        ocrBlock.Complete();
+        ocrBlock.Block.Complete();
 
         // Assert
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
         try
         {
-            await ocrBlock.Completion.WaitAsync(cts.Token);
+            await ocrBlock.Block.Completion.WaitAsync(cts.Token);
         }
         catch (OperationCanceledException)
         {
             Assert.Fail("OcrBlock completion timed out after 1 second");
         }
 
-        Assert.True(ocrBlock.Completion.IsCompleted);
+        Assert.True(ocrBlock.Block.Completion.IsCompleted);
     }
 
     [Fact(Skip = "This test is aspirational, TDD baby")]
@@ -51,14 +51,14 @@ public class DataflowTests
         using var meter = new Meter("DataflowTests");
 
         var config = new OcrConfiguration { CacheFirstInference = true };
-        var ocrBlock = OcrBlock.Create(dbnetSession, svtrSession, config, meter);
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, config, meter);
 
         // Warm up the pipeline by sending a single input through and waiting for completion
         var warmupImage = CreateTestImage("WARMUP");
         var warmupVizBuilder = VizBuilder.Create(VizMode.None, warmupImage);
         var warmupInput = (warmupImage, warmupVizBuilder);
 
-        var warmupBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock);
+        var warmupBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
         await warmupBridge.ProcessAsync(warmupInput, default, default);
 
         int inputsSent = 0;
@@ -75,7 +75,7 @@ public class DataflowTests
             var testInput = (testImage, vizBuilder);
 
             // Start SendAsync but don't await it
-            var sendAsyncTask = ocrBlock.SendAsync(testInput);
+            var sendAsyncTask = ocrBlock.Block.SendAsync(testInput);
             var delayTask = Task.Delay(500); // 300ms timeout like video tests
 
             var completedTask = await Task.WhenAny(sendAsyncTask, delayTask);
@@ -90,7 +90,7 @@ public class DataflowTests
                 var secondTestImage = CreateTestImage("TEST");
                 var secondVizBuilder = VizBuilder.Create(VizMode.None, secondTestImage);
                 var secondTestInput = (secondTestImage, secondVizBuilder);
-                var secondSendAsyncTask = ocrBlock.SendAsync(secondTestInput);
+                var secondSendAsyncTask = ocrBlock.Block.SendAsync(secondTestInput);
                 var secondDelayTask = Task.Delay(200);
 
                 var secondCompletedTask = await Task.WhenAny(secondSendAsyncTask, secondDelayTask);
@@ -118,7 +118,7 @@ public class DataflowTests
         Assert.True(inputsSent < maxInputs, $"Expected backpressure before {maxInputs} inputs, but sent {inputsSent}");
 
         // Phase 2: Start consuming outputs to release backpressure
-        var outputConsumptionTask = ConsumeOcrOutputsAsync(ocrBlock);
+        var outputConsumptionTask = ConsumeOcrOutputsAsync(ocrBlock.Block);
 
         // Phase 3: Complete the blocked SendAsync and verify flow resumes
         if (blockedSendAsyncTask != null)
@@ -133,11 +133,11 @@ public class DataflowTests
             var finalTestImage = CreateTestImage("TEST");
             var finalVizBuilder = VizBuilder.Create(VizMode.None, finalTestImage);
             var finalTestInput = (finalTestImage, finalVizBuilder);
-            await ocrBlock.SendAsync(finalTestInput);
+            await ocrBlock.Block.SendAsync(finalTestInput);
             inputsSent++;
         }
 
-        ocrBlock.Complete();
+        ocrBlock.Block.Complete();
         await outputConsumptionTask;
     }
 
