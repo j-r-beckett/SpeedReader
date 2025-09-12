@@ -1,6 +1,8 @@
 using System.CommandLine;
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
+using Ocr;
 using Ocr.Visualization;
 
 namespace Core;
@@ -37,6 +39,27 @@ public class Program
         rootCommand.AddOption(serveOption);
         rootCommand.AddOption(vizOption);
         rootCommand.AddOption(jsonOption);
+
+        // Create video subcommand
+        var videoCommand = new Command("video", "Process video files with OCR");
+
+        var pathArgument = new Argument<string>(
+            name: "path",
+            description: "Path to the video file");
+
+        var frameRateArgument = new Argument<int>(
+            name: "frameRate",
+            description: "Frame rate for video processing");
+
+        videoCommand.AddArgument(pathArgument);
+        videoCommand.AddArgument(frameRateArgument);
+
+        videoCommand.SetHandler(async (path, frameRate) =>
+        {
+            await ProcessVideo(path, frameRate);
+        }, pathArgument, frameRateArgument);
+
+        rootCommand.AddCommand(videoCommand);
 
         rootCommand.SetHandler(async (inputs, serve, vizMode, jsonOutput) =>
         {
@@ -91,5 +114,20 @@ public class Program
         await cliOcrBlock.Completion;
     }
 
+    private static async Task ProcessVideo(string path, int frameRate)
+    {
+        var cliVideoOcrBlock = new CliVideoOcrBlock(path, frameRate);
 
+        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        var consoleOutputBlock = new ActionBlock<OcrResult>(result =>
+        {
+            var json = JsonSerializer.Serialize(result, jsonOptions);
+            Console.WriteLine(json);
+        });
+
+        cliVideoOcrBlock.ResultsBlock.LinkTo(consoleOutputBlock, new DataflowLinkOptions { PropagateCompletion = true });
+
+        // Wait for both the video processing to complete AND the console output to finish
+        await Task.WhenAll(cliVideoOcrBlock.Completion, consoleOutputBlock.Completion);
+    }
 }
