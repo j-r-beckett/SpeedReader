@@ -67,7 +67,7 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
         });
     }
 
-    public async Task<Task<TOut>> ProcessSingle(TIn input, CancellationToken bridgeCancellationToken, CancellationToken transformerCancellationToken)
+    public async Task<Task<TOut>> ProcessSingle(TIn input, CancellationToken multiplexerCancellationToken, CancellationToken transformerCancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -90,7 +90,7 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
         // cancel it.
         transformerCancellationToken.Register(() => completionSource.TrySetCanceled(transformerCancellationToken));
 
-        if (!await _origin.SendAsync((input, target), bridgeCancellationToken))
+        if (!await _origin.SendAsync((input, target), multiplexerCancellationToken))
         {
             throw new InvalidOperationException($"{nameof(_origin)} declined input");
         }
@@ -98,14 +98,15 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
         return completionSource.Task;
     }
 
-    public async Task<Task<TOut[]>> ProcessMultiple(IEnumerable<TIn> inputs, CancellationToken bridgeCancellationToken, CancellationToken transformerCancellationToken)
+    public async Task<Task<TOut[]>> ProcessMultipleAsync(IAsyncEnumerable<TIn> inputs,
+        CancellationToken multiplexerCancellationToken, CancellationToken transformerCancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         var tasks = new List<Task<TOut>>();
-        foreach (var input in inputs)
+        await foreach (var input in inputs.WithCancellation(multiplexerCancellationToken))
         {
-            tasks.Add(await ProcessSingle(input, bridgeCancellationToken, transformerCancellationToken));
+            tasks.Add(await ProcessSingle(input, multiplexerCancellationToken, transformerCancellationToken));
         }
 
         return Task.WhenAll(tasks);

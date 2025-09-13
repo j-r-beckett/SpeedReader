@@ -12,7 +12,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_FirstResult_ReturnsUnchangedWithOriginalIds()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         var words = new List<Word>
         {
@@ -21,7 +21,7 @@ public class DeduplicatorBlockTests
         };
         var ocrResult = new OcrResult { Words = words };
 
-        var result = await await bridge.ProcessSingle(ocrResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(ocrResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Equal(2, result.Words.Count);
         Assert.Equal("word_0", result.Words[0].Id);
@@ -33,7 +33,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_ExactMatch_ReusesPreviousIds()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         // First result
         var firstWords = new List<Word>
@@ -42,7 +42,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_1", "world", 50, 10)
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await (await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
+        await (await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
 
         // Second result with exact matches
         var secondWords = new List<Word>
@@ -52,7 +52,7 @@ public class DeduplicatorBlockTests
         };
         var secondResult = new OcrResult { Words = secondWords };
 
-        var result = await await bridge.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Equal(2, result.Words.Count);
         Assert.Equal("word_0", result.Words[0].Id); // Should reuse original ID
@@ -64,7 +64,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_NoMatch_AssignsNewIds()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         // First result
         var firstWords = new List<Word>
@@ -73,7 +73,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_1", "world", 50, 10)
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await (await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
+        await (await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
 
         // Second result with completely different words
         var secondWords = new List<Word>
@@ -83,7 +83,7 @@ public class DeduplicatorBlockTests
         };
         var secondResult = new OcrResult { Words = secondWords };
 
-        var result = await await bridge.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Equal(2, result.Words.Count);
         Assert.Equal("word_2", result.Words[0].Id); // New ID, counter starts at 2
@@ -95,7 +95,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_AllNewWords_AssignsSequentialIds()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         // First result with 3 words
         var firstWords = new List<Word>
@@ -105,7 +105,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_2", "test", 90, 10)
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await (await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
+        await (await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
 
         // Second result with all new words
         var secondWords = new List<Word>
@@ -117,7 +117,7 @@ public class DeduplicatorBlockTests
         };
         var secondResult = new OcrResult { Words = secondWords };
 
-        var result = await await bridge.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Equal(4, result.Words.Count);
         Assert.Equal("word_3", result.Words[0].Id); // Counter starts at 3
@@ -133,7 +133,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_MixedMatches_ReusesMatchingIdsAssignsNewToOthers()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         // First result
         var firstWords = new List<Word>
@@ -142,7 +142,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_1", "world", 50, 10)
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
+        await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with mix: one match, one new
         var secondWords = new List<Word>
@@ -152,7 +152,7 @@ public class DeduplicatorBlockTests
         };
         var secondResult = new OcrResult { Words = secondWords };
 
-        var result = await await bridge.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Equal(2, result.Words.Count);
         Assert.Equal("word_0", result.Words[0].Id); // Reused from match
@@ -164,7 +164,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_EmptyWords_ReturnsUnchanged()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         // First result with words
         var firstWords = new List<Word>
@@ -172,12 +172,12 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "hello", 10, 10)
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
+        await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with no words
         var emptyResult = new OcrResult { Words = new List<Word>() };
 
-        var result = await await bridge.ProcessSingle(emptyResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(emptyResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Empty(result.Words);
     }
@@ -185,7 +185,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_LevenshteinBoundary_RespectsThreshold()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         // First result
         var firstWords = new List<Word>
@@ -193,7 +193,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "hello", 10, 10)
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
+        await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Test word at distance 1 - should match
         var withinThresholdWords = new List<Word>
@@ -202,7 +202,7 @@ public class DeduplicatorBlockTests
         };
         var withinThresholdResult = new OcrResult { Words = withinThresholdWords };
 
-        var result1 = await await bridge.ProcessSingle(withinThresholdResult, CancellationToken.None, CancellationToken.None);
+        var result1 = await await multiplexer.ProcessSingle(withinThresholdResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Single(result1.Words);
         Assert.Equal("word_0", result1.Words[0].Id); // Should reuse ID
@@ -214,7 +214,7 @@ public class DeduplicatorBlockTests
         };
         var exceedsThresholdResult = new OcrResult { Words = exceedsThresholdWords };
 
-        var result2 = await await bridge.ProcessSingle(exceedsThresholdResult, CancellationToken.None, CancellationToken.None);
+        var result2 = await await multiplexer.ProcessSingle(exceedsThresholdResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Single(result2.Words);
         Assert.Equal("word_1", result2.Words[0].Id); // Should get new ID
@@ -223,7 +223,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_SpatialDistance_InfluencesMatching()
     {
-        await using var bridge = CreateBridge(maxLevDist: 2);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 2);
 
         // First result with two identical words at different positions
         var firstWords = new List<Word>
@@ -232,7 +232,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_1", "test", 1000, 1000) // Far position
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
+        await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with word close to first position
         var secondWords = new List<Word>
@@ -241,7 +241,7 @@ public class DeduplicatorBlockTests
         };
         var secondResult = new OcrResult { Words = secondWords };
 
-        var result = await await bridge.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Single(result.Words);
         Assert.Equal("word_0", result.Words[0].Id); // Should match closest spatial word
@@ -251,7 +251,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_MultipleOldWordsMatchOneNew_ClosestLevDistanceWins()
     {
-        await using var bridge = CreateBridge(maxLevDist: 5);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 5);
 
         // First result with multiple similar words
         var firstWords = new List<Word>
@@ -261,7 +261,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_2", "held", 90, 10)     // Distance 2 from "hell"
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
+        await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with word that could match multiple previous words
         var secondWords = new List<Word>
@@ -270,7 +270,7 @@ public class DeduplicatorBlockTests
         };
         var secondResult = new OcrResult { Words = secondWords };
 
-        var result = await await bridge.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Single(result.Words);
         Assert.Equal("word_0", result.Words[0].Id); // Should match "hello" (closest Levenshtein distance)
@@ -280,7 +280,7 @@ public class DeduplicatorBlockTests
     [Fact]
     public async Task ProcessAsync_OneOldWordMatchesMultipleNew_FirstMatchWinsOthersGetNewIds()
     {
-        await using var bridge = CreateBridge(maxLevDist: 5);
+        await using var multiplexer = CreateMultiplexer(maxLevDist: 5);
 
         // First result with one word
         var firstWords = new List<Word>
@@ -288,7 +288,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "hello", 10, 10)
         };
         var firstResult = new OcrResult { Words = firstWords };
-        await await bridge.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
+        await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with multiple words that could all match the previous word
         var secondWords = new List<Word>
@@ -299,7 +299,7 @@ public class DeduplicatorBlockTests
         };
         var secondResult = new OcrResult { Words = secondWords };
 
-        var result = await await bridge.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
+        var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
         Assert.Equal(3, result.Words.Count);
         Assert.Equal("word_0", result.Words[0].Id); // First match gets reused ID
@@ -310,7 +310,7 @@ public class DeduplicatorBlockTests
         Assert.Equal("held", result.Words[2].Text);
     }
 
-    private static BlockMultiplexer<OcrResult, OcrResult> CreateBridge(int maxLevDist)
+    private static BlockMultiplexer<OcrResult, OcrResult> CreateMultiplexer(int maxLevDist)
     {
         var deduplicator = new DeduplicatorBlock(maxLevDist);
         var block = DataflowBlock.Encapsulate(deduplicator.Target, deduplicator.Source);
