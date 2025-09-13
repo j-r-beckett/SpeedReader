@@ -46,7 +46,7 @@ public static class Serve
             var inputs = ParseImagesFromRequest(context.Request)
                 .Select(image => (image, VizBuilder.Create(VizMode.None, image)));
 
-            var results = await await multiplexer.ProcessMultipleAsync(inputs, CancellationToken.None, CancellationToken.None);
+            var results = await await multiplexer.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
 
             if (results.Length == 0)
             {
