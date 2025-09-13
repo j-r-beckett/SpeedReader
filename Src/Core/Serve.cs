@@ -29,7 +29,7 @@ public static class Serve
 
         // Create singleton OCR bridge
         var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        var ocrBridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
+        var ocrBridge = new BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
@@ -41,14 +41,14 @@ public static class Serve
 
         app.MapGet("/api/health", () => "Healthy");
 
-        app.MapPost("api/ocr", async (HttpContext context, DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
+        app.MapPost("api/ocr", async (HttpContext context, BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
         {
             var tasks = new List<Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)>>();
 
             await foreach (var image in ParseImagesFromRequest(context.Request))
             {
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var ocrTask = await ocrBridge.ProcessAsync((image, vizBuilder), CancellationToken.None, CancellationToken.None);
+                var ocrTask = await ocrBridge.ProcessSingle((image, vizBuilder), CancellationToken.None, CancellationToken.None);
                 tasks.Add(ocrTask);
             }
 
