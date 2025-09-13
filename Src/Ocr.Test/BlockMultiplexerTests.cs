@@ -271,4 +271,35 @@ public class BlockMultiplexerTests
         await Assert.ThrowsAsync<TaskCanceledException>(async () =>
             await (await bridge.ProcessSingle(42, CancellationToken.None, transformerCts.Token)));
     }
+
+    [Fact]
+    public async Task ProcessMultiple_WithSimpleTransform_ReturnsCorrectResults()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var inputs = new List<int> { 1, 2, 3, 4, 5 };
+        var task = bridge.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
+        var results = await (await task);
+
+        Assert.Equal(["1", "2", "3", "4", "5"], results);
+    }
+
+    [Fact]
+    public async Task ProcessMultiple_MaintainsOrderWithDelayedProcessing()
+    {
+        var transform = new TransformBlock<int, string>(async x =>
+        {
+            // Longer delay for smaller numbers to test order preservation
+            await Task.Delay(100 - x * 10);
+            return x.ToString();
+        });
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var inputs = new List<int> { 1, 2, 3, 4, 5 };
+        var task = bridge.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
+        var results = await (await task);
+
+        Assert.Equal(["1", "2", "3", "4", "5"], results);
+    }
 }
