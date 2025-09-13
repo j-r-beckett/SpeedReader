@@ -9,10 +9,10 @@ public class BlockMultiplexerTests
     public async Task ProcessAsync_WithSimpleTransform_ReturnsCorrectResults()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var task1 = bridge.ProcessSingle(42, CancellationToken.None, CancellationToken.None);
-        var task2 = bridge.ProcessSingle(100, CancellationToken.None, CancellationToken.None);
+        var task1 = multiplexer.ProcessSingle(42, CancellationToken.None, CancellationToken.None);
+        var task2 = multiplexer.ProcessSingle(100, CancellationToken.None, CancellationToken.None);
 
         var output1 = await (await task1);
         var output2 = await (await task2);
@@ -29,11 +29,11 @@ public class BlockMultiplexerTests
             await Task.Delay(x);
             return x.ToString();
         });
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var task1 = bridge.ProcessSingle(100, CancellationToken.None, CancellationToken.None);
-        var task2 = bridge.ProcessSingle(50, CancellationToken.None, CancellationToken.None);
-        var task3 = bridge.ProcessSingle(10, CancellationToken.None, CancellationToken.None);
+        var task1 = multiplexer.ProcessSingle(100, CancellationToken.None, CancellationToken.None);
+        var task2 = multiplexer.ProcessSingle(50, CancellationToken.None, CancellationToken.None);
+        var task3 = multiplexer.ProcessSingle(10, CancellationToken.None, CancellationToken.None);
 
         var innerTask1 = await task1;
         var innerTask2 = await task2;
@@ -48,11 +48,11 @@ public class BlockMultiplexerTests
     {
         var transform = new TransformBlock<int, string>(x => Task.FromResult(x.ToString()));
 
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         // Start multiple operations concurrently
         var tasks = Enumerable.Range(0, 10)
-            .Select(i => bridge.ProcessSingle(i, CancellationToken.None, CancellationToken.None))
+            .Select(i => multiplexer.ProcessSingle(i, CancellationToken.None, CancellationToken.None))
             .ToList();
 
         // Wait for all to complete
@@ -71,18 +71,18 @@ public class BlockMultiplexerTests
     public async Task DisposeAsync_CompletesAllPendingOperations()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        var bridge = new BlockMultiplexer<int, string>(transform);
+        var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         // Submit operations before disposal
-        var task1 = bridge.ProcessSingle(1, CancellationToken.None, CancellationToken.None);
-        var task2 = bridge.ProcessSingle(2, CancellationToken.None, CancellationToken.None);
+        var task1 = multiplexer.ProcessSingle(1, CancellationToken.None, CancellationToken.None);
+        var task2 = multiplexer.ProcessSingle(2, CancellationToken.None, CancellationToken.None);
 
         // Get the inner tasks before disposal
         var innerTask1 = await task1;
         var innerTask2 = await task2;
 
         // Now dispose
-        await bridge.DisposeAsync();
+        await multiplexer.DisposeAsync();
 
         // The operations that were already accepted should complete
         var result1 = await innerTask1;
@@ -96,11 +96,11 @@ public class BlockMultiplexerTests
     public async Task ProcessAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        var bridge = new BlockMultiplexer<int, string>(transform);
+        var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        await bridge.DisposeAsync();
+        await multiplexer.DisposeAsync();
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await (await bridge.ProcessSingle(1, CancellationToken.None, CancellationToken.None)));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await (await multiplexer.ProcessSingle(1, CancellationToken.None, CancellationToken.None)));
     }
 
     [Fact]
@@ -113,13 +113,13 @@ public class BlockMultiplexerTests
             return x.ToString();
         });
 
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var task1 = bridge.ProcessSingle(1, CancellationToken.None, CancellationToken.None);
+        var task1 = multiplexer.ProcessSingle(1, CancellationToken.None, CancellationToken.None);
         await Task.Delay(50);
-        var task2 = bridge.ProcessSingle(42, CancellationToken.None, CancellationToken.None);
+        var task2 = multiplexer.ProcessSingle(42, CancellationToken.None, CancellationToken.None);
         await Task.Delay(50);
-        var task3 = bridge.ProcessSingle(3, CancellationToken.None, CancellationToken.None);
+        var task3 = multiplexer.ProcessSingle(3, CancellationToken.None, CancellationToken.None);
 
         var result1 = await (await task1);
         Assert.Equal("1", result1);
@@ -134,16 +134,16 @@ public class BlockMultiplexerTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WithCancelledBridgeToken_ThrowsOperationCanceledException()
+    public async Task ProcessAsync_WithCancelledMultiplexerToken_ThrowsOperationCanceledException()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         await Assert.ThrowsAsync<TaskCanceledException>(async () =>
-            await (await bridge.ProcessSingle(42, cts.Token, CancellationToken.None)));
+            await (await multiplexer.ProcessSingle(42, cts.Token, CancellationToken.None)));
     }
 
     [Fact]
@@ -159,10 +159,10 @@ public class BlockMultiplexerTests
             return x.ToString();
         });
 
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         using var cts = new CancellationTokenSource();
-        var processTask = bridge.ProcessSingle(42, cts.Token, CancellationToken.None);
+        var processTask = multiplexer.ProcessSingle(42, cts.Token, CancellationToken.None);
 
         await processingStarted.Task;
         cts.Cancel();
@@ -188,11 +188,11 @@ public class BlockMultiplexerTests
             return x.ToString();
         });
 
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var task1 = bridge.ProcessSingle(1, CancellationToken.None, CancellationToken.None);
-        var task2 = bridge.ProcessSingle(2, CancellationToken.None, CancellationToken.None);
-        var task3 = bridge.ProcessSingle(3, CancellationToken.None, CancellationToken.None);
+        var task1 = multiplexer.ProcessSingle(1, CancellationToken.None, CancellationToken.None);
+        var task2 = multiplexer.ProcessSingle(2, CancellationToken.None, CancellationToken.None);
+        var task3 = multiplexer.ProcessSingle(3, CancellationToken.None, CancellationToken.None);
 
         var result1 = await (await task1);
         Assert.Equal("1", result1);
@@ -217,7 +217,7 @@ public class BlockMultiplexerTests
             BoundedCapacity = 1
         });
 
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         var processorCount = Environment.ProcessorCount;
         var successfulTasks = new List<Task<Task<string>>>();
@@ -225,14 +225,14 @@ public class BlockMultiplexerTests
         // Fill the pipeline: ProcessorCount + 1 items (1 in transformer, ProcessorCount in origin)
         for (int i = 0; i < processorCount + 1; i++)
         {
-            successfulTasks.Add(bridge.ProcessSingle(i, CancellationToken.None, CancellationToken.None));
+            successfulTasks.Add(multiplexer.ProcessSingle(i, CancellationToken.None, CancellationToken.None));
         }
 
         await Task.Delay(100); // Let the pipeline fill up
 
         using var cts = new CancellationTokenSource();
-        var cancelledTask = bridge.ProcessSingle(998, cts.Token, CancellationToken.None);
-        var blockedTask = bridge.ProcessSingle(999, CancellationToken.None, CancellationToken.None);
+        var cancelledTask = multiplexer.ProcessSingle(998, cts.Token, CancellationToken.None);
+        var blockedTask = multiplexer.ProcessSingle(999, CancellationToken.None, CancellationToken.None);
 
         await Task.Delay(100);
         cts.Cancel();
@@ -263,30 +263,30 @@ public class BlockMultiplexerTests
     public async Task ProcessAsync_WithCancelledTransformerToken_ThrowsOperationCanceledException()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         using var transformerCts = new CancellationTokenSource();
         transformerCts.Cancel();
 
         await Assert.ThrowsAsync<TaskCanceledException>(async () =>
-            await (await bridge.ProcessSingle(42, CancellationToken.None, transformerCts.Token)));
+            await (await multiplexer.ProcessSingle(42, CancellationToken.None, transformerCts.Token)));
     }
 
     [Fact]
-    public async Task ProcessMultiple_WithSimpleTransform_ReturnsCorrectResults()
+    public async Task ProcessMultipleAsync_WithSimpleTransform_ReturnsCorrectResults()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var inputs = new List<int> { 1, 2, 3, 4, 5 };
-        var task = bridge.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
+        var inputs = new List<int> { 1, 2, 3, 4, 5 }.ToAsyncEnumerable();
+        var task = multiplexer.ProcessMultipleAsync(inputs, CancellationToken.None, CancellationToken.None);
         var results = await (await task);
 
         Assert.Equal(["1", "2", "3", "4", "5"], results);
     }
 
     [Fact]
-    public async Task ProcessMultiple_MaintainsOrderWithDelayedProcessing()
+    public async Task ProcessMultipleAsync_MaintainsOrderWithDelayedProcessing()
     {
         var transform = new TransformBlock<int, string>(async x =>
         {
@@ -294,10 +294,10 @@ public class BlockMultiplexerTests
             await Task.Delay(100 - x * 10);
             return x.ToString();
         });
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var inputs = new List<int> { 1, 2, 3, 4, 5 };
-        var task = bridge.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
+        var inputs = new List<int> { 1, 2, 3, 4, 5 }.ToAsyncEnumerable();
+        var task = multiplexer.ProcessMultipleAsync(inputs, CancellationToken.None, CancellationToken.None);
         var results = await (await task);
 
         Assert.Equal(["1", "2", "3", "4", "5"], results);
@@ -307,9 +307,9 @@ public class BlockMultiplexerTests
     public async Task GetAccessorBlocks_BasicFunctionality_SendsInputsAndReceivesOutputs()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var (target, source) = bridge.GetAccessorBlocks();
+        var (target, source) = multiplexer.GetAccessorBlocks();
         var results = new List<string>();
         var consumer = new ActionBlock<string>(result => results.Add(result));
         source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
@@ -327,9 +327,9 @@ public class BlockMultiplexerTests
     public async Task GetAccessorBlocks_MultipleConcurrentInputs_HandlesAllInputsCorrectly()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var (target, source) = bridge.GetAccessorBlocks();
+        var (target, source) = multiplexer.GetAccessorBlocks();
         var results = new List<string>();
         var consumer = new ActionBlock<string>(result => results.Add(result));
         source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
@@ -360,9 +360,9 @@ public class BlockMultiplexerTests
             await Task.Delay(50 - x * 5);
             return x.ToString();
         });
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var (target, source) = bridge.GetAccessorBlocks();
+        var (target, source) = multiplexer.GetAccessorBlocks();
         var results = new List<string>();
         var consumer = new ActionBlock<string>(result => results.Add(result));
         source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
@@ -381,9 +381,9 @@ public class BlockMultiplexerTests
     public async Task GetAccessorBlocks_TargetCompletion_PropagatesCompletionToSource()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var (target, source) = bridge.GetAccessorBlocks();
+        var (target, source) = multiplexer.GetAccessorBlocks();
         var consumer = new ActionBlock<string>(_ => { });
         source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
 
@@ -400,9 +400,9 @@ public class BlockMultiplexerTests
     public async Task GetAccessorBlocks_TargetFault_PropagatesFaultToSource()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var (target, source) = bridge.GetAccessorBlocks();
+        var (target, source) = multiplexer.GetAccessorBlocks();
 
         var testException = new InvalidOperationException("Test fault");
         target.Fault(testException);
@@ -417,9 +417,9 @@ public class BlockMultiplexerTests
     public async Task GetAccessorBlocks_BackpressureHandling_HandlesBoundedCapacity()
     {
         var transform = new TransformBlock<int, string>(x => x.ToString());
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var (target, source) = bridge.GetAccessorBlocks();
+        var (target, source) = multiplexer.GetAccessorBlocks();
 
         // Create a propagator block from the target/source pair for testing
         var propagator = DataflowBlock.Encapsulate(target, source);
@@ -441,9 +441,9 @@ public class BlockMultiplexerTests
                 throw new InvalidOperationException("Transformer fault");
             return x.ToString();
         });
-        await using var bridge = new BlockMultiplexer<int, string>(transform);
+        await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
-        var (target, source) = bridge.GetAccessorBlocks();
+        var (target, source) = multiplexer.GetAccessorBlocks();
         var results = new List<string>();
         var consumer = new ActionBlock<string>(result => results.Add(result));
         source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });

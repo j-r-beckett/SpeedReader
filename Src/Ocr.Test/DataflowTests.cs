@@ -58,8 +58,8 @@ public class DataflowTests
         var warmupVizBuilder = VizBuilder.Create(VizMode.None, warmupImage);
         var warmupInput = (warmupImage, warmupVizBuilder);
 
-        var warmupBridge = new BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
-        await warmupBridge.ProcessSingle(warmupInput, default, default);
+        var warmupMultiplexer = new BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
+        await warmupMultiplexer.ProcessSingle(warmupInput, default, default);
 
         int inputsSent = 0;
         var backpressureDetected = false;
