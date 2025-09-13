@@ -302,4 +302,163 @@ public class BlockMultiplexerTests
 
         Assert.Equal(["1", "2", "3", "4", "5"], results);
     }
+
+    [Fact]
+    public async Task GetAccessorBlocks_BasicFunctionality_SendsInputsAndReceivesOutputs()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var (target, source) = bridge.GetAccessorBlocks();
+        var results = new List<string>();
+        var consumer = new ActionBlock<string>(result => results.Add(result));
+        source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
+
+        await target.SendAsync(42);
+        await target.SendAsync(100);
+        target.Complete();
+
+        await consumer.Completion;
+
+        Assert.Equal(["42", "100"], results);
+    }
+
+    [Fact]
+    public async Task GetAccessorBlocks_MultipleConcurrentInputs_HandlesAllInputsCorrectly()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var (target, source) = bridge.GetAccessorBlocks();
+        var results = new List<string>();
+        var consumer = new ActionBlock<string>(result => results.Add(result));
+        source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
+
+        // Send multiple inputs concurrently
+        var sendTasks = Enumerable.Range(1, 5)
+            .Select(i => target.SendAsync(i))
+            .ToArray();
+
+        await Task.WhenAll(sendTasks);
+        target.Complete();
+        await consumer.Completion;
+
+        Assert.Equal(5, results.Count);
+        Assert.Contains("1", results);
+        Assert.Contains("2", results);
+        Assert.Contains("3", results);
+        Assert.Contains("4", results);
+        Assert.Contains("5", results);
+    }
+
+    [Fact]
+    public async Task GetAccessorBlocks_OrderPreservation_MaintainsInputOrder()
+    {
+        var transform = new TransformBlock<int, string>(async x =>
+        {
+            // Longer delay for smaller numbers to test order preservation
+            await Task.Delay(50 - x * 5);
+            return x.ToString();
+        });
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var (target, source) = bridge.GetAccessorBlocks();
+        var results = new List<string>();
+        var consumer = new ActionBlock<string>(result => results.Add(result));
+        source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
+
+        await target.SendAsync(1);
+        await target.SendAsync(2);
+        await target.SendAsync(3);
+        target.Complete();
+
+        await consumer.Completion;
+
+        Assert.Equal(["1", "2", "3"], results);
+    }
+
+    [Fact]
+    public async Task GetAccessorBlocks_TargetCompletion_PropagatesCompletionToSource()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var (target, source) = bridge.GetAccessorBlocks();
+        var consumer = new ActionBlock<string>(_ => { });
+        source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
+
+        await target.SendAsync(42);
+        target.Complete();
+
+        await consumer.Completion;
+
+        Assert.True(target.Completion.IsCompletedSuccessfully);
+        Assert.True(source.Completion.IsCompletedSuccessfully);
+    }
+
+    [Fact]
+    public async Task GetAccessorBlocks_TargetFault_PropagatesFaultToSource()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var (target, source) = bridge.GetAccessorBlocks();
+
+        var testException = new InvalidOperationException("Test fault");
+        target.Fault(testException);
+
+        var ex1 = await Assert.ThrowsAsync<InvalidOperationException>(() => target.Completion);
+        Assert.Equal(ex1.Message, testException.Message);
+        var ex2 = await Assert.ThrowsAsync<AggregateException>(() => source.Completion);
+        Assert.Equal(ex2.GetBaseException().Message, testException.Message);
+    }
+
+    [Fact]
+    public async Task GetAccessorBlocks_BackpressureHandling_HandlesBoundedCapacity()
+    {
+        var transform = new TransformBlock<int, string>(x => x.ToString());
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var (target, source) = bridge.GetAccessorBlocks();
+
+        // Create a propagator block from the target/source pair for testing
+        var propagator = DataflowBlock.Encapsulate(target, source);
+
+        var tester = new TestUtils.Backpressure();
+        await tester.TestBackpressure(
+            propagator,
+            () => Random.Shared.Next(),
+            initialDelay: TimeSpan.FromMilliseconds(500)
+        );
+    }
+
+    [Fact]
+    public async Task GetAccessorBlocks_TransformerException_PropagatesExceptionThroughSource()
+    {
+        var transform = new TransformBlock<int, string>(x =>
+        {
+            if (x == 42)
+                throw new InvalidOperationException("Transformer fault");
+            return x.ToString();
+        });
+        await using var bridge = new BlockMultiplexer<int, string>(transform);
+
+        var (target, source) = bridge.GetAccessorBlocks();
+        var results = new List<string>();
+        var consumer = new ActionBlock<string>(result => results.Add(result));
+        source.LinkTo(consumer, new DataflowLinkOptions { PropagateCompletion = true });
+
+        await target.SendAsync(1);
+        await target.SendAsync(42); // This will cause transformer to fault
+        target.Complete();
+
+        // The first item should be processed
+        await Task.Delay(100);
+        Assert.Single(results);
+        Assert.Equal("1", results[0]);
+
+        // Source should eventually fault due to transformer exception
+        var ex = await Assert.ThrowsAnyAsync<MultiplexerException>(() => source.Completion);
+        // Assert.True(ex);
+    }
 }
