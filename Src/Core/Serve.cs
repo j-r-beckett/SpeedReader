@@ -27,38 +27,31 @@ public static class Serve
         var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
 
-        // Create singleton OCR bridge
-        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        var ocrBridge = new BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
-
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
 
-        // Register OCR bridge as singleton
-        builder.Services.AddSingleton(ocrBridge);
+        // Create OcrBlock and register single multiplexer for access
+        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
+        var ocrMultiplexer = new BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
+        builder.Services.AddSingleton(ocrMultiplexer);
 
         var app = builder.Build();
 
         app.MapGet("/api/health", () => "Healthy");
 
-        app.MapPost("api/ocr", async (HttpContext context, BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBridge) =>
+        app.MapPost("api/ocr", async (HttpContext context, BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> multiplexer) =>
         {
-            var tasks = new List<Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)>>();
+            // var tasks = new List<Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)>>();
 
-            await foreach (var image in ParseImagesFromRequest(context.Request))
-            {
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var ocrTask = await ocrBridge.ProcessSingle((image, vizBuilder), CancellationToken.None, CancellationToken.None);
-                tasks.Add(ocrTask);
-            }
+            var inputs = ParseImagesFromRequest(context.Request)
+                .Select(image => (image, VizBuilder.Create(VizMode.None, image)));
 
-            if (tasks.Count == 0)
+            var results = await await multiplexer.ProcessMultipleAsync(inputs, CancellationToken.None, CancellationToken.None);
+
+            if (results.Length == 0)
             {
                 throw new BadHttpRequestException("No images found in request");
             }
-
-            // Await all tasks - fail fast if any fail
-            var results = await Task.WhenAll(tasks);
 
             // Process results and create response
             var ocrResults = new List<OcrResult>();

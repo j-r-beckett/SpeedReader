@@ -35,17 +35,17 @@ public class InferenceBlockCacheTests : IDisposable
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration { CacheFirstInference = true };
         var svtrBlock = new SVTRBlock(svtrSession, config, _meter);
-        await using var bridge = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
+        await using var multiplexer = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
 
         // Create two different test inputs
         var (boundaries1, image1, viz1) = CreateTestInput("hello");
         var (boundaries2, image2, viz2) = CreateTestInput("world");
 
         // Act - Process two different inputs
-        var result1Task = await bridge.ProcessSingle((boundaries1, image1, viz1), CancellationToken.None, CancellationToken.None);
+        var result1Task = await multiplexer.ProcessSingle((boundaries1, image1, viz1), CancellationToken.None, CancellationToken.None);
         var result1 = await result1Task;
 
-        var result2Task = await bridge.ProcessSingle((boundaries2, image2, viz2), CancellationToken.None, CancellationToken.None);
+        var result2Task = await multiplexer.ProcessSingle((boundaries2, image2, viz2), CancellationToken.None, CancellationToken.None);
         var result2 = await result2Task;
 
         // Assert - With caching enabled, different inputs should produce identical words
@@ -60,17 +60,17 @@ public class InferenceBlockCacheTests : IDisposable
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration { CacheFirstInference = false };
         var svtrBlock = new SVTRBlock(svtrSession, config, _meter);
-        await using var bridge = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
+        await using var multiplexer = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
 
         // Create two different test inputs
         var (boundaries1, image1, viz1) = CreateTestInput("hello");
         var (boundaries2, image2, viz2) = CreateTestInput("world");
 
         // Act - Process two different inputs
-        var result1Task = await bridge.ProcessSingle((boundaries1, image1, viz1), CancellationToken.None, CancellationToken.None);
+        var result1Task = await multiplexer.ProcessSingle((boundaries1, image1, viz1), CancellationToken.None, CancellationToken.None);
         var result1 = await result1Task;
 
-        var result2Task = await bridge.ProcessSingle((boundaries2, image2, viz2), CancellationToken.None, CancellationToken.None);
+        var result2Task = await multiplexer.ProcessSingle((boundaries2, image2, viz2), CancellationToken.None, CancellationToken.None);
         var result2 = await result2Task;
 
         // Assert - With caching disabled, different inputs should produce different words
