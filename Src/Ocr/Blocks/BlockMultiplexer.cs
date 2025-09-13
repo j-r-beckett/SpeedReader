@@ -98,7 +98,7 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
         return completionSource.Task;
     }
 
-    public async Task<Task<TOut[]>> ProcessMultipleAsync(IAsyncEnumerable<TIn> inputs,
+    public async Task<Task<TOut[]>> ProcessMultiple(IAsyncEnumerable<TIn> inputs,
         CancellationToken multiplexerCancellationToken, CancellationToken transformerCancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
