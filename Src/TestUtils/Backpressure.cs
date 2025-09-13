@@ -30,7 +30,7 @@ public class Backpressure
             }
         }, cts.Token);
 
-        sut.Completion.ContinueWith(async _ =>
+        _ = sut.Completion.ContinueWith(async _ =>
         {
             cts.Cancel();
             try
