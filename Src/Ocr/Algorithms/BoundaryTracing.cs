@@ -97,8 +97,8 @@ public static class BoundaryTracing
     }
 
     /// <summary>
-    /// Traces the boundary of a region using Moore boundary tracing with Jacob's stopping criterion.
-    /// Returns an ordered sequence of boundary pixels forming a polygon.
+    /// Traces the boundary of a region using Moore boundary tracing with single-trace stopping criterion.
+    /// Returns an ordered sequence of boundary pixels forming a partial polygon.
     /// </summary>
     private static (int X, int Y)[] TraceMooreBoundary(int startX, int startY, Span2D<float> probabilityMap)
     {
@@ -132,8 +132,9 @@ public static class BoundaryTracing
                 break; // No next pixel found
             }
 
-            // Jacob's stopping criterion: stop when we return to start with same approach direction
-            if (currentX == firstX && currentY == firstY && boundary.Count > 2)
+            // Single-trace stopping criterion: stop when boundary.Count > 2 and current pixel
+            // is either the starting pixel or one of its 8-connected neighbors
+            if (boundary.Count > 2 && IsStartingPixelOrNeighbor(currentX, currentY, firstX, firstY))
             {
                 break;
             }
@@ -147,6 +148,21 @@ public static class BoundaryTracing
         } while (true);
 
         return boundary.ToArray();
+    }
+
+    /// <summary>
+    /// Checks if the current pixel is either the starting pixel or one of its 8-connected neighbors.
+    /// </summary>
+    private static bool IsStartingPixelOrNeighbor(int currentX, int currentY, int startX, int startY)
+    {
+        // Check if it's the starting pixel
+        if (currentX == startX && currentY == startY)
+            return true;
+
+        // Check if it's one of the starting pixel's 8-connected neighbors
+        int dx = Math.Abs(currentX - startX);
+        int dy = Math.Abs(currentY - startY);
+        return dx <= 1 && dy <= 1;
     }
 
     /// <summary>

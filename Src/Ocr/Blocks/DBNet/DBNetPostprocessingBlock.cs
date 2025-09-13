@@ -46,23 +46,11 @@ public class DBNetPostprocessingBlock
 
         foreach (var boundary in boundaries)
         {
-            // Skip very small boundaries
-            if (boundary.Length < 10)
-            {
-                continue;
-            }
+            // Simplify
+            var simplifiedPolygon = PolygonSimplification.DouglasPeucker(boundary);
 
-            // Construct convex hull
-            var polygon = ConvexHull.GrahamScan(boundary);
-
-            // Dilate the polygon
-            var dilatedPolygon = Dilation.DilatePolygon(polygon);
-
-            // Skip polygons that were filtered out during dilation (too small area, etc.)
-            if (dilatedPolygon.Count == 0)
-            {
-                continue;
-            }
+            // Dilate
+            var dilatedPolygon = Dilation.DilatePolygon(simplifiedPolygon.ToList());
 
             // Convert back to original coordinate system
             double scale = Math.Max((double)originalWidth / probabilityMapSpan.Width, (double)originalHeight / probabilityMapSpan.Height);
