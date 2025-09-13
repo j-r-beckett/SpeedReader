@@ -73,7 +73,7 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
 
         var completionSource = new TaskCompletionSource<TOut>();
         var target = new ActionBlock<TOut>(result => completionSource.TrySetResult(result));
-        target.Completion.ContinueWith(sts =>
+        _ = target.Completion.ContinueWith(sts =>
         {
             if (sts.IsFaulted)
             {
