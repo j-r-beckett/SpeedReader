@@ -48,10 +48,10 @@ public class OcrTestFramework
         using var meter = new Meter("OcrTestFramework");
 
         var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        await using var bridge = new DataflowBridge<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
+        await using var bridge = new BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
 
         var vizBuilder = VizBuilder.Create(VizMode.None, scenario.Image);
-        var processTask = await bridge.ProcessAsync((scenario.Image, vizBuilder), CancellationToken.None, CancellationToken.None);
+        var processTask = await bridge.ProcessSingle((scenario.Image, vizBuilder), CancellationToken.None, CancellationToken.None);
 
         var result = await processTask;
 
