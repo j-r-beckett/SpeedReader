@@ -50,7 +50,7 @@ public class DBNetPostprocessingBlock
             var simplifiedPolygon = PolygonSimplification.DouglasPeucker(boundary);
 
             // Dilate
-            var dilatedPolygon = Dilation.DilatePolygon(simplifiedPolygon.ToList());
+            var dilatedPolygon = Dilation.DilatePolygon(simplifiedPolygon);
 
             // Convert back to original coordinate system
             double scale = Math.Max((double)originalWidth / probabilityMapSpan.Width, (double)originalHeight / probabilityMapSpan.Height);
