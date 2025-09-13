@@ -279,7 +279,7 @@ public class BlockMultiplexerTests
         await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         var inputs = new List<int> { 1, 2, 3, 4, 5 }.ToAsyncEnumerable();
-        var task = multiplexer.ProcessMultipleAsync(inputs, CancellationToken.None, CancellationToken.None);
+        var task = multiplexer.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
         var results = await (await task);
 
         Assert.Equal(["1", "2", "3", "4", "5"], results);
@@ -297,7 +297,7 @@ public class BlockMultiplexerTests
         await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         var inputs = new List<int> { 1, 2, 3, 4, 5 }.ToAsyncEnumerable();
-        var task = multiplexer.ProcessMultipleAsync(inputs, CancellationToken.None, CancellationToken.None);
+        var task = multiplexer.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
         var results = await (await task);
 
         Assert.Equal(["1", "2", "3", "4", "5"], results);
