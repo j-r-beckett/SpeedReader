@@ -91,12 +91,86 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
         // cancel it.
         transformerCancellationToken.Register(() => completionSource.TrySetCanceled(transformerCancellationToken));
 
-        if (await _origin.SendAsync((input, target), bridgeCancellationToken))
+        if (!await _origin.SendAsync((input, target), bridgeCancellationToken))
         {
-            return completionSource.Task;
+            throw new InvalidOperationException($"{nameof(_origin)} declined input");
         }
 
-        throw new InvalidOperationException($"{nameof(_origin)} declined input");
+        return completionSource.Task;
+    }
+
+    public async Task<Task<List<TOut>>> ProcessMultiple(List<TIn> input, CancellationToken bridgeCancellationToken, CancellationToken transformerCancellationToken)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (input.Count == 0)
+        {
+            throw new MultiplexerException($"{nameof(ProcessMultiple)} requires input of size at least 1");
+        }
+
+        var completionSource = new TaskCompletionSource<List<TOut>>();
+        var results = new List<TOut>();
+        var target = new ActionBlock<TOut>(result =>
+        {
+            results.Add(result);
+            if (results.Count == input.Count)
+            {
+                completionSource.TrySetResult(results);
+            }
+        });
+        target.Completion.ContinueWith(sts =>
+        {
+            if (sts.IsFaulted)
+            {
+                completionSource.SetException(sts.Exception.GetBaseException());
+            }
+            else if (sts.IsCanceled)
+            {
+                completionSource.SetCanceled();
+            }
+        });
+        // No need to complete target, it will just be garbage collected
+
+        // This is just for the convenience of the caller; once the input is in the pipeline we are unable to truly
+        // cancel it.
+        transformerCancellationToken.Register(() => completionSource.TrySetCanceled(transformerCancellationToken));
+
+        foreach (var element in input)
+        {
+            if (!await _origin.SendAsync((element, target), bridgeCancellationToken))
+            {
+                throw new InvalidOperationException($"{nameof(_origin)} declined input");
+            }
+        }
+
+        return completionSource.Task;
+
+    }
+
+    public (ITargetBlock<TIn>, ISourceBlock<TOut>) GetAccessorBlocks()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var resultBlock = new TransformBlock<TOut, TOut>(result => result, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+
+        var target = new ActionBlock<TIn>(async input =>
+        {
+            await _origin.SendAsync((input, resultBlock));
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+
+        target.Completion.ContinueWith(sts =>
+        {
+            if (sts.IsFaulted)
+            {
+                ((IDataflowBlock)resultBlock).Fault(sts.Exception);
+            }
+            else
+            {
+                resultBlock.Complete();
+            }
+        });
+
+        return (target, resultBlock);
     }
 
     public async ValueTask DisposeAsync()
