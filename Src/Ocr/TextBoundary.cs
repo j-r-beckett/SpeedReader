@@ -1,3 +1,4 @@
+using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 
 namespace Ocr
@@ -20,31 +21,9 @@ namespace Ocr
             if (polygon == null || polygon.Count == 0)
                 throw new ArgumentException("Polygon cannot be null or empty", nameof(polygon));
 
-            // Calculate axis-aligned rectangle using the same logic as DBNet.GetBoundingBox
-            int maxX = int.MinValue;
-            int maxY = int.MinValue;
-            int minX = int.MaxValue;
-            int minY = int.MaxValue;
-
-            foreach ((int x, int y) in polygon)
-            {
-                maxX = Math.Max(maxX, x);
-                maxY = Math.Max(maxY, y);
-                minX = Math.Min(minX, x);
-                minY = Math.Min(minY, y);
-            }
-
-            // Create axis-aligned rectangle
-            var aaRectangle = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
-
-            // For now, set oriented rectangle to the corners of the axis-aligned rectangle
-            var oRectangle = new List<(int X, int Y)>
-            {
-                (minX, minY),           // Top-left
-                (maxX, minY),           // Top-right
-                (maxX, maxY),           // Bottom-right
-                (minX, maxY)            // Bottom-left
-            };
+            // Use new algorithms for rectangle computation
+            var aaRectangle = BoundingRectangles.ComputeAxisAlignedRectangle(polygon);
+            var oRectangle = BoundingRectangles.ComputeOrientedRectangle(polygon);
 
             return new TextBoundary(polygon, aaRectangle, oRectangle);
         }
