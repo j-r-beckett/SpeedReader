@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using Core;
+using Ocr.Algorithms;
 using Ocr.Blocks;
 using Ocr.Blocks.SVTR;
 using Ocr.Visualization;
@@ -89,13 +90,16 @@ public class InferenceBlockCacheTests : IDisposable
         image.Mutate(ctx => ctx.DrawText(text, _testFont, Color.Black, new PointF(10, 10)));
 
         // Create a text boundary around the word (ensure it fits within image bounds)
-        var boundary = TextBoundary.Create(new List<(int X, int Y)>
+        var polygon = new List<(int X, int Y)>
         {
             (5, 5),
             (154, 5),
             (154, 42),
             (5, 42)
-        });
+        };
+        var aaRect = AxisAlignedRectangle.Compute(polygon);
+        var oRect = MinAreaRectangle.Compute(ConvexHull.GrahamScan(polygon.ToArray()));
+        var boundary = new TextBoundary(polygon, aaRect, oRect);
 
         var boundaries = new List<TextBoundary> { boundary };
         var vizBuilder = VizBuilder.Create(VizMode.None, image);
