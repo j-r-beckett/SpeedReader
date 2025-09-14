@@ -59,7 +59,13 @@ public class DBNetPostprocessingBlock
             // Clamp coordinates to image bounds
             ClampToImageBounds(dilatedPolygon, originalWidth, originalHeight);
 
-            textBoundaries.Add(TextBoundary.Create(dilatedPolygon));
+            var convexHull = ConvexHull.GrahamScan(dilatedPolygon.ToArray());
+
+            // Calculate axis-aligned and oriented rectangles using geometric utilities
+            var aaRectangle = AxisAlignedRectangle.Compute(dilatedPolygon);
+            var oRectangle = MinAreaRectangle.Compute(convexHull);
+
+            textBoundaries.Add(new TextBoundary(dilatedPolygon, aaRectangle, oRectangle));
         }
 
         return textBoundaries;
