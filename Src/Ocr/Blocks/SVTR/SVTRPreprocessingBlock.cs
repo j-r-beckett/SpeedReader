@@ -32,8 +32,7 @@ public class SVTRPreprocessingBlock
     {
         float[] data = new float[_height * _width * 3];
 
-        // using var croppedImage = OrientedCropping.CropOrientedRectangle(image, textBoundary.ORectangle);
-        using var croppedImage = image.Clone(ctx => ctx.Crop(textBoundary.AARectangle));
+        using var croppedImage = image.Clone(x => x.Crop(textBoundary.AARectangle));
 
         Resampling.AspectResizeInto(croppedImage, data, _width, _height, 127.5f);
 
