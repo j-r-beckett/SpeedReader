@@ -31,17 +31,18 @@ public static class ImageCropping
     /// - Text reading direction follows the "width" of the rectangle (top edge direction)
     /// </summary>
     /// <param name="image">Source image to crop</param>
-    /// <param name="orientedRectangle">Four corner points defining the oriented rectangle</param>
+    /// <param name="orientedRectangle">Four corner points defining the oriented rectangle in floating-point precision</param>
     /// <returns>Cropped and rectified image where text appears upright</returns>
     /// <exception cref="ArgumentException">Thrown when orientedRectangle doesn't have exactly 4 points</exception>
-    public static Image<Rgb24> CropOriented(Image<Rgb24> image, List<(int X, int Y)> orientedRectangle)
+    public static Image<Rgb24> CropOriented(Image<Rgb24> image, List<(double X, double Y)> orientedRectangle)
     {
         if (orientedRectangle == null || orientedRectangle.Count != 4)
             throw new ArgumentException("Oriented rectangle must have exactly 4 points", nameof(orientedRectangle));
 
         // TODO: Implement oriented rectangle cropping with perspective transformation
         // For now, fall back to axis-aligned cropping using the bounding box of the oriented rectangle
-        var aaRect = BoundingRectangles.ComputeAxisAlignedRectangle(orientedRectangle);
+        var intPoints = orientedRectangle.Select(p => ((int)Math.Round(p.X), (int)Math.Round(p.Y))).ToList();
+        var aaRect = BoundingRectangles.ComputeAxisAlignedRectangle(intPoints);
         return CropAxisAligned(image, aaRect);
     }
 }

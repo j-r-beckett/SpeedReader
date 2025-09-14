@@ -6,17 +6,17 @@ using Xunit.Abstractions;
 
 namespace Ocr.Test.Algorithms;
 
-public class OrientedRectangleTests
+public class OrientedRectangleCreationTests
 {
     private readonly ITestOutputHelper _outputHelper;
-    private readonly ILogger<OrientedRectangleTests> _logger;
-    private readonly FileSystemUrlPublisher<OrientedRectangleTests> _publisher;
+    private readonly ILogger<OrientedRectangleCreationTests> _logger;
+    private readonly FileSystemUrlPublisher<OrientedRectangleCreationTests> _publisher;
 
-    public OrientedRectangleTests(ITestOutputHelper outputHelper)
+    public OrientedRectangleCreationTests(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-        _logger = new TestLogger<OrientedRectangleTests>(outputHelper);
-        _publisher = new FileSystemUrlPublisher<OrientedRectangleTests>("/tmp/oriented-rectangle-debug", _logger);
+        _logger = new TestLogger<OrientedRectangleCreationTests>(outputHelper);
+        _publisher = new FileSystemUrlPublisher<OrientedRectangleCreationTests>("/tmp/oriented-rectangle-debug", _logger);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class OrientedRectangleTests
         }
     }
 
-    private void VerifyRectangleHasParallelSides(List<(int X, int Y)> rectangle)
+    private void VerifyRectangleHasParallelSides(List<(double X, double Y)> rectangle)
     {
         Assert.Equal(4, rectangle.Count);
 
@@ -106,11 +106,11 @@ public class OrientedRectangleTests
             edges.Add((next.X - current.X, next.Y - current.Y));
         }
 
-        // Calculate tolerances based on rectangle size (proportional to edge lengths)
+        // Calculate tolerances based on rectangle size (much tighter with floating-point precision)
         var edgeLengths = edges.Select(e => Math.Sqrt(e.X * e.X + e.Y * e.Y)).ToList();
         var avgEdgeLength = edgeLengths.Average();
-        var parallelTolerance = Math.Max(2.0, avgEdgeLength * 0.02); // 2% of edge length or minimum 2 pixels
-        var perpendicularTolerance = Math.Max(50.0, avgEdgeLength * avgEdgeLength * 0.015); // For dot product
+        var parallelTolerance = Math.Max(0.1, avgEdgeLength * 0.001); // 0.1% of edge length or minimum 0.1
+        var perpendicularTolerance = Math.Max(1.0, avgEdgeLength * 0.01); // Much tighter for dot product
 
         // Edge 0 should be parallel to edge 2
         Assert.True(AreVectorsParallel(edges[0], edges[2], parallelTolerance),
@@ -133,7 +133,7 @@ public class OrientedRectangleTests
         return Math.Abs(crossProduct) < tolerance;
     }
 
-    private void VerifyAllPointsContained(List<(int X, int Y)> points, List<(int X, int Y)> rectangle)
+    private void VerifyAllPointsContained(List<(int X, int Y)> points, List<(double X, double Y)> rectangle)
     {
         foreach (var point in points)
         {
@@ -142,10 +142,10 @@ public class OrientedRectangleTests
         }
     }
 
-    private void VerifyAtLeastTwoPointsOnBoundary(List<(int X, int Y)> points, List<(int X, int Y)> rectangle)
+    private void VerifyAtLeastTwoPointsOnBoundary(List<(int X, int Y)> points, List<(double X, double Y)> rectangle)
     {
         int pointsOnBoundary = 0;
-        var tolerance = 2.0;
+        var tolerance = 0.1; // Much tighter tolerance with floating-point precision
 
         foreach (var point in points)
         {
@@ -159,11 +159,10 @@ public class OrientedRectangleTests
             $"At least 2 original points should lie within {tolerance} pixels of the rectangle boundary. Found {pointsOnBoundary} points on boundary.");
     }
 
-    private bool IsPointInRectangle((int X, int Y) point, List<(int X, int Y)> rectangle)
+    private bool IsPointInRectangle((int X, int Y) point, List<(double X, double Y)> rectangle)
     {
-        // Use distance-based tolerance since rounding can make the integer rectangle
-        // slightly smaller than the theoretical floating-point rectangle
-        var tolerance = 3.0; // Allow 3 pixels of tolerance
+        // Use distance-based tolerance - much tighter with floating-point precision
+        var tolerance = 0.5; // Allow 0.5 pixel tolerance
 
         // Check if point is close to boundary first
         if (IsPointOnRectangleBoundary(point, rectangle, tolerance))
@@ -175,7 +174,7 @@ public class OrientedRectangleTests
         return IsPointInPolygon(point, rectangle);
     }
 
-    private bool IsPointOnRectangleBoundary((int X, int Y) point, List<(int X, int Y)> rectangle, double tolerance)
+    private bool IsPointOnRectangleBoundary((int X, int Y) point, List<(double X, double Y)> rectangle, double tolerance)
     {
         // Check if point lies on any of the four edges
         for (int i = 0; i < 4; i++)
@@ -192,7 +191,7 @@ public class OrientedRectangleTests
         return false;
     }
 
-    private bool IsPointOnLineSegment((int X, int Y) point, (int X, int Y) start, (int X, int Y) end, double tolerance)
+    private bool IsPointOnLineSegment((int X, int Y) point, (double X, double Y) start, (double X, double Y) end, double tolerance)
     {
         // Calculate distance from point to line
         double A = end.Y - start.Y;
@@ -214,7 +213,7 @@ public class OrientedRectangleTests
                point.Y >= minY - tolerance && point.Y <= maxY + tolerance;
     }
 
-    private bool IsPointInPolygon((int X, int Y) point, List<(int X, int Y)> polygon)
+    private bool IsPointInPolygon((int X, int Y) point, List<(double X, double Y)> polygon)
     {
         int intersectionCount = 0;
         int n = polygon.Count;
