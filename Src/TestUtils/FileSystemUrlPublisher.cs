@@ -25,7 +25,7 @@ public class FileSystemUrlPublisher<T>
     public async Task PublishAsync(Stream data, string contentType, string description = "", CancellationToken cancellationToken = default)
     {
         var extension = GetExtensionFromContentType(contentType);
-        var fileName = $"{Guid.NewGuid()}.{extension}";
+        var fileName = $"{Guid.NewGuid().ToString().Substring(0, 12)}.{extension}";
         var filePath = Path.Combine(_baseDirectory, fileName);
 
         await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
