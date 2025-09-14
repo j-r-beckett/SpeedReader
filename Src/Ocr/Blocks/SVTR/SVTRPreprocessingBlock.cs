@@ -4,7 +4,6 @@ using Ocr.Algorithms;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace Ocr.Blocks.SVTR;
 
@@ -32,7 +31,7 @@ public class SVTRPreprocessingBlock
     {
         float[] data = new float[_height * _width * 3];
 
-        using var croppedImage = image.Clone(x => x.Crop(textBoundary.AARectangle));
+        using var croppedImage = ImageCropping.CropOriented(image, textBoundary.ORectangle);
 
         Resampling.AspectResizeInto(croppedImage, data, _width, _height, 127.5f);
 
