@@ -40,25 +40,25 @@ public static class BoundingRectangles
     /// Uses naive O(n^4) rotating calipers algorithm - tries all edge pairs as potential sides.
     /// </summary>
     /// <param name="polygon">Convex hull points in counter-clockwise order</param>
-    /// <returns>Four corner points of the minimum area oriented rectangle</returns>
+    /// <returns>Four corner points of the minimum area oriented rectangle in floating-point precision</returns>
     /// <exception cref="ArgumentException">Thrown when polygon is null or empty</exception>
-    public static List<(int X, int Y)> ComputeOrientedRectangle(List<(int X, int Y)> polygon)
+    public static List<(double X, double Y)> ComputeOrientedRectangle(List<(int X, int Y)> polygon)
     {
         if (polygon == null || polygon.Count == 0)
             throw new ArgumentException("Polygon cannot be null or empty", nameof(polygon));
 
         if (polygon.Count == 1)
-            return new List<(int X, int Y)> { polygon[0], polygon[0], polygon[0], polygon[0] };
+            return new List<(double X, double Y)> { (polygon[0].X, polygon[0].Y), (polygon[0].X, polygon[0].Y), (polygon[0].X, polygon[0].Y), (polygon[0].X, polygon[0].Y) };
 
         if (polygon.Count == 2)
         {
             var p1 = polygon[0];
             var p2 = polygon[1];
-            return new List<(int X, int Y)> { p1, p2, p2, p1 };
+            return new List<(double X, double Y)> { (p1.X, p1.Y), (p2.X, p2.Y), (p2.X, p2.Y), (p1.X, p1.Y) };
         }
 
         double minArea = double.MaxValue;
-        List<(int X, int Y)>? bestRectangle = null;
+        List<(double X, double Y)>? bestRectangle = null;
 
         int n = polygon.Count;
 
@@ -88,7 +88,7 @@ public static class BoundingRectangles
     /// <summary>
     /// Finds the minimum bounding rectangle aligned with the given edge direction.
     /// </summary>
-    private static List<(int X, int Y)> FindRectangleAlignedWithEdge(List<(int X, int Y)> polygon, (int X, int Y) edge)
+    private static List<(double X, double Y)> FindRectangleAlignedWithEdge(List<(int X, int Y)> polygon, (int X, int Y) edge)
     {
         // Normalize the edge to create orthogonal unit vectors
         double edgeLength = Math.Sqrt(edge.X * edge.X + edge.Y * edge.Y);
@@ -112,10 +112,9 @@ public static class BoundingRectangles
             maxV = Math.Max(maxV, projV);
         }
 
-        // Compute corner 0 in double precision and round up to integers
+        // Compute corner 0 in floating-point precision
         double corner0X = minU * ux + minV * vx;
         double corner0Y = minU * uy + minV * vy;
-        var corner0 = ((int)Math.Ceiling(corner0X), (int)Math.Ceiling(corner0Y));
 
         // Compute exact edge vectors from corner 0
         double edgeVector1X = (maxU - minU) * ux; // Vector from corner 0 to corner 1
@@ -123,24 +122,19 @@ public static class BoundingRectangles
         double edgeVector2X = (maxV - minV) * vx; // Vector from corner 0 to corner 3
         double edgeVector2Y = (maxV - minV) * vy;
 
-        // Compute other corners using exact vectors to preserve rectangle properties
-        // Round the vector components up, then add to corner0 to maintain exact relationships
-        int vector1X = (int)Math.Ceiling(edgeVector1X);
-        int vector1Y = (int)Math.Ceiling(edgeVector1Y);
-        int vector2X = (int)Math.Ceiling(edgeVector2X);
-        int vector2Y = (int)Math.Ceiling(edgeVector2Y);
+        // Compute other corners using exact floating-point arithmetic
+        var corner0 = (corner0X, corner0Y);
+        var corner1 = (corner0X + edgeVector1X, corner0Y + edgeVector1Y);
+        var corner2 = (corner0X + edgeVector1X + edgeVector2X, corner0Y + edgeVector1Y + edgeVector2Y);
+        var corner3 = (corner0X + edgeVector2X, corner0Y + edgeVector2Y);
 
-        var corner1 = (corner0.Item1 + vector1X, corner0.Item2 + vector1Y);
-        var corner2 = (corner0.Item1 + vector1X + vector2X, corner0.Item2 + vector1Y + vector2Y);
-        var corner3 = (corner0.Item1 + vector2X, corner0.Item2 + vector2Y);
-
-        return new List<(int X, int Y)> { corner0, corner1, corner2, corner3 };
+        return new List<(double X, double Y)> { corner0, corner1, corner2, corner3 };
     }
 
     /// <summary>
     /// Calculates the area of a rectangle given its four corners.
     /// </summary>
-    private static double CalculateRectangleArea(List<(int X, int Y)> rectangle)
+    private static double CalculateRectangleArea(List<(double X, double Y)> rectangle)
     {
         if (rectangle.Count != 4) return 0;
 

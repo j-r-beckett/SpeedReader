@@ -6,10 +6,10 @@ namespace Ocr
     public class TextBoundary
     {
         public Rectangle AARectangle { get; }
-        public List<(int X, int Y)> ORectangle { get; }
+        public List<(double X, double Y)> ORectangle { get; }
         public List<(int X, int Y)> Polygon { get; }
 
-        private TextBoundary(List<(int X, int Y)> polygon, Rectangle aaRectangle, List<(int X, int Y)> oRectangle)
+        private TextBoundary(List<(int X, int Y)> polygon, Rectangle aaRectangle, List<(double X, double Y)> oRectangle)
         {
             Polygon = polygon;
             AARectangle = aaRectangle;
