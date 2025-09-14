@@ -50,7 +50,7 @@ public class DBNetPostprocessingBlock
             var simplifiedPolygon = PolygonSimplification.DouglasPeucker(boundary);
 
             // Dilate
-            var dilatedPolygon = Dilation.DilatePolygon(simplifiedPolygon);
+            var dilatedPolygon = Dilation.DilatePolygon(simplifiedPolygon.ToList());
 
             // Convert back to original coordinate system
             double scale = Math.Max((double)originalWidth / probabilityMapSpan.Width, (double)originalHeight / probabilityMapSpan.Height);
@@ -59,13 +59,7 @@ public class DBNetPostprocessingBlock
             // Clamp coordinates to image bounds
             ClampToImageBounds(dilatedPolygon, originalWidth, originalHeight);
 
-            var convexHull = ConvexHull.GrahamScan(dilatedPolygon.ToArray());
-
-            // Calculate axis-aligned and oriented rectangles using geometric utilities
-            var aaRectangle = AxisAlignedRectangle.Compute(dilatedPolygon);
-            var oRectangle = MinAreaRectangle.Compute(convexHull);
-
-            textBoundaries.Add(new TextBoundary(dilatedPolygon, aaRectangle, oRectangle));
+            textBoundaries.Add(TextBoundary.Create(dilatedPolygon));
         }
 
         return textBoundaries;

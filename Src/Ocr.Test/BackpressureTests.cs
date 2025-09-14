@@ -1,7 +1,6 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Core;
-using Ocr.Algorithms;
 using Ocr.Blocks;
 using Ocr.Blocks.DBNet;
 using Ocr.Blocks.SVTR;
@@ -156,14 +155,14 @@ public class BackpressureTests : IAsyncDisposable
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 var boundaries = new List<TextBoundary>
                 {
-                    CreateTestBoundary(new List<(int, int)>
+                    TextBoundary.Create(new List<(int, int)>
                     {
                         (10, 10),
                         (100, 10),
                         (100, 50),
                         (10, 50)
                     }),
-                    CreateTestBoundary(new List<(int, int)>
+                    TextBoundary.Create(new List<(int, int)>
                     {
                         (110, 10),
                         (200, 10),
@@ -199,7 +198,7 @@ public class BackpressureTests : IAsyncDisposable
                 var image = new Image<Rgb24>(config.Svtr.Width, config.Svtr.Height, Color.White);
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 var floatData = new float[3 * config.Svtr.Height * config.Svtr.Width];  // CHW format for SVTR input
-                var boundary = CreateTestBoundary(new List<(int, int)>
+                var boundary = TextBoundary.Create(new List<(int, int)>
                 {
                     (10, 10),
                     (90, 10),
@@ -301,13 +300,6 @@ public class BackpressureTests : IAsyncDisposable
             },
             initialDelay: TimeSpan.FromMilliseconds(1000)
         );
-    }
-
-    private static TextBoundary CreateTestBoundary(List<(int, int)> polygon)
-    {
-        var aaRect = AxisAlignedRectangle.Compute(polygon);
-        var oRect = MinAreaRectangle.Compute(ConvexHull.GrahamScan(polygon.ToArray()));
-        return new TextBoundary(polygon, aaRect, oRect);
     }
 
     public async ValueTask DisposeAsync()
