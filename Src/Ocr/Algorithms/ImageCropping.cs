@@ -41,74 +41,208 @@ public static class ImageCropping
         // Detect orientation and establish proper corner correspondence
         var corners = DetectOrientationAndOrderCorners(orientedRectangle);
 
-        // Calculate the axis-aligned bounding box of the oriented rectangle
-        var minX = Math.Min(Math.Min(corners.TopLeft.X, corners.TopRight.X),
-                           Math.Min(corners.BottomLeft.X, corners.BottomRight.X));
-        var maxX = Math.Max(Math.Max(corners.TopLeft.X, corners.TopRight.X),
-                           Math.Max(corners.BottomLeft.X, corners.BottomRight.X));
-        var minY = Math.Min(Math.Min(corners.TopLeft.Y, corners.TopRight.Y),
-                           Math.Min(corners.BottomLeft.Y, corners.BottomRight.Y));
-        var maxY = Math.Max(Math.Max(corners.TopLeft.Y, corners.TopRight.Y),
-                           Math.Max(corners.BottomLeft.Y, corners.BottomRight.Y));
+        // Calculate target dimensions based on the detected orientation
+        var width = CalculateDistance(corners.TopLeft, corners.TopRight);
+        var height = CalculateDistance(corners.TopLeft, corners.BottomLeft);
 
-        var boundingRect = new Rectangle(
-            (int)Math.Floor(minX),
-            (int)Math.Floor(minY),
-            (int)Math.Ceiling(maxX - minX),
-            (int)Math.Ceiling(maxY - minY)
-        );
+        // Check if this is already axis-aligned (no geometric transformation needed)
+        const double alignmentTolerance = 1e-3;
+        bool isAxisAligned =
+            Math.Abs(corners.TopLeft.Y - corners.TopRight.Y) < alignmentTolerance &&
+            Math.Abs(corners.BottomLeft.Y - corners.BottomRight.Y) < alignmentTolerance &&
+            Math.Abs(corners.TopLeft.X - corners.BottomLeft.X) < alignmentTolerance &&
+            Math.Abs(corners.TopRight.X - corners.BottomRight.X) < alignmentTolerance;
 
-        return CropAxisAligned(image, boundingRect);
+        if (isAxisAligned)
+        {
+            // Use simple axis-aligned cropping for better performance and accuracy
+            var boundingRect = new Rectangle(
+                (int)Math.Round(corners.TopLeft.X),
+                (int)Math.Round(corners.TopLeft.Y),
+                (int)Math.Round(width),
+                (int)Math.Round(height)
+            );
+            return CropAxisAligned(image, boundingRect);
+        }
+
+        // Apply custom geometric transformation for oriented rectangles
+        return CropOrientedWithGeometry(image, corners, (int)Math.Round(width), (int)Math.Round(height));
     }
 
     /// <summary>
     /// Detects the orientation of an oriented rectangle and orders the corners properly.
-    /// Finds the longer parallel edges (text direction) and shorter parallel edges (text height).
+    /// Uses analytic geometry to determine the correct text reading orientation.
     /// </summary>
-    private static (
+    internal static (
         (double X, double Y) TopLeft,
         (double X, double Y) TopRight,
         (double X, double Y) BottomRight,
         (double X, double Y) BottomLeft
     ) DetectOrientationAndOrderCorners(List<(double X, double Y)> vertices)
     {
-        // Pick the first vertex as reference point
-        var referenceVertex = vertices[0];
-        var otherVertices = vertices.Skip(1).ToList();
-
-        // Calculate vectors from reference vertex to all other vertices
-        var vectors = otherVertices
-            .Select(v => new
+        // Step 1: Identify rectangle structure using edge lengths
+        var distances = new List<(int i, int j, double distance)>();
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            for (int j = i + 1; j < vertices.Count; j++)
             {
-                Vertex = v,
-                Distance = CalculateDistance(referenceVertex, v),
-                Vector = (X: v.X - referenceVertex.X, Y: v.Y - referenceVertex.Y)
-            })
-            .OrderBy(v => v.Distance)
-            .ToList();
+                var distance = CalculateDistance(vertices[i], vertices[j]);
+                distances.Add((i, j, distance));
+            }
+        }
 
-        // The longest vector is the diagonal, the other two are the adjacent sides
-        var diagonal = vectors[2]; // Longest distance
-        var side1 = vectors[0];    // Shorter side
-        var side2 = vectors[1];    // Longer side
+        // Sort by distance - 4 shortest are edges, 2 longest are diagonals
+        distances.Sort((a, b) => a.distance.CompareTo(b.distance));
+        var edges = distances.Take(4).ToList();
 
-        // The vertex opposite to reference is at the end of the diagonal
-        var oppositeVertex = diagonal.Vertex;
+        // Group edges by length to find parallel pairs
+        var edgeGroups = edges.GroupBy(e => Math.Round(e.distance, 1)).OrderBy(g => g.Key).ToList();
+        var shortEdges = edgeGroups[0].ToList();
+        var longEdges = edgeGroups[1].ToList();
 
-        // Determine which side is longer (text direction) vs shorter (text height)
-        var longerSide = side1.Distance > side2.Distance ? side1 : side2;
-        var shorterSide = side1.Distance > side2.Distance ? side2 : side1;
+        // Step 2: Determine text direction (along longer edges) and text height (along shorter edges)
+        var textDirectionEdges = longEdges.Count >= 2 ? longEdges : shortEdges;
+        var textHeightEdges = longEdges.Count >= 2 ? shortEdges : longEdges;
 
-        // Now we have the rectangle: reference -> longerSide -> opposite -> shorterSide -> reference
-        // Map this to our standard orientation where text flows left-to-right
-        var topLeft = referenceVertex;
-        var topRight = longerSide.Vertex;
-        var bottomRight = oppositeVertex;
-        var bottomLeft = shorterSide.Vertex;
+        // Step 3: Pick any text direction edge and establish the text direction vector
+        var primaryTextEdge = textDirectionEdges[0];
+        var v1 = vertices[primaryTextEdge.i];
+        var v2 = vertices[primaryTextEdge.j];
+
+        // Calculate the text direction vector (from v1 to v2)
+        var textVector = (X: v2.X - v1.X, Y: v2.Y - v1.Y);
+
+        // Step 4: Determine the correct direction for left-to-right reading
+        // Choose the direction that has a more positive X component (rightward)
+        var (textStart, textEnd) = textVector.X >= 0 ? (v1, v2) : (v2, v1);
+        var canonicalTextVector = (X: textEnd.X - textStart.X, Y: textEnd.Y - textStart.Y);
+
+        // Step 5: Find the text height vector (perpendicular to text direction)
+        // Look for the vertex connected to textStart by a text height edge
+        var heightVertex = textHeightEdges
+            .Where(e => e.i == vertices.IndexOf(textStart) || e.j == vertices.IndexOf(textStart))
+            .Select(e => e.i == vertices.IndexOf(textStart) ? vertices[e.j] : vertices[e.i])
+            .First();
+
+        var heightVector = (X: heightVertex.X - textStart.X, Y: heightVertex.Y - textStart.Y);
+
+        // Step 6: Ensure text height points downward (positive Y direction)
+        var (topLeft, bottomLeft) = heightVector.Y >= 0 ? (textStart, heightVertex) : (heightVertex, textStart);
+
+        // Step 7: Calculate remaining corners using vector arithmetic
+        var topRight = (X: topLeft.X + canonicalTextVector.X, Y: topLeft.Y + canonicalTextVector.Y);
+        var bottomRight = (X: bottomLeft.X + canonicalTextVector.X, Y: bottomLeft.Y + canonicalTextVector.Y);
+
+        // Ensure we're using actual vertices, not calculated points (handle floating point precision)
+        topRight = FindClosestVertex(vertices, topRight);
+        bottomRight = FindClosestVertex(vertices, bottomRight);
 
         return (topLeft, topRight, bottomRight, bottomLeft);
     }
 
+    /// <summary>
+    /// Finds the vertex in the list that is closest to the target point.
+    /// </summary>
+    private static (double X, double Y) FindClosestVertex(
+        List<(double X, double Y)> vertices,
+        (double X, double Y) target)
+    {
+        return vertices
+            .OrderBy(v => CalculateDistance(v, target))
+            .First();
+    }
+
+
+    /// <summary>
+    /// Crops an oriented rectangle using custom geometric transformation.
+    /// Maps each pixel in the output rectangle back to the source oriented quadrilateral.
+    /// </summary>
+    private static Image<Rgb24> CropOrientedWithGeometry(
+        Image<Rgb24> sourceImage,
+        (
+            (double X, double Y) TopLeft,
+            (double X, double Y) TopRight,
+            (double X, double Y) BottomRight,
+            (double X, double Y) BottomLeft
+        ) corners,
+        int outputWidth,
+        int outputHeight)
+    {
+        var outputImage = new Image<Rgb24>(outputWidth, outputHeight);
+
+        // Define the local coordinate system using the rectangle edges as basis vectors
+        var uVector = (X: corners.TopRight.X - corners.TopLeft.X, Y: corners.TopRight.Y - corners.TopLeft.Y);
+        var vVector = (X: corners.BottomLeft.X - corners.TopLeft.X, Y: corners.BottomLeft.Y - corners.TopLeft.Y);
+
+        // For each pixel in the output image
+        for (int j = 0; j < outputHeight; j++)
+        {
+            for (int i = 0; i < outputWidth; i++)
+            {
+                // Convert output pixel to normalized coordinates [0,1]
+                double u = outputWidth > 1 ? (double)i / (outputWidth - 1) : 0;
+                double v = outputHeight > 1 ? (double)j / (outputHeight - 1) : 0;
+
+                // Map to source image coordinates using bilinear combination
+                var sourceX = corners.TopLeft.X + u * uVector.X + v * vVector.X;
+                var sourceY = corners.TopLeft.Y + u * uVector.Y + v * vVector.Y;
+
+                // Sample the source image with bilinear interpolation
+                var color = BilinearSample(sourceImage, sourceX, sourceY);
+                outputImage[i, j] = color;
+            }
+        }
+
+        return outputImage;
+    }
+
+    /// <summary>
+    /// Samples a source image at the given coordinates using bilinear interpolation.
+    /// </summary>
+    private static Rgb24 BilinearSample(Image<Rgb24> sourceImage, double x, double y)
+    {
+        // Handle out-of-bounds coordinates
+        if (x < 0 || y < 0 || x >= sourceImage.Width || y >= sourceImage.Height)
+        {
+            return new Rgb24(0, 0, 0); // Return black for out-of-bounds
+        }
+
+        // Get the integer coordinates and fractional parts
+        int x0 = (int)Math.Floor(x);
+        int y0 = (int)Math.Floor(y);
+        int x1 = Math.Min(x0 + 1, sourceImage.Width - 1);
+        int y1 = Math.Min(y0 + 1, sourceImage.Height - 1);
+
+        double fx = x - x0;
+        double fy = y - y0;
+
+        // Sample the four surrounding pixels
+        var p00 = sourceImage[x0, y0];
+        var p10 = sourceImage[x1, y0];
+        var p01 = sourceImage[x0, y1];
+        var p11 = sourceImage[x1, y1];
+
+        // Perform bilinear interpolation for each color channel
+        byte r = (byte)Math.Round(
+            (1 - fx) * (1 - fy) * p00.R +
+            fx * (1 - fy) * p10.R +
+            (1 - fx) * fy * p01.R +
+            fx * fy * p11.R);
+
+        byte g = (byte)Math.Round(
+            (1 - fx) * (1 - fy) * p00.G +
+            fx * (1 - fy) * p10.G +
+            (1 - fx) * fy * p01.G +
+            fx * fy * p11.G);
+
+        byte b = (byte)Math.Round(
+            (1 - fx) * (1 - fy) * p00.B +
+            fx * (1 - fy) * p10.B +
+            (1 - fx) * fy * p01.B +
+            fx * fy * p11.B);
+
+        return new Rgb24(r, g, b);
+    }
 
     /// <summary>
     /// Calculates the Euclidean distance between two points.

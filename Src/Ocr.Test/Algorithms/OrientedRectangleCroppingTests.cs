@@ -40,13 +40,37 @@ public class OrientedRectangleCroppingTests
         var vertices = OrientedRectangleTestUtils.CalculateOrientedRectangleVertices(p, q, width);
         var orientedRect = vertices.Select(v => ((double)v.X, (double)v.Y)).ToList();
 
-        // Act - Crop the oriented rectangle
-        using var croppedImage = ImageCropping.CropOriented(sourceImage, orientedRect);
-        await _publisher.PublishAsync(croppedImage, "Cropped oriented rectangle");
+        // Test all possible vertex orderings to ensure order independence
+        int permutationCount = 0;
+        foreach (var permutedVertices in Permute(orientedRect))
+        {
+            permutationCount++;
+            var permutedList = permutedVertices.ToList();
 
-        // Assert - Verify corner colors and dimensions
-        VerifyCornerColors(croppedImage);
-        VerifyImageDimensions(croppedImage, 200, 120); // Expected: width=|p-q|=200, height=width=120
+            _outputHelper.WriteLine($"Permutation {permutationCount}: [{string.Join(", ", permutedList.Select(v => $"({v.Item1:F1},{v.Item2:F1})"))}]");
+
+            // Test the orientation detection directly
+            var detectedCorners = ImageCropping.DetectOrientationAndOrderCorners(permutedList);
+            _outputHelper.WriteLine($"  Detected corners: TL=({detectedCorners.TopLeft.X:F1},{detectedCorners.TopLeft.Y:F1}), " +
+                                 $"TR=({detectedCorners.TopRight.X:F1},{detectedCorners.TopRight.Y:F1}), " +
+                                 $"BR=({detectedCorners.BottomRight.X:F1},{detectedCorners.BottomRight.Y:F1}), " +
+                                 $"BL=({detectedCorners.BottomLeft.X:F1},{detectedCorners.BottomLeft.Y:F1})");
+
+            // Act - Crop the oriented rectangle with this permutation
+            using var croppedImage = ImageCropping.CropOriented(sourceImage, permutedList);
+
+            // Only publish the first permutation for visual inspection
+            if (permutationCount == 1)
+            {
+                await _publisher.PublishAsync(croppedImage, "Cropped oriented rectangle");
+            }
+
+            // Assert - Verify corner colors and dimensions for each permutation
+            VerifyCornerColors(croppedImage);
+            VerifyImageDimensions(croppedImage, 200, 120); // Expected: width=|p-q|=200, height=width=120
+        }
+
+        _outputHelper.WriteLine($"Successfully tested {permutationCount} vertex permutations");
     }
 
     [Fact]
@@ -59,12 +83,41 @@ public class OrientedRectangleCroppingTests
         var q = new PointF(350, 100);  // Top-right-ish (upward slope)
         var width = 60f; // Width perpendicular to p-q edge
 
-        // Act - Generate test image
-        using var image = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
+        // Generate test image with gradient-filled oriented rectangle
+        using var sourceImage = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
             imageWidth, imageHeight, p, q, width);
+        await _publisher.PublishAsync(sourceImage, "Source image with upward-tilted oriented rectangle");
 
-        // Assert - Publish for visual inspection
-        await _publisher.PublishAsync(image, "Upward-tilted oriented rectangle");
+        // Calculate oriented rectangle vertices for cropping
+        var vertices = OrientedRectangleTestUtils.CalculateOrientedRectangleVertices(p, q, width);
+        var orientedRect = vertices.Select(v => ((double)v.X, (double)v.Y)).ToList();
+
+        // Calculate expected dimensions: width = |p-q|, height = width
+        var expectedWidth = (int)Math.Round(Math.Sqrt(Math.Pow(q.X - p.X, 2) + Math.Pow(q.Y - p.Y, 2)));
+        var expectedHeight = (int)Math.Round(width);
+
+        // Test all possible vertex orderings to ensure order independence
+        int permutationCount = 0;
+        foreach (var permutedVertices in Permute(orientedRect))
+        {
+            permutationCount++;
+            var permutedList = permutedVertices.ToList();
+
+            // Act - Crop the oriented rectangle with this permutation
+            using var croppedImage = ImageCropping.CropOriented(sourceImage, permutedList);
+
+            // Only publish the first permutation for visual inspection
+            if (permutationCount == 1)
+            {
+                await _publisher.PublishAsync(croppedImage, "Cropped upward-tilted oriented rectangle");
+            }
+
+            // Assert - Verify corner colors and dimensions for each permutation
+            VerifyCornerColors(croppedImage);
+            VerifyImageDimensions(croppedImage, expectedWidth, expectedHeight);
+        }
+
+        _outputHelper.WriteLine($"Successfully tested {permutationCount} vertex permutations");
     }
 
     [Fact]
@@ -77,12 +130,41 @@ public class OrientedRectangleCroppingTests
         var q = new PointF(350, 220);  // Bottom-right-ish (downward slope)
         var width = 60f; // Width perpendicular to p-q edge
 
-        // Act - Generate test image
-        using var image = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
+        // Generate test image with gradient-filled oriented rectangle
+        using var sourceImage = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
             imageWidth, imageHeight, p, q, width);
+        await _publisher.PublishAsync(sourceImage, "Source image with downward-tilted oriented rectangle");
 
-        // Assert - Publish for visual inspection
-        await _publisher.PublishAsync(image, "Downward-tilted oriented rectangle");
+        // Calculate oriented rectangle vertices for cropping
+        var vertices = OrientedRectangleTestUtils.CalculateOrientedRectangleVertices(p, q, width);
+        var orientedRect = vertices.Select(v => ((double)v.X, (double)v.Y)).ToList();
+
+        // Calculate expected dimensions: width = |p-q|, height = width
+        var expectedWidth = (int)Math.Round(Math.Sqrt(Math.Pow(q.X - p.X, 2) + Math.Pow(q.Y - p.Y, 2)));
+        var expectedHeight = (int)Math.Round(width);
+
+        // Test all possible vertex orderings to ensure order independence
+        int permutationCount = 0;
+        foreach (var permutedVertices in Permute(orientedRect))
+        {
+            permutationCount++;
+            var permutedList = permutedVertices.ToList();
+
+            // Act - Crop the oriented rectangle with this permutation
+            using var croppedImage = ImageCropping.CropOriented(sourceImage, permutedList);
+
+            // Only publish the first permutation for visual inspection
+            if (permutationCount == 1)
+            {
+                await _publisher.PublishAsync(croppedImage, "Cropped downward-tilted oriented rectangle");
+            }
+
+            // Assert - Verify corner colors and dimensions for each permutation
+            VerifyCornerColors(croppedImage);
+            VerifyImageDimensions(croppedImage, expectedWidth, expectedHeight);
+        }
+
+        _outputHelper.WriteLine($"Successfully tested {permutationCount} vertex permutations");
     }
 
     /// <summary>
@@ -135,5 +217,28 @@ public class OrientedRectangleCroppingTests
             $"Width should be within ±2 of {expectedWidth}, got {actualWidth}");
         Assert.True(Math.Abs(actualHeight - expectedHeight) <= 2,
             $"Height should be within ±2 of {expectedHeight}, got {actualHeight}");
+    }
+
+    /// <summary>
+    /// Generates all permutations of a collection of items.
+    /// </summary>
+    private static IEnumerable<IEnumerable<T>> Permute<T>(IEnumerable<T> sequence)
+    {
+        var items = sequence.ToArray();
+        if (items.Length == 0)
+        {
+            yield return Enumerable.Empty<T>();
+        }
+        else
+        {
+            for (int i = 0; i < items.Length; i++)
+            {
+                var remaining = items.Take(i).Concat(items.Skip(i + 1));
+                foreach (var permutation in Permute(remaining))
+                {
+                    yield return new[] { items[i] }.Concat(permutation);
+                }
+            }
+        }
     }
 }
