@@ -13,8 +13,8 @@ public static class MinAreaRectangle
     /// </returns>
     public static List<(int X, int Y)> Compute(List<(int X, int Y)> convexHull)
     {
-        if (convexHull == null || convexHull.Count == 0)
-            throw new ArgumentException("Convex hull cannot be null or empty", nameof(convexHull));
+        if (convexHull.Count == 0)
+            throw new ArgumentException("Convex hull cannot be empty", nameof(convexHull));
 
         if (convexHull.Count < 3)
         {

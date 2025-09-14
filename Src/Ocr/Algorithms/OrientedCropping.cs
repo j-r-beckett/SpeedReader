@@ -10,43 +10,38 @@ public static class OrientedCropping
     /// The oriented rectangle is defined by 4 corner points in counter-clockwise order.
     /// </summary>
     /// <param name="image">Source image to crop from</param>
-    /// <param name="orientedRectangle">4 corner points defining the oriented rectangle</param>
+    /// <param name="rectangle">4 corner points defining the oriented rectangle</param>
     /// <returns>Cropped and straightened image</returns>
-    public static Image<Rgb24> CropOrientedRectangle(Image<Rgb24> image, List<(int X, int Y)> orientedRectangle)
+    public static Image<Rgb24> CropOrientedRectangle(Image<Rgb24> image, List<(int X, int Y)> rectangle)
     {
-        if (orientedRectangle == null || orientedRectangle.Count != 4)
-            throw new ArgumentException("Oriented rectangle must have exactly 4 points", nameof(orientedRectangle));
+        if (rectangle.Count != 4)
+            throw new ArgumentException("Oriented rectangle must have exactly 4 points", nameof(rectangle));
 
-        return ExtractOrientedRectangle(image, orientedRectangle);
-    }
+        // Input from MinAreaRectangle is in counter-clockwise order:
+        // [0] = bottom-left, [1] = bottom-right, [2] = top-right, [3] = top-left
+        var bottomLeft = rectangle[0];
+        var bottomRight = rectangle[1];
+        // var topRight = rectangle[2]; // Not needed for simple parallelogram mapping
+        var topLeft = rectangle[3];
 
-    private static Image<Rgb24> ExtractOrientedRectangle(Image<Rgb24> sourceImage, List<(int X, int Y)> rectangle)
-    {
-        // Rectangle corners in counter-clockwise order
-        var p0 = rectangle[0]; // Bottom-left
-        var p1 = rectangle[1]; // Bottom-right
-        var p2 = rectangle[2]; // Top-right
-        var p3 = rectangle[3]; // Top-left
-
-        // Calculate rectangle dimensions using proper sides
-        double width = Math.Sqrt(Math.Pow(p1.X - p0.X, 2) + Math.Pow(p1.Y - p0.Y, 2));
-        double height = Math.Sqrt(Math.Pow(p3.X - p0.X, 2) + Math.Pow(p3.Y - p0.Y, 2));
+        // Calculate dimensions of the oriented rectangle
+        double width = Distance(bottomLeft, bottomRight);
+        double height = Distance(bottomLeft, topLeft);
 
         int targetWidth = Math.Max(1, (int)Math.Round(width));
         int targetHeight = Math.Max(1, (int)Math.Round(height));
 
         var result = new Image<Rgb24>(targetWidth, targetHeight);
 
-        // Calculate the rectangle's local coordinate system
-        // Unit vector along width (p0 -> p1)
-        double ux = (p1.X - p0.X) / width;
-        double uy = (p1.Y - p0.Y) / width;
+        // Parallelogram vectors from bottom-left corner
+        // Width vector: bottom-left → bottom-right
+        double widthVecX = bottomRight.X - bottomLeft.X;
+        double widthVecY = bottomRight.Y - bottomLeft.Y;
 
-        // Unit vector along height (p0 -> p3)
-        double vx = (p3.X - p0.X) / height;
-        double vy = (p3.Y - p0.Y) / height;
+        // Height vector: bottom-left → top-left
+        double heightVecX = topLeft.X - bottomLeft.X;
+        double heightVecY = topLeft.Y - bottomLeft.Y;
 
-        // Fill the result image by mapping each target pixel to source coordinates
         result.ProcessPixelRows(accessor =>
         {
             for (int y = 0; y < targetHeight; y++)
@@ -54,12 +49,20 @@ public static class OrientedCropping
                 var row = accessor.GetRowSpan(y);
                 for (int x = 0; x < targetWidth; x++)
                 {
-                    // Map target rectangle coordinates to source image coordinates
-                    double srcX = p0.X + x * ux + y * vx;
-                    double srcY = p0.Y + x * uy + y * vy;
+                    // Normalized coordinates (0,0) to (1,1) in output rectangle
+                    double s = (double)x / (targetWidth - 1);   // Along width
+                    double t = (double)y / (targetHeight - 1);  // Along height
 
-                    // Sample the source image at the mapped coordinates
-                    var color = SampleBilinear(sourceImage, srcX, srcY);
+                    // BUT: output (0,0) should map to top-left, not bottom-left
+                    // So we need to flip t: output y=0 → source t=1, output y=max → source t=0
+                    t = 1.0 - t;
+
+                    // Map to source coordinates using parallelogram equation: P = A + s*u + t*v
+                    double srcX = bottomLeft.X + s * widthVecX + t * heightVecX;
+                    double srcY = bottomLeft.Y + s * widthVecY + t * heightVecY;
+
+                    // Sample the source image
+                    var color = SampleBilinear(image, srcX, srcY);
                     row[x] = color;
                 }
             }
@@ -94,5 +97,11 @@ public static class OrientedCropping
         double b = (1 - fx) * (1 - fy) * p00.B + fx * (1 - fy) * p10.B + (1 - fx) * fy * p01.B + fx * fy * p11.B;
 
         return new Rgb24((byte)Math.Round(r), (byte)Math.Round(g), (byte)Math.Round(b));
+    }
+
+
+    private static double Distance((int X, int Y) p1, (int X, int Y) p2)
+    {
+        return Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
     }
 }
