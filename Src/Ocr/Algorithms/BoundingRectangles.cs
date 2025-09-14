@@ -37,26 +37,117 @@ public static class BoundingRectangles
 
     /// <summary>
     /// Computes the oriented bounding rectangle for a set of polygon points.
-    /// The oriented rectangle is the smallest rectangle (not necessarily axis-aligned)
-    /// that contains all points.
+    /// Uses naive O(n^4) rotating calipers algorithm - tries all edge pairs as potential sides.
     /// </summary>
-    /// <param name="polygon">Polygon points to compute oriented bounding rectangle for</param>
-    /// <returns>Four corner points of the oriented rectangle in order: top-left, top-right, bottom-right, bottom-left</returns>
+    /// <param name="polygon">Convex hull points in counter-clockwise order</param>
+    /// <returns>Four corner points of the minimum area oriented rectangle</returns>
     /// <exception cref="ArgumentException">Thrown when polygon is null or empty</exception>
     public static List<(int X, int Y)> ComputeOrientedRectangle(List<(int X, int Y)> polygon)
     {
         if (polygon == null || polygon.Count == 0)
             throw new ArgumentException("Polygon cannot be null or empty", nameof(polygon));
 
-        // TODO: Implement oriented rectangle computation
-        // For now, return axis-aligned rectangle corners as placeholder
-        var aaRect = ComputeAxisAlignedRectangle(polygon);
-        return new List<(int X, int Y)>
+        if (polygon.Count == 1)
+            return new List<(int X, int Y)> { polygon[0], polygon[0], polygon[0], polygon[0] };
+
+        if (polygon.Count == 2)
         {
-            (aaRect.Left, aaRect.Top),          // Top-left
-            (aaRect.Right - 1, aaRect.Top),     // Top-right
-            (aaRect.Right - 1, aaRect.Bottom - 1), // Bottom-right
-            (aaRect.Left, aaRect.Bottom - 1)    // Bottom-left
-        };
+            var p1 = polygon[0];
+            var p2 = polygon[1];
+            return new List<(int X, int Y)> { p1, p2, p2, p1 };
+        }
+
+        double minArea = double.MaxValue;
+        List<(int X, int Y)>? bestRectangle = null;
+
+        int n = polygon.Count;
+
+        // Try each edge as a potential side of the rectangle
+        for (int i = 0; i < n; i++)
+        {
+            int j = (i + 1) % n;
+            var edge = (polygon[j].X - polygon[i].X, polygon[j].Y - polygon[i].Y);
+
+            // Skip zero-length edges
+            if (edge.Item1 == 0 && edge.Item2 == 0) continue;
+
+            // Find the rectangle aligned with this edge
+            var rectangle = FindRectangleAlignedWithEdge(polygon, edge);
+            double area = CalculateRectangleArea(rectangle);
+
+            if (area < minArea)
+            {
+                minArea = area;
+                bestRectangle = rectangle;
+            }
+        }
+
+        return bestRectangle ?? throw new InvalidOperationException("Could not compute oriented rectangle");
+    }
+
+    /// <summary>
+    /// Finds the minimum bounding rectangle aligned with the given edge direction.
+    /// </summary>
+    private static List<(int X, int Y)> FindRectangleAlignedWithEdge(List<(int X, int Y)> polygon, (int X, int Y) edge)
+    {
+        // Normalize the edge to create orthogonal unit vectors
+        double edgeLength = Math.Sqrt(edge.X * edge.X + edge.Y * edge.Y);
+        double ux = edge.X / edgeLength;  // Unit vector along edge
+        double uy = edge.Y / edgeLength;
+        double vx = -uy;  // Perpendicular unit vector
+        double vy = ux;
+
+        // Project all points onto the two axes
+        double minU = double.MaxValue, maxU = double.MinValue;
+        double minV = double.MaxValue, maxV = double.MinValue;
+
+        foreach (var point in polygon)
+        {
+            double projU = point.X * ux + point.Y * uy;
+            double projV = point.X * vx + point.Y * vy;
+
+            minU = Math.Min(minU, projU);
+            maxU = Math.Max(maxU, projU);
+            minV = Math.Min(minV, projV);
+            maxV = Math.Max(maxV, projV);
+        }
+
+        // Compute corner 0 in double precision and round up to integers
+        double corner0X = minU * ux + minV * vx;
+        double corner0Y = minU * uy + minV * vy;
+        var corner0 = ((int)Math.Ceiling(corner0X), (int)Math.Ceiling(corner0Y));
+
+        // Compute exact edge vectors from corner 0
+        double edgeVector1X = (maxU - minU) * ux; // Vector from corner 0 to corner 1
+        double edgeVector1Y = (maxU - minU) * uy;
+        double edgeVector2X = (maxV - minV) * vx; // Vector from corner 0 to corner 3
+        double edgeVector2Y = (maxV - minV) * vy;
+
+        // Compute other corners using exact vectors to preserve rectangle properties
+        // Round the vector components up, then add to corner0 to maintain exact relationships
+        int vector1X = (int)Math.Ceiling(edgeVector1X);
+        int vector1Y = (int)Math.Ceiling(edgeVector1Y);
+        int vector2X = (int)Math.Ceiling(edgeVector2X);
+        int vector2Y = (int)Math.Ceiling(edgeVector2Y);
+
+        var corner1 = (corner0.Item1 + vector1X, corner0.Item2 + vector1Y);
+        var corner2 = (corner0.Item1 + vector1X + vector2X, corner0.Item2 + vector1Y + vector2Y);
+        var corner3 = (corner0.Item1 + vector2X, corner0.Item2 + vector2Y);
+
+        return new List<(int X, int Y)> { corner0, corner1, corner2, corner3 };
+    }
+
+    /// <summary>
+    /// Calculates the area of a rectangle given its four corners.
+    /// </summary>
+    private static double CalculateRectangleArea(List<(int X, int Y)> rectangle)
+    {
+        if (rectangle.Count != 4) return 0;
+
+        // Calculate side lengths
+        double side1 = Math.Sqrt(Math.Pow(rectangle[1].X - rectangle[0].X, 2) + Math.Pow(rectangle[1].Y - rectangle[0].Y, 2));
+        double side2 = Math.Sqrt(Math.Pow(rectangle[2].X - rectangle[1].X, 2) + Math.Pow(rectangle[2].Y - rectangle[1].Y, 2));
+
+        return side1 * side2;
     }
 }

@@ -247,4 +247,51 @@ public static class OrientedRectangleTestUtils
 
         return CreateGradientOrientedRectangle(imageWidth, imageHeight, corners[0], corners[1], rectHeight);
     }
+
+    /// <summary>
+    /// Creates a debug visualization showing convex hull points and oriented rectangle.
+    /// </summary>
+    /// <param name="convexHull">Convex hull points</param>
+    /// <param name="orientedRect">Computed oriented rectangle</param>
+    /// <param name="imageWidth">Width of the debug image</param>
+    /// <param name="imageHeight">Height of the debug image</param>
+    /// <returns>Debug image with white background, black dots for hull points, red rectangle</returns>
+    public static Image<Rgb24> CreateDebugVisualization(
+        List<(int X, int Y)> convexHull,
+        List<(int X, int Y)> orientedRect,
+        int imageWidth = 200,
+        int imageHeight = 150)
+    {
+        var image = new Image<Rgb24>(imageWidth, imageHeight);
+        image.Mutate(ctx => ctx.BackgroundColor(Color.White));
+
+        // Ensure the background is actually filled with white
+        for (int y = 0; y < imageHeight; y++)
+        {
+            for (int x = 0; x < imageWidth; x++)
+            {
+                image[x, y] = new Rgb24(255, 255, 255); // White background
+            }
+        }
+
+        // Draw convex hull points as black dots
+        foreach (var point in convexHull)
+        {
+            if (point.X >= 0 && point.X < imageWidth && point.Y >= 0 && point.Y < imageHeight)
+            {
+                var rect = new Rectangle(point.X - 2, point.Y - 2, 4, 4);
+                image.Mutate(ctx => ctx.Fill(Color.Black, rect));
+            }
+        }
+
+        // Draw oriented rectangle as red polygon
+        if (orientedRect.Count == 4)
+        {
+            var rectPoints = orientedRect.Select(p => new PointF(p.X, p.Y)).ToArray();
+            var rectPolygon = new Polygon(rectPoints);
+            image.Mutate(ctx => ctx.Draw(Color.Red, 3, rectPolygon));
+        }
+
+        return image;
+    }
 }
