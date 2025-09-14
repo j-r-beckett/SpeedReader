@@ -36,11 +36,11 @@ public class FileSystemUrlPublisher<T>
 
         if (!string.IsNullOrEmpty(description))
         {
-            _logger.LogInformation("Published {ContentType} data ({Description}) to {Url}", contentType, description, url);
+            _logger.LogInformation("Published {ContentType} data ({Description}) to \n{Url}", contentType, description, url);
         }
         else
         {
-            _logger.LogInformation("Published {ContentType} data to {Url}", contentType, url);
+            _logger.LogInformation("Published {ContentType} data to \n{Url}", contentType, url);
         }
     }
 

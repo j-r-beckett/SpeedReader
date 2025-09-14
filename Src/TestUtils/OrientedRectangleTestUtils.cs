@@ -133,16 +133,6 @@ public static class OrientedRectangleTestUtils
             }
         }
 
-        // Add a small white square at the origin corner for reference
-        var originSize = 6;
-        var originRect = new Rectangle(
-            (int)origin.X - originSize / 2,
-            (int)origin.Y - originSize / 2,
-            originSize,
-            originSize
-        );
-
-        image.Mutate(ctx => ctx.Fill(Color.White, originRect));
     }
 
     /// <summary>
@@ -258,7 +248,7 @@ public static class OrientedRectangleTestUtils
     /// <returns>Debug image with white background, black dots for hull points, red rectangle</returns>
     public static Image<Rgb24> CreateDebugVisualization(
         List<(int X, int Y)> convexHull,
-        List<(int X, int Y)> orientedRect,
+        List<(double X, double Y)> orientedRect,
         int imageWidth = 200,
         int imageHeight = 150)
     {
@@ -287,7 +277,7 @@ public static class OrientedRectangleTestUtils
         // Draw oriented rectangle as red polygon
         if (orientedRect.Count == 4)
         {
-            var rectPoints = orientedRect.Select(p => new PointF(p.X, p.Y)).ToArray();
+            var rectPoints = orientedRect.Select(p => new PointF((float)p.X, (float)p.Y)).ToArray();
             var rectPolygon = new Polygon(rectPoints);
             image.Mutate(ctx => ctx.Draw(Color.Red, 3, rectPolygon));
         }
