@@ -5,6 +5,12 @@
       .oriented-bounding-box { fill: none; stroke: blue; stroke-width: 2; }
       .polygon { fill: none; stroke: green; stroke-width: 2; }
       .dbnet-overlay { opacity: 0.5; }
+      .recognized-text {
+        fill: white;
+        text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+      }
 
       .legend {
         font-family: Arial, sans-serif;
@@ -117,6 +123,60 @@
     
   </g>
 
+  <g class="text-overlay">
+    
+    <text x="513.500526" y="741.499434"
+          font-size="71.2493236px"
+          transform="rotate(0, 513.500526, 741.499434)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">BUILDING</text>
+    
+    <text x="841.000545" y="739.999559"
+          font-size="68.3995611px"
+          transform="rotate(0, 841.000545, 739.999559)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">WIDE</text>
+    
+    <text x="696.49965" y="836.500132"
+          font-size="71.2493236px"
+          transform="rotate(0, 696.49965, 836.500132)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">SHUT</text>
+    
+    <text x="903.80367" y="838.2109125"
+          font-size="72.0722863401772px"
+          transform="rotate(1.09387056355515, 903.80367, 838.2109125)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">OFF</text>
+    
+    <text x="427.999572" y="840.999757"
+          font-size="68.3995610999999px"
+          transform="rotate(0, 427.999572, 840.999757)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">WATER</text>
+    
+    <text x="749.999943" y="932.999782"
+          font-size="56.9987574px"
+          transform="rotate(0, 749.999943, 932.999782)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">4TH</text>
+    
+    <text x="509.0150835" y="937.443104"
+          font-size="57.1065811651387px"
+          transform="rotate(0.411066630086206, 509.0150835, 937.443104)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">SEPTEMBER</text>
+    
+    <text x="878.500161" y="937.50033"
+          font-size="59.8502736000001px"
+          transform="rotate(0, 878.500161, 937.50033)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">2025</text>
+    
+    <text x="503.499843" y="1013.999493"
+          font-size="57.0005111000001px"
+          transform="rotate(0, 503.499843, 1013.999493)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">11:00AM</text>
+    
+    <text x="794.999898" y="1013.999493"
+          font-size="57.0005111000001px"
+          transform="rotate(0, 794.999898, 1013.999493)"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">4:30PM</text>
+    
+  </g>
+
   <foreignObject x="27" y="27" width="462" height="346">
     <div class="legend" xmlns="http://www.w3.org/1999/xhtml">
       
@@ -133,6 +193,11 @@
       <div class="legend-item" onclick="toggleLayer('polygons')" data-class="polygons">
         <div class="legend-swatch" style="background-color: green;"></div>
         <span>Polygons</span>
+      </div>
+      
+      <div class="legend-item" onclick="toggleLayer('text-overlay')" data-class="text-overlay">
+        <div class="legend-swatch" style="background-color: white;"></div>
+        <span>Recognized Text</span>
       </div>
       
       <div class="legend-item" onclick="toggleLayer('dbnet-overlay')" data-class="dbnet-overlay">

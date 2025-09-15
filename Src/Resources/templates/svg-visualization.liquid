@@ -5,6 +5,12 @@
       .oriented-bounding-box { fill: none; stroke: blue; stroke-width: 2; }
       .polygon { fill: none; stroke: green; stroke-width: 2; }
       .dbnet-overlay { opacity: 0.5; }
+      .recognized-text {
+        fill: white;
+        text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+      }
 
       .legend {
         font-family: Arial, sans-serif;
@@ -60,6 +66,15 @@
   <g class="polygons">
     {% for polygon in Polygons %}
     <polygon class="polygon" points="{{ polygon.Points }}" />
+    {% endfor %}
+  </g>
+
+  <g class="text-overlay">
+    {% for textItem in TextItems %}
+    <text x="{{ textItem.CenterX }}" y="{{ textItem.CenterY }}"
+          font-size="{{ textItem.FontSize }}px"
+          transform="rotate({{ textItem.RotationAngle }}, {{ textItem.CenterX }}, {{ textItem.CenterY }})"
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">{{ textItem.Text }}</text>
     {% endfor %}
   </g>
 
