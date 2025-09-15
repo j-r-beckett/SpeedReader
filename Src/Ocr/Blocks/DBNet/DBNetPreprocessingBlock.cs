@@ -15,15 +15,15 @@ public class DBNetPreprocessingBlock
     private readonly int _width;
     private readonly int _height;
 
-    public IPropagatorBlock<(Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> Target { get; }
+    public IPropagatorBlock<(Image<Rgb24>, VizData?), (float[], Image<Rgb24>, VizData?)> Target { get; }
 
     public DBNetPreprocessingBlock(DbNetConfiguration config)
     {
         _width = config.Width;
         _height = config.Height;
 
-        Target = new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(input
-            => (PreProcess(input.Image), input.Image, input.VizBuilder), new ExecutionDataflowBlockOptions
+        Target = new TransformBlock<(Image<Rgb24> Image, VizData? VizData), (float[], Image<Rgb24>, VizData?)>(input
+            => (PreProcess(input.Image), input.Image, input.VizData), new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 1
             });
