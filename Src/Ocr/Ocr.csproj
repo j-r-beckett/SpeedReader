@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Clipper2" />
     <PackageReference Include="CommunityToolkit.HighPerformance" />
+    <PackageReference Include="Fluid.Core" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" />
     <PackageReference Include="SixLabors.Fonts" />

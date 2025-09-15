@@ -15,6 +15,12 @@ public static class Resource
         return _cache.GetOrAdd(resourceName, LoadResource);
     }
 
+    public static string GetString(string resourceName)
+    {
+        var bytes = GetBytes(resourceName);
+        return System.Text.Encoding.UTF8.GetString(bytes);
+    }
+
     private static byte[] LoadResource(string resourceName)
     {
         var assembly = Assembly.GetExecutingAssembly();
