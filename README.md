@@ -77,3 +77,7 @@ The `speedread` binary will be in `Src/Core/bin/Release/net10.0/<platform>/publi
 | 2025-9-6  | bb505e062a3c | 6 | 8 | - | 8.0                      | Use application threading instead of ONNX intra-op threading |
 | 2025-9-6  | caa6d6e1587d | 6 | 8 | - | 18.3                     | Quantize DBNet model to int8 |
 
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+
