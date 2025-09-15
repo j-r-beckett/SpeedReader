@@ -124,9 +124,8 @@ public class BackpressureTests : IAsyncDisposable
             {
                 var image = new Image<Rgb24>(640, 640, Color.White);
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var context = new OcrContext(image, vizBuilder);
                 var floatData = new float[3 * 640 * 640];  // CHW format
-                return (floatData, context);
+                return (floatData, image, vizBuilder);
             },
             initialDelay: TimeSpan.FromMilliseconds(1000)
         );
@@ -171,8 +170,7 @@ public class BackpressureTests : IAsyncDisposable
                         (110, 50)
                     })
                 };
-                var context = new OcrContext(image, vizBuilder);
-                return (boundaries, context);
+                return (boundaries, image, vizBuilder);
             },
             initialDelay: TimeSpan.FromMilliseconds(1000)
         );
@@ -298,8 +296,7 @@ public class BackpressureTests : IAsyncDisposable
                 var image = new Image<Rgb24>(640, 640, Color.Black);
                 image.Mutate(ctx => ctx.DrawText("hello", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
                 var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                var context = new OcrContext(image, vizBuilder);
-                return context;
+                return (image, vizBuilder);
             },
             initialDelay: TimeSpan.FromMilliseconds(1000)
         );

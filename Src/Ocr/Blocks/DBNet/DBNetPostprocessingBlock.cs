@@ -1,7 +1,9 @@
 using System.Threading.Tasks.Dataflow;
 using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
+using Ocr.Visualization;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr.Blocks.DBNet;
 
@@ -10,24 +12,24 @@ public class DBNetPostprocessingBlock
     private readonly int _width;
     private readonly int _height;
 
-    public IPropagatorBlock<(float[], OcrContext), (List<TextBoundary>, OcrContext)> Target { get; }
+    public IPropagatorBlock<(float[], Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> Target { get; }
 
     public DBNetPostprocessingBlock(DbNetConfiguration config)
     {
         _width = config.Width;
         _height = config.Height;
 
-        Target = new TransformBlock<(float[] RawResult, OcrContext Context), (List<TextBoundary>, OcrContext)>(input =>
+        Target = new TransformBlock<(float[] RawResult, Image<Rgb24> OriginalImage, VizBuilder VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)>(input =>
         {
             // Add raw probability map to visualization BEFORE binarization
-            input.Context.VizBuilder.AddProbabilityMap(input.RawResult.AsSpan().AsSpan2D(_height, _width));
+            input.VizBuilder.AddProbabilityMap(input.RawResult.AsSpan().AsSpan2D(_height, _width));
 
-            var textBoundaries = PostProcess(input.RawResult, input.Context.OriginalImage.Width, input.Context.OriginalImage.Height);
+            var textBoundaries = PostProcess(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 
-            input.Context.VizBuilder.AddRectangles(textBoundaries.Select(tb => tb.AARectangle).ToList());
-            input.Context.VizBuilder.AddPolygons(textBoundaries.Select(tb => tb.Polygon).ToList());
+            input.VizBuilder.AddRectangles(textBoundaries.Select(tb => tb.AARectangle).ToList());
+            input.VizBuilder.AddPolygons(textBoundaries.Select(tb => tb.Polygon).ToList());
 
-            return (textBoundaries, input.Context);
+            return (textBoundaries, input.OriginalImage, input.VizBuilder);
         }, new ExecutionDataflowBlockOptions
         {
             BoundedCapacity = 1,
