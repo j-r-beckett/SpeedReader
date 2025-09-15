@@ -3,12 +3,10 @@
     <style>
       .bounding-box { fill: none; stroke: red; stroke-width: 2; }
       .dbnet-overlay { opacity: 0.5; }
-      .bounding-boxes { }
 
-      /* Legend styling */
       .legend {
         font-family: Arial, sans-serif;
-        font-size: {{ Width | divided_by: 50 }}px;
+        font-size: {{ Width | divided_by: 65 }}px;
         background: rgba(0, 0, 0, 0.2);
         border: 1px solid rgba(0, 0, 0, 0.5);
         border-radius: 12px;
@@ -27,41 +25,31 @@
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         user-select: none;
       }
-      .legend-item:hover {
-        color: #ddd;
-      }
+      .legend-item:hover { color: #ddd; }
       .legend-swatch {
         width: {{ Width | divided_by: 50 }}px;
         height: 6px;
         border-radius: 3px;
-        flex-shrink: 0;
       }
-
-      /* Visibility states */
       .hidden { display: none; }
     </style>
   </defs>
 
-  <!-- Base image -->
-  <image x="0" y="0" width="{{ Width }}" height="{{ Height }}" xlink:href="{{ BaseImageDataUri }}" />
+  <image width="{{ Width }}" height="{{ Height }}" xlink:href="{{ BaseImageDataUri }}" />
 
-  <!-- DBNet probability map overlay (if present) -->
   {% if ProbabilityMapDataUri %}
   <g class="dbnet-overlay">
-    <image x="0" y="0" width="{{ Width }}" height="{{ Height }}" xlink:href="{{ ProbabilityMapDataUri }}" />
+    <image width="{{ Width }}" height="{{ Height }}" xlink:href="{{ ProbabilityMapDataUri }}" />
   </g>
   {% endif %}
 
-  <!-- Bounding boxes -->
   <g class="bounding-boxes">
     {% for box in BoundingBoxes %}
     <rect class="bounding-box" x="{{ box.X }}" y="{{ box.Y }}" width="{{ box.Width }}" height="{{ box.Height }}" />
     {% endfor %}
   </g>
 
-  <!-- Legend -->
-  {% assign legend_margin = Width | divided_by: 50 %}
-  <foreignObject x="{{ legend_margin }}" y="{{ legend_margin }}" width="300" height="200">
+  <foreignObject x="{{ Width | divided_by: 50 }}" y="{{ Width | divided_by: 50 }}" width="300" height="200">
     <div class="legend" xmlns="http://www.w3.org/1999/xhtml">
       {% for item in LegendItems %}
       <div class="legend-item" onclick="toggleLayer('{{ item.ElementClass }}')" data-class="{{ item.ElementClass }}">
@@ -72,13 +60,11 @@
     </div>
   </foreignObject>
 
-  <!-- JavaScript for interactivity -->
-  <script type="text/javascript">
+  <script>
     <![CDATA[
     function toggleLayer(className) {
       var elements = document.querySelectorAll('.' + className);
       var legendItem = document.querySelector('.legend-item[data-class="' + className + '"]');
-
       for (var i = 0; i < elements.length; i++) {
         var element = elements[i];
         if (element.classList.contains('hidden')) {
