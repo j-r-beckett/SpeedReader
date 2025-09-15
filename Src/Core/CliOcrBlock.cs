@@ -112,8 +112,7 @@ public class CliOcrBlock
                 {
                     var inputDir = Path.GetDirectoryName(filename) ?? ".";
                     var inputName = Path.GetFileNameWithoutExtension(filename);
-                    var inputExt = Path.GetExtension(filename);
-                    vizFilePath = Path.Combine(inputDir, $"{inputName}_viz{inputExt}");
+                    vizFilePath = Path.Combine(inputDir, $"{inputName}_viz.svg");
                 }
 
                 // Create enriched result with additional CLI metadata
@@ -167,9 +166,8 @@ public class CliOcrBlock
                 // Generate visualization if configured
                 if (vizFilePath != null)
                 {
-                    var outputImage = VizRenderer.Render(image, ocrResult, vizData);
-                    await outputImage.SaveAsync(vizFilePath);
-                    outputImage.Dispose();
+                    var svg = SvgRenderer.Render(image, ocrResult, vizData);
+                    await svg.SaveAsync(vizFilePath);
                 }
             }
             finally
