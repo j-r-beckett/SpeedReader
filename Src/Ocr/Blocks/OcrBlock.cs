@@ -13,7 +13,7 @@ namespace Ocr.Blocks;
 
 public class OcrBlock
 {
-    public readonly IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Block;
+    public readonly IPropagatorBlock<(Image<Rgb24>, VizData?), (Image<Rgb24>, OcrResult, VizData?)> Block;
 
     public OcrBlock(
         InferenceSession dbnetSession,

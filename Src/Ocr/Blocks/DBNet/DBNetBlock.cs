@@ -12,7 +12,7 @@ namespace Ocr.Blocks.DBNet;
 
 public class DBNetBlock
 {
-    public IPropagatorBlock<(Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> Target { get; }
+    public IPropagatorBlock<(Image<Rgb24>, VizData?), (List<TextBoundary>, Image<Rgb24>, VizData?)> Target { get; }
 
     public DBNetBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {
