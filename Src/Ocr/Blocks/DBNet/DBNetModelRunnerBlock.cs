@@ -1,25 +1,22 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
-using Ocr.Visualization;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr.Blocks.DBNet;
 
 public class DBNetModelRunnerBlock
 {
-    public IPropagatorBlock<(float[], Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)> Target { get; }
+    public IPropagatorBlock<(float[], OcrContext), (float[], OcrContext)> Target { get; }
 
     public DBNetModelRunnerBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {
-        var splitBlock = new SplitBlock<(float[], Image<Rgb24>, VizBuilder), float[], (Image<Rgb24>, VizBuilder)>(
-            input => (input.Item1, (input.Item2, input.Item3)));
+        var splitBlock = new SplitBlock<(float[], OcrContext), float[], OcrContext>(
+            input => (input.Item1, input.Item2));
 
         var inferenceBlock = new InferenceBlock(session, [3, config.DbNet.Height, config.DbNet.Width], meter, "dbnet", config.CacheFirstInference);
 
-        var mergeBlock = new MergeBlock<float[], (Image<Rgb24>, VizBuilder), (float[], Image<Rgb24>, VizBuilder)>(
-            (result, passthrough) => (result, passthrough.Item1, passthrough.Item2));
+        var mergeBlock = new MergeBlock<float[], OcrContext, (float[], OcrContext)>(
+            (result, context) => (result, context));
 
         splitBlock.LeftSource.LinkTo(inferenceBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
         splitBlock.RightSource.LinkTo(mergeBlock.RightTarget, new DataflowLinkOptions { PropagateCompletion = true });
