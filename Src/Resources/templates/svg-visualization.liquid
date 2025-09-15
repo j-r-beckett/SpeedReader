@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{ Width }} {{ Height }}" width="{{ Width }}" height="{{ Height }}">
+  <defs>
+    <style>
+      .bounding-box { fill: none; stroke: red; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <!-- Base image -->
+  <image x="0" y="0" width="{{ Width }}" height="{{ Height }}" xlink:href="{{ BaseImageDataUri }}" />
+
+  <!-- Probability map overlay (if present) -->
+  {% if ProbabilityMapDataUri %}
+  <image x="0" y="0" width="{{ Width }}" height="{{ Height }}" xlink:href="{{ ProbabilityMapDataUri }}" opacity="0.5" />
+  {% endif %}
+
+  <!-- Bounding boxes -->
+  {% for box in BoundingBoxes %}
+  <rect class="bounding-box" x="{{ box.X }}" y="{{ box.Y }}" width="{{ box.Width }}" height="{{ box.Height }}" />
+  {% endfor %}
+</svg>

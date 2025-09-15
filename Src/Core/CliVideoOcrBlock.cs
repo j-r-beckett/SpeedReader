@@ -37,7 +37,7 @@ public class CliVideoOcrBlock
         var transformer = new TransformBlock<(Image<Rgb24> Img, OcrResult Result, VizData? VizData), OcrResult>(async item =>
         {
             // Render the visualization with OCR results
-            var visualizedImage = VizRenderer.Render(item.Img, item.Result, item.VizData);
+            var visualizedImage = PngRenderer.Render(item.Img, item.Result, item.VizData);
 
             if (ffmpegEncoderBlock == null)
             {
