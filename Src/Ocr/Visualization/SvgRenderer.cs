@@ -65,10 +65,10 @@ public static class SvgRenderer
         // Create legend items
         var legendItems = new List<LegendItem>
         {
-            new LegendItem
+            new()
             {
                 Color = "red",
-                Description = "Bounding Boxes",
+                Description = "Axis-aligned bounding boxes",
                 ElementClass = "bounding-boxes",
                 IsVisible = true
             }
@@ -80,7 +80,7 @@ public static class SvgRenderer
             legendItems.Add(new LegendItem
             {
                 Color = "yellow",
-                Description = "DBNet Output",
+                Description = "Raw text detection output",
                 ElementClass = "dbnet-overlay",
                 IsVisible = true
             });
