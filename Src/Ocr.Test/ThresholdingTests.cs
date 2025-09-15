@@ -1,3 +1,6 @@
+// Copyright (c) 2025 j-r-beckett
+// Licensed under the Apache License, Version 2.0
+
 #pragma warning disable
 // Rider intellisense incorrectly flags tensor[i,j] indexing as syntax error in preview .NET
 // This compiles correctly with both dotnet CLI and Rider solution build
