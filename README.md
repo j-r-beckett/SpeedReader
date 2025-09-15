@@ -59,13 +59,25 @@ ASPNETCORE_URLS="http://localhost:5000;https://localhost:5001" ./speedread serve
 
 Default: `http://localhost:5000`
 
-## Build
+## Development
+
+### Build
 
 Supported platforms: linux-x64, win-x64, osx-arm64
+
 ```bash
 dotnet publish -c Release -r <platform> Src/Core
 ```
+
 The `speedread` binary will be in `Src/Core/bin/Release/net10.0/<platform>/publish/`
+
+### Precommit Hook
+
+To install the pre-commit hook:
+
+```bash
+ln -sf "pre-commit.sh" .git/hooks/pre-commit
+```
 
 ## Benchmarks
 
