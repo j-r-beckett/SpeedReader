@@ -10,6 +10,7 @@
         text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
         font-family: Arial, sans-serif;
         font-weight: bold;
+        pointer-events: all;
       }
 
       .legend {
@@ -46,42 +47,49 @@
   <image width="{{ Width }}" height="{{ Height }}" xlink:href="{{ BaseImageDataUri }}" />
 
   {% if ProbabilityMapDataUri %}
-  <g class="dbnet-overlay">
+  {% assign dbnet_item = LegendItems | where: "ElementClass", "dbnet-overlay" | first %}
+  <g class="dbnet-overlay{% unless dbnet_item.DefaultVisible %} hidden{% endunless %}">
     <image width="{{ Width }}" height="{{ Height }}" xlink:href="{{ ProbabilityMapDataUri }}" />
   </g>
   {% endif %}
 
-  <g class="bounding-boxes">
+  {% assign bounding_boxes_item = LegendItems | where: "ElementClass", "bounding-boxes" | first %}
+  <g class="bounding-boxes{% unless bounding_boxes_item.DefaultVisible %} hidden{% endunless %}">
     {% for box in BoundingBoxes %}
     <rect class="bounding-box" x="{{ box.X }}" y="{{ box.Y }}" width="{{ box.Width }}" height="{{ box.Height }}" />
     {% endfor %}
   </g>
 
-  <g class="oriented-bounding-boxes">
+  {% assign oriented_boxes_item = LegendItems | where: "ElementClass", "oriented-bounding-boxes" | first %}
+  <g class="oriented-bounding-boxes{% unless oriented_boxes_item.DefaultVisible %} hidden{% endunless %}">
     {% for obb in OrientedBoundingBoxes %}
     <polygon class="oriented-bounding-box" points="{{ obb.Points }}" />
     {% endfor %}
   </g>
 
-  <g class="polygons">
+  {% assign polygons_item = LegendItems | where: "ElementClass", "polygons" | first %}
+  <g class="polygons{% unless polygons_item.DefaultVisible %} hidden{% endunless %}">
     {% for polygon in Polygons %}
     <polygon class="polygon" points="{{ polygon.Points }}" />
     {% endfor %}
   </g>
 
-  <g class="text-overlay">
+  {% assign text_item = LegendItems | where: "ElementClass", "text-overlay" | first %}
+  <g class="text-overlay{% unless text_item.DefaultVisible %} hidden{% endunless %}">
     {% for textItem in TextItems %}
     <text x="{{ textItem.CenterX }}" y="{{ textItem.CenterY }}"
           font-size="{{ textItem.FontSize }}px"
           transform="rotate({{ textItem.RotationAngle }}, {{ textItem.CenterX }}, {{ textItem.CenterY }})"
-          text-anchor="middle" dominant-baseline="central" class="recognized-text">{{ textItem.Text }}</text>
+          text-anchor="middle" dominant-baseline="central" class="recognized-text">
+      <title>{{ textItem.Confidence | times: 100 | round: 1 }}%</title>{{ textItem.Text }}
+    </text>
     {% endfor %}
   </g>
 
   <foreignObject x="{{ Width | divided_by: 50 }}" y="{{ Width | divided_by: 50 }}" width="{{ Width | divided_by: 3 }}" height="{{ Width | divided_by: 4 }}">
     <div class="legend" xmlns="http://www.w3.org/1999/xhtml">
       {% for item in LegendItems %}
-      <div class="legend-item" onclick="toggleLayer('{{ item.ElementClass }}')" data-class="{{ item.ElementClass }}">
+      <div class="legend-item" onclick="toggleLayer('{{ item.ElementClass }}')" data-class="{{ item.ElementClass }}" style="opacity: {% if item.DefaultVisible %}1{% else %}0.5{% endif %};">
         <div class="legend-swatch" style="background-color: {{ item.Color }};"></div>
         <span>{{ item.Description }}</span>
       </div>

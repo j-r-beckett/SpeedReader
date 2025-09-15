@@ -39,6 +39,7 @@ public static class SvgRenderer
         public double CenterY { get; set; }
         public double FontSize { get; set; }
         public double RotationAngle { get; set; }
+        public double Confidence { get; set; }
     }
 
     public class LegendItem
@@ -47,6 +48,7 @@ public static class SvgRenderer
         public string Description { get; set; } = string.Empty;
         public string ElementClass { get; set; } = string.Empty;
         public bool IsVisible { get; set; } = true;
+        public bool DefaultVisible { get; set; } = true;
     }
 
     public class TemplateData
@@ -132,7 +134,8 @@ public static class SvgRenderer
                 CenterX = centerX,
                 CenterY = centerY,
                 FontSize = fontSize,
-                RotationAngle = rotationAngle
+                RotationAngle = rotationAngle,
+                Confidence = word.Confidence
             };
         }).ToArray();
 
@@ -144,28 +147,32 @@ public static class SvgRenderer
                 Color = "red",
                 Description = "Axis-aligned bounding boxes",
                 ElementClass = "bounding-boxes",
-                IsVisible = true
+                IsVisible = true,
+                DefaultVisible = false
             },
             new()
             {
                 Color = "blue",
                 Description = "Oriented bounding boxes",
                 ElementClass = "oriented-bounding-boxes",
-                IsVisible = true
+                IsVisible = true,
+                DefaultVisible = true
             },
             new()
             {
                 Color = "green",
                 Description = "Polygons",
                 ElementClass = "polygons",
-                IsVisible = true
+                IsVisible = true,
+                DefaultVisible = false
             },
             new()
             {
                 Color = "white",
                 Description = "Recognized Text",
                 ElementClass = "text-overlay",
-                IsVisible = true
+                IsVisible = true,
+                DefaultVisible = false
             }
         };
 
@@ -177,7 +184,8 @@ public static class SvgRenderer
                 Color = "yellow",
                 Description = "Raw text detection output",
                 ElementClass = "dbnet-overlay",
-                IsVisible = true
+                IsVisible = true,
+                DefaultVisible = false
             });
         }
 
