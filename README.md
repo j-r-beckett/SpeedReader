@@ -76,7 +76,7 @@ The `speedread` binary will be in `Src/Core/bin/Release/net10.0/<platform>/publi
 To install the pre-commit hook:
 
 ```bash
-ln -sf "pre-commit.sh" .git/hooks/pre-commit
+ln -sf "../../pre-commit.sh" .git/hooks/pre-commit
 ```
 
 ## Benchmarks
