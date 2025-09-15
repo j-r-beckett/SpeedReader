@@ -21,6 +21,16 @@ public static class SvgRenderer
         public double Height { get; set; }
     }
 
+    public class OrientedBoundingBox
+    {
+        public string Points { get; set; } = string.Empty;
+    }
+
+    public class Polygon
+    {
+        public string Points { get; set; } = string.Empty;
+    }
+
     public class LegendItem
     {
         public string Color { get; set; } = string.Empty;
@@ -36,6 +46,8 @@ public static class SvgRenderer
         public string BaseImageDataUri { get; set; } = string.Empty;
         public string? ProbabilityMapDataUri { get; set; }
         public BoundingBox[] BoundingBoxes { get; set; } = [];
+        public OrientedBoundingBox[] OrientedBoundingBoxes { get; set; } = [];
+        public Polygon[] Polygons { get; set; } = [];
         public LegendItem[] LegendItems { get; set; } = [];
     }
 
@@ -62,6 +74,22 @@ public static class SvgRenderer
             Height = word.BoundingBox.AARectangle.Height * sourceImage.Height
         }).ToArray();
 
+        // Prepare oriented bounding boxes
+        var orientedBoundingBoxes = ocrResult.Words.Select(word =>
+        {
+            var obb = word.BoundingBox.ORectangle;
+            var points = string.Join(" ", obb.Select(v => $"{v.X * sourceImage.Width},{v.Y * sourceImage.Height}"));
+            return new OrientedBoundingBox { Points = points };
+        }).ToArray();
+
+        // Prepare polygons
+        var polygons = ocrResult.Words.Select(word =>
+        {
+            var polygon = word.BoundingBox.Polygon;
+            var points = string.Join(" ", polygon.Select(p => $"{p.X * sourceImage.Width},{p.Y * sourceImage.Height}"));
+            return new Polygon { Points = points };
+        }).ToArray();
+
         // Create legend items
         var legendItems = new List<LegendItem>
         {
@@ -70,6 +98,20 @@ public static class SvgRenderer
                 Color = "red",
                 Description = "Axis-aligned bounding boxes",
                 ElementClass = "bounding-boxes",
+                IsVisible = true
+            },
+            new()
+            {
+                Color = "blue",
+                Description = "Oriented bounding boxes",
+                ElementClass = "oriented-bounding-boxes",
+                IsVisible = true
+            },
+            new()
+            {
+                Color = "green",
+                Description = "Polygons",
+                ElementClass = "polygons",
                 IsVisible = true
             }
         };
@@ -94,6 +136,8 @@ public static class SvgRenderer
             BaseImageDataUri = baseImageDataUri,
             ProbabilityMapDataUri = probabilityMapDataUri,
             BoundingBoxes = boundingBoxes,
+            OrientedBoundingBoxes = orientedBoundingBoxes,
+            Polygons = polygons,
             LegendItems = legendItems.ToArray()
         };
 
@@ -101,6 +145,8 @@ public static class SvgRenderer
         var options = new TemplateOptions();
         options.MemberAccessStrategy.Register<TemplateData>();
         options.MemberAccessStrategy.Register<BoundingBox>();
+        options.MemberAccessStrategy.Register<OrientedBoundingBox>();
+        options.MemberAccessStrategy.Register<Polygon>();
         options.MemberAccessStrategy.Register<LegendItem>();
 
         // Create template context
