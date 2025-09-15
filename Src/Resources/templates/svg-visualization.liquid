@@ -2,6 +2,8 @@
   <defs>
     <style>
       .bounding-box { fill: none; stroke: red; stroke-width: 2; }
+      .oriented-bounding-box { fill: none; stroke: blue; stroke-width: 2; }
+      .polygon { fill: none; stroke: green; stroke-width: 2; }
       .dbnet-overlay { opacity: 0.5; }
 
       .legend {
@@ -49,7 +51,19 @@
     {% endfor %}
   </g>
 
-  <foreignObject x="{{ Width | divided_by: 50 }}" y="{{ Width | divided_by: 50 }}" width="300" height="200">
+  <g class="oriented-bounding-boxes">
+    {% for obb in OrientedBoundingBoxes %}
+    <polygon class="oriented-bounding-box" points="{{ obb.Points }}" />
+    {% endfor %}
+  </g>
+
+  <g class="polygons">
+    {% for polygon in Polygons %}
+    <polygon class="polygon" points="{{ polygon.Points }}" />
+    {% endfor %}
+  </g>
+
+  <foreignObject x="{{ Width | divided_by: 50 }}" y="{{ Width | divided_by: 50 }}" width="{{ Width | divided_by: 3 }}" height="{{ Width | divided_by: 4 }}">
     <div class="legend" xmlns="http://www.w3.org/1999/xhtml">
       {% for item in LegendItems %}
       <div class="legend-item" onclick="toggleLayer('{{ item.ElementClass }}')" data-class="{{ item.ElementClass }}">
