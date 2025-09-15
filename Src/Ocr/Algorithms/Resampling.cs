@@ -1,3 +1,6 @@
+// Copyright (c) 2025 j-r-beckett
+// Licensed under the Apache License, Version 2.0
+
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
