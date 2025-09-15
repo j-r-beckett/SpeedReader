@@ -1,12 +1,15 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ML.OnnxRuntime;
+using Ocr.Visualization;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr.Blocks.DBNet;
 
 public class DBNetBlock
 {
-    public IPropagatorBlock<OcrContext, (List<TextBoundary>, OcrContext)> Target { get; }
+    public IPropagatorBlock<(Image<Rgb24>, VizBuilder), (List<TextBoundary>, Image<Rgb24>, VizBuilder)> Target { get; }
 
     public DBNetBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {

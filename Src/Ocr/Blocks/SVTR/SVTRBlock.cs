@@ -11,17 +11,10 @@ namespace Ocr.Blocks.SVTR;
 
 public class SVTRBlock
 {
-    public IPropagatorBlock<(List<TextBoundary>, OcrContext), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> Target { get; }
+    public IPropagatorBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> Target { get; }
 
     public SVTRBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {
-        // Transform the input to deconstruct the context back to the old format
-        var contextDeconstructionBlock = new TransformBlock<(List<TextBoundary>, OcrContext), (List<TextBoundary>, Image<Rgb24>, VizBuilder)>(
-            input => (input.Item1, input.Item2.OriginalImage, input.Item2.VizBuilder), new ExecutionDataflowBlockOptions
-            {
-                BoundedCapacity = 1
-            });
-
         var aggregatorBlock = new AggregatorBlock<(string, double, TextBoundary, Image<Rgb24>, VizBuilder)>();
         var splitterBlock = CreateSplitterBlock(aggregatorBlock);
         var preprocessingBlock = new SVTRPreprocessingBlock(config.Svtr);
@@ -29,14 +22,13 @@ public class SVTRBlock
         var postprocessingBlock = new SVTRPostprocessingBlock();
         var reconstructorBlock = CreateReconstructorBlock();
 
-        contextDeconstructionBlock.LinkTo(splitterBlock, new DataflowLinkOptions { PropagateCompletion = true });
         splitterBlock.LinkTo(preprocessingBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
         preprocessingBlock.Target.LinkTo(modelRunnerBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
         modelRunnerBlock.Target.LinkTo(postprocessingBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
         postprocessingBlock.Target.LinkTo(aggregatorBlock.InputTarget, new DataflowLinkOptions { PropagateCompletion = true });
         aggregatorBlock.OutputTarget.LinkTo(reconstructorBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-        var svtrPipeline = DataflowBlock.Encapsulate(contextDeconstructionBlock, reconstructorBlock);
+        var svtrPipeline = DataflowBlock.Encapsulate(splitterBlock, reconstructorBlock);
 
         // TODO: once max parallelism is made configurable, use the appropriate value here
         var (anabranchStartBlock, anabranchBufferBlock) = CreateAnabranchStartBlock(svtrPipeline, 10);
@@ -45,25 +37,25 @@ public class SVTRBlock
         Target = DataflowBlock.Encapsulate(anabranchStartBlock, anabranchEndBlock);
     }
 
-    private static (ITargetBlock<(List<TextBoundary>, OcrContext)>, BufferBlock<OcrContext?>) CreateAnabranchStartBlock(
-        ITargetBlock<(List<TextBoundary>, OcrContext)> svtrPipeline, int svtrPipelineMaxParallelism)
+    private static (ITargetBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder)>, BufferBlock<(Image<Rgb24>, VizBuilder)?>) CreateAnabranchStartBlock(
+        ITargetBlock<(List<TextBoundary>, Image<Rgb24>, VizBuilder)> svtrPipeline, int svtrPipelineMaxParallelism)
     {
         // We need to put a backpressure limit here so that we don't blow up under a deluge of images without detected text.
         // But we want that backpressure limit to be strictly higher than the max parallelism of the svtr flow, or else
         // it will artificially limit it.
-        var buffer = new BufferBlock<OcrContext?>(new DataflowBlockOptions
+        var buffer = new BufferBlock<(Image<Rgb24>, VizBuilder)?>(new DataflowBlockOptions
         {
             BoundedCapacity = svtrPipelineMaxParallelism * 2
         });
 
-        var anabranchStartBlock = new TransformBlock<(List<TextBoundary> TextBoundaries, OcrContext Context), OcrContext?>(async input =>
+        var anabranchStartBlock = new TransformBlock<(List<TextBoundary> TextBoundaries, Image<Rgb24> Image, VizBuilder VizBuilder), (Image<Rgb24>, VizBuilder)?>(async input =>
         {
             if (input.TextBoundaries.Count == 0)
             {
-                return input.Context;
+                return (input.Image, input.VizBuilder);
             }
 
-            await svtrPipeline.SendAsync((input.TextBoundaries, input.Context));
+            await svtrPipeline.SendAsync(input);
             return null;
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
@@ -74,7 +66,7 @@ public class SVTRBlock
 
     private static ISourceBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> CreateAnabranchEndBlock(
         ISourceBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> svtrPipeline,
-        BufferBlock<OcrContext?> buffer)
+        BufferBlock<(Image<Rgb24>, VizBuilder)?> buffer)
     {
         Channel<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)> svtrChannel = Channel.CreateBounded<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(1);
 
@@ -85,11 +77,11 @@ public class SVTRBlock
 
         svtrPipeline.LinkTo(svtrChannelFeeder, new DataflowLinkOptions { PropagateCompletion = true });
 
-        var anabranchEndBlock = new TransformBlock<OcrContext?, (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(async input =>
+        var anabranchEndBlock = new TransformBlock<(Image<Rgb24> Image, VizBuilder VizBuilder)?, (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(async input =>
         {
             if (input != null)
             {
-                return (input.OriginalImage, [], [], [], input.VizBuilder);
+                return (input.Value.Image, [], [], [], input.Value.VizBuilder);
             }
 
             await svtrChannel.Reader.WaitToReadAsync();
