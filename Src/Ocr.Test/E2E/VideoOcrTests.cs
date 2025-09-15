@@ -61,7 +61,7 @@ public class VideoOcrTests
         var videoOcrBlock = new VideoOcrBlock(ocrBlock, videoStream, sampleRate: 1);
 
         var results = new List<(Image<Rgb24>, OcrResult)>();
-        var consumeBlock = new ActionBlock<(Image<Rgb24>, OcrResult, VizBuilder)>(result =>
+        var consumeBlock = new ActionBlock<(Image<Rgb24>, OcrResult, VizData?)>(result =>
         {
             results.Add((result.Item1, result.Item2));
         });
@@ -134,7 +134,7 @@ public class VideoOcrTests
         var videoOcrBlock = new VideoOcrBlock(ocrBlock, videoStream, sampleRate: 1);
 
         var results = new List<(Image<Rgb24>, OcrResult)>();
-        var consumeBlock = new ActionBlock<(Image<Rgb24>, OcrResult, VizBuilder)>(result =>
+        var consumeBlock = new ActionBlock<(Image<Rgb24>, OcrResult, VizData?)>(result =>
         {
             results.Add((result.Item1, result.Item2));
         });

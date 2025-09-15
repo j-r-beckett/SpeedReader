@@ -7,7 +7,6 @@ using Core;
 using Ocr.Blocks;
 using Ocr.Blocks.DBNet;
 using Ocr.Blocks.SVTR;
-using Ocr.Visualization;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -126,9 +125,8 @@ public class BackpressureTests : IAsyncDisposable
             () =>
             {
                 var image = new Image<Rgb24>(640, 640, Color.White);
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 var floatData = new float[3 * 640 * 640];  // CHW format
-                return (floatData, image, vizBuilder);
+                return (floatData, image, null);
             },
             initialDelay: TimeSpan.FromMilliseconds(1000)
         );
@@ -155,7 +153,6 @@ public class BackpressureTests : IAsyncDisposable
             () =>
             {
                 var image = new Image<Rgb24>(640, 480, Color.White);
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 var boundaries = new List<TextBoundary>
                 {
                     TextBoundary.Create(new List<(int, int)>
@@ -173,7 +170,7 @@ public class BackpressureTests : IAsyncDisposable
                         (110, 50)
                     })
                 };
-                return (boundaries, image, vizBuilder);
+                return (boundaries, image, null);
             },
             initialDelay: TimeSpan.FromMilliseconds(1000)
         );
@@ -199,7 +196,6 @@ public class BackpressureTests : IAsyncDisposable
             () =>
             {
                 var image = new Image<Rgb24>(config.Svtr.Width, config.Svtr.Height, Color.White);
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
                 var floatData = new float[3 * config.Svtr.Height * config.Svtr.Width];  // CHW format for SVTR input
                 var boundary = TextBoundary.Create(new List<(int, int)>
                 {
@@ -208,7 +204,7 @@ public class BackpressureTests : IAsyncDisposable
                     (90, 40),
                     (10, 40)
                 });
-                return (floatData, boundary, image, vizBuilder);
+                return (floatData, boundary, image);
             },
             initialDelay: TimeSpan.FromMilliseconds(500)
         );
@@ -237,8 +233,7 @@ public class BackpressureTests : IAsyncDisposable
             {
                 var image = new Image<Rgb24>(640, 640, Color.White);
                 image.Mutate(ctx => ctx.DrawText("test", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                return (image, vizBuilder);
+                return (image, null);
             },
             initialDelay: TimeSpan.FromMilliseconds(2000)
         );
@@ -266,8 +261,7 @@ public class BackpressureTests : IAsyncDisposable
             () =>
             {
                 var image = new Image<Rgb24>(640, 640, Color.White);
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                return (image, vizBuilder);
+                return (image, null);
             },
             initialDelay: TimeSpan.FromMilliseconds(2000)
         );
@@ -298,8 +292,7 @@ public class BackpressureTests : IAsyncDisposable
             {
                 var image = new Image<Rgb24>(640, 640, Color.Black);
                 image.Mutate(ctx => ctx.DrawText("hello", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
-                var vizBuilder = VizBuilder.Create(VizMode.None, image);
-                return (image, vizBuilder);
+                return (image, null);
             },
             initialDelay: TimeSpan.FromMilliseconds(1000)
         );

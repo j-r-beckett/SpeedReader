@@ -58,10 +58,9 @@ public class DataflowTests
 
         // Warm up the pipeline by sending a single input through and waiting for completion
         var warmupImage = CreateTestImage("WARMUP");
-        var warmupVizBuilder = VizBuilder.Create(VizMode.None, warmupImage);
-        var warmupInput = (warmupImage, warmupVizBuilder);
+        (Image<Rgb24>, VizData?) warmupInput = (warmupImage, null);
 
-        var warmupMultiplexer = new BlockMultiplexer<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(ocrBlock.Block);
+        var warmupMultiplexer = new BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, OcrResult, VizData?)>(ocrBlock.Block);
         await warmupMultiplexer.ProcessSingle(warmupInput, default, default);
 
         int inputsSent = 0;
@@ -74,8 +73,7 @@ public class DataflowTests
         {
             // Clone the test image for each pipeline input since pipeline takes ownership
             var testImage = CreateTestImage("TEST");
-            var vizBuilder = VizBuilder.Create(VizMode.None, testImage);
-            var testInput = (testImage, vizBuilder);
+            (Image<Rgb24>, VizData?) testInput = (testImage, null);
 
             // Start SendAsync but don't await it
             var sendAsyncTask = ocrBlock.Block.SendAsync(testInput);
@@ -91,8 +89,7 @@ public class DataflowTests
 
                 // Verify sustained backpressure with second SendAsync
                 var secondTestImage = CreateTestImage("TEST");
-                var secondVizBuilder = VizBuilder.Create(VizMode.None, secondTestImage);
-                var secondTestInput = (secondTestImage, secondVizBuilder);
+                (Image<Rgb24>, VizData?) secondTestInput = (secondTestImage, null);
                 var secondSendAsyncTask = ocrBlock.Block.SendAsync(secondTestInput);
                 var secondDelayTask = Task.Delay(200);
 
@@ -134,8 +131,7 @@ public class DataflowTests
         for (int i = 0; i < 5; i++)
         {
             var finalTestImage = CreateTestImage("TEST");
-            var finalVizBuilder = VizBuilder.Create(VizMode.None, finalTestImage);
-            var finalTestInput = (finalTestImage, finalVizBuilder);
+            (Image<Rgb24>, VizData?) finalTestInput = (finalTestImage, null);
             await ocrBlock.Block.SendAsync(finalTestInput);
             inputsSent++;
         }
@@ -158,9 +154,9 @@ public class DataflowTests
         return image;
     }
 
-    private async Task ConsumeOcrOutputsAsync(IPropagatorBlock<(Image<Rgb24>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> ocrBlock)
+    private async Task ConsumeOcrOutputsAsync(IPropagatorBlock<(Image<Rgb24>, VizData?), (Image<Rgb24>, OcrResult, VizData?)> ocrBlock)
     {
-        var outputConsumer = new ActionBlock<(Image<Rgb24>, OcrResult, VizBuilder)>(output =>
+        var outputConsumer = new ActionBlock<(Image<Rgb24>, OcrResult, VizData?)>(output =>
         {
             // Just consume the outputs, dispose the image
             output.Item1.Dispose();

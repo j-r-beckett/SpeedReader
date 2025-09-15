@@ -38,7 +38,7 @@ public class InferenceBlockCacheTests : IDisposable
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration { CacheFirstInference = true };
         var svtrBlock = new SVTRBlock(svtrSession, config, _meter);
-        await using var multiplexer = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
+        await using var multiplexer = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizData?), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizData?)>(svtrBlock.Target);
 
         // Create two different test inputs
         var (boundaries1, image1, viz1) = CreateTestInput("hello");
@@ -63,7 +63,7 @@ public class InferenceBlockCacheTests : IDisposable
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration { CacheFirstInference = false };
         var svtrBlock = new SVTRBlock(svtrSession, config, _meter);
-        await using var multiplexer = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizBuilder), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder)>(svtrBlock.Target);
+        await using var multiplexer = new BlockMultiplexer<(List<TextBoundary>, Image<Rgb24>, VizData?), (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizData?)>(svtrBlock.Target);
 
         // Create two different test inputs
         var (boundaries1, image1, viz1) = CreateTestInput("hello");
@@ -83,7 +83,7 @@ public class InferenceBlockCacheTests : IDisposable
     /// <summary>
     /// Creates test input with a single word image and text boundary
     /// </summary>
-    private (List<TextBoundary>, Image<Rgb24>, VizBuilder) CreateTestInput(string text)
+    private (List<TextBoundary>, Image<Rgb24>, VizData?) CreateTestInput(string text)
     {
         // Create a test image with white background
         var image = new Image<Rgb24>(160, 48, Color.White);
@@ -101,9 +101,7 @@ public class InferenceBlockCacheTests : IDisposable
         });
 
         var boundaries = new List<TextBoundary> { boundary };
-        var vizBuilder = VizBuilder.Create(VizMode.None, image);
-
-        return (boundaries, image, vizBuilder);
+        return (boundaries, image, null);
     }
 
     public void Dispose()

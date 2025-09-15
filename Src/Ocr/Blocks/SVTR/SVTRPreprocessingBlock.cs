@@ -4,7 +4,6 @@
 using System.Numerics.Tensors;
 using System.Threading.Tasks.Dataflow;
 using Ocr.Algorithms;
-using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -15,15 +14,15 @@ public class SVTRPreprocessingBlock
     private readonly int _width;
     private readonly int _height;
 
-    public IPropagatorBlock<(TextBoundary, Image<Rgb24>, VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)> Target { get; }
+    public IPropagatorBlock<(TextBoundary, Image<Rgb24>), (float[], TextBoundary, Image<Rgb24>)> Target { get; }
 
     public SVTRPreprocessingBlock(SvtrConfiguration config)
     {
         _width = config.Width;
         _height = config.Height;
 
-        Target = new TransformBlock<(TextBoundary TextBoundary, Image<Rgb24> Image, VizBuilder VizBuilder), (float[], TextBoundary, Image<Rgb24>, VizBuilder)>(input
-            => (PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image, input.VizBuilder),
+        Target = new TransformBlock<(TextBoundary TextBoundary, Image<Rgb24> Image), (float[], TextBoundary, Image<Rgb24>)>(input
+            => (PreProcess(input.Image, input.TextBoundary), input.TextBoundary, input.Image),
             new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = 1

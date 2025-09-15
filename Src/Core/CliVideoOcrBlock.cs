@@ -34,10 +34,10 @@ public class CliVideoOcrBlock
         Task<Stream>? videoOutputTask = null;
 
         var counter = 0;
-        var transformer = new TransformBlock<(Image<Rgb24> Img, OcrResult Result, VizBuilder VizBuilder), OcrResult>(async item =>
+        var transformer = new TransformBlock<(Image<Rgb24> Img, OcrResult Result, VizData? VizData), OcrResult>(async item =>
         {
             // Render the visualization with OCR results
-            var visualizedImage = item.VizBuilder.Render();
+            var visualizedImage = VizRenderer.Render(item.Img, item.Result, item.VizData);
 
             if (ffmpegEncoderBlock == null)
             {

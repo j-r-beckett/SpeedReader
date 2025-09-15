@@ -12,20 +12,17 @@ namespace Ocr.Blocks;
 
 public static class OcrPostProcessingBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)> Create(Meter meter)
+    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizData?), (Image<Rgb24>, OcrResult, VizData?)> Create(Meter meter)
     {
         var postProcessingCounter = meter.CreateCounter<long>("ocr_postprocessing_completed", description: "Number of completed OCR post-processing operations");
 
-        return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, List<double> Confidences, VizBuilder VizBuilder), (Image<Rgb24>, OcrResult, VizBuilder)>(data =>
+        return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, List<double> Confidences, VizData? VizData), (Image<Rgb24>, OcrResult, VizData?)>(data =>
         {
             Debug.Assert(data.TextBoundaries.Count == data.Texts.Count);
             Debug.Assert(data.TextBoundaries.Count == data.Confidences.Count);
 
-            // Extract rectangles for processing
-            var rectangles = data.TextBoundaries.Select(tb => tb.AARectangle).ToList();
-
-            // Step 1: Filter out empty text
-            var (filteredTextBoundaries, filteredTexts, filteredConfidences) = FilterEmptyText(data.TextBoundaries, data.Texts, data.Confidences);
+            // Step 1: Filter out empty text and capture filtered boxes for visualization
+            var (filteredTextBoundaries, filteredTexts, filteredConfidences, filteredOutBoundaries) = FilterEmptyText(data.TextBoundaries, data.Texts, data.Confidences);
             var filteredRectangles = filteredTextBoundaries.Select(tb => tb.AARectangle).ToList();
 
             // Step 2: Create lines from words
@@ -34,24 +31,26 @@ public static class OcrPostProcessingBlock
             // Step 3: Convert to OcrResult
             var ocrResults = ConvertToOcrResults(filteredTextBoundaries, filteredTexts, filteredConfidences, lines, data.Image);
 
-            // Add merged results for visualization
-            var mergedRectangles = lines.Select(line => line.bounds).ToList();
-            var mergedTexts = lines.Select(line => line.text).ToList();
-            data.VizBuilder.AddMergedResults(mergedRectangles, mergedTexts);
+            // Step 4: Capture filtered boxes in VizData if it exists
+            if (data.VizData != null)
+            {
+                data.VizData.FilteredTextBoxes.AddRange(filteredOutBoundaries);
+            }
 
             postProcessingCounter.Add(1);
-            return (data.Image, ocrResults, data.VizBuilder);
+            return (data.Image, ocrResults, data.VizData);
         }, new ExecutionDataflowBlockOptions
         {
             BoundedCapacity = 1
         });
     }
 
-    private static (List<TextBoundary>, List<string>, List<double>) FilterEmptyText(List<TextBoundary> textBoundaries, List<string> texts, List<double> confidences)
+    private static (List<TextBoundary>, List<string>, List<double>, List<TextBoundary>) FilterEmptyText(List<TextBoundary> textBoundaries, List<string> texts, List<double> confidences)
     {
         var filteredTextBoundaries = new List<TextBoundary>();
         var filteredTexts = new List<string>();
         var filteredConfidences = new List<double>();
+        var filteredOutBoundaries = new List<TextBoundary>();
 
         for (int i = 0; i < texts.Count; i++)
         {
@@ -62,9 +61,13 @@ public static class OcrPostProcessingBlock
                 filteredTexts.Add(cleanedText);
                 filteredConfidences.Add(confidences[i]);
             }
+            else
+            {
+                filteredOutBoundaries.Add(textBoundaries[i]);
+            }
         }
 
-        return (filteredTextBoundaries, filteredTexts, filteredConfidences);
+        return (filteredTextBoundaries, filteredTexts, filteredConfidences, filteredOutBoundaries);
     }
 
 

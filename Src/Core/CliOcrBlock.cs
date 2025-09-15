@@ -33,8 +33,9 @@ public class CliOcrBlock
 
         // Create the pipeline components
         var fileReaderBlock = CreateFileReaderBlock();
-        var splitBlock = new SplitBlock<(Image<Rgb24> Image, string Filename), (Image<Rgb24> Image, VizBuilder VizBuilder), string>(
-            input => ((input.Image, VizBuilder.Create(_config.VizMode, input.Image)), input.Filename)
+        var vizData = _config.VizMode is VizMode.None or VizMode.Basic ? null : new VizData();
+        var splitBlock = new SplitBlock<(Image<Rgb24> Image, string Filename), (Image<Rgb24> Image, VizData? VizData), string>(
+            input => ((input.Image, vizData), input.Filename)
         );
 
         // Create OCR block
@@ -43,8 +44,8 @@ public class CliOcrBlock
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), _config.Meter);
 
-        var mergeBlock = new MergeBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder), string, (Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)>(
-            (ocrResult, filename) => (ocrResult.Image, ocrResult.Result, ocrResult.VizBuilder, filename)
+        var mergeBlock = new MergeBlock<(Image<Rgb24> Image, OcrResult Result, VizData? VizData), string, (Image<Rgb24> Image, OcrResult Result, VizData? VizData, string Filename)>(
+            (ocrResult, filename) => (ocrResult.Image, ocrResult.Result, ocrResult.VizData, filename)
         );
 
         var outputEmitterBlock = CreateOutputEmitterBlock();
@@ -92,13 +93,13 @@ public class CliOcrBlock
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
     }
 
-    private ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)> CreateOutputEmitterBlock()
+    private ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizData? VizData, string Filename)> CreateOutputEmitterBlock()
     {
         int pageNumber = 0;
 
-        return new ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder, string Filename)>(async output =>
+        return new ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizData? VizData, string Filename)>(async output =>
         {
-            var (image, ocrResult, vizBuilder, filename) = output;
+            var (image, ocrResult, vizData, filename) = output;
 
             try
             {
@@ -166,8 +167,9 @@ public class CliOcrBlock
                 // Generate visualization if configured
                 if (vizFilePath != null)
                 {
-                    var outputImage = vizBuilder.Render();
+                    var outputImage = VizRenderer.Render(image, ocrResult, vizData);
                     await outputImage.SaveAsync(vizFilePath);
+                    outputImage.Dispose();
                 }
             }
             finally
