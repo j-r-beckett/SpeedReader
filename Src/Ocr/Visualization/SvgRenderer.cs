@@ -21,6 +21,14 @@ public static class SvgRenderer
         public double Height { get; set; }
     }
 
+    public class LegendItem
+    {
+        public string Color { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string ElementClass { get; set; } = string.Empty;
+        public bool IsVisible { get; set; } = true;
+    }
+
     public class TemplateData
     {
         public int Width { get; set; }
@@ -28,6 +36,7 @@ public static class SvgRenderer
         public string BaseImageDataUri { get; set; } = string.Empty;
         public string? ProbabilityMapDataUri { get; set; }
         public BoundingBox[] BoundingBoxes { get; set; } = [];
+        public LegendItem[] LegendItems { get; set; } = [];
     }
 
     public static Svg Render(Image<Rgb24> sourceImage, OcrResult ocrResult, VizData? vizData)
@@ -53,6 +62,30 @@ public static class SvgRenderer
             Height = word.BoundingBox.AARectangle.Height * sourceImage.Height
         }).ToArray();
 
+        // Create legend items
+        var legendItems = new List<LegendItem>
+        {
+            new LegendItem
+            {
+                Color = "red",
+                Description = "Bounding Boxes",
+                ElementClass = "bounding-boxes",
+                IsVisible = true
+            }
+        };
+
+        // Add DBNet output legend item if probability map is available
+        if (probabilityMapDataUri != null)
+        {
+            legendItems.Add(new LegendItem
+            {
+                Color = "yellow",
+                Description = "DBNet Output",
+                ElementClass = "dbnet-overlay",
+                IsVisible = true
+            });
+        }
+
         // Create template data
         var templateData = new TemplateData
         {
@@ -60,13 +93,15 @@ public static class SvgRenderer
             Height = sourceImage.Height,
             BaseImageDataUri = baseImageDataUri,
             ProbabilityMapDataUri = probabilityMapDataUri,
-            BoundingBoxes = boundingBoxes
+            BoundingBoxes = boundingBoxes,
+            LegendItems = legendItems.ToArray()
         };
 
         // Create template options and register our types
         var options = new TemplateOptions();
         options.MemberAccessStrategy.Register<TemplateData>();
         options.MemberAccessStrategy.Register<BoundingBox>();
+        options.MemberAccessStrategy.Register<LegendItem>();
 
         // Create template context
         var context = new TemplateContext(templateData, options);
