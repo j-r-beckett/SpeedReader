@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Fluid;
+using Ocr.Algorithms;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -31,6 +32,15 @@ public static class SvgRenderer
         public string Points { get; set; } = string.Empty;
     }
 
+    public class TextItem
+    {
+        public string Text { get; set; } = string.Empty;
+        public double CenterX { get; set; }
+        public double CenterY { get; set; }
+        public double FontSize { get; set; }
+        public double RotationAngle { get; set; }
+    }
+
     public class LegendItem
     {
         public string Color { get; set; } = string.Empty;
@@ -48,6 +58,7 @@ public static class SvgRenderer
         public BoundingBox[] BoundingBoxes { get; set; } = [];
         public OrientedBoundingBox[] OrientedBoundingBoxes { get; set; } = [];
         public Polygon[] Polygons { get; set; } = [];
+        public TextItem[] TextItems { get; set; } = [];
         public LegendItem[] LegendItems { get; set; } = [];
     }
 
@@ -90,6 +101,41 @@ public static class SvgRenderer
             return new Polygon { Points = points };
         }).ToArray();
 
+        // Prepare text items with orientation
+        var textItems = ocrResult.Words.Select(word =>
+        {
+            // Convert ORectangle to the format expected by DetectOrientationAndOrderCorners
+            var orientedRectangle = word.BoundingBox.ORectangle
+                .Select(p => (p.X, p.Y))
+                .ToList();
+
+            // Get properly ordered corners
+            var corners = ImageCropping.DetectOrientationAndOrderCorners(orientedRectangle);
+
+            // Calculate center
+            var centerX = (corners.TopLeft.X + corners.TopRight.X + corners.BottomRight.X + corners.BottomLeft.X) / 4.0 * sourceImage.Width;
+            var centerY = (corners.TopLeft.Y + corners.TopRight.Y + corners.BottomRight.Y + corners.BottomLeft.Y) / 4.0 * sourceImage.Height;
+
+            // Calculate rotation angle (text direction from TopLeft to TopRight)
+            var textVector = (X: corners.TopRight.X - corners.TopLeft.X, Y: corners.TopRight.Y - corners.TopLeft.Y);
+            var rotationAngle = Math.Atan2(textVector.Y, textVector.X) * 180.0 / Math.PI;
+
+            // Calculate font size based on text height (70% of the distance from TopLeft to BottomLeft)
+            var textHeight = Math.Sqrt(
+                Math.Pow((corners.BottomLeft.X - corners.TopLeft.X) * sourceImage.Width, 2) +
+                Math.Pow((corners.BottomLeft.Y - corners.TopLeft.Y) * sourceImage.Height, 2));
+            var fontSize = textHeight * 0.95;
+
+            return new TextItem
+            {
+                Text = word.Text,
+                CenterX = centerX,
+                CenterY = centerY,
+                FontSize = fontSize,
+                RotationAngle = rotationAngle
+            };
+        }).ToArray();
+
         // Create legend items
         var legendItems = new List<LegendItem>
         {
@@ -112,6 +158,13 @@ public static class SvgRenderer
                 Color = "green",
                 Description = "Polygons",
                 ElementClass = "polygons",
+                IsVisible = true
+            },
+            new()
+            {
+                Color = "white",
+                Description = "Recognized Text",
+                ElementClass = "text-overlay",
                 IsVisible = true
             }
         };
@@ -138,6 +191,7 @@ public static class SvgRenderer
             BoundingBoxes = boundingBoxes,
             OrientedBoundingBoxes = orientedBoundingBoxes,
             Polygons = polygons,
+            TextItems = textItems,
             LegendItems = legendItems.ToArray()
         };
 
@@ -147,6 +201,7 @@ public static class SvgRenderer
         options.MemberAccessStrategy.Register<BoundingBox>();
         options.MemberAccessStrategy.Register<OrientedBoundingBox>();
         options.MemberAccessStrategy.Register<Polygon>();
+        options.MemberAccessStrategy.Register<TextItem>();
         options.MemberAccessStrategy.Register<LegendItem>();
 
         // Create template context
