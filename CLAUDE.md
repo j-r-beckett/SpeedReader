@@ -1,5 +1,17 @@
 # CLAUDE.md
 
+## Guidance
+- ...
+- 100% test pass rate is enforced by a pre-commit hook. The ONLY acceptable pass rate for tests is 100%
+- Changing test tuning or disabling tests to get to 100% pass rate is NEVER acceptable
+- Feature development is only complete once the build succeeds with zero warnings and all tests pass
+- When working on a feature, try to build and test while developing the feature instead of only once at the end
+- Avoid excessive or overly helpful commenting
+- Do not make any changes outside the scope of the current feature
+- If the user mentions a type you're not familiar with, learn how to use it by doing a quick search through the codebase
+- Always use synthetic data during testing. Use ImageSharp to generate images with text. See examples in existing tests for how to do this properly
+- If the user mentions any URLs, types, or files, always be sure to read them in their entirety even if they don't seem immediately relevant. Do this even if the user doesn't explicitly ask you to view the URL/type/file. You should, on your initiative, access and read EVERY reference mentioned by the user.
+
 ## Projects
 
 ### Core
@@ -58,16 +70,6 @@ Contains utilities useful for testing.
 - FileSystemUrlPublisher: saves images (and other data) to disk, and writes log messages containing URLs that point to written files
 
 ## Development
-
-## Guidance
-- 100% test pass rate is enforced by a pre-commit hook. The ONLY acceptable pass rate for tests is 100%
-- Changing test tuning or disabling tests to get to 100% pass rate is NEVER acceptable
-- Feature development is only complete once the build succeeds with zero warnings and all tests pass
-- When working on a feature, try to build and test while developing the feature instead of only once at the end
-- Avoid excessive or overly helpful commenting
-- Do not make any changes outside the scope of the current feature
-- If the user mentions a type you're not familiar with, learn how to use it by doing a quick search through the codebase
-- Always use synthetic data during testing. Use ImageSharp to generate images with text. See examples in existing tests for how to do this properly
 
 ## Package Management
 - All package versions are managed in `Directory.Packages.props`. Project files reference packages without version attributes
