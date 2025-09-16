@@ -32,10 +32,7 @@ public static class OcrPostProcessingBlock
             var ocrResults = ConvertToOcrResults(filteredTextBoundaries, filteredTexts, filteredConfidences, lines, data.Image);
 
             // Step 4: Capture filtered boxes in VizData if it exists
-            if (data.VizData != null)
-            {
-                data.VizData.FilteredTextBoxes.AddRange(filteredOutBoundaries);
-            }
+            data.VizData?.FilteredTextBoxes.AddRange(filteredOutBoundaries);
 
             postProcessingCounter.Add(1);
             return (data.Image, ocrResults, data.VizData);
@@ -74,7 +71,9 @@ public static class OcrPostProcessingBlock
     private static List<(string text, Rectangle bounds, List<int> wordIndices)> CreateLines(List<Rectangle> rectangles, List<string> texts)
     {
         if (rectangles.Count == 0)
+        {
             return new List<(string, Rectangle, List<int>)>();
+        }
 
         // Build undirected adjacency list for connected components
         var adjacency = new List<List<int>>();
@@ -201,7 +200,9 @@ public static class OcrPostProcessingBlock
 
         // If significant overlap, merge them
         if (iou >= 0.5)
+        {
             return true;
+        }
 
         // Otherwise, check if they're adjacent words on the same line
         // Determine left/right by horizontal center

@@ -22,7 +22,9 @@ namespace Ocr
         public static TextBoundary Create(List<(int X, int Y)> polygon)
         {
             if (polygon == null || polygon.Count == 0)
+            {
                 throw new ArgumentException("Polygon cannot be null or empty", nameof(polygon));
+            }
 
             // Use new algorithms for rectangle computation
             var aaRectangle = BoundingRectangles.ComputeAxisAlignedRectangle(polygon);

@@ -10,10 +10,7 @@ public static class Resource
 {
     private static readonly ConcurrentDictionary<string, byte[]> _cache = new();
 
-    public static byte[] GetBytes(string resourceName)
-    {
-        return _cache.GetOrAdd(resourceName, LoadResource);
-    }
+    public static byte[] GetBytes(string resourceName) => _cache.GetOrAdd(resourceName, LoadResource);
 
     public static string GetString(string resourceName)
     {
@@ -25,10 +22,7 @@ public static class Resource
     {
         var assembly = Assembly.GetExecutingAssembly();
 
-        using var stream = assembly.GetManifestResourceStream($"Resources.{resourceName}");
-        if (stream == null)
-            throw new FileNotFoundException($"Embedded resource 'Resources.{resourceName}' not found");
-
+        using var stream = assembly.GetManifestResourceStream($"Resources.{resourceName}") ?? throw new FileNotFoundException($"Embedded resource 'Resources.{resourceName}' not found");
         var bytes = new byte[stream.Length];
         stream.ReadExactly(bytes);
 

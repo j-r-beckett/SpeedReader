@@ -150,7 +150,10 @@ public class MorphologicalBoundaryTracingTests
     /// </summary>
     private static void VerifyBoundaryConnectivity(ReadOnlySpan<(int X, int Y)> boundary)
     {
-        if (boundary.Length <= 1) return;
+        if (boundary.Length <= 1)
+        {
+            return;
+        }
 
         // Just verify no duplicate pixels and reasonable bounds
         var boundarySet = boundary.ToArray().ToHashSet();
@@ -167,9 +170,6 @@ public class MorphologicalBoundaryTracingTests
     /// <summary>
     /// Checks if a pixel is on the perimeter of a rectangle
     /// </summary>
-    private static bool IsPerimeterPixel(int x, int y, int rectX, int rectY, int rectWidth, int rectHeight)
-    {
-        return (x >= rectX && x < rectX + rectWidth && y >= rectY && y < rectY + rectHeight) &&
+    private static bool IsPerimeterPixel(int x, int y, int rectX, int rectY, int rectWidth, int rectHeight) => (x >= rectX && x < rectX + rectWidth && y >= rectY && y < rectY + rectHeight) &&
                (x == rectX || x == rectX + rectWidth - 1 || y == rectY || y == rectY + rectHeight - 1);
-    }
 }

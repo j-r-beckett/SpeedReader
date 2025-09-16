@@ -110,11 +110,7 @@ public class BlockMultiplexerTests
     public async Task ProcessAsync_WhenBlockFaults_PropagatesException()
     {
         var transform = new TransformBlock<int, string>(x =>
-        {
-            if (x == 42)
-                throw new InvalidOperationException("Cannot process 42");
-            return x.ToString();
-        });
+            x == 42 ? throw new InvalidOperationException("Cannot process 42") : x.ToString());
 
         await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
@@ -439,11 +435,7 @@ public class BlockMultiplexerTests
     public async Task GetAccessorBlocks_TransformerException_PropagatesExceptionThroughSource()
     {
         var transform = new TransformBlock<int, string>(x =>
-        {
-            if (x == 42)
-                throw new InvalidOperationException("Transformer fault");
-            return x.ToString();
-        });
+            x == 42 ? throw new InvalidOperationException("Transformer fault") : x.ToString());
         await using var multiplexer = new BlockMultiplexer<int, string>(transform);
 
         var (target, source) = multiplexer.GetAccessorBlocks();

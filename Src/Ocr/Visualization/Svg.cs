@@ -7,23 +7,11 @@ public class Svg
 {
     private readonly string _content;
 
-    public Svg(string content)
-    {
-        _content = content;
-    }
+    public Svg(string content) => _content = content;
 
-    public void Save(string filename)
-    {
-        File.WriteAllText(filename, _content);
-    }
+    public void Save(string filename) => File.WriteAllText(filename, _content);
 
-    public async Task SaveAsync(string filename)
-    {
-        await File.WriteAllTextAsync(filename, _content);
-    }
+    public async Task SaveAsync(string filename) => await File.WriteAllTextAsync(filename, _content);
 
-    public override string ToString()
-    {
-        return _content;
-    }
+    public override string ToString() => _content;
 }

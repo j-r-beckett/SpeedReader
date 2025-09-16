@@ -54,10 +54,7 @@ public class FileSystemUrlPublisher<T>
         await PublishAsync(stream, "image/jpeg", description, cancellationToken);
     }
 
-    private string CreateUrl(string filePath)
-    {
-        return $"{_urlPrefix}{filePath}";
-    }
+    private string CreateUrl(string filePath) => $"{_urlPrefix}{filePath}";
 
     private static string GetExtensionFromContentType(string contentType) => contentType.ToLowerInvariant() switch
     {

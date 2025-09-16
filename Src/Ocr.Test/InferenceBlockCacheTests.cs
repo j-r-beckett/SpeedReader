@@ -104,8 +104,5 @@ public class InferenceBlockCacheTests : IDisposable
         return (boundaries, image, null);
     }
 
-    public void Dispose()
-    {
-        _meter?.Dispose();
-    }
+    public void Dispose() => _meter?.Dispose();
 }

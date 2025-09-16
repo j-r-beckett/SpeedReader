@@ -89,10 +89,7 @@ public class SVTRBlock
     {
         Channel<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)> svtrChannel = Channel.CreateBounded<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)>(1);
 
-        var svtrChannelFeeder = new ActionBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)>(async input =>
-        {
-            await svtrChannel.Writer.WriteAsync(input);
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+        var svtrChannelFeeder = new ActionBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)>(async input => await svtrChannel.Writer.WriteAsync(input), new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         svtrPipeline.LinkTo(svtrChannelFeeder, new DataflowLinkOptions { PropagateCompletion = true });
 
@@ -104,12 +101,9 @@ public class SVTRBlock
             }
 
             await svtrChannel.Reader.WaitToReadAsync();
-            if (svtrChannel.Reader.TryRead(out var result))
-            {
-                return result;
-            }
-
-            throw new UnexpectedFlowException($"Race condition in {nameof(svtrChannel)}");
+            return svtrChannel.Reader.TryRead(out var result)
+                ? result
+                : throw new UnexpectedFlowException($"Race condition in {nameof(svtrChannel)}");
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         buffer.LinkTo(anabranchEndBlock, new DataflowLinkOptions { PropagateCompletion = true });
@@ -130,52 +124,46 @@ public class SVTRBlock
     }
 
 
-    private static TransformManyBlock<(List<TextBoundary>, Image<Rgb24>), (TextBoundary, Image<Rgb24>)> CreateSplitterBlock(AggregatorBlock<(string, double, TextBoundary, Image<Rgb24>)> aggregatorBlock)
-    {
-        return new TransformManyBlock<(List<TextBoundary> TextBoundaries, Image<Rgb24> Image), (TextBoundary, Image<Rgb24>)>(async input =>
-        {
-            // Send batch size to aggregator
-            await aggregatorBlock.BatchSizeTarget.SendAsync(input.TextBoundaries.Count);
+    private static TransformManyBlock<(List<TextBoundary>, Image<Rgb24>), (TextBoundary, Image<Rgb24>)> CreateSplitterBlock(AggregatorBlock<(string, double, TextBoundary, Image<Rgb24>)> aggregatorBlock) => new TransformManyBlock<(List<TextBoundary> TextBoundaries, Image<Rgb24> Image), (TextBoundary, Image<Rgb24>)>(async input =>
+                                                                                                                                                                                                                   {
+                                                                                                                                                                                                                       // Send batch size to aggregator
+                                                                                                                                                                                                                       await aggregatorBlock.BatchSizeTarget.SendAsync(input.TextBoundaries.Count);
 
-            var results = new List<(TextBoundary, Image<Rgb24>)>();
-            foreach (var boundary in input.TextBoundaries)
-            {
-                results.Add((boundary, input.Image));
-            }
-            return results;
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
-    }
+                                                                                                                                                                                                                       var results = new List<(TextBoundary, Image<Rgb24>)>();
+                                                                                                                                                                                                                       foreach (var boundary in input.TextBoundaries)
+                                                                                                                                                                                                                       {
+                                                                                                                                                                                                                           results.Add((boundary, input.Image));
+                                                                                                                                                                                                                       }
+                                                                                                                                                                                                                       return results;
+                                                                                                                                                                                                                   }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
-    private static TransformBlock<(string, double, TextBoundary, Image<Rgb24>)[], (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)> CreateReconstructorBlock()
-    {
-        return new TransformBlock<(string Text, double Confidence, TextBoundary TextBoundary, Image<Rgb24> Image)[], (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)>(inputArray =>
-        {
-            if (inputArray.Length == 0)
-            {
-                throw new InvalidOperationException("Empty array received in reconstructor block");
-            }
+    private static TransformBlock<(string, double, TextBoundary, Image<Rgb24>)[], (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)> CreateReconstructorBlock() => new TransformBlock<(string Text, double Confidence, TextBoundary TextBoundary, Image<Rgb24> Image)[], (Image<Rgb24>, List<TextBoundary>, List<string>, List<double>)>(inputArray =>
+                                                                                                                                                                                     {
+                                                                                                                                                                                         if (inputArray.Length == 0)
+                                                                                                                                                                                         {
+                                                                                                                                                                                             throw new InvalidOperationException("Empty array received in reconstructor block");
+                                                                                                                                                                                         }
 
-            // Extract shared references (all items should have the same Image)
-            var image = inputArray[0].Image;
+                                                                                                                                                                                         // Extract shared references (all items should have the same Image)
+                                                                                                                                                                                         var image = inputArray[0].Image;
 
-            // Extract individual results
-            var texts = new List<string>();
-            var confidences = new List<double>();
-            var boundaries = new List<TextBoundary>();
+                                                                                                                                                                                         // Extract individual results
+                                                                                                                                                                                         var texts = new List<string>();
+                                                                                                                                                                                         var confidences = new List<double>();
+                                                                                                                                                                                         var boundaries = new List<TextBoundary>();
 
-            foreach (var item in inputArray)
-            {
-                // Verify all items share the same Image reference
-                Debug.Assert(ReferenceEquals(item.Image, image), "All items must share the same Image reference");
+                                                                                                                                                                                         foreach (var item in inputArray)
+                                                                                                                                                                                         {
+                                                                                                                                                                                             // Verify all items share the same Image reference
+                                                                                                                                                                                             Debug.Assert(ReferenceEquals(item.Image, image), "All items must share the same Image reference");
 
-                texts.Add(item.Text);
-                confidences.Add(item.Confidence);
-                boundaries.Add(item.TextBoundary);
-            }
+                                                                                                                                                                                             texts.Add(item.Text);
+                                                                                                                                                                                             confidences.Add(item.Confidence);
+                                                                                                                                                                                             boundaries.Add(item.TextBoundary);
+                                                                                                                                                                                         }
 
-            return (image, boundaries, texts, confidences);
-        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
-    }
+                                                                                                                                                                                         return (image, boundaries, texts, confidences);
+                                                                                                                                                                                     }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
     public class UnexpectedFlowException : Exception
     {

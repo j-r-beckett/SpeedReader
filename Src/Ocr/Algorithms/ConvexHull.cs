@@ -86,10 +86,7 @@ public static class ConvexHull
     /// negative value if clockwise turn,
     /// zero if points are collinear
     /// </returns>
-    private static int CrossProductZ((int X, int Y) a, (int X, int Y) b, (int X, int Y) c)
-    {
-        return (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
-    }
+    private static int CrossProductZ((int X, int Y) a, (int X, int Y) b, (int X, int Y) c) => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
 
     /// <summary>
     /// Compares two points by their polar angle relative to an anchor point.
@@ -108,8 +105,15 @@ public static class ConvexHull
     {
         int crossZ = CrossProductZ(anchor, p1, p2);
 
-        if (crossZ < 0) return 1;
-        if (crossZ > 0) return -1;
+        if (crossZ < 0)
+        {
+            return 1;
+        }
+
+        if (crossZ > 0)
+        {
+            return -1;
+        }
 
         (int X, int Y) v1 = (p1.X - anchor.X, p1.Y - anchor.Y);
         (int X, int Y) v2 = (p2.X - anchor.X, p2.Y - anchor.Y);

@@ -35,10 +35,7 @@ public class FontsTests
         Assert.NotNull(font);
     }
 
-    public static IEnumerable<object[]> GetAllFontNames()
-    {
-        return Enum.GetValues<FontName>().Select(fontName => new object[] { fontName });
-    }
+    public static IEnumerable<object[]> GetAllFontNames() => Enum.GetValues<FontName>().Select(fontName => new object[] { fontName });
 
     public static IEnumerable<object[]> GetFontSizeTestCases()
     {

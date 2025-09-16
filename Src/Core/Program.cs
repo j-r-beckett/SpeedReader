@@ -57,10 +57,7 @@ public class Program
         videoCommand.AddArgument(pathArgument);
         videoCommand.AddArgument(frameRateArgument);
 
-        videoCommand.SetHandler(async (path, frameRate) =>
-        {
-            await ProcessVideo(path, frameRate);
-        }, pathArgument, frameRateArgument);
+        videoCommand.SetHandler(async (path, frameRate) => await ProcessVideo(path, frameRate), pathArgument, frameRateArgument);
 
         rootCommand.AddCommand(videoCommand);
 

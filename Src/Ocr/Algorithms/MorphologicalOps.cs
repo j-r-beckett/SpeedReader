@@ -8,7 +8,7 @@ namespace Ocr.Algorithms;
 public static class MorphologicalOps
 {
     // 3x3 structuring element (8-connectivity)
-    private static readonly (int dx, int dy)[] StructuringElement = {
+    private static readonly (int dx, int dy)[] _structuringElement = {
         (-1, -1), (0, -1), (1, -1),
         (-1,  0),          (1,  0),
         (-1,  1), (0,  1), (1,  1)
@@ -34,7 +34,7 @@ public static class MorphologicalOps
 
                 if (allNeighborsForeground)
                 {
-                    foreach (var (dx, dy) in StructuringElement)
+                    foreach (var (dx, dy) in _structuringElement)
                     {
                         int nx = x + dx, ny = y + dy;
                         if (nx < 0 || nx >= image.Width || ny < 0 || ny >= image.Height ||
@@ -80,7 +80,7 @@ public static class MorphologicalOps
 
                 if (!anyNeighborForeground)
                 {
-                    foreach (var (dx, dy) in StructuringElement)
+                    foreach (var (dx, dy) in _structuringElement)
                     {
                         int nx = x + dx, ny = y + dy;
                         if (nx >= 0 && nx < image.Width && ny >= 0 && ny < image.Height &&

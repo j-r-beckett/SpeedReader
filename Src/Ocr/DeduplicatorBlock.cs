@@ -52,7 +52,10 @@ public class DeduplicatorBlock
 
             foreach ((int currLevDist, double _, (string fromWordId, string toWordId)) in buffer)
             {
-                if (currLevDist >= maxLevDist) break;
+                if (currLevDist >= maxLevDist)
+                {
+                    break;
+                }
 
                 if (!sameWords.ContainsKey(toWordId) && !sameWords.ContainsValue(fromWordId))
                 {
@@ -62,14 +65,7 @@ public class DeduplicatorBlock
 
             foreach (var word in result.Words)
             {
-                if (sameWords.TryGetValue(word.Id, out string? sameWordId))
-                {
-                    word.Id = sameWordId;
-                }
-                else
-                {
-                    word.Id = $"word_{wordIdCounter++}";
-                }
+                word.Id = sameWords.TryGetValue(word.Id, out string? sameWordId) ? sameWordId : $"word_{wordIdCounter++}";
             }
 
             previousResult = result;
@@ -123,19 +119,12 @@ public class DeduplicatorBlock
         {
             for (int j = 1; j <= n; j++)
             {
-                if (s1[i - 1] == s2[j - 1])
-                {
-                    dp[i, j] = dp[i - 1, j - 1];
-                }
-                else
-                {
-                    dp[i, j] = 1 + Min(dp[i - 1, j], dp[i, j - 1], dp[i - 1, j - 1]);
-                }
+                dp[i, j] = s1[i - 1] == s2[j - 1] ? dp[i - 1, j - 1] : 1 + Min(dp[i - 1, j], dp[i, j - 1], dp[i - 1, j - 1]);
             }
         }
 
         return dp[m, n];
 
-        T Min<T>(params T[] values) => values.Min() ?? throw new IndexOutOfRangeException();
+        static T Min<T>(params T[] values) => values.Min() ?? throw new IndexOutOfRangeException();
     }
 }

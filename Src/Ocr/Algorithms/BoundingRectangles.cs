@@ -20,7 +20,9 @@ public static class BoundingRectangles
     public static Rectangle ComputeAxisAlignedRectangle(List<(int X, int Y)> polygon)
     {
         if (polygon == null || polygon.Count == 0)
+        {
             throw new ArgumentException("Polygon cannot be null or empty", nameof(polygon));
+        }
 
         int maxX = int.MinValue;
         int maxY = int.MinValue;
@@ -48,10 +50,14 @@ public static class BoundingRectangles
     public static List<(double X, double Y)> ComputeOrientedRectangle(List<(int X, int Y)> polygon)
     {
         if (polygon == null || polygon.Count == 0)
+        {
             throw new ArgumentException("Polygon cannot be null or empty", nameof(polygon));
+        }
 
         if (polygon.Count == 1)
+        {
             return new List<(double X, double Y)> { (polygon[0].X, polygon[0].Y), (polygon[0].X, polygon[0].Y), (polygon[0].X, polygon[0].Y), (polygon[0].X, polygon[0].Y) };
+        }
 
         if (polygon.Count == 2)
         {
@@ -72,7 +78,10 @@ public static class BoundingRectangles
             var edge = (polygon[j].X - polygon[i].X, polygon[j].Y - polygon[i].Y);
 
             // Skip zero-length edges
-            if (edge.Item1 == 0 && edge.Item2 == 0) continue;
+            if (edge.Item1 == 0 && edge.Item2 == 0)
+            {
+                continue;
+            }
 
             // Find the rectangle aligned with this edge
             var rectangle = FindRectangleAlignedWithEdge(polygon, edge);
@@ -139,7 +148,10 @@ public static class BoundingRectangles
     /// </summary>
     private static double CalculateRectangleArea(List<(double X, double Y)> rectangle)
     {
-        if (rectangle.Count != 4) return 0;
+        if (rectangle.Count != 4)
+        {
+            return 0;
+        }
 
         // Calculate side lengths
         double side1 = Math.Sqrt(Math.Pow(rectangle[1].X - rectangle[0].X, 2) + Math.Pow(rectangle[1].Y - rectangle[0].Y, 2));

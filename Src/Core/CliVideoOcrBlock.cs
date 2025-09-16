@@ -104,7 +104,9 @@ public class CliVideoOcrBlock
                 reader.AdvanceTo(buffer.End);
 
                 if (result.IsCompleted)
+                {
                     break;
+                }
             }
         }
         finally

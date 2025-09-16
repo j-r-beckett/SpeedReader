@@ -23,11 +23,17 @@ public static class Fonts
 
     private static void EnsureInitialized(FontName fontName)
     {
-        if (_loadedFonts.ContainsKey(fontName)) return;
+        if (_loadedFonts.ContainsKey(fontName))
+        {
+            return;
+        }
 
         lock (_lock)
         {
-            if (_loadedFonts.ContainsKey(fontName)) return;
+            if (_loadedFonts.ContainsKey(fontName))
+            {
+                return;
+            }
 
             var resourceName = GetResourceName(fontName);
             var fontBytes = Resource.GetBytes(resourceName);
@@ -38,23 +44,17 @@ public static class Fonts
         }
     }
 
-    private static string GetResourceName(FontName fontName)
+    private static string GetResourceName(FontName fontName) => fontName switch
     {
-        return fontName switch
-        {
-            FontName.Arial => "arial.ttf",
-            _ => throw new ArgumentException($"Unknown font name: {fontName}")
-        };
-    }
+        FontName.Arial => "arial.ttf",
+        _ => throw new ArgumentException($"Unknown font name: {fontName}")
+    };
 
-    private static string GetFamilyName(FontName fontName)
+    private static string GetFamilyName(FontName fontName) => fontName switch
     {
-        return fontName switch
-        {
-            FontName.Arial => "Arial",
-            _ => throw new ArgumentException($"Unknown font name: {fontName}")
-        };
-    }
+        FontName.Arial => "Arial",
+        _ => throw new ArgumentException($"Unknown font name: {fontName}")
+    };
 }
 
 public enum FontName

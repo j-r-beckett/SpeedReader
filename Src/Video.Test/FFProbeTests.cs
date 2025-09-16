@@ -155,15 +155,10 @@ public class FFProbeTests
 
         public MockFFProbe(Func<CancellationToken, Task<BufferedCommandResult>> asyncFuncWithToken) => _asyncFuncWithToken = asyncFuncWithToken;
 
-        protected override async Task<BufferedCommandResult> RunFFProbeCommand(Stream video, CancellationToken cancellationToken)
-        {
-            if (_asyncFuncWithToken != null)
-                return await _asyncFuncWithToken(cancellationToken);
-
-            if (_asyncFunc != null)
-                return await _asyncFunc();
-
-            return _func!(Interlocked.Increment(ref _counter));
-        }
+        protected override async Task<BufferedCommandResult> RunFFProbeCommand(Stream video, CancellationToken cancellationToken) =>
+            // First try _asyncFuncWithToken, then _asyncFunc, then _func
+            _asyncFuncWithToken != null
+                ? await _asyncFuncWithToken(cancellationToken)
+                : _asyncFunc != null ? await _asyncFunc() : _func!(Interlocked.Increment(ref _counter));
     }
 }

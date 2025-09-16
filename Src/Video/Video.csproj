@@ -8,8 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="CLIwrap" />
-    <PackageReference Include="FFMpegcore" />
-    <PackageReference Include="microsoft.extensions.logging" />
     <PackageReference Include="Sixlabors.Imagesharp" />
   </ItemGroup>
 

@@ -10,10 +10,7 @@ public class TestLogger : ILogger
 {
     private readonly ITestOutputHelper _outputHelper;
 
-    public TestLogger(ITestOutputHelper outputHelper)
-    {
-        _outputHelper = outputHelper;
-    }
+    public TestLogger(ITestOutputHelper outputHelper) => _outputHelper = outputHelper;
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {

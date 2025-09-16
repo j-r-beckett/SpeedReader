@@ -25,7 +25,10 @@ public static class CharacterDictionary
         // Load characters from file (indices 1-6623)
         for (int i = 0; i < lines.Length; i++)
         {
-            if (string.IsNullOrEmpty(lines[i])) continue;
+            if (string.IsNullOrEmpty(lines[i]))
+            {
+                continue;
+            }
 
             char character = lines[i][0]; // Take first character of each line
             int index = i + 1; // Offset by 1 for blank token

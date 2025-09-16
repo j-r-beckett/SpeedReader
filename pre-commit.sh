@@ -9,31 +9,8 @@ get_modification_hash() {
     git ls-files --cached --others --exclude-standard | xargs -I {} stat -c "%Y %n" {} 2>/dev/null | sort | sha256sum | cut -d' ' -f1
 }
 
-# Copyright header for C# files
-CS_HEADER="// Copyright (c) 2025 j-r-beckett
-// Licensed under the Apache License, Version 2.0"
-
-# Function to add header to C# files
-add_cs_header() {
-    local file="$1"
-    if ! grep -q "Copyright" "$file"; then
-        echo "$CS_HEADER" > "$file.tmp"
-        echo "" >> "$file.tmp"
-        cat "$file" >> "$file.tmp"
-        mv "$file.tmp" "$file"
-        git add "$file"
-    fi
-}
-
 # Run formatter
 dotnet format --no-restore
-
-# Add copyright to new files
-git diff --cached --name-only --diff-filter=ACM | while read file; do
-    if [[ "$file" == *.cs && "$file" != */obj/* ]]; then
-        add_cs_header "$file"
-    fi
-done
 
 BEFORE_TESTS_HASH=$(get_modification_hash)
 

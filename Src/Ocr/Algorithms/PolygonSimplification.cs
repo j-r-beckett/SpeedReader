@@ -11,13 +11,8 @@ public static class PolygonSimplification
     /// <param name="polygon">Array of polygon vertices</param>
     /// <param name="tolerance">Maximum distance tolerance (default: 2.0)</param>
     /// <returns>Simplified polygon as a list of vertices</returns>
-    public static List<(int, int)> DouglasPeucker((int X, int Y)[] polygon, double tolerance = 1)
-    {
-        if (polygon.Length <= 2)
-            return polygon.ToList();
-
-        return DouglasPeuckerRecursive(polygon.AsSpan(), tolerance).ToList();
-    }
+    public static List<(int, int)> DouglasPeucker((int X, int Y)[] polygon, double tolerance = 1) =>
+        polygon.Length <= 2 ? polygon.ToList() : DouglasPeuckerRecursive(polygon.AsSpan(), tolerance).ToList();
 
     /// <summary>
     /// Recursive implementation of Douglas-Peucker algorithm.
@@ -25,7 +20,9 @@ public static class PolygonSimplification
     private static IEnumerable<(int X, int Y)> DouglasPeuckerRecursive(ReadOnlySpan<(int X, int Y)> polygon, double tolerance)
     {
         if (polygon.Length <= 2)
+        {
             return polygon.ToArray();
+        }
 
         // Find the point with maximum distance from the line segment
         var start = polygon[0];
@@ -68,7 +65,9 @@ public static class PolygonSimplification
 
         // If the line segment has zero length, return distance to start point
         if (dx == 0 && dy == 0)
+        {
             return Math.Sqrt(Math.Pow(point.X - lineStart.X, 2) + Math.Pow(point.Y - lineStart.Y, 2));
+        }
 
         // Calculate perpendicular distance using the formula:
         // |ax + by + c| / sqrt(a² + b²)

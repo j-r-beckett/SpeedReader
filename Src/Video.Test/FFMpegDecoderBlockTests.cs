@@ -28,10 +28,7 @@ public class FFMpegDecoderBlockTests
     private const int Height = 75;
     private readonly ILogger _logger;
 
-    public FFMpegDecoderBlockTests(ITestOutputHelper outputHelper)
-    {
-        _logger = new TestLogger(outputHelper);
-    }
+    public FFMpegDecoderBlockTests(ITestOutputHelper outputHelper) => _logger = new TestLogger(outputHelper);
 
     [Theory]
     [InlineData(10)]

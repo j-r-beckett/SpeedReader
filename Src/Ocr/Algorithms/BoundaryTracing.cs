@@ -9,7 +9,7 @@ namespace Ocr.Algorithms;
 public static class BoundaryTracing
 {
     // 8 directions: N, NE, E, SE, S, SW, W, NW
-    private static readonly (int dx, int dy)[] Directions = {
+    private static readonly (int dx, int dy)[] _directions = {
         (0, -1), (1, -1), (1, 0), (1, 1),
         (0, 1), (-1, 1), (-1, 0), (-1, -1)
     };
@@ -39,7 +39,9 @@ public static class BoundaryTracing
             {
                 // Skip already processed pixels
                 if (probabilityMap[y, x] == -1)
+                {
                     continue;
+                }
 
                 // Look for foreground pixels that are boundary pixels
                 if (probabilityMap[y, x] > 0 && IsBoundaryPixel(x, y, probabilityMap))
@@ -65,13 +67,17 @@ public static class BoundaryTracing
     private static bool IsBoundaryPixel(int x, int y, Span2D<float> probabilityMap)
     {
         if (!IsForeground(x, y, probabilityMap))
+        {
             return false;
+        }
 
         // Check all 8 neighbors - boundary if ANY neighbor is background
-        foreach (var (dx, dy) in Directions)
+        foreach (var (dx, dy) in _directions)
         {
             if (IsBackground(x + dx, y + dy, probabilityMap))
+            {
                 return true;
+            }
         }
         return false;
     }
@@ -83,7 +89,9 @@ public static class BoundaryTracing
     {
         // Virtual edges: pixels outside bounds are treated as background
         if (x < 0 || x >= probabilityMap.Width || y < 0 || y >= probabilityMap.Height)
+        {
             return true;
+        }
 
         return probabilityMap[y, x] <= 0; // 0 or -1 (processed)
     }
@@ -91,13 +99,8 @@ public static class BoundaryTracing
     /// <summary>
     /// Checks if a pixel is foreground (value > 0 and within bounds).
     /// </summary>
-    private static bool IsForeground(int x, int y, Span2D<float> probabilityMap)
-    {
-        if (x < 0 || x >= probabilityMap.Width || y < 0 || y >= probabilityMap.Height)
-            return false;
-
-        return probabilityMap[y, x] > 0;
-    }
+    private static bool IsForeground(int x, int y, Span2D<float> probabilityMap) =>
+        x < 0 || x >= probabilityMap.Width || y < 0 || y >= probabilityMap.Height ? false : probabilityMap[y, x] > 0;
 
     /// <summary>
     /// Traces the boundary of a region using Moore boundary tracing with single-trace stopping criterion.
@@ -160,7 +163,9 @@ public static class BoundaryTracing
     {
         // Check if it's the starting pixel
         if (currentX == startX && currentY == startY)
+        {
             return true;
+        }
 
         // Check if it's one of the starting pixel's 8-connected neighbors
         int dx = Math.Abs(currentX - startX);
@@ -175,7 +180,7 @@ public static class BoundaryTracing
     {
         for (int i = 0; i < 8; i++)
         {
-            var (dx, dy) = Directions[i];
+            var (dx, dy) = _directions[i];
             if (IsBackground(x + dx, y + dy, probabilityMap))
             {
                 return i;
@@ -195,7 +200,7 @@ public static class BoundaryTracing
         for (int i = 0; i < 8; i++)
         {
             int dir = (searchStart + i) % 8;
-            var (dx, dy) = Directions[dir];
+            var (dx, dy) = _directions[dir];
             int nextX = currentX + dx;
             int nextY = currentY + dy;
 
@@ -223,13 +228,15 @@ public static class BoundaryTracing
             // Skip if out of bounds or already processed/background
             if (x < 0 || x >= probabilityMap.Width || y < 0 || y >= probabilityMap.Height ||
                 probabilityMap[y, x] <= 0)
+            {
                 continue;
+            }
 
             // Mark as processed
             probabilityMap[y, x] = -1;
 
             // Add all 8-connected foreground neighbors
-            foreach (var (dx, dy) in Directions)
+            foreach (var (dx, dy) in _directions)
             {
                 stack.Push((x + dx, y + dy));
             }
