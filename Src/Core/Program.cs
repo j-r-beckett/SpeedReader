@@ -15,10 +15,18 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        // Create root command
+        if (Environment.GetEnvironmentVariable("SPEEDREADER_DEBUG_WAIT")?.ToLower() == "true")
+        {
+            Console.WriteLine("Waiting for debugger to attach");
+            while (!Debugger.IsAttached)
+            {
+                await Task.Delay(25);
+            }
+            Console.WriteLine("Debugger attached");
+        }
+
         var rootCommand = new RootCommand("SpeedReader - Blazing fast OCR");
 
-        // Add arguments and options
         var inputArgument = new Argument<FileInfo[]>(
             name: "inputs",
             description: "Input image files")
