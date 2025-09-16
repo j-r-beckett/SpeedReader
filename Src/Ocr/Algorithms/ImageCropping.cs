@@ -98,9 +98,24 @@ public static class ImageCropping
         var edges = distances.Take(4).ToList();
 
         // Group edges by length to find parallel pairs
-        var edgeGroups = edges.GroupBy(e => Math.Round(e.distance, 1)).OrderBy(g => g.Key).ToList();
-        var shortEdges = edgeGroups[0].ToList();
-        var longEdges = edgeGroups[1].ToList();
+        var edgeGroups = edges
+            .GroupBy(e => Math.Round(e.distance, 1))
+            .OrderBy(g => g.Key)
+            .Select(g => g.ToList())
+            .ToList();
+        List<(int i, int j, double distance)> shortEdges;
+        List<(int i, int j, double distance)> longEdges;
+
+        if (edgeGroups[0].Count == 4)
+        {
+            shortEdges = edgeGroups[0][..2];
+            longEdges = edgeGroups[0][2..];
+        }
+        else
+        {
+            shortEdges = edgeGroups[0];
+            longEdges = edgeGroups[1];
+        }
 
         // Step 2: Determine text direction (along longer edges) and text height (along shorter edges)
         var textDirectionEdges = longEdges.Count >= 2 ? longEdges : shortEdges;
