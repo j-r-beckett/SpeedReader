@@ -59,7 +59,7 @@ public class DBNetPostprocessingBlock
             // Clamp coordinates to image bounds
             ClampToImageBounds(dilatedPolygon, originalWidth, originalHeight);
 
-            if (dilatedPolygon.Count > 0)
+            if (dilatedPolygon.Count >= 4)
             {
                 textBoundaries.Add(TextBoundary.Create(dilatedPolygon));
             }
