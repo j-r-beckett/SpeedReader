@@ -16,10 +16,7 @@ public class FFProbe
 {
     private readonly string _binaryPath;
 
-    public FFProbe(string binaryPath = "ffprobe")
-    {
-        _binaryPath = binaryPath;
-    }
+    public FFProbe(string binaryPath = "ffprobe") => _binaryPath = binaryPath;
 
     public async Task<(int Width, int Height)> GetVideoDimensions(Stream video,
         CancellationToken cancellationToken)
@@ -36,14 +33,11 @@ public class FFProbe
 
         // Match two comma separated numbers surrounded by optional whitespace, ignoring leading zeros
         var match = Regex.Match(result.StandardOutput, @"^\s*0*(\d+),0*(\d+)\s*$");
-        if (!match.Success
+        return !match.Success
             || !int.TryParse(match.Groups[1].Value, out var width) || width <= 0
-            || !int.TryParse(match.Groups[2].Value, out var height) || height <= 0)
-        {
-            throw new FFPRobeException($"Unable to parse output {result.StandardOutput}");
-        }
-
-        return (width, height);
+            || !int.TryParse(match.Groups[2].Value, out var height) || height <= 0
+            ? throw new FFPRobeException($"Unable to parse output {result.StandardOutput}")
+            : ((int Width, int Height))(width, height);
     }
 
     // Protected virtual for testing

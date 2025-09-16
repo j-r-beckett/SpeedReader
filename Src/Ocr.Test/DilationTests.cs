@@ -310,8 +310,5 @@ public class DilationTests
         return (minX, minY, maxX - minX, maxY - minY);
     }
 
-    private static (double X, double Y) GetCenter((int X, int Y)[] polygon)
-    {
-        return (polygon.Average(p => p.X), polygon.Average(p => p.Y));
-    }
+    private static (double X, double Y) GetCenter((int X, int Y)[] polygon) => (polygon.Average(p => p.X), polygon.Average(p => p.Y));
 }

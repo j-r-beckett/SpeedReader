@@ -18,10 +18,7 @@ public static class ImageCropping
     /// <param name="image">Source image to crop</param>
     /// <param name="rectangle">Axis-aligned rectangle defining the crop area</param>
     /// <returns>Cropped image</returns>
-    public static Image<Rgb24> CropAxisAligned(Image<Rgb24> image, Rectangle rectangle)
-    {
-        return image.Clone(x => x.Crop(rectangle));
-    }
+    public static Image<Rgb24> CropAxisAligned(Image<Rgb24> image, Rectangle rectangle) => image.Clone(x => x.Crop(rectangle));
 
     /// <summary>
     /// Crops an image using an oriented rectangle defined by four corner points.
@@ -39,7 +36,9 @@ public static class ImageCropping
     public static Image<Rgb24> CropOriented(Image<Rgb24> image, List<(double X, double Y)> orientedRectangle)
     {
         if (orientedRectangle == null || orientedRectangle.Count != 4)
+        {
             throw new ArgumentException("Oriented rectangle must have exactly 4 points", nameof(orientedRectangle));
+        }
 
         // Detect orientation and establish proper corner correspondence
         var corners = DetectOrientationAndOrderCorners(orientedRectangle);
@@ -148,12 +147,9 @@ public static class ImageCropping
     /// </summary>
     private static (double X, double Y) FindClosestVertex(
         List<(double X, double Y)> vertices,
-        (double X, double Y) target)
-    {
-        return vertices
+        (double X, double Y) target) => vertices
             .OrderBy(v => CalculateDistance(v, target))
             .First();
-    }
 
 
     /// <summary>

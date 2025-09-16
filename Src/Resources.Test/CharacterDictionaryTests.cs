@@ -19,10 +19,7 @@ public class CharacterDictionaryTests
     }
 
     [Fact]
-    public void Count_ReturnsExpectedVocabularySize()
-    {
-        Assert.Equal(6625, CharacterDictionary.Count);
-    }
+    public void Count_ReturnsExpectedVocabularySize() => Assert.Equal(6625, CharacterDictionary.Count);
 
     [Fact]
     public void IndexToChar_UnknownIndex_ReturnsQuestionMark()

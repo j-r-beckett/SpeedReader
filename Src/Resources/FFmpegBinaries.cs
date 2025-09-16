@@ -31,13 +31,17 @@ internal static class BinaryResolver
 
         // Check cache first
         if (_cachedPaths.TryGetValue(cacheKey, out var cachedPath))
+        {
             return cachedPath;
+        }
 
         lock (_lock)
         {
             // Double-check after acquiring lock
             if (_cachedPaths.TryGetValue(cacheKey, out cachedPath))
+            {
                 return cachedPath;
+            }
 
             // Cache miss - resolve the path
             var resolvedPath = ResolveBinary(GetBinaryName(binary), useSystemPath);
@@ -156,7 +160,10 @@ internal static class BinaryResolver
     {
         try
         {
-            if (!Directory.Exists(directoryPath)) return false;
+            if (!Directory.Exists(directoryPath))
+            {
+                return false;
+            }
 
             var testFile = Path.Combine(directoryPath, $".test_{Environment.ProcessId}");
             File.WriteAllText(testFile, "");
@@ -209,7 +216,9 @@ internal static class BinaryResolver
         {
             var fileInfo = new FileInfo(path);
             if (!fileInfo.Exists)
+            {
                 return false;
+            }
 
             // On Unix, check if file has execute permission
             if (Environment.OSVersion.Platform == PlatformID.Unix)

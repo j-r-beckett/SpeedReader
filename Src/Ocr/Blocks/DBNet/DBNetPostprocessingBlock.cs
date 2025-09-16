@@ -25,10 +25,7 @@ public class DBNetPostprocessingBlock
 
         Target = new TransformBlock<(float[] RawResult, Image<Rgb24> OriginalImage, VizData? VizData), (List<TextBoundary>, Image<Rgb24>, VizData?)>(input =>
         {
-            if (input.VizData != null)
-            {
-                input.VizData.ProbabilityMap = CreateProbabilityMap(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
-            }
+            input.VizData?.ProbabilityMap = CreateProbabilityMap(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 
             var textBoundaries = PostProcess(input.RawResult, input.OriginalImage.Width, input.OriginalImage.Height);
 

@@ -48,12 +48,9 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
             {
                 Action<ITargetBlock<TOut>> handler;
 
-                handler = orphanedTarget =>
-                {
-                    orphanedTarget.Fault(
+                handler = orphanedTarget => orphanedTarget.Fault(
                         new MultiplexerException("Dataflow mesh faulted",
                             primaryCompletionTask.Exception!));
-                };
 
                 var orphanedCompletionHandler = new ActionBlock<ITargetBlock<TOut>>(handler);
                 targets.LinkTo(orphanedCompletionHandler, new DataflowLinkOptions { PropagateCompletion = true });
@@ -93,12 +90,9 @@ public class BlockMultiplexer<TIn, TOut> : IAsyncDisposable
         // cancel it.
         transformerCancellationToken.Register(() => completionSource.TrySetCanceled(transformerCancellationToken));
 
-        if (!await _origin.SendAsync((input, target), multiplexerCancellationToken))
-        {
-            throw new InvalidOperationException($"{nameof(_origin)} declined input");
-        }
-
-        return completionSource.Task;
+        return !await _origin.SendAsync((input, target), multiplexerCancellationToken)
+            ? throw new InvalidOperationException($"{nameof(_origin)} declined input")
+            : completionSource.Task;
     }
 
     public async Task<Task<TOut[]>> ProcessMultiple(IAsyncEnumerable<TIn> inputs,

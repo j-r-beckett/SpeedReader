@@ -116,7 +116,9 @@ public static class OrientedRectangleTestUtils
             {
                 // Skip pixels outside image bounds
                 if (x < 0 || x >= image.Width || y < 0 || y >= image.Height)
+                {
                     continue;
+                }
 
                 var point = new PointF(x, y);
 

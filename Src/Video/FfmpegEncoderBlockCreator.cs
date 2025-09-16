@@ -18,10 +18,7 @@ public class FfmpegEncoderBlockCreator
 {
     private readonly string _binaryPath;
 
-    public FfmpegEncoderBlockCreator()
-    {
-        _binaryPath = FFmpegBinaries.GetFFmpegPath();
-    }
+    public FfmpegEncoderBlockCreator() => _binaryPath = FFmpegBinaries.GetFFmpegPath();
 
     public ITargetBlock<Image<Rgb24>> CreateFfmpegEncoderBlock(
         int width,
@@ -57,10 +54,7 @@ public class FfmpegEncoderBlockCreator
             try
             {
                 // Wait for target block completion, then close input
-                var completionTask = targetBlock.Completion.ContinueWith(async _ =>
-                {
-                    await inputPipe.Writer.CompleteAsync();
-                });
+                var completionTask = targetBlock.Completion.ContinueWith(async _ => await inputPipe.Writer.CompleteAsync());
 
                 var ffmpegTask = Cli.Wrap(_binaryPath)
                     .WithArguments($"-f rawvideo -pix_fmt rgb24 -s {width}x{height} -r {frameRate} -i pipe:0 -c:v libvpx -crf 30 -b:v 100k -speed 16 -threads 1 -f webm pipe:1")

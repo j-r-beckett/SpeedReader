@@ -18,10 +18,7 @@ public class FfmpegDecoderBlockCreator
 {
     private readonly string _binaryPath;
 
-    public FfmpegDecoderBlockCreator()
-    {
-        _binaryPath = FFmpegBinaries.GetFFmpegPath();
-    }
+    public FfmpegDecoderBlockCreator() => _binaryPath = FFmpegBinaries.GetFFmpegPath();
 
     public ISourceBlock<Image<Rgb24>> CreateFfmpegDecoderBlock(Stream videoData, int sampleRate, CancellationToken cancellationToken)
     {

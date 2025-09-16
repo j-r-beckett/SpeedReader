@@ -222,11 +222,9 @@ public static class SvgRenderer
     private static IFluidTemplate LoadTemplate()
     {
         var templateContent = Resource.GetString("templates.svg-visualization.liquid");
-        if (!_parser.TryParse(templateContent, out var template, out var error))
-        {
-            throw new InvalidOperationException($"Failed to parse SVG template: {error}");
-        }
-        return template;
+        return !_parser.TryParse(templateContent, out var template, out var error)
+            ? throw new InvalidOperationException($"Failed to parse SVG template: {error}")
+            : template;
     }
 
     private static string ConvertProbabilityMapToDataUri(Image<L8> probabilityMap)

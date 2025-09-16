@@ -204,7 +204,9 @@ public class OrientedRectangleCreationTests
         double distance = Math.Abs(A * point.X + B * point.Y + C) / Math.Sqrt(A * A + B * B);
 
         if (distance > tolerance)
+        {
             return false;
+        }
 
         // Check if point is within the segment bounds
         double minX = Math.Min(start.X, end.X);
