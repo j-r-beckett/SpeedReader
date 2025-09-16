@@ -24,10 +24,7 @@ public class ModelsTests
         Assert.NotNull(session);
     }
 
-    public static IEnumerable<object[]> GetAllModels()
-    {
-        return Enum.GetValues<Model>().Select(model => new object[] { model });
-    }
+    public static IEnumerable<object[]> GetAllModels() => Enum.GetValues<Model>().Select(model => new object[] { model });
 
     [Fact]
     public void NonExistentModelFile_ThrowsOnnxRuntimeException()

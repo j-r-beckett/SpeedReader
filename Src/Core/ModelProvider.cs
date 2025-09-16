@@ -38,7 +38,10 @@ public class ModelProvider : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         foreach (var session in _sessions.Values)
         {

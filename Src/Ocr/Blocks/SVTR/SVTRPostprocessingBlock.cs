@@ -13,16 +13,13 @@ public class SVTRPostprocessingBlock
 {
     public IPropagatorBlock<(float[], TextBoundary, Image<Rgb24>), (string, double, TextBoundary, Image<Rgb24>)> Target { get; }
 
-    public SVTRPostprocessingBlock()
-    {
-        Target = new TransformBlock<(float[] RawResult, TextBoundary TextBoundary, Image<Rgb24> OriginalImage), (string, double, TextBoundary, Image<Rgb24>)>(input =>
-        {
-            var (recognizedText, confidence) = CTC.DecodeSingleSequence(input.RawResult, CharacterDictionary.Count);
+    public SVTRPostprocessingBlock() => Target = new TransformBlock<(float[] RawResult, TextBoundary TextBoundary, Image<Rgb24> OriginalImage), (string, double, TextBoundary, Image<Rgb24>)>(input =>
+                                             {
+                                                 var (recognizedText, confidence) = CTC.DecodeSingleSequence(input.RawResult, CharacterDictionary.Count);
 
-            return (recognizedText, confidence, input.TextBoundary, input.OriginalImage);
-        }, new ExecutionDataflowBlockOptions
-        {
-            BoundedCapacity = 1
-        });
-    }
+                                                 return (recognizedText, confidence, input.TextBoundary, input.OriginalImage);
+                                             }, new ExecutionDataflowBlockOptions
+                                             {
+                                                 BoundedCapacity = 1
+                                             });
 }

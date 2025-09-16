@@ -8,7 +8,7 @@ namespace Ocr.Algorithms;
 public static class TensorOps
 {
     // Pool with maxArrayLength of 1 Gb (bigger than the ArrayPool.Shared maxArrayLength of 1 Mb)
-    private static ArrayPool<float> s_pool = ArrayPool<float>.Create(1 << 30, 64);
+    private static readonly ArrayPool<float> _pool = ArrayPool<float>.Create(1 << 30, 64);
 
     /// <summary>
     /// Converts tensor layout from HWC (height, width, channels) to NCHW (channels, height, width).
@@ -34,26 +34,30 @@ public static class TensorOps
         {
             workspaceSize = H * W * C;
         }
-        float[] workspace = s_pool.Rent(workspaceSize);  // Array returned by pool may be bigger than workspaceSize
+        float[] workspace = _pool.Rent(workspaceSize);  // Array returned by pool may be bigger than workspaceSize
 
         try
         {
             // Write tensor to workspace, converting to CHW as we go
             for (int h = 0; h < H; h++)
+            {
                 for (int w = 0; w < W; w++)
+                {
                     for (int c = 0; c < C; c++)
                     {
                         int hwcIndex = h * W * C + w * C + c;
                         int chwIndex = c * H * W + h * W + w;
                         workspace[chwIndex] = tensor[hwcIndex];
                     }
+                }
+            }
 
             // Copy workspace back to tensor slice
             workspace.AsSpan()[..workspaceSize].CopyTo(tensor);
         }
         finally
         {
-            s_pool.Return(workspace);
+            _pool.Return(workspace);
         }
     }
 }

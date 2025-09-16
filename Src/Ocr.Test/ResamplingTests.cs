@@ -12,10 +12,7 @@ public class ResamplingTests
 {
     private readonly ITestOutputHelper _output;
 
-    public ResamplingTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    public ResamplingTests(ITestOutputHelper output) => _output = output;
 
     [Theory]
     [InlineData(100, 50)]    // Landscape

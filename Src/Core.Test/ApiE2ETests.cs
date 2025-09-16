@@ -161,10 +161,12 @@ public class ApiE2ETests : IClassFixture<ServerFixture>
         var fooBytes = await SaveImageToBytes(fooImage);
 
         // Create multipart form content
-        using var content = new MultipartFormDataContent();
-        content.Add(new ByteArrayContent(helloBytes), "images", "hello.png");
-        content.Add(new ByteArrayContent(worldBytes), "images", "world.png");
-        content.Add(new ByteArrayContent(fooBytes), "images", "foo.png");
+        using var content = new MultipartFormDataContent
+        {
+            { new ByteArrayContent(helloBytes), "images", "hello.png" },
+            { new ByteArrayContent(worldBytes), "images", "world.png" },
+            { new ByteArrayContent(fooBytes), "images", "foo.png" }
+        };
 
         var response = await _httpClient.PostAsync("/api/ocr", content);
 
@@ -229,9 +231,11 @@ public class ApiE2ETests : IClassFixture<ServerFixture>
         var validBytes = await SaveImageToBytes(validImage);
         var invalidBytes = System.Text.Encoding.UTF8.GetBytes("invalid image data");
 
-        using var content = new MultipartFormDataContent();
-        content.Add(new ByteArrayContent(validBytes), "images", "valid.png");
-        content.Add(new ByteArrayContent(invalidBytes), "images", "invalid.png");
+        using var content = new MultipartFormDataContent
+        {
+            { new ByteArrayContent(validBytes), "images", "valid.png" },
+            { new ByteArrayContent(invalidBytes), "images", "invalid.png" }
+        };
 
         var response = await _httpClient.PostAsync("/api/ocr", content);
 
@@ -337,8 +341,10 @@ public class ServerFixture : IDisposable
         WaitForServerReady(_serverPort, CancellationToken.None).GetAwaiter().GetResult();
 
         // Create HTTP client
-        HttpClient = new HttpClient();
-        HttpClient.BaseAddress = new Uri($"http://localhost:{_serverPort}");
+        HttpClient = new HttpClient
+        {
+            BaseAddress = new Uri($"http://localhost:{_serverPort}")
+        };
     }
 
     private static int GetAvailablePort()
