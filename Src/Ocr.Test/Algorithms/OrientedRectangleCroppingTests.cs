@@ -222,6 +222,26 @@ public class OrientedRectangleCroppingTests
             $"Height should be within ±2 of {expectedHeight}, got {actualHeight}");
     }
 
+    [Fact]
+    public void CropOriented_WithSquareOrientedRectangle_ShouldCropSuccessfully()
+    {
+        // Create a square oriented rectangle where all edges have equal length
+        var squareVertices = new List<(double X, double Y)>
+        {
+            (100.0, 100.0),
+            (200.0, 100.0),
+            (200.0, 200.0),
+            (100.0, 200.0)
+        };
+
+        using var testImage = new Image<Rgb24>(300, 300);
+
+        using var croppedImage = ImageCropping.CropOriented(testImage, squareVertices);
+
+        Assert.Equal(100, croppedImage.Width);
+        Assert.Equal(100, croppedImage.Height);
+    }
+
     /// <summary>
     /// Generates all permutations of a collection of items.
     /// </summary>
