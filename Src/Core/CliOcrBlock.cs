@@ -58,37 +58,42 @@ public class CliOcrBlock
         mergeBlock.Source.LinkTo(outputEmitterBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
         Target = fileReaderBlock;
-        Completion = outputEmitterBlock.Completion.ContinueWith(_ =>
+        Completion = outputEmitterBlock.Completion.ContinueWith(sts =>
         {
             if (_config.JsonOutput)
             {
                 Console.WriteLine("\n]");
             }
             modelProvider.Dispose();
+            if (sts.IsFaulted)
+            {
+                throw sts.Exception;
+            }
         });
     }
 
-    private TransformBlock<string, (Image<Rgb24> Image, string Filename)> CreateFileReaderBlock() => new TransformBlock<string, (Image<Rgb24> Image, string Filename)>(async filename =>
-                                                                                                          {
-                                                                                                              try
-                                                                                                              {
-                                                                                                                  var fileInfo = new FileInfo(filename);
-                                                                                                                  if (!fileInfo.Exists)
-                                                                                                                  {
-                                                                                                                      Console.Error.WriteLine($"Error: Input file '{filename}' not found.");
-                                                                                                                      Environment.Exit(1);
-                                                                                                                  }
+    private TransformBlock<string, (Image<Rgb24> Image, string Filename)> CreateFileReaderBlock() =>
+        new(async filename =>
+        {
+            try
+            {
+                var fileInfo = new FileInfo(filename);
+                if (!fileInfo.Exists)
+                {
+                    Console.Error.WriteLine($"Error: Input file '{filename}' not found.");
+                    Environment.Exit(1);
+                }
 
-                                                                                                                  var image = await Image.LoadAsync<Rgb24>(filename);
-                                                                                                                  return (image, filename);
-                                                                                                              }
-                                                                                                              catch (Exception ex)
-                                                                                                              {
-                                                                                                                  Console.Error.WriteLine($"Error loading '{filename}': {ex.Message}");
-                                                                                                                  Environment.Exit(1);
-                                                                                                                  throw; // Never reached
-                                                                                                              }
-                                                                                                          }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
+                var image = await Image.LoadAsync<Rgb24>(filename);
+                return (image, filename);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error loading '{filename}': {ex.Message}");
+                Environment.Exit(1);
+                throw; // Never reached
+            }
+        }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
     private ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizData? VizData, string Filename)> CreateOutputEmitterBlock()
     {

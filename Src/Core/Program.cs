@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.CommandLine;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
@@ -91,10 +92,8 @@ public class Program
 
     private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode, bool jsonOutput)
     {
-        // Initialize metrics
         var meter = new Meter("SpeedReader.Ocr");
 
-        // Create CLI OCR pipeline
         var config = new CliOcrBlock.Config
         {
             VizMode = vizMode,
@@ -103,14 +102,16 @@ public class Program
         };
         var cliOcrBlock = new CliOcrBlock(config);
 
-        // Send all filenames to the pipeline
+        var inputBuffer = new BufferBlock<string>();
+
+        inputBuffer.LinkTo(cliOcrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
+
         foreach (var input in inputs)
         {
-            await cliOcrBlock.Target.SendAsync(input.FullName);
+            await inputBuffer.SendAsync(input.FullName);
         }
 
-        // Complete the pipeline and await completion
-        cliOcrBlock.Target.Complete();
+        inputBuffer.Complete();
         await cliOcrBlock.Completion;
     }
 
