@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
-
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -25,9 +24,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Resources\Resources.csproj" />
   </ItemGroup>
-
-  <Target Name="CleanModelsBeforeBuild" BeforeTargets="BeforeBuild">
-    <RemoveDir Directories="$(OutputPath)models" Condition="Exists('$(OutputPath)models')" />
-  </Target>
 
 </Project>
