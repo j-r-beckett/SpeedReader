@@ -314,7 +314,10 @@ public class ServerFixture : IDisposable
     private readonly StringBuilder _stdErrBuffer = new();
     private readonly string _logFilePath;
 
-    public HttpClient HttpClient { get; }
+    public HttpClient HttpClient
+    {
+        get;
+    }
 
     public ServerFixture()
     {

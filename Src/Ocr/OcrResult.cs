@@ -8,7 +8,10 @@ namespace Ocr
     public record OcrResult
     {
         [JsonPropertyName("pageNumber")]
-        public int PageNumber { get; init; }
+        public int PageNumber
+        {
+            get; init;
+        }
 
         [JsonPropertyName("blocks")]
         public List<Block> Blocks { get; init; } = new();
@@ -26,7 +29,10 @@ namespace Ocr
         public List<JsonPoint> Polygon { get; init; } = new();
 
         [JsonPropertyName("aarectangle")]
-        public required AARectangle AARectangle { get; init; }
+        public required AARectangle AARectangle
+        {
+            get; init;
+        }
 
         [JsonPropertyName("orectangle")]
         public List<JsonPoint> ORectangle { get; init; } = new();
@@ -35,25 +41,43 @@ namespace Ocr
     public record JsonPoint
     {
         [JsonPropertyName("x")]
-        public double X { get; init; }
+        public double X
+        {
+            get; init;
+        }
 
         [JsonPropertyName("y")]
-        public double Y { get; init; }
+        public double Y
+        {
+            get; init;
+        }
     }
 
     public record AARectangle
     {
         [JsonPropertyName("x")]
-        public double X { get; init; }
+        public double X
+        {
+            get; init;
+        }
 
         [JsonPropertyName("y")]
-        public double Y { get; init; }
+        public double Y
+        {
+            get; init;
+        }
 
         [JsonPropertyName("width")]
-        public double Width { get; init; }
+        public double Width
+        {
+            get; init;
+        }
 
         [JsonPropertyName("height")]
-        public double Height { get; init; }
+        public double Height
+        {
+            get; init;
+        }
     }
 
     public record Block
@@ -62,10 +86,16 @@ namespace Ocr
         public string Id { get; init; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public required BoundingBox BoundingBox { get; init; }
+        public required BoundingBox BoundingBox
+        {
+            get; init;
+        }
 
         [JsonPropertyName("confidence")]
-        public double Confidence { get; init; }
+        public double Confidence
+        {
+            get; init;
+        }
 
         [JsonPropertyName("lineIds")]
         public List<string> LineIds { get; init; } = new();
@@ -77,10 +107,16 @@ namespace Ocr
         public string Id { get; init; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public required BoundingBox BoundingBox { get; init; }
+        public required BoundingBox BoundingBox
+        {
+            get; init;
+        }
 
         [JsonPropertyName("confidence")]
-        public double Confidence { get; init; }
+        public double Confidence
+        {
+            get; init;
+        }
 
         [JsonPropertyName("text")]
         public string Text { get; init; } = string.Empty;
@@ -95,10 +131,16 @@ namespace Ocr
         public string Id { get; set; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public required BoundingBox BoundingBox { get; init; }
+        public required BoundingBox BoundingBox
+        {
+            get; init;
+        }
 
         [JsonPropertyName("confidence")]
-        public double Confidence { get; init; }
+        public double Confidence
+        {
+            get; init;
+        }
 
         [JsonPropertyName("text")]
         public string Text { get; init; } = string.Empty;

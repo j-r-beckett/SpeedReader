@@ -12,7 +12,10 @@ namespace Ocr;
 
 public class VideoOcrBlock
 {
-    public ISourceBlock<(Image<Rgb24>, OcrResult, VizData?)> Source { get; init; }
+    public ISourceBlock<(Image<Rgb24>, OcrResult, VizData?)> Source
+    {
+        get; init;
+    }
 
     public VideoOcrBlock(OcrBlock ocrBlock, Stream video, int sampleRate)
     {

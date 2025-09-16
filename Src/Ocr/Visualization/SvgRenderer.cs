@@ -16,10 +16,22 @@ public static class SvgRenderer
 
     public class BoundingBox
     {
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
+        public double X
+        {
+            get; set;
+        }
+        public double Y
+        {
+            get; set;
+        }
+        public double Width
+        {
+            get; set;
+        }
+        public double Height
+        {
+            get; set;
+        }
     }
 
     public class OrientedBoundingBox
@@ -35,11 +47,26 @@ public static class SvgRenderer
     public class TextItem
     {
         public string Text { get; set; } = string.Empty;
-        public double CenterX { get; set; }
-        public double CenterY { get; set; }
-        public double FontSize { get; set; }
-        public double RotationAngle { get; set; }
-        public double Confidence { get; set; }
+        public double CenterX
+        {
+            get; set;
+        }
+        public double CenterY
+        {
+            get; set;
+        }
+        public double FontSize
+        {
+            get; set;
+        }
+        public double RotationAngle
+        {
+            get; set;
+        }
+        public double Confidence
+        {
+            get; set;
+        }
     }
 
     public class LegendItem
@@ -53,10 +80,19 @@ public static class SvgRenderer
 
     public class TemplateData
     {
-        public int Width { get; set; }
-        public int Height { get; set; }
+        public int Width
+        {
+            get; set;
+        }
+        public int Height
+        {
+            get; set;
+        }
         public string BaseImageDataUri { get; set; } = string.Empty;
-        public string? ProbabilityMapDataUri { get; set; }
+        public string? ProbabilityMapDataUri
+        {
+            get; set;
+        }
         public BoundingBox[] BoundingBoxes { get; set; } = [];
         public OrientedBoundingBox[] OrientedBoundingBoxes { get; set; } = [];
         public Polygon[] Polygons { get; set; } = [];

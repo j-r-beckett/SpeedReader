@@ -61,7 +61,10 @@ public static class Serve
             for (int i = 0; i < results.Length; i++)
             {
                 var (image, result, _) = results[i];
-                ocrResults.Add(result with { PageNumber = i });
+                ocrResults.Add(result with
+                {
+                    PageNumber = i
+                });
 
                 // Dispose image after processing
                 image.Dispose();

@@ -12,7 +12,10 @@ namespace Ocr.Blocks.DBNet;
 
 public class DBNetModelRunnerBlock
 {
-    public IPropagatorBlock<(float[], Image<Rgb24>, VizData?), (float[], Image<Rgb24>, VizData?)> Target { get; }
+    public IPropagatorBlock<(float[], Image<Rgb24>, VizData?), (float[], Image<Rgb24>, VizData?)> Target
+    {
+        get;
+    }
 
     public DBNetModelRunnerBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {
