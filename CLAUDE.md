@@ -1,21 +1,80 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Projects
 
-## Project Overview
+### Core
+Application entrypoint. Builds a self-contained binary that can identify and recognize text in images and videos. Can be used either as a CLI tool or as an API server.
 
-SpeedReader is a .NET 10.0 OCR (Optical Character Recognition) solution with seven main components:
-- **Core**: CLI application for text detection and recognition in images and videos
-- **Video**: Video processing library using FFMpegCore, CliWrap, and streaming components
-- **Video.Test**: Test project with video generation and processing tests
-- **Models**: ONNX machine learning model management using Microsoft.ML.OnnxRuntime
-- **Models.Test**: Test project that verifies the Models build process correctly generated the models
-- **Ocr**: OCR functionality with DBNet text detection and SVTRv2 text recognition
-- **Ocr.Test**: Test project for OCR components and end-to-end text processing
+### Core.Test
 
-## Common Commands
+### Ocr
+OCR functionality. Uses a TPL Dataflow pipeline: text detection (DBNet) -> text recognition (SVTR) -> post-processing.
 
-### Build and Test
+The entire pipeline is wrapped by Src/Ocr/Blocks/OcrBlock.cs. When trying to understand how the pipeline works, start in OcrBlock and expand outward.
+
+All control flow blocks should have BoundedCapacity = 1. This ensures backpressure, and prevents the pipeline from having excessive internal capacity.
+
+All blocks should propagate completion. This can be done either by using `.LinkTo(new DataflowLinkOptions { PropagateCompletion = true })`, or with this idiom:
+
+```csharp
+block.Completion.ContinueWith(t =>
+{
+    if (t.IsFaulted)
+    {
+        ((IDataflowBlock)nextBlock).Fault(t.Exception);
+    }
+    else
+    {
+        nextBlock.Complete();
+    }
+});
+```
+
+When trying to understand how the parts of Dataflow pipeline fit together, focus on the input and output types of blocks and how blocks are linked together.
+
+Complex algorithms are implemented in static classes in Src/Ocr/Algorithms.
+
+### Ocr.Test
+
+### Resources
+Embeds application resources in the application binary and makes them available to other projects.
+
+Contains models, fonts, the SVG visualization template, and ffmpeg and ffprobe binaries. All embedded resources should be managed by this project.
+
+### Resources.Test
+
+### Video
+Decodes and encodes videos using ffmpeg.
+
+Starts an ffmpeg process using CliWrap, then interacts with it using pipes to provide backpressure (ffmpeg stops accepting input over stdin when its internal buffer is full).
+
+### Video.Test
+
+### TestUtils
+Contains utilities useful for testing.
+- Backpressure: utility for verifying that Dataflow blocks emit and respond to backpressure
+- CapturingLogger: saves logger output
+- TestLogger: log to console in a unit test
+- FileSystemUrlPublisher: saves images (and other data) to disk, and writes log messages containing URLs that point to written files
+
+## Development
+
+## Guidance
+- 100% test pass rate is enforced by a pre-commit hook. The ONLY acceptable pass rate for tests is 100%
+- Changing test tuning or disabling tests to get to 100% pass rate is NEVER acceptable
+- Feature development is only complete once the build succeeds with zero warnings and all tests pass
+- When working on a feature, try to build and test while developing the feature instead of only once at the end
+- Avoid excessive or overly helpful commenting
+- Do not make any changes outside the scope of the current feature
+- If the user mentions a type you're not familiar with, learn how to use it by doing a quick search through the codebase
+- Always use synthetic data during testing. Use ImageSharp to generate images with text. See examples in existing tests for how to do this properly
+
+## Package Management
+- All package versions are managed in `Directory.Packages.props`. Project files reference packages without version attributes
+- Use `dotnet package add` to add new packages and `dotnet reference add` to add new project references. Do not edit project files manually
+- Never introduce a new dependency without consulting the user
+
+## Build and Test
 ```bash
 # Build entire solution
 dotnet build
@@ -27,109 +86,39 @@ timeout 60s bash -c "dotnet build && dotnet test --no-build"
 # Run specific test with detailed output
 timeout 60s bash -c "dotnet build && dotnet test --no-build --logger 'console;verbosity=detailed' --filter 'CanDecodeRedBlueFrames'"
 
-# Run backpressure test
-timeout 60s bash -c "dotnet build && dotnet test --no-build --logger 'console;verbosity=detailed' --filter 'BackpressureStopsInputConsumption'"
-
-# Run single test project
-timeout 60s bash -c "dotnet build && dotnet test Src/Video.Test/ --no-build"
-
-# Run Models tests (verifies build process generated valid models)
-timeout 60s bash -c "dotnet build && dotnet test Src/Models.Test/ --no-build"
-
-# Run OCR tests (end-to-end text detection and recognition)
-timeout 60s bash -c "dotnet build && dotnet test Src/Ocr.Test/ --no-build"
-
-# Clean and restore
-dotnet clean
-dotnet restore
-
-# Run the CLI application
-dotnet run --project Src/Core/ -- [arguments]
+# Run a standalone C# file, useful for experimentation
+dotnet run MyFile.cs
 ```
 
-## Architecture Notes
+## CLI
+```bash
+# Run the CLI application
+dotnet run --project Src/Core/ -- [arguments]
 
-### OCR Pipeline
-SpeedReader processes images through a complete OCR pipeline:
+# Start and wait for debugger to attach
+SPEEDREADER_DEBUG_WAIT=true dotnet run --project Src/Core/ -- [arguments]
+```
 
-1. **Input**: Image or video frame (via Core CLI application)
-2. **Text Detection**: DBNet model identifies text regions with bounding boxes
-3. **Text Recognition**: SVTRv2 model reads text content from detected regions
-4. **Output**: Annotated image with bounding boxes and recognized text
+```bash
+# CLI help
+$ dotnet run --project Src/Core/ -- -h
+Description:
+  SpeedReader - Blazing fast OCR
 
-### Backpressure Implementation
+Usage:
+  speedread [<inputs>...] [command] [options]
 
-**FFmpeg + Unix pipes provide natural backpressure coordination** - when stdout blocks, FFmpeg automatically pauses stdin. No manual throttling needed.
+Arguments:
+  <inputs>  Input image files
 
-#### Decoder Chain
-`Stream` → `StreamingPipeSource` → `FFmpeg` → `StreamingPipeTarget` → `BufferBlock<Image<Rgb24>>(capacity=2)` → Consumer
+Options:
+  --serve                        Run as HTTP server
+  --viz <Basic|Diagnostic|None>  Visualization mode [default: None]
+  --json                         Full JSON output with detailed metadata and confidence scores
+  --version                      Show version information
+  -?, -h, --help                 Show help and usage information
 
-**Slow consumer** → BufferBlock fills → `SendAsync()` blocks → PipeReader stops → StreamingPipeTarget pipe fills → **Unix pipe blocks** → FFmpeg stdout blocks → **FFmpeg pauses stdin** → input stream stops
 
-#### Encoder Chain
-Producer → `ActionBlock<Image<Rgb24>>(capacity=2)` → `Pipe.Writer` → `StreamingPipeSource` → `FFmpeg` → `StreamingPipeTarget` → Consumer
-
-**Key insight**: Unix pipes + FFmpeg = automatic coordination. Don't reinvent this with polling or manual throttling.
-
-### Models Project Architecture
-
-#### Model Build Process
-The Models project uses a Docker-based build system to generate ONNX models:
-- **buildModels.sh**: Builds a Docker container and extracts generated models to the `models/` directory
-- **MSBuild Integration**: Models are automatically built before compilation via `BuildModels` target
-- **Auto-copy**: Generated models are included as `None` items and copied to output directory
-- **Clean Integration**: `CleanModels` target removes generated models during clean operations
-
-#### ModelZoo Class
-- **GetInferenceSession()**: Factory method for creating ONNX inference sessions from model enums
-- **Model Enum**: Defines available models (DbNet18, SVTRv2) with corresponding directory names
-- **Assembly-relative Paths**: Models are located relative to assembly location for deployment flexibility
-- **Standard Structure**: Each model follows `models/{model_name}/end2end.onnx` pattern
-
-#### Models and Models.Test: Stale File Prevention
-
-**Models Project:**
-- **Generated files**: `models/` directory contains Docker-generated ONNX models and metadata
-- **Incremental builds**: Uses `models/.built` marker file - only rebuilds when `modelBuilder/` files change
-- **Clean behavior**: `dotnet clean` removes `models/` directory and `.built` marker
-
-**Models.Test Project:**
-- **Clean generated models**: `CleanModelsBeforeBuild` target removes copied models directory before every build
-- **Canary function**: Tests validate models load correctly, detecting stale model issues in other projects
-
-### OCR Components
-
-#### Text Detection (DBNet)
-- **Input**: RGB images in NCHW format (N, C=3, H, W)
-- **Output**: Probability maps NHW (N, H, W) indicating text detection confidence
-- **Post-processing**: Contour detection, polygon generation, and filtering in `Ocr/Algorithms/`
-
-#### Text Recognition (SVTRv2)
-- **Input**: Text region images normalized to height 48, variable width
-- **Output**: CTC character sequence probabilities
-- **Vocabulary**: 6625 characters (multilingual Chinese+English)
-- **Decoding**: CTC decoding to extract final text strings
-
-#### Streaming Architecture
-- **TPL Dataflow**: Bounded blocks propagate backpressure to application layer
-- **System.IO.Pipelines**: Memory-efficient streaming with configurable thresholds
-- **Concurrent Processing**: Frame processing happens concurrently with FFmpeg processing using `Task.WhenAll()`
-
-### Core Application
-- **CLI Interface**: Command-line tool for processing images and videos
-- **Self-contained**: Single-file deployment with embedded FFmpeg binaries
-- **Output Publishing**: Flexible output system with file system publisher
-
-### Implementation Notes
-
-#### Central Package Management
-All package versions are managed in `Directory.Packages.props`. Project files reference packages without version attributes.
-
-#### Test Output Location
-Test-generated media files are saved to `/tmp/` and logged with `file://wsl$/Ubuntu` URLs for direct access in WSL environments.
-
-#### Performance Characteristics
-- **Memory efficient**: No large buffer accumulation, frames processed as they arrive
-- **Responsive**: Sub-millisecond backpressure response via Unix pipe coordination
-- **Scalable**: Natural flow control prevents memory bloat regardless of input size
-- **Deterministic**: Stops at exact buffer limits, verified by automated tests
+Commands:
+  video <path> <frameRate>  Process video files with OCR
+```
