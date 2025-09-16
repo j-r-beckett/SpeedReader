@@ -14,7 +14,10 @@ public class SVTRPreprocessingBlock
     private readonly int _width;
     private readonly int _height;
 
-    public IPropagatorBlock<(TextBoundary, Image<Rgb24>), (float[], TextBoundary, Image<Rgb24>)> Target { get; }
+    public IPropagatorBlock<(TextBoundary, Image<Rgb24>), (float[], TextBoundary, Image<Rgb24>)> Target
+    {
+        get;
+    }
 
     public SVTRPreprocessingBlock(SvtrConfiguration config)
     {

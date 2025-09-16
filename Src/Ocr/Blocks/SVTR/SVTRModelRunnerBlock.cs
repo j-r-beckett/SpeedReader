@@ -11,7 +11,10 @@ namespace Ocr.Blocks.SVTR;
 
 public class SVTRModelRunnerBlock
 {
-    public IPropagatorBlock<(float[], TextBoundary, Image<Rgb24>), (float[], TextBoundary, Image<Rgb24>)> Target { get; }
+    public IPropagatorBlock<(float[], TextBoundary, Image<Rgb24>), (float[], TextBoundary, Image<Rgb24>)> Target
+    {
+        get;
+    }
 
     public SVTRModelRunnerBlock(InferenceSession session, OcrConfiguration config, Meter meter)
     {
