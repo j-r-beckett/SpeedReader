@@ -8,8 +8,14 @@ namespace Video;
 
 public class DeduplicatorBlock
 {
-    public ITargetBlock<OcrResult> Target { get; set; }
-    public ISourceBlock<OcrResult> Source { get; set; }
+    public ITargetBlock<OcrResult> Target
+    {
+        get; set;
+    }
+    public ISourceBlock<OcrResult> Source
+    {
+        get; set;
+    }
 
     public DeduplicatorBlock(int maxLevDist)
     {

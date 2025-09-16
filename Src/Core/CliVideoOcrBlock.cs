@@ -16,8 +16,14 @@ namespace Core;
 
 public class CliVideoOcrBlock
 {
-    public ISourceBlock<OcrResult> ResultsBlock { get; init; }
-    public Task Completion { get; init; }
+    public ISourceBlock<OcrResult> ResultsBlock
+    {
+        get; init;
+    }
+    public Task Completion
+    {
+        get; init;
+    }
 
     public CliVideoOcrBlock(string videoFilePath, int sampleRate)
     {

@@ -106,7 +106,10 @@ public class CliOcrBlock
             try
             {
                 // Update page number
-                var resultWithPageNumber = ocrResult with { PageNumber = pageNumber };
+                var resultWithPageNumber = ocrResult with
+                {
+                    PageNumber = pageNumber
+                };
 
                 // Generate viz file path if applicable
                 string? vizFilePath = null;

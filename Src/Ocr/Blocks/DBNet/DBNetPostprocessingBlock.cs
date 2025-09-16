@@ -16,7 +16,10 @@ public class DBNetPostprocessingBlock
     private readonly int _width;
     private readonly int _height;
 
-    public IPropagatorBlock<(float[], Image<Rgb24>, VizData?), (List<TextBoundary>, Image<Rgb24>, VizData?)> Target { get; }
+    public IPropagatorBlock<(float[], Image<Rgb24>, VizData?), (List<TextBoundary>, Image<Rgb24>, VizData?)> Target
+    {
+        get;
+    }
 
     public DBNetPostprocessingBlock(DbNetConfiguration config)
     {

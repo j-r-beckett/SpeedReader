@@ -15,7 +15,10 @@ public class DBNetPreprocessingBlock
     private readonly int _width;
     private readonly int _height;
 
-    public IPropagatorBlock<(Image<Rgb24>, VizData?), (float[], Image<Rgb24>, VizData?)> Target { get; }
+    public IPropagatorBlock<(Image<Rgb24>, VizData?), (float[], Image<Rgb24>, VizData?)> Target
+    {
+        get;
+    }
 
     public DBNetPreprocessingBlock(DbNetConfiguration config)
     {
