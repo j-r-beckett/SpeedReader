@@ -60,7 +60,7 @@ public class Backpressure
 
         int count = inputCount;
 
-        await Task.Delay(initialDelay);
+        await Task.Delay(Min(initialDelay / 8, TimeSpan.FromMilliseconds(100)));
 
         Assert.True(count == inputCount, $"{nameof(sut)} continued to consume input after backpressure should have been engaged, {inputCount} items consumed");
 
@@ -68,8 +68,11 @@ public class Backpressure
 
         outputConsumer.LinkTo(outputBucket);
 
-        await Task.Delay(initialDelay);
+        await Task.Delay(Min(initialDelay / 8, TimeSpan.FromMilliseconds(100)));
+
 
         Assert.True(count < inputCount, $"{nameof(sut)} did not consume any input after backpressure was released");
     }
+
+    private static TimeSpan Min(TimeSpan a, TimeSpan b) => a <= b ? a : b;
 }
