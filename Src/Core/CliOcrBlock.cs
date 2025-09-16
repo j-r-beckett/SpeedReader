@@ -155,7 +155,7 @@ public class CliOcrBlock
                 {
                     // Pipe-separated output: filename|line1|line2|line3...
                     var lines = ocrResult.Lines
-                        .Select(line => line.Text.Replace('|', ' ').Replace('\t', ' ').Replace('\n', ' ').Replace('\r', ' ').Trim())
+                        .Select(line => line.Text.Replace('|', ' ').Trim())
                         .Where(line => line != string.Empty);
                     var pipeOutput = string.Join(" | ", new[] { filename.Replace('|', ' ') }.Concat(lines));
                     Console.WriteLine(pipeOutput);
@@ -172,7 +172,6 @@ public class CliOcrBlock
             }
             finally
             {
-                // Dispose image after processing
                 image.Dispose();
             }
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
