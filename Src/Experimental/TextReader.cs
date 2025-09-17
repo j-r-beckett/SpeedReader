@@ -8,14 +8,14 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Experimental;
 
-public class OcrProcessor
+public class TextReader
 {
     private readonly SemaphoreSlim _semaphore;
 
     private readonly Func<TextDetector> _detectorFactory;
     private readonly Func<TextRecognizer> _recognizerFactory;
 
-    public OcrProcessor(Func<TextDetector> detectorFactory, Func<TextRecognizer> recognizerFactory, int maxParallelism, int maxBatchSize)
+    public TextReader(Func<TextDetector> detectorFactory, Func<TextRecognizer> recognizerFactory, int maxParallelism, int maxBatchSize)
     {
         _detectorFactory = detectorFactory;
         _recognizerFactory = recognizerFactory;
@@ -23,7 +23,7 @@ public class OcrProcessor
         _semaphore = new SemaphoreSlim(capacity, capacity);
     }
 
-    public async IAsyncEnumerable<OcrResult> ProcessMany(IAsyncEnumerable<Image<Rgb24>> images)
+    public async IAsyncEnumerable<OcrResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
     {
         var processingTasks = Channel.CreateUnbounded<Task<OcrResult>>();
 
@@ -31,7 +31,7 @@ public class OcrProcessor
         {
             await foreach (var image in images)
             {
-                await processingTasks.Writer.WriteAsync(await Process(image));
+                await processingTasks.Writer.WriteAsync(await ReadOne(image));
             }
 
             processingTasks.Writer.Complete();
@@ -46,7 +46,7 @@ public class OcrProcessor
     }
 
     // Outer task (first await) is the handoff, inner task (second await) is actual processing
-    public async Task<Task<OcrResult>> Process(Image<Rgb24> image)
+    public async Task<Task<OcrResult>> ReadOne(Image<Rgb24> image)
     {
         await _semaphore.WaitAsync();
         return Task.Run(async () =>
