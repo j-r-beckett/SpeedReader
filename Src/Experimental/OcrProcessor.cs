@@ -1,41 +1,73 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Experimental.Inference;
+using System.Threading.Channels;
 using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Experimental;
 
-public class OcrProcessor : BaseProcessor<Image<Rgb24>, OcrResult>
+public class OcrProcessor
 {
-    private readonly ModelRunner _dbnetRunner;
-    private readonly ModelRunner _svtrRunner;
+    private readonly SemaphoreSlim _semaphore;
 
-    public OcrProcessor(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism) : base(maxParallelism)
+    private readonly Func<TextDetector> _detectorFactory;
+    private readonly Func<TextRecognizer> _recognizerFactory;
+
+    public OcrProcessor(Func<TextDetector> detectorFactory, Func<TextRecognizer> recognizerFactory, int maxParallelism, int maxBatchSize)
     {
-        _dbnetRunner = dbnetRunner;
-        _svtrRunner = svtrRunner;
+        _detectorFactory = detectorFactory;
+        _recognizerFactory = recognizerFactory;
+        var capacity = maxParallelism * maxBatchSize * 2;
+        _semaphore = new SemaphoreSlim(capacity, capacity);
     }
 
-    protected override async Task<OcrResult> ProcessProtected(Image<Rgb24> image)
+    public async IAsyncEnumerable<OcrResult> ProcessMany(IAsyncEnumerable<Image<Rgb24>> images)
     {
-        var detector = new TextDetector(DBNetInference);
-        var recognizer = new TextRecognizer(SVTRv2Inference);
+        var processingTasks = Channel.CreateUnbounded<Task<OcrResult>>();
 
-        var detections = await detector.Detect(image);
-        var recognitionTasks = detections.Select(d => recognizer.Recognize(d, image)).ToList();
-        var recognitions = await Task.WhenAll(recognitionTasks);
-        return AssembleResults(detections, recognitions.ToList());
+        var processingTaskStarter = Task.Run(async () =>
+        {
+            await foreach (var image in images)
+            {
+                await processingTasks.Writer.WriteAsync(await Process(image));
+            }
+
+            processingTasks.Writer.Complete();
+        });
+
+        await foreach (var task in processingTasks.Reader.ReadAllAsync())
+        {
+            yield return await task;
+        }
+
+        await processingTaskStarter;
+    }
+
+    // Outer task (first await) is the handoff, inner task (second await) is actual processing
+    public async Task<Task<OcrResult>> Process(Image<Rgb24> image)
+    {
+        await _semaphore.WaitAsync();
+        return Task.Run(async () =>
+        {
+            try
+            {
+                var detector = _detectorFactory();
+                var recognizer = _recognizerFactory();
+
+                var detections = await detector.Detect(image);
+                var recognitionTasks = detections.Select(d => recognizer.Recognize(d, image)).ToList();
+                var recognitions = await Task.WhenAll(recognitionTasks);
+                return AssembleResults(detections, recognitions.ToList());
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        });
     }
 
     private OcrResult AssembleResults(List<TextBoundary> detections,
         List<(string Text, double Confidence)> recognitions) => new OcrResult();
-
-    // Override for testing
-    protected virtual Task<float[]> DBNetInference(float[] input) => RunOutside(() => _dbnetRunner.Run(input));
-
-    // Override for testing
-    protected virtual Task<float[]> SVTRv2Inference(float[] input) => RunOutside(() => _svtrRunner.Run(input));
 }

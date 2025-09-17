@@ -12,7 +12,7 @@ public class CpuModelRunner : ModelRunner
     private readonly Task _inputsToInferenceBlockTask;
     private readonly Task _inferenceBlockToOutputsTask;
 
-    public CpuModelRunner(InferenceSession inferenceSession, int maxParallelism, int maxBatchSize) : base(maxBatchSize, inferenceSession)
+    public CpuModelRunner(InferenceSession inferenceSession, int maxParallelism) : base(inferenceSession)
     {
         _inferenceRunnerBlock = new TransformBlock<float[], float[]>(RunInference,
             new ExecutionDataflowBlockOptions
@@ -36,7 +36,8 @@ public class CpuModelRunner : ModelRunner
 
     private async Task InferenceBlockToOutputs()
     {
-        var actionBlock = new ActionBlock<float[]>(async result => await Outputs.Writer.WriteAsync(result));
+        var actionBlock = new ActionBlock<float[]>(async result => await Outputs.Writer.WriteAsync(result),
+            new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
         _inferenceRunnerBlock.LinkTo(actionBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
