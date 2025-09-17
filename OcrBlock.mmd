@@ -1,0 +1,84 @@
+stateDiagram-v2
+    [*] --> OcrBlock
+    OcrBlock: OCR Pipeline
+
+    state OcrBlock {
+        [*] --> TextDet
+        TextDet --> TextRec
+
+        TextDet: Text Detection w/ DBNet
+        state TextDet {
+            DBNetPreProcessing: Preprocess
+            DBNetInference: DBNet Inference (1)
+            DBNetPostProcessing: Postprocess
+
+            DBNetPreProcessing --> DBNetInference
+            DBNetInference --> DBNetPostProcessing
+
+            state DBNetInference {
+                DBNetSplit: Split metadata
+                DBNetMerge: Merge w/ metadata
+
+                DBNetSplit --> DBNetNestedInference
+                DBNetSplit --> DBNetMerge: Metadata
+
+                DBNetNestedInference --> DBNetMerge
+
+                DBNetNestedInference: DBNet Inference (2)
+                state DBNetNestedInference {
+                    DBNetInferenceBatch: Batch
+                    DBNetModelExecution: Run DBNet
+                    DBNetInferenceUnBatch: Un-batch
+
+                    DBNetInferenceBatch --> DBNetModelExecution
+                    DBNetModelExecution --> DBNetInferenceUnBatch
+                }
+            }
+        }
+
+        TextRec: Text Recognition w/ SVTRv2
+        state TextRec {
+            SVTRv2TopLevelSplit --> SVTRv2UnBatch: Non-empty batches
+            SVTRv2TopLevelSplit: Empty/non-empty batch split
+
+            SVTRv2PreProcessing: Preprocess
+            SVTRv2Inference: SVTRv2 Inference (1)
+            SVTRv2PostProcessing: Postprocess
+
+            SVTRv2UnBatch --> SVTRv2PreProcessing
+            SVTRv2UnBatch: Split into individual elements
+            SVTRv2PreProcessing --> SVTRv2Inference
+            SVTRv2Inference --> SVTRv2PostProcessing
+
+            state SVTRv2Inference {
+                SVTRv2Split: Split metadata
+                SVTRv2Merge: Merge w/ metadata
+
+                SVTRv2Split --> SVTRv2NestedInference
+                SVTRv2Split --> SVTRv2Merge: Metadata
+
+                SVTRv2NestedInference --> SVTRv2Merge
+
+                SVTRv2NestedInference: SVTRv2 Inference (2)
+                state SVTRv2NestedInference {
+                    SVTRv2InferenceBatch: Batch
+                    SVTRv2ModelExecution: Run SVTRv2
+                    SVTRv2InferenceUnBatch: Un-batch
+
+                    SVTRv2InferenceBatch --> SVTRv2ModelExecution
+                    SVTRv2ModelExecution --> SVTRv2InferenceUnBatch
+                }
+            }
+
+            SVTRv2PostProcessing --> SVTRv2ReBatch
+            SVTRv2ReBatch: Re-assemble batches
+            SVTRv2ReBatch --> SVTRv2TopLevelMerge
+            SVTRv2TopLevelSplit --> SVTRv2TopLevelMerge: Empty batches
+            SVTRv2TopLevelMerge: Empty/non-empty merge
+        }
+
+        TextRec --> PostProcessing
+        PostProcessing: Final postprocessing
+    }
+
+    OcrBlock --> [*]
