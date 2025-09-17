@@ -9,14 +9,9 @@ namespace Experimental.Inference;
 public abstract class ModelRunner : IAsyncDisposable
 {
     // Subclasses should read inputs from Inputs -> do inference -> write inference results to Outputs
-    protected Channel<float[]> Inputs
-    {
-        get;
-    }
-    protected Channel<float[]> Outputs
-    {
-        get;
-    }
+    protected readonly Channel<float[]> Inputs;
+
+    protected readonly Channel<float[]> Outputs;
 
     private readonly Channel<TaskCompletionSource<float[]>> _completions;
     private readonly AsyncLock _writeLock = new();  // Synchronizes writes to Inputs and _completions
@@ -26,17 +21,16 @@ public abstract class ModelRunner : IAsyncDisposable
 
     private readonly InferenceSession _inferenceSession;
 
-    protected ModelRunner(int maxBatchSize, InferenceSession inferenceSession)
+    protected ModelRunner(InferenceSession inferenceSession)
     {
-        Inputs = Channel.CreateBounded<float[]>(maxBatchSize * 2);
-        Outputs = Channel.CreateBounded<float[]>(maxBatchSize * 2);
+        Inputs = Channel.CreateUnbounded<float[]>();
+        Outputs = Channel.CreateUnbounded<float[]>();
         _completions = Channel.CreateUnbounded<TaskCompletionSource<float[]>>();
         _outputCompletionTask = CompleteOutputs();
         _inferenceSession = inferenceSession;
     }
 
-    // First await (outer task) is for the handoff, second await (inner task) is for the actual inference
-    public async Task<Task<float[]>> Run(float[] input)
+    public async Task<float[]> Run(float[] input)
     {
         var tcs = new TaskCompletionSource<float[]>();
         await _writeLock.AcquireAsync(CancellationToken.None);
@@ -50,7 +44,7 @@ public abstract class ModelRunner : IAsyncDisposable
             _writeLock.Release();
         }
 
-        return tcs.Task;
+        return await tcs.Task;
     }
 
     private async Task CompleteOutputs()
@@ -67,7 +61,7 @@ public abstract class ModelRunner : IAsyncDisposable
     }
 
     // Run inference using _inferenceSession
-    protected float[] RunInference(float[] input) => [];
+    protected float[] RunInference(float[] batch) => [];
 
     public async ValueTask DisposeAsync()
     {
