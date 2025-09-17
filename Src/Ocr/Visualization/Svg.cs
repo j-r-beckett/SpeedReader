@@ -9,9 +9,14 @@ public class Svg
 
     public Svg(string content) => _content = content;
 
-    public void Save(string filename) => File.WriteAllText(filename, _content);
+    public async Task Save(string filename) => await File.WriteAllTextAsync(filename, _content);
 
-    public async Task SaveAsync(string filename) => await File.WriteAllTextAsync(filename, _content);
+    public async Task<string> SaveAsDataUri(string? filename = null)
+    {
+        filename ??= $"/tmp/{Guid.NewGuid().ToString("d")[..8]}.svg";
+        await Save(filename);
+        return $"file://{filename}";
+    }
 
     public override string ToString() => _content;
 }
