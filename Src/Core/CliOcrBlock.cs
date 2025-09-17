@@ -172,7 +172,7 @@ public class CliOcrBlock
                 if (vizFilePath != null)
                 {
                     var svg = SvgRenderer.Render(image, ocrResult, vizData);
-                    await svg.SaveAsync(vizFilePath);
+                    await svg.Save(vizFilePath);
                 }
             }
             finally

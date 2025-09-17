@@ -158,7 +158,7 @@ public static class SvgRenderer
             var textVector = (X: corners.TopRight.X - corners.TopLeft.X, Y: corners.TopRight.Y - corners.TopLeft.Y);
             var rotationAngle = Math.Atan2(textVector.Y, textVector.X) * 180.0 / Math.PI;
 
-            // Calculate font size based on text height (70% of the distance from TopLeft to BottomLeft)
+            // Calculate font size based on text height (95% of the distance from TopLeft to BottomLeft)
             var textHeight = Math.Sqrt(
                 Math.Pow((corners.BottomLeft.X - corners.TopLeft.X) * sourceImage.Width, 2) +
                 Math.Pow((corners.BottomLeft.Y - corners.TopLeft.Y) * sourceImage.Height, 2));
