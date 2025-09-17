@@ -12,9 +12,14 @@ public abstract class BaseProcessor<TIn, TOut>
     public async Task<TOut> Process(TIn input)
     {
         await _semaphore.WaitAsync();
-        var result = await ProcessProtected(input);
-        _semaphore.Release();
-        return result;
+        try
+        {
+            return await ProcessProtected(input);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     protected abstract Task<TOut> ProcessProtected(TIn input);
@@ -23,8 +28,13 @@ public abstract class BaseProcessor<TIn, TOut>
     {
         var queuedWorkItem = await func();
         _semaphore.Release();
-        var result = await queuedWorkItem;
-        await _semaphore.WaitAsync();
-        return result;
+        try
+        {
+            return await queuedWorkItem;
+        }
+        finally
+        {
+            await _semaphore.WaitAsync();
+        }
     }
 }

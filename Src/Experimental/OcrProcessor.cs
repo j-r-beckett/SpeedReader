@@ -3,7 +3,6 @@
 
 using Experimental.Inference;
 using Ocr;
-using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 

@@ -15,13 +15,13 @@ public class TextRecognizer
 
     public async Task<(string, double)> Recognize(TextBoundary detection, Image<Rgb24> image)
     {
-        var modelInput = Preprocess(image);
+        var modelInput = Preprocess(detection, image);
         var modelOutput = await _runInference(modelInput);
         var result = Postprocess(modelOutput);
         return result;
     }
 
-    private float[] Preprocess(Image<Rgb24> image) => [];
+    private float[] Preprocess(TextBoundary detection, Image<Rgb24> image) => [];
 
     private (string, double) Postprocess(float[] modelOutput) => ("", 0);
 }
