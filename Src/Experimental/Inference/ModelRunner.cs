@@ -62,7 +62,8 @@ public abstract class ModelRunner : IAsyncDisposable
         }
     }
 
-    protected (float[], int[]) RunInference(float[] batch, int[] shape)
+    // Override for testing
+    protected virtual (float[], int[]) RunInference(float[] batch, int[] shape)
     {
         Debug.Assert(shape.Length > 2);  // 1 batch size dimension, at least one other dimension
         var longShape = shape.Select(d => (long)d).ToArray();  // convert int[] -> long[]

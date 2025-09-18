@@ -16,6 +16,7 @@
     <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     <PackageReference Include="xunit" />
+    <PackageReference Include="Xunit.Combinatorial" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
@@ -30,7 +31,7 @@
     <ProjectReference Include="../TestUtils/TestUtils.csproj" />
     <ProjectReference Include="../Resources/Resources.csproj" />
     <ProjectReference Include="../Core/Core.csproj" />
-    <ProjectReference Include="..\Experimental\Experimental.csproj" />
+    <ProjectReference Include="../Experimental/Experimental.csproj" />
   </ItemGroup>
 
 </Project>

@@ -22,7 +22,8 @@ public class TextRecognizer
         _vizBuilder = vizBuilder;
     }
 
-    public async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image)
+    // Override for testing only
+    public virtual async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image)
     {
         var (modelInputHeight, modelInputWidth) = (48, 160);
         var modelInput = Preprocess(oRectangle, image, modelInputHeight, modelInputWidth);
