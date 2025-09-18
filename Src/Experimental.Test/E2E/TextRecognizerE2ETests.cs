@@ -3,6 +3,7 @@
 
 using Core;
 using Experimental.Inference;
+using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Ocr;
 using Resources;
@@ -87,8 +88,16 @@ public class TextRecognizerE2ETests
     {
         var session = _modelProvider.GetSession(Model.SVTRv2);
         var svtrRunner = new CpuModelRunner(session, 1);
-        var recognizer = new TextRecognizer(svtrRunner);
-        return await recognizer.Recognize(bbox, image);
+        var vizBuilder = new VizBuilder();
+        vizBuilder.AddBaseImage(image);
+        vizBuilder.AddOrientedBBoxes([bbox], true);
+        var recognizer = new TextRecognizer(svtrRunner, vizBuilder);
+        var result = await recognizer.Recognize(bbox, image);
+
+        var svg = vizBuilder.RenderSvg();
+        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+
+        return result;
     }
 
     private List<(double X, double Y)> DrawText(Image image, string text, int x, int y, float angleDegrees = 0)

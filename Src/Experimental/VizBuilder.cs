@@ -25,6 +25,16 @@ public class VizBuilder
         public required List<Point> Points;
     }
 
+    public class TextItem
+    {
+        public required string Text;
+        public required double CenterX;
+        public required double CenterY;
+        public required double FontSize;
+        public required double RotationAngle;
+        public required double Confidence;
+    }
+
     public class TemplateData
     {
         public required int Width;
@@ -36,7 +46,7 @@ public class VizBuilder
         public required List<Polygon> ExpectedAxisAlignedBoundingBoxes;
         public required List<Polygon> ExpectedOrientedBoundingBoxes;
         public required List<Polygon> Polygons = [];
-        public required List<SvgRenderer.TextItem> TextItems = [];
+        public required List<TextItem> TextItems = [];
         public required SvgRenderer.LegendItem[] Legend;
     }
 
@@ -64,6 +74,9 @@ public class VizBuilder
 
     private List<Polygon>? _polygonBBoxes;
     private bool _displayPolygonBBoxesByDefault;
+
+    private List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)>? _textItemsData;
+    private bool _displayTextItemsByDefault;
 
     private static readonly FluidParser _parser = new();
     private static readonly Lazy<IFluidTemplate> _template = new(LoadTemplate);
@@ -178,6 +191,19 @@ public class VizBuilder
         return this;
     }
 
+    public VizBuilder AddTextItems(List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)> textItems, bool displayByDefault = false)
+    {
+        if (_textItemsData != null)
+        {
+            throw new MultipleAddException($"{nameof(AddTextItems)} cannot be called twice");
+        }
+
+        _textItemsData = textItems;
+        _displayTextItemsByDefault = displayByDefault;
+
+        return this;
+    }
+
     public VizBuilder AddProbabilityMap(Image<L8> probabilityMap, bool displayByDefault = false)
     {
         if (_probabilityMap != null)
@@ -240,6 +266,7 @@ public class VizBuilder
         options.MemberAccessStrategy.Register<TemplateData>();
         options.MemberAccessStrategy.Register<Point>();
         options.MemberAccessStrategy.Register<Polygon>();
+        options.MemberAccessStrategy.Register<TextItem>();
 
         // Currently unused
         // ----------------
@@ -307,6 +334,17 @@ public class VizBuilder
             });
         }
 
+        if (_textItemsData != null)
+        {
+            legend.Add(new()
+            {
+                Color = "white",
+                Description = "Recognized Text",
+                ElementClass = "text-overlay",
+                DefaultVisible = _displayTextItemsByDefault
+            });
+        }
+
         string? probabilityMapDataUri = null;
         if (_probabilityMap != null)
         {
@@ -320,6 +358,39 @@ public class VizBuilder
             });
         }
 
+        List<TextItem> textItems = [];
+        if (_textItemsData != null)
+        {
+            textItems = _textItemsData.Select(item =>
+            {
+                var corners = ImageCropping.DetectOrientationAndOrderCorners(item.ORectangle);
+
+                // Calculate center
+                var centerX = (corners.TopLeft.X + corners.TopRight.X + corners.BottomRight.X + corners.BottomLeft.X) / 4.0;
+                var centerY = (corners.TopLeft.Y + corners.TopRight.Y + corners.BottomRight.Y + corners.BottomLeft.Y) / 4.0;
+
+                // Calculate rotation angle
+                var textVector = (X: corners.TopRight.X - corners.TopLeft.X, Y: corners.TopRight.Y - corners.TopLeft.Y);
+                var rotationAngle = Math.Atan2(textVector.Y, textVector.X) * 180.0 / Math.PI;
+
+                // Calculate font size to use based on text height
+                var textHeight = Math.Sqrt(
+                    Math.Pow(corners.BottomLeft.X - corners.TopLeft.X, 2) +
+                    Math.Pow(corners.BottomLeft.Y - corners.TopLeft.Y, 2));
+                var fontSize = textHeight * 0.95;
+
+                return new TextItem
+                {
+                    Text = item.Text,
+                    CenterX = centerX,
+                    CenterY = centerY,
+                    FontSize = fontSize,
+                    RotationAngle = rotationAngle,
+                    Confidence = item.Confidence
+                };
+            }).ToList();
+        }
+
         var templateData = new TemplateData
         {
             Width = _baseImage.Width,
@@ -331,7 +402,7 @@ public class VizBuilder
             ExpectedAxisAlignedBoundingBoxes = _expectedAxisAlignedBBoxes ?? [],
             ExpectedOrientedBoundingBoxes = _expectedOrientedBBoxes ?? [],
             Polygons = _polygonBBoxes ?? [],
-            TextItems = [],
+            TextItems = textItems,
             Legend = legend.ToArray()
         };
 

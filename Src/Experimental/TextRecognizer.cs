@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 using Experimental.Inference;
-using Ocr;
 using Ocr.Algorithms;
 using Resources;
 using SixLabors.ImageSharp;
@@ -15,8 +14,13 @@ namespace Experimental;
 public class TextRecognizer
 {
     private readonly ModelRunner _modelRunner;
+    private readonly VizBuilder _vizBuilder;
 
-    public TextRecognizer(ModelRunner modelRunner) => _modelRunner = modelRunner;
+    public TextRecognizer(ModelRunner modelRunner, VizBuilder vizBuilder)
+    {
+        _modelRunner = modelRunner;
+        _vizBuilder = vizBuilder;
+    }
 
     public async Task<(string, double)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image)
     {
@@ -25,8 +29,9 @@ public class TextRecognizer
         var (modelOutput, shape) = await _modelRunner.Run(modelInput, [3, modelInputHeight, modelInputWidth]);
         Debug.Assert(shape.Length == 2);
         Debug.Assert(shape[1] == CharacterDictionary.Count);
-        var result = Postprocess(modelOutput);
-        return result;
+        var (text, confidence) = Postprocess(modelOutput);
+        _vizBuilder.AddTextItems([(text, confidence, oRectangle)]);
+        return (text, confidence);
     }
 
     private float[] Preprocess(List<(double X, double Y)> oRectangle, Image<Rgb24> image, int height, int width)
