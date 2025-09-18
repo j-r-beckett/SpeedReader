@@ -75,7 +75,7 @@ public static class ImageCropping
     /// Detects the orientation of an oriented rectangle and orders the corners properly.
     /// Uses analytic geometry to determine the correct text reading orientation.
     /// </summary>
-    internal static (
+    public static (
         (double X, double Y) TopLeft,
         (double X, double Y) TopRight,
         (double X, double Y) BottomRight,
