@@ -4,14 +4,10 @@
 using Core;
 using Experimental.Inference;
 using Microsoft.Extensions.Logging;
-using Microsoft.ML.OnnxRuntime;
-using Ocr;
 using Resources;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using TestUtils;
 using Xunit.Abstractions;
 
@@ -40,7 +36,7 @@ public class TextRecognizerE2ETests
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        var bbox = DrawText(image, text, 100, 100);
+        var bbox = Utils.DrawText(image, text, 100, 100);
 
         var (actualText, confidence) = await RunRecognition(image, bbox);
 
@@ -63,7 +59,7 @@ public class TextRecognizerE2ETests
 
         const string text = "greetings";
 
-        var bbox = DrawText(image, text, 100, 100, angleDegrees);
+        var bbox = Utils.DrawText(image, text, 100, 100, angleDegrees);
 
         var (actualText, confidence) = await RunRecognition(image, bbox);
 
@@ -98,38 +94,5 @@ public class TextRecognizerE2ETests
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         return result;
-    }
-
-    private List<(double X, double Y)> DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
-    {
-        var textRect = TextMeasurer.MeasureAdvance(text, new TextOptions(_font));
-        var width = Math.Ceiling(textRect.Width);
-        var height = Math.Ceiling(textRect.Height);
-
-        // Draw text, rotated angleDegrees counterclockwise around (x, y)
-        image.Mutate(ctx => ctx
-            .SetDrawingTransform(Matrix3x2Extensions.CreateRotationDegrees(-angleDegrees, new PointF(x, y)))
-            .DrawText(text, _font, Color.Black, new PointF(x, y)));
-
-        // Calculate oriented rectangle; start with 4 corners outlining a rectangle at the origin
-        List<(double X, double Y)> corners =
-        [
-            (0, 0),           // Top-left
-            (width, 0),       // Top-right
-            (width, height),  // Bottom-right
-            (0, height)       // Bottom-left
-        ];
-
-        // Rotate the rectangle angleDegrees around the origin, then translate to (x, y)
-        var angleRadians = -angleDegrees * Math.PI / 180.0;
-        var cos = Math.Cos(angleRadians);
-        var sin = Math.Sin(angleRadians);
-
-        return corners.Select(corner =>
-        {
-            var rotatedX = corner.X * cos - corner.Y * sin + x;
-            var rotatedY = corner.X * sin + corner.Y * cos + y;
-            return (rotatedX, rotatedY);
-        }).ToList();
     }
 }
