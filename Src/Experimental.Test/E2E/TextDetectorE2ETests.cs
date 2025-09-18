@@ -16,7 +16,7 @@ using SixLabors.ImageSharp.Processing;
 using TestUtils;
 using Xunit.Abstractions;
 
-namespace Experimental.Test.Detection;
+namespace Experimental.Test.E2E;
 
 public class TextDetectorE2ETests : IDisposable
 {
@@ -32,7 +32,7 @@ public class TextDetectorE2ETests : IDisposable
     }
 
     [Fact]
-    public async Task Detection_ReturnsCorrectResults_StraightText()
+    public async Task ReturnsCorrectResults_StraightText()
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
@@ -48,7 +48,7 @@ public class TextDetectorE2ETests : IDisposable
     }
 
     [Fact]
-    public async Task Detection_ReturnsCorrectResults_RotatedText()
+    public async Task ReturnsCorrectResults_RotatedText()
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 

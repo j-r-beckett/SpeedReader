@@ -57,7 +57,7 @@ public class TextReader
                 var recognizer = _recognizerFactory();
 
                 var detections = await detector.Detect(image);
-                var recognitionTasks = detections.Select(d => recognizer.Recognize(d, image)).ToList();
+                var recognitionTasks = detections.Select(d => recognizer.Recognize(d.ORectangle, image)).ToList();
                 var recognitions = await Task.WhenAll(recognitionTasks);
                 return AssembleResults(detections, recognitions.ToList());
             }
