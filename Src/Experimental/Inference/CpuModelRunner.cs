@@ -15,6 +15,8 @@ public class CpuModelRunner : ModelRunner
 
     public CpuModelRunner(InferenceSession inferenceSession, int maxParallelism) : base(inferenceSession)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
+
         _inferenceRunnerBlock = new TransformBlock<(float[] Data, int[] Shape), (float[], int[])>(item => RunInference(item.Data, item.Shape),
             new ExecutionDataflowBlockOptions
             {

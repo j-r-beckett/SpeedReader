@@ -17,6 +17,9 @@ public class TextReader
 
     public TextReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBatchSize);
+
         _factory = factory;
         var capacity = maxParallelism * maxBatchSize * 2;
         _semaphore = new SemaphoreSlim(capacity, capacity);
