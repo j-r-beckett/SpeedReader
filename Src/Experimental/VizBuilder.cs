@@ -377,7 +377,7 @@ public class VizBuilder
                 var textHeight = Math.Sqrt(
                     Math.Pow(corners.BottomLeft.X - corners.TopLeft.X, 2) +
                     Math.Pow(corners.BottomLeft.Y - corners.TopLeft.Y, 2));
-                var fontSize = textHeight * 0.95;
+                var fontSize = textHeight * 0.70;
 
                 return new TextItem
                 {

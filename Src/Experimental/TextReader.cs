@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using System.Threading.Channels;
 using Ocr;
 using SixLabors.ImageSharp;
@@ -23,9 +24,9 @@ public class TextReader
         _semaphore = new SemaphoreSlim(capacity, capacity);
     }
 
-    public async IAsyncEnumerable<OcrResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
+    public async IAsyncEnumerable<List<(TextBoundary BBox, string Text, double Confidence)>> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
     {
-        var processingTasks = Channel.CreateUnbounded<Task<OcrResult>>();
+        var processingTasks = Channel.CreateUnbounded<Task<List<(TextBoundary BBox, string Text, double Confidence)>>>();
 
         var processingTaskStarter = Task.Run(async () =>
         {
@@ -46,7 +47,7 @@ public class TextReader
     }
 
     // Outer task (first await) is the handoff, inner task (second await) is actual processing
-    public async Task<Task<OcrResult>> ReadOne(Image<Rgb24> image)
+    public async Task<Task<List<(TextBoundary BBox, string Text, double Confidence)>>> ReadOne(Image<Rgb24> image)
     {
         await _semaphore.WaitAsync();
         return Task.Run(async () =>
@@ -59,7 +60,11 @@ public class TextReader
                 var detections = await detector.Detect(image);
                 var recognitionTasks = detections.Select(d => recognizer.Recognize(d.ORectangle, image)).ToList();
                 var recognitions = await Task.WhenAll(recognitionTasks);
-                return AssembleResults(detections, recognitions.ToList());
+                Debug.Assert(detections.Count == recognitions.Length);
+                return Enumerable.Range(0, detections.Count)
+                    .Select(i => (detections[i], recognitions[i].Text, recognitions[i].Confidence))
+                    .Where(item => item.Confidence > 0.5)
+                    .ToList();
             }
             finally
             {
@@ -67,7 +72,4 @@ public class TextReader
             }
         });
     }
-
-    private OcrResult AssembleResults(List<TextBoundary> detections,
-        List<(string Text, double Confidence)> recognitions) => new OcrResult();
 }
