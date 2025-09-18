@@ -23,7 +23,8 @@ public class TextDetector
         _vizBuilder = vizBuilder;
     }
 
-    public async Task<List<TextBoundary>> Detect(Image<Rgb24> image)
+    // Override for testing only
+    public virtual async Task<List<TextBoundary>> Detect(Image<Rgb24> image)
     {
         _vizBuilder.AddBaseImage(image);
 

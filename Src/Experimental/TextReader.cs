@@ -13,13 +13,11 @@ public class TextReader
 {
     private readonly SemaphoreSlim _semaphore;
 
-    private readonly Func<TextDetector> _detectorFactory;
-    private readonly Func<TextRecognizer> _recognizerFactory;
+    private readonly Func<(TextDetector, TextRecognizer)> _factory;
 
-    public TextReader(Func<TextDetector> detectorFactory, Func<TextRecognizer> recognizerFactory, int maxParallelism, int maxBatchSize)
+    public TextReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
     {
-        _detectorFactory = detectorFactory;
-        _recognizerFactory = recognizerFactory;
+        _factory = factory;
         var capacity = maxParallelism * maxBatchSize * 2;
         _semaphore = new SemaphoreSlim(capacity, capacity);
     }
@@ -54,8 +52,7 @@ public class TextReader
         {
             try
             {
-                var detector = _detectorFactory();
-                var recognizer = _recognizerFactory();
+                var (detector, recognizer) = _factory();
 
                 var detections = await detector.Detect(image);
                 var recognitionTasks = detections.Select(d => recognizer.Recognize(d.ORectangle, image)).ToList();

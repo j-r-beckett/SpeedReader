@@ -38,11 +38,10 @@ public class TextReaderE2ETests
 
         Assert.Single(results);
 
-        var detections = results.Select(r => r.BBox).ToList();
-
-        var axisAlignedBBoxes = detections.Select(d => d.AARectangle).ToList();
-        var orientedBBoxes = detections.Select(d => d.ORectangle).ToList();
-        var polygonBBoxes = detections.Select(d => d.Polygon).ToList();
+        var bboxes = results.Select(r => r.BBox).ToList();
+        var axisAlignedBBoxes = bboxes.Select(d => d.AARectangle).ToList();
+        var orientedBBoxes = bboxes.Select(d => d.ORectangle).ToList();
+        var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
 
         Utils.ValidateAxisAlignedBBoxes([Utils.ToAxisAlignedRectangle(bbox)], axisAlignedBBoxes);
         Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
@@ -70,7 +69,7 @@ public class TextReaderE2ETests
         var detector = new TextDetector(dbnetRunner, vizBuilder);
         var recognizer = new TextRecognizer(svtrRunner, vizBuilder);
 
-        var reader = new TextReader(() => detector, () => recognizer, 1, 1);
+        var reader = new TextReader(() => (detector, recognizer), 1, 1);
 
         var result = await await reader.ReadOne(image);
 
