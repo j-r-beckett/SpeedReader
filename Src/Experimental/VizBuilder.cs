@@ -30,6 +30,8 @@ public class VizBuilder
         public string? ProbabilityMapDataUri;
         public required List<Polygon> AxisAlignedBoundingBoxes;
         public required List<Polygon> OrientedBoundingBoxes;
+        public required List<Polygon> ExpectedAxisAlignedBoundingBoxes;
+        public required List<Polygon> ExpectedOrientedBoundingBoxes;
         public required List<Polygon> Polygons = [];
         public required List<SvgRenderer.TextItem> TextItems = [];
         public required SvgRenderer.LegendItem[] Legend;
@@ -47,6 +49,15 @@ public class VizBuilder
 
     private List<Polygon>? _orientedBBoxes;
     private bool _displayOrientedBBoxesByDefault;
+
+    private List<Polygon>? _expectedAxisAlignedBBoxes;
+    private bool _displayExpectedAxisAlignedBBoxesByDefault;
+
+    private List<Polygon>? _expectedOrientedBBoxes;
+    private bool _displayExpectedOrientedBBoxesByDefault;
+
+    private List<Polygon>? _polygonBBoxes;
+    private bool _displayPolygonBBoxesByDefault;
 
     private static readonly FluidParser _parser = new();
     private static readonly Lazy<IFluidTemplate> _template = new(LoadTemplate);
@@ -103,6 +114,64 @@ public class VizBuilder
         return this;
     }
 
+    public VizBuilder AddExpectedAxisAlignedBBoxes(List<Rectangle> expectedAxisAlignedBBoxes, bool displayByDefault = false)
+    {
+        if (_expectedAxisAlignedBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddExpectedAxisAlignedBBoxes)} cannot be called twice");
+        }
+
+        var polygons = expectedAxisAlignedBBoxes.Select(bbox =>
+        {
+            var topLeft = new Point { X = bbox.X, Y = bbox.Y };
+            var topRight = new Point { X = bbox.X + bbox.Width, Y = bbox.Y };
+            var bottomRight = new Point { X = bbox.X + bbox.Width, Y = bbox.Y + bbox.Height };
+            var bottomLeft = new Point { X = bbox.X, Y = bbox.Y + bbox.Height };
+            return new Polygon { Points = [topLeft, topRight, bottomRight, bottomLeft] };
+        });
+
+        _expectedAxisAlignedBBoxes = polygons.ToList();
+        _displayExpectedAxisAlignedBBoxesByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder AddExpectedOrientedBBoxes(List<List<(double X, double Y)>> expectedOrientedBBoxes, bool displayByDefault = false)
+    {
+        if (_expectedOrientedBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddExpectedOrientedBBoxes)} cannot be called twice");
+        }
+
+        var polygons = expectedOrientedBBoxes
+            .Select(bbox => bbox.Select(p => new Point { X = p.X, Y = p.Y }))
+            .Select(points => new Polygon { Points = points.ToList() })
+            .ToList();
+
+        _expectedOrientedBBoxes = polygons;
+        _displayExpectedOrientedBBoxesByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder AddPolygonBBoxes(List<List<(int X, int Y)>> polygonBBoxes, bool displayByDefault = false)
+    {
+        if (_polygonBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddPolygonBBoxes)} cannot be called twice");
+        }
+
+        var polygons = polygonBBoxes
+            .Select(bbox => bbox.Select(p => new Point { X = p.X, Y = p.Y }))
+            .Select(points => new Polygon { Points = points.ToList() })
+            .ToList();
+
+        _polygonBBoxes = polygons;
+        _displayPolygonBBoxesByDefault = displayByDefault;
+
+        return this;
+    }
+
     public Svg RenderSvg()
     {
         ArgumentNullException.ThrowIfNull(_baseImage);  // base image is required
@@ -148,6 +217,39 @@ public class VizBuilder
             });
         }
 
+        if (_expectedAxisAlignedBBoxes != null)
+        {
+            legend.Add(new()
+            {
+                Color = "black",
+                Description = "Expected axis-aligned bounding boxes",
+                ElementClass = "expected-bounding-boxes",
+                DefaultVisible = _displayExpectedAxisAlignedBBoxesByDefault
+            });
+        }
+
+        if (_expectedOrientedBBoxes != null)
+        {
+            legend.Add(new()
+            {
+                Color = "orange",
+                Description = "Expected oriented bounding boxes",
+                ElementClass = "expected-oriented-bounding-boxes",
+                DefaultVisible = _displayExpectedOrientedBBoxesByDefault
+            });
+        }
+
+        if (_polygonBBoxes != null)
+        {
+            legend.Add(new()
+            {
+                Color = "green",
+                Description = "Polygon bounding boxes",
+                ElementClass = "polygons",
+                DefaultVisible = _displayPolygonBBoxesByDefault
+            });
+        }
+
         var templateData = new TemplateData
         {
             Width = _baseImage.Width,
@@ -155,7 +257,9 @@ public class VizBuilder
             BaseImageDataUri = baseImageDataUri,
             AxisAlignedBoundingBoxes = _axisAlignedBBoxes ?? [],
             OrientedBoundingBoxes = _orientedBBoxes ?? [],
-            Polygons = [],
+            ExpectedAxisAlignedBoundingBoxes = _expectedAxisAlignedBBoxes ?? [],
+            ExpectedOrientedBoundingBoxes = _expectedOrientedBBoxes ?? [],
+            Polygons = _polygonBBoxes ?? [],
             TextItems = [],
             Legend = legend.ToArray()
         };
