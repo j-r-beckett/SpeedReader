@@ -2,8 +2,10 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
+using System.Numerics.Tensors;
 using Experimental.Inference;
 using Ocr;
+using Ocr.Algorithms;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -16,23 +18,41 @@ public class TextRecognizer
 
     public TextRecognizer(ModelRunner modelRunner) => _modelRunner = modelRunner;
 
-    public async Task<(string, double)> Recognize(TextBoundary detection, Image<Rgb24> image)
+    public async Task<(string, double)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image)
     {
         var (modelInputHeight, modelInputWidth) = (48, 160);
-        var modelInput = Preprocess(detection, image, modelInputHeight, modelInputWidth);
+        var modelInput = Preprocess(oRectangle, image, modelInputHeight, modelInputWidth);
         var (modelOutput, shape) = await _modelRunner.Run(modelInput, [3, modelInputHeight, modelInputWidth]);
         Debug.Assert(shape.Length == 2);
-        Debug.Assert(shape[0] == modelInputHeight);
-        Debug.Assert(shape[1] == modelInputHeight);
-        var result = Postprocess(modelOutput, modelInputWidth);
+        Debug.Assert(shape[1] == CharacterDictionary.Count);
+        var result = Postprocess(modelOutput);
         return result;
     }
 
-    private float[] Preprocess(TextBoundary detection, Image<Rgb24> image, int height, int width) => [];
-
-    private (string, double) Postprocess(float[] modelOutput, int width)
+    private float[] Preprocess(List<(double X, double Y)> oRectangle, Image<Rgb24> image, int height, int width)
     {
-        Debug.Assert(width == CharacterDictionary.Count);
-        return ("", 0);
+        float[] data = new float[height * width * 3];
+
+        using var croppedImage = ImageCropping.CropOriented(image, oRectangle);
+
+        Resampling.AspectResizeInto(croppedImage, data, width, height, 127.5f);
+
+        // Convert to CHW format in place
+        TensorOps.NhwcToNchw(data, [height, width, 3]);
+
+        // Normalize: [0,255] -> [-1,1]
+        for (int channel = 0; channel < 3; channel++)
+        {
+            int channelOffset = channel * height * width;
+            var channelTensor = Tensor.Create(data, channelOffset, [height, width], default);
+
+            Tensor.Divide(channelTensor, 127.5f, channelTensor);
+            Tensor.Subtract(channelTensor, 1.0f, channelTensor);
+        }
+
+        return data;
     }
+
+    private (string, double) Postprocess(float[] modelOutput)
+        => CTC.DecodeSingleSequence(modelOutput, CharacterDictionary.Count);
 }
