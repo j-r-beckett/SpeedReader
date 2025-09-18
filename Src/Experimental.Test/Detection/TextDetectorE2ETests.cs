@@ -7,7 +7,6 @@ using Core;
 using Experimental.Inference;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
-using Ocr;
 using Resources;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
@@ -33,42 +32,72 @@ public class TextDetectorE2ETests : IDisposable
     }
 
     [Fact]
-    public async Task Detection_ReturnsCorrectResults()
+    public async Task Detection_ReturnsCorrectResults_StraightText()
     {
-        var dbnetRunner = new CpuModelRunner(_modelProvider.GetSession(Model.DbNet18), 1);
+        using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        var detector = new TextDetector(dbnetRunner);
+        List<List<(double X, double Y)>> expected =
+        [
+            DrawText(image, "undertake", 100, 400),
+            DrawText(image, "yup", 300, 150),
+            DrawText(image, "anabranch", 500, 100),
+            DrawText(image, "happy", 600, 200),
+        ];
 
-        using var image = new Image<Rgb24>(1200, 800, Color.White);
+        await TestTextDetection(image, expected);
+    }
 
-        var expected = new List<Rectangle>
+    [Fact]
+    public async Task Detection_ReturnsCorrectResults_RotatedText()
+    {
+        using var image = new Image<Rgb24>(720, 640, Color.White);
+
+        List<List<(double X, double Y)>> expected =
+        [
+            DrawText(image, "dastardly", 450, 450, 35),
+            DrawText(image, "citizen", 300, 150, 15),
+            DrawText(image, "nowhere", 600, 100, 50),
+            DrawText(image, "guppy", 150, 500, -45),
+        ];
+
+        await TestTextDetection(image, expected);
+    }
+
+    [Fact]
+    public async Task Detection_ReturnsCorrectResults_NoText()
+    {
+        using var image = new Image<Rgb24>(720, 640, Color.White);
+
+        List<List<(double X, double Y)>> expected = [];
+
+        await TestTextDetection(image, expected);
+    }
+
+    private async Task TestTextDetection(Image<Rgb24> image, List<List<(double X, double Y)>> expectedBBoxes)
+    {
+        // Set IntraOpNumThreads to maximize throughput for non-parallelized CPU execution
+        var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions
         {
-            DrawText(image, "hello", 100, 100),
-            DrawText(image, "world", 300, 150),
-            DrawText(image, "quick", 800, 100),
-            DrawText(image, "brown", 1000, 200),
-            DrawText(image, "fox", 150, 500),
-            DrawText(image, "jumps", 250, 650),
-            DrawText(image, "over", 900, 550),
-            DrawText(image, "lazy", 800, 700),
-            DrawText(image, "dog", 600, 400),
-        };
+            IntraOpNumThreads = 4
+        });
+        var dbnetRunner = new CpuModelRunner(session, 1);
+
+        var vizBuilder = new VizBuilder();
+        var detector = new TextDetector(dbnetRunner, vizBuilder);
 
         var results = await detector.Detect(image);
 
-        var svg = new VizBuilder()
-            .AddBaseImage(image)
-            .AddAxisAlignedBBoxes(results.Select(r => r.AARectangle).ToList())
-            .AddOrientedBBoxes(results.Select(r => r.ORectangle).ToList(), true)
-            .AddPolygonBBoxes(results.Select(r => r.Polygon).ToList())
-            .AddExpectedAxisAlignedBBoxes(expected)
-            .AddExpectedOrientedBBoxes(expected.Select(ToPoints).ToList(), true)
+        var expectedAxisAligned = expectedBBoxes.Select(ToAxisAlignedRectangle).ToList();
+
+        var svg = vizBuilder
+            .AddExpectedAxisAlignedBBoxes(expectedAxisAligned)
+            .AddExpectedOrientedBBoxes(expectedBBoxes, true)
             .RenderSvg();
 
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
-        ValidateAxisAlignedBBoxes(expected, results.Select(r => r.AARectangle).ToList());
-        ValidateOrientedBBoxes(expected.Select(ToPoints).ToList(), results.Select(r => r.ORectangle).ToList());
+        ValidateOrientedBBoxes(expectedBBoxes, results.Select(r => r.ORectangle).ToList());
+        ValidateAxisAlignedBBoxes(expectedAxisAligned, results.Select(r => r.AARectangle).ToList());
 
         foreach (var result in results)
         {
@@ -76,34 +105,79 @@ public class TextDetectorE2ETests : IDisposable
         }
     }
 
-    private Rectangle DrawText(Image image, string text, int x, int y)
+    private List<(double X, double Y)> DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
     {
-        image.Mutate(ctx => ctx.DrawText(text, _font, Color.Black, new PointF(x, y)));
         var textRect = TextMeasurer.MeasureAdvance(text, new TextOptions(_font));
-        return new Rectangle(x, y, (int)Math.Ceiling(textRect.Width), (int)Math.Ceiling(textRect.Height));
+        var width = Math.Ceiling(textRect.Width);
+        var height = Math.Ceiling(textRect.Height);
+
+        // Draw text, rotated angleDegrees counterclockwise around (x, y)
+        image.Mutate(ctx => ctx
+            .SetDrawingTransform(Matrix3x2Extensions.CreateRotationDegrees(-angleDegrees, new PointF(x, y)))
+            .DrawText(text, _font, Color.Black, new PointF(x, y)));
+
+        // Calculate oriented rectangle; start with 4 corners outlining a rectangle at the origin
+        List<(double X, double Y)> corners =
+        [
+            (0, 0),           // Top-left
+            (width, 0),       // Top-right
+            (width, height),  // Bottom-right
+            (0, height)       // Bottom-left
+        ];
+
+        // Rotate the rectangle angleDegrees around the origin, then translate to (x, y)
+        var angleRadians = -angleDegrees * Math.PI / 180.0;
+        var cos = Math.Cos(angleRadians);
+        var sin = Math.Sin(angleRadians);
+
+        return corners.Select(corner =>
+        {
+            var rotatedX = corner.X * cos - corner.Y * sin + x;
+            var rotatedY = corner.X * sin + corner.Y * cos + y;
+            return (rotatedX, rotatedY);
+        }).ToList();
+    }
+
+    private Rectangle ToAxisAlignedRectangle(List<(double X, double Y)> orientedRect)
+    {
+        if (orientedRect == null || orientedRect.Count == 0)
+        {
+            return Rectangle.Empty;
+        }
+
+        double minX = double.MaxValue, minY = double.MaxValue;
+        double maxX = double.MinValue, maxY = double.MinValue;
+
+        foreach (var point in orientedRect)
+        {
+            minX = Math.Min(minX, point.X);
+            minY = Math.Min(minY, point.Y);
+            maxX = Math.Max(maxX, point.X);
+            maxY = Math.Max(maxY, point.Y);
+        }
+
+        return new Rectangle(
+            (int)Math.Floor(minX),
+            (int)Math.Floor(minY),
+            (int)Math.Ceiling(maxX - minX),
+            (int)Math.Ceiling(maxY - minY)
+        );
     }
 
     private void ValidateAxisAlignedBBoxes(List<Rectangle> expected, List<Rectangle> actual)
-    {
-        Assert.Equal(expected.Count, actual.Count);
-        var pairs = PairBBoxes(expected, actual);
-        foreach (var (iou, _, _) in pairs)
-        {
-            Assert.True(iou >= 0.5);
-        }
-    }
+        => ValidateOrientedBBoxes(expected.Select(ToPoints).ToList(), actual.Select(ToPoints).ToList());
 
     private void ValidateOrientedBBoxes(List<List<(double X, double Y)>> expected, List<List<(double X, double Y)>> actual)
     {
         Assert.Equal(expected.Count, actual.Count);
         var pairs = PairBBoxes(expected, actual);
-        foreach (var (iou, _, _) in pairs)
+        foreach (var iou in pairs)
         {
             Assert.True(iou >= 0.5);
         }
     }
 
-    private List<(double IoU, int ExpectedIdx, int ActualIdx)> PairBBoxes(
+    private List<double> PairBBoxes(
         List<List<(double X, double Y)>> expectedBBoxes, List<List<(double X, double Y)>> actualBBoxes)
     {
         Debug.Assert(expectedBBoxes.Count == actualBBoxes.Count);
@@ -133,13 +207,9 @@ public class TextDetectorE2ETests : IDisposable
         }
 
         return pairs
-            .Select(p => (IoU(expectedBBoxes[p.Key], actualBBoxes[p.Value]), p.Key, p.Value))
+            .Select(p => IoU(expectedBBoxes[p.Key], actualBBoxes[p.Value]))
             .ToList();
     }
-
-
-    private List<(double IoU, int ExpectedIdx, int ActualIdx)> PairBBoxes(List<Rectangle> expectedBBoxes, List<Rectangle> actualBBoxes)
-        => PairBBoxes(expectedBBoxes.Select(ToPoints).ToList(), actualBBoxes.Select(ToPoints).ToList());
 
     private static List<(double X, double Y)> ToPoints(Rectangle rect) => [
         (rect.X, rect.Y),
@@ -147,18 +217,6 @@ public class TextDetectorE2ETests : IDisposable
         (rect.X + rect.Width, rect.Y + rect.Height),
         (rect.X, rect.Y + rect.Height)
     ];
-
-    private double IoU(Rectangle a, Rectangle b)
-    {
-        return IoU(ToPoints(a), ToPoints(b));
-
-        static List<(double X, double Y)> ToPoints(Rectangle rect) => [
-                (rect.X, rect.Y),
-                (rect.X + rect.Width, rect.Y),
-                (rect.X + rect.Width, rect.Y + rect.Height),
-                (rect.X, rect.Y + rect.Height)
-            ];
-    }
 
     private double IoU(List<(double X, double Y)> a, List<(double X, double Y)> b)
     {

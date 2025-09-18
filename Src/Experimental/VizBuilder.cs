@@ -1,11 +1,14 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using CommunityToolkit.HighPerformance;
 using Fluid;
 using Ocr.Algorithms;
 using Ocr.Visualization;
 using Resources;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace Experimental;
 
@@ -43,6 +46,9 @@ public class VizBuilder
     }
 
     private Image? _baseImage;
+
+    private Image<L8>? _probabilityMap;
+    private bool _displayProbabilityMapByDefault;
 
     private List<Polygon>? _axisAlignedBBoxes;
     private bool _displayAxisAlignedBBoxesByDefault;
@@ -172,6 +178,57 @@ public class VizBuilder
         return this;
     }
 
+    public VizBuilder AddProbabilityMap(Image<L8> probabilityMap, bool displayByDefault = false)
+    {
+        if (_probabilityMap != null)
+        {
+            throw new MultipleAddException($"{nameof(AddProbabilityMap)} cannot be called twice");
+        }
+
+        _probabilityMap = probabilityMap;
+        _displayProbabilityMapByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder CreateAndAddProbabilityMap(Span2D<float> probabilityMapSpan, int originalWidth, int originalHeight, bool displayByDefault = false)
+    {
+        if (_probabilityMap != null)
+        {
+            throw new MultipleAddException($"Probability map already exists");
+        }
+
+        int modelHeight = probabilityMapSpan.Height;
+        int modelWidth = probabilityMapSpan.Width;
+
+        // Calculate the fitted dimensions (what the image was resized to before padding)
+        double scale = Math.Min((double)modelWidth / originalWidth, (double)modelHeight / originalHeight);
+        int fittedWidth = (int)Math.Round(originalWidth * scale);
+        int fittedHeight = (int)Math.Round(originalHeight * scale);
+
+        // Create a grayscale image from the probability map (only the fitted portion, not padding)
+        var probImage = new Image<L8>(fittedWidth, fittedHeight);
+
+        for (int y = 0; y < fittedHeight; y++)
+        {
+            for (int x = 0; x < fittedWidth; x++)
+            {
+                var probability = probabilityMapSpan[y, x];
+                // Convert probability [0,1] to grayscale [0,255]
+                probImage[x, y] = new L8((byte)(probability * 255));
+            }
+        }
+
+        // Resize back to original image size
+        probImage.Mutate(ctx =>
+            ctx.Resize(originalWidth, originalHeight, KnownResamplers.Bicubic));
+
+        _probabilityMap = probImage;
+        _displayProbabilityMapByDefault = displayByDefault;
+
+        return this;
+    }
+
     public Svg RenderSvg()
     {
         ArgumentNullException.ThrowIfNull(_baseImage);  // base image is required
@@ -250,11 +307,25 @@ public class VizBuilder
             });
         }
 
+        string? probabilityMapDataUri = null;
+        if (_probabilityMap != null)
+        {
+            probabilityMapDataUri = ConvertProbabilityMapToDataUri(_probabilityMap);
+            legend.Add(new()
+            {
+                Color = "yellow",
+                Description = "Raw text detection output",
+                ElementClass = "dbnet-overlay",
+                DefaultVisible = _displayProbabilityMapByDefault
+            });
+        }
+
         var templateData = new TemplateData
         {
             Width = _baseImage.Width,
             Height = _baseImage.Height,
             BaseImageDataUri = baseImageDataUri,
+            ProbabilityMapDataUri = probabilityMapDataUri,
             AxisAlignedBoundingBoxes = _axisAlignedBBoxes ?? [],
             OrientedBoundingBoxes = _orientedBBoxes ?? [],
             ExpectedAxisAlignedBoundingBoxes = _expectedAxisAlignedBBoxes ?? [],
@@ -283,5 +354,23 @@ public class VizBuilder
         return !_parser.TryParse(templateContent, out var template, out var error)
             ? throw new InvalidOperationException($"Failed to parse SVG template: {error}")
             : template;
+    }
+
+    private static string ConvertProbabilityMapToDataUri(Image<L8> probabilityMap)
+    {
+        // Convert grayscale probability map to RGBA with transparency
+        using var overlayImage = new Image<Rgba32>(probabilityMap.Width, probabilityMap.Height);
+
+        for (int y = 0; y < probabilityMap.Height; y++)
+        {
+            for (int x = 0; x < probabilityMap.Width; x++)
+            {
+                var intensity = probabilityMap[x, y].PackedValue;
+                var alpha = (byte)(intensity / 2); // Max 50% opacity
+                overlayImage[x, y] = new Rgba32(255, 255, 0, alpha);  // Yellow
+            }
+        }
+
+        return ConvertImageToDataUri(overlayImage);
     }
 }
