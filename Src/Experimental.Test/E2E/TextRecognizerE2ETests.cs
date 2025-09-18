@@ -3,6 +3,7 @@
 
 using Core;
 using Experimental.Inference;
+using Microsoft.ML.OnnxRuntime;
 using Ocr;
 using Resources;
 using SixLabors.Fonts;
@@ -36,16 +37,11 @@ public class TextRecognizerE2ETests
     [InlineData("two words")]
     public async Task ReturnsCorrectResult_StraightText(string text)
     {
-        var session = _modelProvider.GetSession(Model.SVTRv2);
-        var svtrRunner = new CpuModelRunner(session, 1);
-
-        var recognizer = new TextRecognizer(svtrRunner);
-
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
         var bbox = DrawText(image, text, 100, 100);
 
-        var (actualText, confidence) = await recognizer.Recognize(bbox, image);
+        var (actualText, confidence) = await RunRecognition(image, bbox);
 
         Assert.Equal(text, actualText);
         Assert.True(confidence >= 0.98);
@@ -62,18 +58,13 @@ public class TextRecognizerE2ETests
     [InlineData(-90)]
     public async Task ReturnsCorrectResult_AngledText(int angleDegrees)
     {
-        var session = _modelProvider.GetSession(Model.SVTRv2);
-        var svtrRunner = new CpuModelRunner(session, 1);
-
-        var recognizer = new TextRecognizer(svtrRunner);
-
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
         const string text = "greetings";
 
         var bbox = DrawText(image, text, 100, 100, angleDegrees);
 
-        var (actualText, confidence) = await recognizer.Recognize(bbox, image);
+        var (actualText, confidence) = await RunRecognition(image, bbox);
 
         Assert.Equal(text, actualText);
         Assert.True(confidence >= 0.98);
@@ -82,19 +73,22 @@ public class TextRecognizerE2ETests
     [Fact]
     public async Task ReturnsCorrectResult_NoText()
     {
-        var session = _modelProvider.GetSession(Model.SVTRv2);
-        var svtrRunner = new CpuModelRunner(session, 1);
-
-        var recognizer = new TextRecognizer(svtrRunner);
-
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
         List<(double, double)> bbox = [(100, 100), (200, 100), (200, 200), (100, 200)];
 
-        var (actualText, confidence) = await recognizer.Recognize(bbox, image);
+        var (actualText, confidence) = await RunRecognition(image, bbox);
 
         Assert.Equal(string.Empty, actualText);
         Assert.True(confidence <= 0.01);
+    }
+
+    private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, List<(double X, double Y)> bbox)
+    {
+        var session = _modelProvider.GetSession(Model.SVTRv2);
+        var svtrRunner = new CpuModelRunner(session, 1);
+        var recognizer = new TextRecognizer(svtrRunner);
+        return await recognizer.Recognize(bbox, image);
     }
 
     private List<(double X, double Y)> DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
