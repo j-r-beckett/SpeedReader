@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using Experimental.Inference;
 using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -37,6 +38,39 @@ public class FaultHandlingTests
         var reader = new TextReader(factory, 1, 1);
 
         await Assert.ThrowsAsync<TestException>(async () => await await reader.ReadOne(new Image<Rgb24>(720, 720)));
+    }
+
+    [Fact]
+    public async Task CpuModelRunner_PropagatesException()
+    {
+        var counter = -1;
+
+        // Throw an exception on the second call only
+        var infer = () =>
+        {
+            var count = Interlocked.Increment(ref counter);
+            return count == 1 ? throw new InferenceException("", new TestException()) : MockCpuModelRunner.SimpleResult;
+        };
+
+        var runner = new MockCpuModelRunner(infer);
+
+        // First call should succeed
+        var firstResult = await runner.Run([0], [1, 1]);
+
+        Assert.Equivalent(firstResult.Data, MockCpuModelRunner.SimpleResult.Data);
+        Assert.Equivalent(firstResult.Shape, MockCpuModelRunner.SimpleResult.Shape);
+
+        // Second call should fail
+        var ex = await Assert.ThrowsAnyAsync<InferenceException>(() => runner.Run([0], [1, 1]));
+        Assert.IsType<TestException>(ex.InnerException);
+
+        // Third call should succeed
+        var secondResult = await runner.Run([0], [1, 1]);
+
+        Assert.Equivalent(secondResult.Data, MockCpuModelRunner.SimpleResult.Data);
+        Assert.Equivalent(secondResult.Shape, MockCpuModelRunner.SimpleResult.Shape);
+
+        await runner.DisposeAsync();
     }
 }
 

@@ -16,41 +16,34 @@ public class ModelRunnerParallelismTests
     {
         var tcs = new TaskCompletionSource();
 
-        var runner = new BlockingCpuModelRunner(null!, maxParallelism, tcs.Task);
+        var parallelism = 0;
+
+        // Simulate inference by waiting for tcs task to complete. Track number of ongoing simulated inferences by
+        // incrementing/decrementing parallelism counter
+        var infer = () =>
+        {
+            Interlocked.Increment(ref parallelism);
+            tcs.Task.GetAwaiter().GetResult();
+            Interlocked.Decrement(ref parallelism);
+            return MockCpuModelRunner.SimpleResult;
+        };
+
+        var runner = new MockCpuModelRunner(infer, maxParallelism);
 
         // Start 2x maxParallelism tasks
         var results = Enumerable.Range(0, 2 * maxParallelism).Select(_ => runner.Run([0], [1, 1])).ToList();
 
         await Task.Delay(100);
 
-        var observedParallelism = runner.Parallelism;
+        // Snapshot parallelism before we allow execution to proceed
+        var observedMaxParallelism = parallelism;
 
         tcs.SetResult();
 
+        // Ensure no exceptions were thrown
         await Task.WhenAll(results);
 
         // Verify that exactly maxParallelism tasks were observed running in parallel
-        Assert.Equal(maxParallelism, observedParallelism);
-    }
-}
-
-public class BlockingCpuModelRunner : CpuModelRunner
-{
-    private readonly Task _block;
-
-    public int Parallelism;
-
-    public BlockingCpuModelRunner(InferenceSession session, int maxParallelism, Task block)
-        : base(session, maxParallelism) => _block = block;
-
-    protected override (float[], int[]) RunInferenceInternal(float[] batch, int[] shape)
-    {
-        Interlocked.Increment(ref Parallelism);
-
-        _block.GetAwaiter().GetResult();
-
-        Interlocked.Decrement(ref Parallelism);
-
-        return ([0], [1, 1]);
+        Assert.Equal(maxParallelism, observedMaxParallelism);
     }
 }
