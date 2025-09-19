@@ -66,17 +66,33 @@ public abstract class ModelRunner : IAsyncDisposable
     protected virtual (float[], int[]) RunInference(float[] batch, int[] shape)
     {
         Debug.Assert(shape.Length > 2);  // 1 batch size dimension, at least one other dimension
+
         var longShape = shape.Select(d => (long)d).ToArray();  // convert int[] -> long[]
-        var inputTensor = OrtValue.CreateTensorValueFromMemory(batch, longShape);  // Instantiate ONNX tensor
-        var inputs = new Dictionary<string, OrtValue> { { "input", inputTensor } };
-        using var runOptions = new RunOptions();
-        var outputs = _inferenceSession.Run(runOptions, inputs, _inferenceSession.OutputNames);  // Run inference
-        var outputTensor = outputs[0];  // One input, so one output
-        var outputShape = outputTensor.GetTensorTypeAndShape().Shape.Select(l => (int)l).ToArray();  // Convert output shape from long[] -> int[]
-        var outputSize = outputShape.Aggregate(1, (prod, next) => prod * next);  // Multiply all shape dimensions together to get total element count
-        var output = new float[outputSize];  // Instantiate an output buffer
-        outputTensor.GetTensorDataAsSpan<float>().CopyTo(output);  // Copy to output buffer
-        return (output, outputShape);  // Return output buffer, shape
+
+        // try/finally to prevent leaking unmanaged ONNX tensors
+        OrtValue? inputTensor = null;
+        IDisposableReadOnlyCollection<OrtValue>? outputTensors = null;
+        float[] output;
+        int[] outputShape;
+        try
+        {
+            inputTensor = OrtValue.CreateTensorValueFromMemory(batch, longShape);  // Instantiate ONNX tensor
+            var inputs = new Dictionary<string, OrtValue> { { "input", inputTensor } };
+            using var runOptions = new RunOptions();
+            outputTensors = _inferenceSession.Run(runOptions, inputs, _inferenceSession.OutputNames); // Run inference
+            var outputTensor = outputTensors[0]; // One input, so one output
+            outputShape = outputTensor.GetTensorTypeAndShape().Shape.Select(l => (int)l).ToArray(); // Convert output shape from long[] -> int[]
+            var outputSize = outputShape.Aggregate(1, (prod, next) => prod * next); // Multiply all shape dimensions together to get total element count
+            output = new float[outputSize]; // Instantiate an output buffer
+            outputTensor.GetTensorDataAsSpan<float>().CopyTo(output); // Copy to output buffer
+        }
+        finally
+        {
+            inputTensor?.Dispose();
+            outputTensors?.Dispose();
+        }
+
+        return (output, outputShape);
     }
 
     public async ValueTask DisposeAsync()
