@@ -20,7 +20,7 @@ public class FaultHandlingTests
             return (detector, recognizer);
         };
 
-        var reader = new TextReader(factory, 1, 1);
+        var reader = new SpeedReader(factory, 1, 1);
 
         await Assert.ThrowsAsync<TestException>(async () => await await reader.ReadOne(new Image<Rgb24>(720, 720)));
     }
@@ -35,7 +35,7 @@ public class FaultHandlingTests
             return (detector, recognizer);
         };
 
-        var reader = new TextReader(factory, 1, 1);
+        var reader = new SpeedReader(factory, 1, 1);
 
         await Assert.ThrowsAsync<TestException>(async () => await await reader.ReadOne(new Image<Rgb24>(720, 720)));
     }
