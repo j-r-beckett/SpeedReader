@@ -26,7 +26,7 @@ public class TextReaderE2ETests
     }
 
     [Fact]
-    public async Task ReturnsCorrectResult()
+    public async Task ReadOne_ReturnsCorrectResult()
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
@@ -34,7 +34,12 @@ public class TextReaderE2ETests
 
         var bbox = Utils.DrawText(image, text, 200, 200);
 
-        var results = await Ocr(image);
+        var reader = CreateTextReader();
+
+        var (results, vizBuilder) = await await reader.ReadOne(image);
+
+        var svg = vizBuilder.RenderSvg();
+        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         Assert.Single(results);
 
@@ -53,7 +58,60 @@ public class TextReaderE2ETests
         Assert.True(results[0].Text == text);
     }
 
-    private async Task<List<(TextBoundary BBox, string Text, double Confidence)>> Ocr(Image<Rgb24> image)
+    [Fact]
+    public async Task ReadMany_ReturnsCorrectResults()
+    {
+
+        using var image1 = new Image<Rgb24>(720, 640, Color.White);
+        const string text1 = "yanked";
+        var bbox1 = Utils.DrawText(image1, text1, 200, 200);
+
+        using var image2 = new Image<Rgb24>(500, 800, Color.White);
+        const string text2 = "Kazakhstan";
+        var bbox2 = Utils.DrawText(image2, text2, 300, 250);
+
+        using var image3 = new Image<Rgb24>(800, 600, Color.White);
+        const string text3 = "specimen";
+        var bbox3 = Utils.DrawText(image3, text3, 500, 100);
+
+        var reader = CreateTextReader();
+
+        List<(Image<Rgb24> Image, List<(double, double)> BBox, string Text)> cases =
+            [
+                (image1, bbox1, text1),
+                (image2, bbox2, text2),
+                (image3, bbox3, text3)
+            ];
+
+        var images = cases.Select(c => c.Image).ToAsyncEnumerable();
+
+        // var i = 0;
+        // await foreach (var result in reader.ReadMany(images))
+        // {
+        //     var svg = vizBuilder.RenderSvg();
+        //     _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+        // }
+        //
+        //
+
+        // Assert.Single(results);
+        //
+        // var bboxes = results.Select(r => r.BBox).ToList();
+        // var axisAlignedBBoxes = bboxes.Select(d => d.AARectangle).ToList();
+        // var orientedBBoxes = bboxes.Select(d => d.ORectangle).ToList();
+        // var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
+        //
+        // Utils.ValidateAxisAlignedBBoxes([Utils.ToAxisAlignedRectangle(bbox)], axisAlignedBBoxes);
+        // Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
+        // foreach (var polygon in polygonBBoxes)
+        // {
+        //     Assert.True(polygon.Count >= 4);
+        // }
+        //
+        // Assert.True(results[0].Text == text);
+    }
+
+    private TextReader CreateTextReader()
     {
         var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions
         {
@@ -64,18 +122,8 @@ public class TextReaderE2ETests
         var svtrSession = _modelProvider.GetSession(Model.SVTRv2);
         var svtrRunner = new CpuModelRunner(svtrSession, 1);
 
-        var vizBuilder = new VizBuilder();
+        var factory = () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner));
 
-        var detector = new TextDetector(dbnetRunner, vizBuilder);
-        var recognizer = new TextRecognizer(svtrRunner, vizBuilder);
-
-        var reader = new TextReader(() => (detector, recognizer), 1, 1);
-
-        var result = await await reader.ReadOne(image);
-
-        var svg = vizBuilder.RenderSvg();
-        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
-
-        return result;
+        return new TextReader(factory, 1, 1);
     }
 }

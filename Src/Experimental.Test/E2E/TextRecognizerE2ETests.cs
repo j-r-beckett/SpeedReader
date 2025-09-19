@@ -87,8 +87,8 @@ public class TextRecognizerE2ETests
         var vizBuilder = new VizBuilder();
         vizBuilder.AddBaseImage(image);
         vizBuilder.AddOrientedBBoxes([bbox], true);
-        var recognizer = new TextRecognizer(svtrRunner, vizBuilder);
-        var result = await recognizer.Recognize(bbox, image);
+        var recognizer = new TextRecognizer(svtrRunner);
+        var result = await recognizer.Recognize(bbox, image, vizBuilder);
 
         var svg = vizBuilder.RenderSvg();
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");

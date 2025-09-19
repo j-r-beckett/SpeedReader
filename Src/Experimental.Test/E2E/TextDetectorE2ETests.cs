@@ -76,9 +76,9 @@ public class TextDetectorE2ETests : IDisposable
         var dbnetRunner = new CpuModelRunner(session, 1);
 
         var vizBuilder = new VizBuilder();
-        var detector = new TextDetector(dbnetRunner, vizBuilder);
+        var detector = new TextDetector(dbnetRunner);
 
-        var results = await detector.Detect(image);
+        var results = await detector.Detect(image, vizBuilder);
 
         var expectedAxisAligned = expectedBBoxes.Select(Utils.ToAxisAlignedRectangle).ToList();
 
