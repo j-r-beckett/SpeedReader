@@ -10,24 +10,16 @@ namespace Experimental.Test.FlowControl;
 public class TextReaderBackpressureTests
 {
     [Theory, CombinatorialData]
-    public async Task TextReader_EmitsBackpressure(
+    public async Task TextReader_ReadOne_EmitsBackpressure(
         [CombinatorialRange(from: 1, count: 3)] int maxParallelism,
-        [CombinatorialRange(from: 1, count: 3)] int maxBatchSize,
-        bool shouldDbnetBlock)
+        [CombinatorialRange(from: 1, count: 3)] int maxBatchSize)
     {
         var capacity = maxParallelism * maxBatchSize * 2;
 
         var tcs = new TaskCompletionSource();
-        bool shouldSvtrBlock = !shouldDbnetBlock;
-        var dbnetBlock = shouldDbnetBlock ? tcs.Task : Task.CompletedTask;
-        var svtrBlock = shouldSvtrBlock ? tcs.Task : Task.CompletedTask;
 
-        Func<(TextDetector, TextRecognizer)> factory = () =>
-        {
-            var detector = new MockTextDetector(dbnetBlock);
-            var recognizer = new MockTextRecognizer(svtrBlock);
-            return (detector, recognizer);
-        };
+        Func<(TextDetector, TextRecognizer)> factory =
+            () => (new MockTextDetector(tcs.Task), new MockTextRecognizer(Task.CompletedTask));
 
         List<Task<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>>> results = [];
 
@@ -65,5 +57,59 @@ public class TextReaderBackpressureTests
             results.Add(submissionTask);
             return result == delay;
         }
+    }
+
+    [Theory, CombinatorialData]
+    public async Task TextReader_ReadMany_EmitsBackpressure(
+        [CombinatorialRange(from: 1, count: 3)] int maxParallelism,
+        [CombinatorialRange(from: 1, count: 3)] int maxBatchSize)
+    {
+        var capacity = maxParallelism * maxBatchSize * 2;
+
+        var tcs = new TaskCompletionSource();
+
+        var count = 0;
+
+        var incrementAndBlock = async () =>
+        {
+            Interlocked.Increment(ref count);
+            await tcs.Task;
+            return MockTextDetector.SimpleResult;
+        };
+
+        Func<(TextDetector, TextRecognizer)> factory =
+            () => (new MockTextDetector(incrementAndBlock), new MockTextRecognizer(Task.CompletedTask));
+
+        var reader = new TextReader(factory, maxParallelism, maxBatchSize);
+
+        var image = new Image<Rgb24>(720, 640, Color.White);
+
+        var numInputs = 5 * capacity;
+
+        var inputs = Enumerable.Range(0, numInputs).Select(_ => image).ToAsyncEnumerable();
+
+        var task = Task.Run(async () =>
+        {
+            await foreach (var _ in reader.ReadMany(inputs))
+            {
+                // Do nothing
+            }
+        });
+
+        await Task.Delay(50);
+
+        // Should have read capacity items before blocking
+        Assert.Equal(capacity, count);
+
+        // Unblock
+        tcs.SetResult();
+
+        await Task.Delay(50);
+
+        // Read the rest of the items
+        Assert.Equal(numInputs, count);
+
+        // Make sure we didn't throw any exceptions
+        await task;
     }
 }
