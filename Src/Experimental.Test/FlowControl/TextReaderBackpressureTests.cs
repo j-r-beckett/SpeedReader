@@ -21,7 +21,7 @@ public class TextReaderBackpressureTests
         Func<(TextDetector, TextRecognizer)> factory =
             () => (new MockTextDetector(tcs.Task), new MockTextRecognizer(Task.CompletedTask));
 
-        List<Task<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>>> results = [];
+        List<Task<Task<SpeedReaderResult>>> results = [];
 
         var reader = new SpeedReader(factory, maxParallelism, maxBatchSize);
 
