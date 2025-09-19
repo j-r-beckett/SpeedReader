@@ -36,9 +36,10 @@ public class TextReaderE2ETests
 
         var reader = CreateTextReader();
 
-        var (results, vizBuilder) = await await reader.ReadOne(image);
+        var readerResult = await await reader.ReadOne(image);
+        var results = readerResult.Results;
 
-        var svg = vizBuilder.RenderSvg();
+        var svg = readerResult.VizBuilder.RenderSvg();
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         Assert.Single(results);
@@ -91,7 +92,7 @@ public class TextReaderE2ETests
             var svg = item.VizBuilder.RenderSvg();
             _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
-            var results = item.Result;
+            var results = item.Results;
             var text = cases[i].Text;
             var bbox = cases[i++].BBox;
 
@@ -122,8 +123,6 @@ public class TextReaderE2ETests
         var svtrSession = _modelProvider.GetSession(Model.SVTRv2);
         var svtrRunner = new CpuModelRunner(svtrSession, 1);
 
-        var factory = () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner));
-
-        return new SpeedReader(factory, 1, 1);
+        return new SpeedReader(dbnetRunner, svtrRunner, 1, 1);
     }
 }

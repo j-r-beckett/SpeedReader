@@ -33,9 +33,9 @@ public class SpeedReader
     {
     }
 
-    public async IAsyncEnumerable<(List<(TextBoundary BBox, string Text, double Confidence)> Result, VizBuilder VizBuilder)> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
+    public async IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
     {
-        var processingTasks = Channel.CreateUnbounded<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>>();
+        var processingTasks = Channel.CreateUnbounded<Task<SpeedReaderResult>>();
 
         var processingTaskStarter = Task.Run(async () =>
         {
@@ -56,7 +56,7 @@ public class SpeedReader
     }
 
     // Outer task (first await) is the handoff, inner task (second await) is actual processing
-    public async Task<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>> ReadOne(Image<Rgb24> image)
+    public async Task<Task<SpeedReaderResult>> ReadOne(Image<Rgb24> image)
     {
         await _semaphore.WaitAsync();
         return Task.Run(async () =>
@@ -70,10 +70,7 @@ public class SpeedReader
                 var recognitionTasks = detections.Select(d => recognizer.Recognize(d.ORectangle, image, vizBuilder)).ToList();
                 var recognitions = await Task.WhenAll(recognitionTasks);
                 Debug.Assert(detections.Count == recognitions.Length);
-                return (Enumerable.Range(0, detections.Count)
-                    .Select(i => (detections[i], recognitions[i].Text, recognitions[i].Confidence))
-                    .Where(item => item.Confidence > 0.5)
-                    .ToList(), vizBuilder);
+                return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
             }
             finally
             {
