@@ -15,18 +15,13 @@ namespace Experimental;
 public class TextDetector
 {
     private readonly ModelRunner _modelRunner;
-    private readonly VizBuilder _vizBuilder;
 
-    public TextDetector(ModelRunner modelRunner, VizBuilder vizBuilder)
-    {
-        _modelRunner = modelRunner;
-        _vizBuilder = vizBuilder;
-    }
+    public TextDetector(ModelRunner modelRunner) => _modelRunner = modelRunner;
 
     // Override for testing only
-    public virtual async Task<List<TextBoundary>> Detect(Image<Rgb24> image)
+    public virtual async Task<List<TextBoundary>> Detect(Image<Rgb24> image, VizBuilder vizBuilder)
     {
-        _vizBuilder.AddBaseImage(image);
+        vizBuilder.AddBaseImage(image);
 
         var (modelInputHeight, modelInputWidth) = (640, 640);
         var modelInput = Preprocess(image, modelInputHeight, modelInputWidth);
@@ -36,13 +31,13 @@ public class TextDetector
         Debug.Assert(shape[1] == modelInputHeight);
 
         var probabilityMapSpan = modelOutput.AsSpan().AsSpan2D(modelInputHeight, modelInputWidth);
-        _vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, image.Width, image.Height);
+        vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, image.Width, image.Height);
 
         var result = Postprocess(modelOutput, image, modelInputHeight, modelInputWidth);
 
-        _vizBuilder.AddAxisAlignedBBoxes(result.Select(r => r.AARectangle).ToList());
-        _vizBuilder.AddOrientedBBoxes(result.Select(r => r.ORectangle).ToList(), true);
-        _vizBuilder.AddPolygonBBoxes(result.Select(r => r.Polygon).ToList());
+        vizBuilder.AddAxisAlignedBBoxes(result.Select(r => r.AARectangle).ToList());
+        vizBuilder.AddOrientedBBoxes(result.Select(r => r.ORectangle).ToList(), true);
+        vizBuilder.AddPolygonBBoxes(result.Select(r => r.Polygon).ToList());
 
         return result;
     }

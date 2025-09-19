@@ -14,16 +14,11 @@ namespace Experimental;
 public class TextRecognizer
 {
     private readonly ModelRunner _modelRunner;
-    private readonly VizBuilder _vizBuilder;
 
-    public TextRecognizer(ModelRunner modelRunner, VizBuilder vizBuilder)
-    {
-        _modelRunner = modelRunner;
-        _vizBuilder = vizBuilder;
-    }
+    public TextRecognizer(ModelRunner modelRunner) => _modelRunner = modelRunner;
 
     // Override for testing only
-    public virtual async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image)
+    public virtual async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image, VizBuilder vizBuilder)
     {
         var (modelInputHeight, modelInputWidth) = (48, 160);
         var modelInput = Preprocess(oRectangle, image, modelInputHeight, modelInputWidth);
@@ -31,7 +26,7 @@ public class TextRecognizer
         Debug.Assert(shape.Length == 2);
         Debug.Assert(shape[1] == CharacterDictionary.Count);
         var (text, confidence) = Postprocess(modelOutput);
-        _vizBuilder.AddTextItems([(text, confidence, oRectangle)]);
+        vizBuilder.AddTextItems([(text, confidence, oRectangle)]);
         return (text, confidence);
     }
 

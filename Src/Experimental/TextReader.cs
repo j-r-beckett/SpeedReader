@@ -3,7 +3,10 @@
 
 using System.Diagnostics;
 using System.Threading.Channels;
+using Experimental.Inference;
+using Microsoft.ML.OnnxRuntime;
 using Ocr;
+using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -15,7 +18,7 @@ public class TextReader
 
     private readonly Func<(TextDetector, TextRecognizer)> _factory;
 
-    public TextReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
+    internal TextReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBatchSize);
@@ -25,9 +28,15 @@ public class TextReader
         _semaphore = new SemaphoreSlim(capacity, capacity);
     }
 
-    public async IAsyncEnumerable<List<(TextBoundary BBox, string Text, double Confidence)>> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
+    public TextReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this (
+        () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner)),
+        maxParallelism,
+        maxBatchSize)
+    { }
+
+    public async IAsyncEnumerable<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
     {
-        var processingTasks = Channel.CreateUnbounded<Task<List<(TextBoundary BBox, string Text, double Confidence)>>>();
+        var processingTasks = Channel.CreateUnbounded<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>>();
 
         var processingTaskStarter = Task.Run(async () =>
         {
@@ -48,7 +57,7 @@ public class TextReader
     }
 
     // Outer task (first await) is the handoff, inner task (second await) is actual processing
-    public async Task<Task<List<(TextBoundary BBox, string Text, double Confidence)>>> ReadOne(Image<Rgb24> image)
+    public async Task<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>> ReadOne(Image<Rgb24> image)
     {
         await _semaphore.WaitAsync();
         return Task.Run(async () =>
@@ -56,15 +65,16 @@ public class TextReader
             try
             {
                 var (detector, recognizer) = _factory();
+                var vizBuilder = new VizBuilder();
 
-                var detections = await detector.Detect(image);
-                var recognitionTasks = detections.Select(d => recognizer.Recognize(d.ORectangle, image)).ToList();
+                var detections = await detector.Detect(image, vizBuilder);
+                var recognitionTasks = detections.Select(d => recognizer.Recognize(d.ORectangle, image, vizBuilder)).ToList();
                 var recognitions = await Task.WhenAll(recognitionTasks);
                 Debug.Assert(detections.Count == recognitions.Length);
-                return Enumerable.Range(0, detections.Count)
+                return (Enumerable.Range(0, detections.Count)
                     .Select(i => (detections[i], recognitions[i].Text, recognitions[i].Confidence))
                     .Where(item => item.Confidence > 0.5)
-                    .ToList();
+                    .ToList(), vizBuilder);
             }
             finally
             {
