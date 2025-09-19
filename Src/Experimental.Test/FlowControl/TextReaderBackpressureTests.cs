@@ -10,7 +10,7 @@ namespace Experimental.Test.FlowControl;
 public class TextReaderBackpressureTests
 {
     [Theory, CombinatorialData]
-    public async Task TextReaderEmitsBackpressure(
+    public async Task TextReader_EmitsBackpressure(
         [CombinatorialRange(from: 1, count: 3)] int maxParallelism,
         [CombinatorialRange(from: 1, count: 3)] int maxBatchSize,
         bool shouldDbnetBlock)
@@ -46,6 +46,8 @@ public class TextReaderBackpressureTests
 
         // Process submissions
         tcs.SetResult();
+
+        await Task.Delay(50);
 
         // Capacity is free again, should no longer block
         Assert.False(await IsBlocked());
