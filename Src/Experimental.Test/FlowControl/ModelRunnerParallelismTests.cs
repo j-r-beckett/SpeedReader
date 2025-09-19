@@ -43,7 +43,7 @@ public class BlockingCpuModelRunner : CpuModelRunner
     public BlockingCpuModelRunner(InferenceSession session, int maxParallelism, Task block)
         : base(session, maxParallelism) => _block = block;
 
-    protected override (float[], int[]) RunInference(float[] batch, int[] shape)
+    protected override (float[], int[]) RunInferenceInternal(float[] batch, int[] shape)
     {
         Interlocked.Increment(ref Parallelism);
 
