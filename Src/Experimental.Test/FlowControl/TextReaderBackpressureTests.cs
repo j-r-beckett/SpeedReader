@@ -67,31 +67,3 @@ public class TextReaderBackpressureTests
         }
     }
 }
-//
-// public class BlockingTextDetector : TextDetector
-// {
-//     private readonly Task _block;
-//
-//     public BlockingTextDetector(Task block) : base(null!, null!) => _block = block;
-//
-//     public override async Task<List<TextBoundary>> Detect(Image<Rgb24> image)
-//     {
-//         await _block;
-//
-//         // Can't return empty, if we do TextRecognizer is never called so it never has the opportunity to block
-//         return [TextBoundary.Create([(100, 100), (200, 100), (200, 200), (100, 200)])];
-//     }
-// }
-
-// public class MockTextRecognizer : TextRecognizer
-// {
-//     private readonly Task _block;
-//
-//     public MockTextRecognizer(Task block) : base(null!, null!) => _block = block;
-//
-//     public override async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image)
-//     {
-//         await _block;
-//         return ("", 0);
-//     }
-// }
