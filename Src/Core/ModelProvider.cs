@@ -10,7 +10,7 @@ namespace Core;
 public class ModelProvider : IDisposable
 {
     private readonly ConcurrentDictionary<(Model, ModelPrecision), InferenceSession> _sessions = new();
-    private readonly Lock _lock = new();
+    private static readonly Lock _lock = new();  // ONNX inference session creation is globally thread unsafe
     private bool _disposed;
 
     public InferenceSession GetSession(Model model) => GetSession(model, ModelPrecision.FP32);
