@@ -17,10 +17,17 @@ public class CpuModelRunner : ModelRunner
 
         _inferenceRunnerBlock = new ActionBlock<(TaskCompletionSource<(float[], int[])> Tcs, float[] Data, int[] Shape)>(input =>
         {
-            var (data, shape) = RunInferenceInternal(input.Data, input.Shape);
-            Debug.Assert(shape[0] == 1);  // Batch size is always 1 on CPU
-            var unbatchedShape = shape[1..];  // Strip batch size dimension that we added earlier
-            input.Tcs.SetResult((data, unbatchedShape));
+            try
+            {
+                var (data, shape) = RunInferenceInternal(input.Data, input.Shape);
+                Debug.Assert(shape[0] == 1); // Batch size is always 1 on CPU
+                var unbatchedShape = shape[1..]; // Strip batch size dimension that we added earlier
+                input.Tcs.SetResult((data, unbatchedShape));
+            }
+            catch (InferenceException ex)
+            {
+                input.Tcs.TrySetException(ex);
+            }
         }, new ExecutionDataflowBlockOptions
         {
             MaxDegreeOfParallelism = maxParallelism,
