@@ -4,21 +4,19 @@
 using System.Diagnostics;
 using System.Threading.Channels;
 using Experimental.Inference;
-using Microsoft.ML.OnnxRuntime;
 using Ocr;
-using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Experimental;
 
-public class TextReader
+public class SpeedReader
 {
     private readonly SemaphoreSlim _semaphore;
 
     private readonly Func<(TextDetector, TextRecognizer)> _factory;
 
-    internal TextReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
+    internal SpeedReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBatchSize);
@@ -28,7 +26,7 @@ public class TextReader
         _semaphore = new SemaphoreSlim(capacity, capacity);
     }
 
-    public TextReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this(
+    public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this(
         () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner)),
         maxParallelism,
         maxBatchSize)

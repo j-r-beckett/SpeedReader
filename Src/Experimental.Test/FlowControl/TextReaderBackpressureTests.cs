@@ -23,7 +23,7 @@ public class TextReaderBackpressureTests
 
         List<Task<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>>> results = [];
 
-        var reader = new TextReader(factory, maxParallelism, maxBatchSize);
+        var reader = new SpeedReader(factory, maxParallelism, maxBatchSize);
 
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
@@ -80,7 +80,7 @@ public class TextReaderBackpressureTests
         Func<(TextDetector, TextRecognizer)> factory =
             () => (new MockTextDetector(incrementAndBlock), new MockTextRecognizer(Task.CompletedTask));
 
-        var reader = new TextReader(factory, maxParallelism, maxBatchSize);
+        var reader = new SpeedReader(factory, maxParallelism, maxBatchSize);
 
         var image = new Image<Rgb24>(720, 640, Color.White);
 

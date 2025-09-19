@@ -111,7 +111,7 @@ public class TextReaderE2ETests
         }
     }
 
-    private TextReader CreateTextReader()
+    private SpeedReader CreateTextReader()
     {
         var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions
         {
@@ -124,6 +124,6 @@ public class TextReaderE2ETests
 
         var factory = () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner));
 
-        return new TextReader(factory, 1, 1);
+        return new SpeedReader(factory, 1, 1);
     }
 }
