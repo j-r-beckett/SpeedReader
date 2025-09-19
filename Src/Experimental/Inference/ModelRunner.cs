@@ -16,34 +16,46 @@ public abstract class ModelRunner : IAsyncDisposable
 
     protected virtual (float[] Data, int[] Shape) RunInferenceInternal(float[] batch, int[] shape)
     {
-        Debug.Assert(shape.Length > 2);  // 1 batch size dimension, at least one other dimension
-
-        var longShape = shape.Select(d => (long)d).ToArray();  // convert int[] -> long[]
-
-        // try/finally to prevent leaking unmanaged ONNX tensors
-        OrtValue? inputTensor = null;
-        IDisposableReadOnlyCollection<OrtValue>? outputTensors = null;
-        float[] output;
-        int[] outputShape;
         try
         {
-            inputTensor = OrtValue.CreateTensorValueFromMemory(batch, longShape);  // Instantiate ONNX tensor
-            var inputs = new Dictionary<string, OrtValue> { { "input", inputTensor } };
-            using var runOptions = new RunOptions();
-            outputTensors = _inferenceSession.Run(runOptions, inputs, _inferenceSession.OutputNames); // Run inference
-            var outputTensor = outputTensors[0]; // One input, so one output
-            outputShape = outputTensor.GetTensorTypeAndShape().Shape.Select(l => (int)l).ToArray(); // Convert output shape from long[] -> int[]
-            var outputSize = outputShape.Aggregate(1, (prod, next) => prod * next); // Multiply all shape dimensions together to get total element count
-            output = new float[outputSize]; // Instantiate an output buffer
-            outputTensor.GetTensorDataAsSpan<float>().CopyTo(output); // Copy to output buffer
+            return Execute();
         }
-        finally
+        catch (Exception ex)
         {
-            inputTensor?.Dispose();
-            outputTensors?.Dispose();
+            throw new InferenceException("An exception was thrown during inference", ex);
         }
 
-        return (output, outputShape);
+        (float[], int[]) Execute()
+        {
+            Debug.Assert(shape.Length > 2);  // 1 batch size dimension, at least one other dimension
+
+            var longShape = shape.Select(d => (long)d).ToArray();  // convert int[] -> long[]
+
+            // try/finally to prevent leaking unmanaged ONNX tensors
+            OrtValue? inputTensor = null;
+            IDisposableReadOnlyCollection<OrtValue>? outputTensors = null;
+            float[] output;
+            int[] outputShape;
+            try
+            {
+                inputTensor = OrtValue.CreateTensorValueFromMemory(batch, longShape);  // Instantiate ONNX tensor
+                var inputs = new Dictionary<string, OrtValue> { { "input", inputTensor } };
+                using var runOptions = new RunOptions();
+                outputTensors = _inferenceSession.Run(runOptions, inputs, _inferenceSession.OutputNames); // Run inference
+                var outputTensor = outputTensors[0]; // One input, so one output
+                outputShape = outputTensor.GetTensorTypeAndShape().Shape.Select(l => (int)l).ToArray(); // Convert output shape from long[] -> int[]
+                var outputSize = outputShape.Aggregate(1, (prod, next) => prod * next); // Multiply all shape dimensions together to get total element count
+                output = new float[outputSize]; // Instantiate an output buffer
+                outputTensor.GetTensorDataAsSpan<float>().CopyTo(output); // Copy to output buffer
+            }
+            finally
+            {
+                inputTensor?.Dispose();
+                outputTensors?.Dispose();
+            }
+
+            return (output, outputShape);
+        }
     }
 
     protected abstract ValueTask SubclassDisposeAsync();
@@ -54,5 +66,10 @@ public abstract class ModelRunner : IAsyncDisposable
 
         GC.SuppressFinalize(this);
     }
+}
 
+public class InferenceException : Exception
+{
+    public InferenceException(string message) : base(message) { }
+    public InferenceException(string message, Exception innerException) : base(message, innerException) { }
 }
