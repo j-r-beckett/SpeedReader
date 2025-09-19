@@ -85,30 +85,30 @@ public class TextReaderE2ETests
 
         var images = cases.Select(c => c.Image).ToAsyncEnumerable();
 
-        // var i = 0;
-        // await foreach (var result in reader.ReadMany(images))
-        // {
-        //     var svg = vizBuilder.RenderSvg();
-        //     _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
-        // }
-        //
-        //
+        var i = 0;
+        await foreach (var item in reader.ReadMany(images))
+        {
+            var svg = item.VizBuilder.RenderSvg();
+            _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
-        // Assert.Single(results);
-        //
-        // var bboxes = results.Select(r => r.BBox).ToList();
-        // var axisAlignedBBoxes = bboxes.Select(d => d.AARectangle).ToList();
-        // var orientedBBoxes = bboxes.Select(d => d.ORectangle).ToList();
-        // var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
-        //
-        // Utils.ValidateAxisAlignedBBoxes([Utils.ToAxisAlignedRectangle(bbox)], axisAlignedBBoxes);
-        // Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
-        // foreach (var polygon in polygonBBoxes)
-        // {
-        //     Assert.True(polygon.Count >= 4);
-        // }
-        //
-        // Assert.True(results[0].Text == text);
+            var results = item.Result;
+            var text = cases[i].Text;
+            var bbox = cases[i++].BBox;
+
+            var bboxes = results.Select(r => r.BBox).ToList();
+            var axisAlignedBBoxes = bboxes.Select(d => d.AARectangle).ToList();
+            var orientedBBoxes = bboxes.Select(d => d.ORectangle).ToList();
+            var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
+
+            Utils.ValidateAxisAlignedBBoxes([Utils.ToAxisAlignedRectangle(bbox)], axisAlignedBBoxes);
+            Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
+            foreach (var polygon in polygonBBoxes)
+            {
+                Assert.True(polygon.Count >= 4);
+            }
+
+            Assert.True(results[0].Text == text);
+        }
     }
 
     private TextReader CreateTextReader()
