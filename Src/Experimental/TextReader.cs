@@ -28,13 +28,14 @@ public class TextReader
         _semaphore = new SemaphoreSlim(capacity, capacity);
     }
 
-    public TextReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this (
+    public TextReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this(
         () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner)),
         maxParallelism,
         maxBatchSize)
-    { }
+    {
+    }
 
-    public async IAsyncEnumerable<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
+    public async IAsyncEnumerable<(List<(TextBoundary BBox, string Text, double Confidence)> Result, VizBuilder VizBuilder)> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
     {
         var processingTasks = Channel.CreateUnbounded<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>>();
 
