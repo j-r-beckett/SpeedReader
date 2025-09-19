@@ -29,7 +29,7 @@ public class TextReaderBackpressureTests
             return (detector, recognizer);
         };
 
-        List<Task<Task<List<(TextBoundary, string, double)>>>> results = [];
+        List<Task<Task<(List<(TextBoundary BBox, string Text, double Confidence)>, VizBuilder)>>> results = [];
 
         var reader = new TextReader(factory, maxParallelism, maxBatchSize);
 

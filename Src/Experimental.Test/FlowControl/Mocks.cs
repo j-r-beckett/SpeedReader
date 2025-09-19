@@ -27,9 +27,9 @@ public class MockTextDetector : TextDetector
 
     public MockTextDetector(Func<List<TextBoundary>> detect) : this(() => Task.FromResult(detect())) { }
 
-    public MockTextDetector(Func<Task<List<TextBoundary>>> detect) : base(null!, null!) => _detect = detect;
+    public MockTextDetector(Func<Task<List<TextBoundary>>> detect) : base(null!) => _detect = detect;
 
-    public override async Task<List<TextBoundary>> Detect(Image<Rgb24> image) => await _detect();
+    public override async Task<List<TextBoundary>> Detect(Image<Rgb24> image, VizBuilder vizBuilder) => await _detect();
 }
 
 
@@ -51,9 +51,9 @@ public class MockTextRecognizer : TextRecognizer
 
     public MockTextRecognizer(Func<(string, double)> recognize) : this(() => Task.FromResult(recognize())) { }
 
-    public MockTextRecognizer(Func<Task<(string, double)>> recognize) : base(null!, null!) => _recognize = recognize;
+    public MockTextRecognizer(Func<Task<(string, double)>> recognize) : base(null!) => _recognize = recognize;
 
-    public override async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image) => await _recognize();
+    public override async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
 }
 
 public class MockCpuModelRunner : CpuModelRunner
