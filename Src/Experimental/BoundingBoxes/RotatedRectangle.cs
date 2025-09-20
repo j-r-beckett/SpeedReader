@@ -1,0 +1,76 @@
+// Copyright (c) 2025 j-r-beckett
+// Licensed under the Apache License, Version 2.0
+
+using System.Diagnostics;
+using System.Text.Json.Serialization;
+
+namespace Experimental.BoundingBoxes;
+
+public record RotatedRectangle
+{
+    [JsonPropertyName("x")]
+    public required int X  // Top left x
+    {
+        get;
+        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+    }
+
+    [JsonPropertyName("y")]
+    public required int Y  // Top left y
+    {
+        get;
+        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+    }
+
+    [JsonPropertyName("height")]
+    public required int Height  // Height in pixels
+    {
+        get;
+        set => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+    }
+
+    [JsonPropertyName("width")]
+    public required int Width  // Width in pixels
+    {
+        get;
+        set => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+    }
+
+    [JsonPropertyName("angle")]
+    public required double Angle { get; init; }  // Angle in radians
+}
+
+public static partial class RotatedRectangleExtensions
+{
+    public static List<PointF> Corners(this RotatedRectangle rotatedRectangle)
+    {
+        var cos = Math.Cos(rotatedRectangle.Angle);
+        var sin = Math.Sin(rotatedRectangle.Angle);
+
+        var topLeft = new PointF
+        {
+            X = rotatedRectangle.X,
+            Y = rotatedRectangle.Y
+        };
+
+        var topRight = new PointF
+        {
+            X = rotatedRectangle.X + rotatedRectangle.Width * cos,
+            Y = rotatedRectangle.Y + rotatedRectangle.Width * sin
+        };
+
+        var bottomRight = new PointF
+        {
+            X = rotatedRectangle.X + rotatedRectangle.Width * cos - rotatedRectangle.Height * sin,
+            Y = rotatedRectangle.Y + rotatedRectangle.Width * sin + rotatedRectangle.Height * cos
+        };
+
+        var bottomLeft = new PointF
+        {
+            X = rotatedRectangle.X - rotatedRectangle.Height * sin,
+            Y = rotatedRectangle.Y + rotatedRectangle.Height * cos
+        };
+
+        return [topLeft, topRight, bottomRight, bottomLeft];  // clockwise order
+    }
+}

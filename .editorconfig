@@ -59,7 +59,7 @@ dotnet_naming_style.prefix_underscore.required_prefix = _
 # Code style defaults
 csharp_using_directive_placement = outside_namespace:warning
 dotnet_sort_system_directives_first = true
-csharp_prefer_braces = true:warning
+csharp_prefer_braces = when_multiline:warning
 # csharp_preserve_single_line_blocks = true:none
 # csharp_preserve_single_line_statements = false:none
 csharp_prefer_static_local_function = true:warning
@@ -93,7 +93,7 @@ csharp_style_expression_bodied_local_functions = true:warning
 
 # Wrapping preferences
 csharp_preserve_single_line_statements = false
-csharp_preserve_single_line_blocks = false
+csharp_preserve_single_line_blocks = true
 
 # Pattern matching
 csharp_style_pattern_matching_over_is_with_cast_check = true:warning
