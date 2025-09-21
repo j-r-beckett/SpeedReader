@@ -12,11 +12,11 @@ namespace Ocr.Blocks;
 
 public static class OcrPostProcessingBlock
 {
-    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizData?), (Image<Rgb24>, OcrResult, VizData?)> Create(Meter meter)
+    public static IPropagatorBlock<(Image<Rgb24>, List<TextBoundary>, List<string>, List<double>, VizData?), (Image<Rgb24>, JsonOcrResult, VizData?)> Create(Meter meter)
     {
         var postProcessingCounter = meter.CreateCounter<long>("ocr_postprocessing_completed", description: "Number of completed OCR post-processing operations");
 
-        return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, List<double> Confidences, VizData? VizData), (Image<Rgb24>, OcrResult, VizData?)>(data =>
+        return new TransformBlock<(Image<Rgb24> Image, List<TextBoundary> TextBoundaries, List<string> Texts, List<double> Confidences, VizData? VizData), (Image<Rgb24>, JsonOcrResult, VizData?)>(data =>
         {
             Debug.Assert(data.TextBoundaries.Count == data.Texts.Count);
             Debug.Assert(data.TextBoundaries.Count == data.Confidences.Count);
@@ -128,7 +128,7 @@ public static class OcrPostProcessingBlock
         return lines;
     }
 
-    private static OcrResult ConvertToOcrResults(
+    private static JsonOcrResult ConvertToOcrResults(
         List<TextBoundary> wordTextBoundaries,
         List<string> wordTexts,
         List<double> wordConfidences,
@@ -136,7 +136,7 @@ public static class OcrPostProcessingBlock
         Image<Rgb24> image)
     {
 
-        var result = new OcrResult
+        var result = new JsonOcrResult
         {
             PageNumber = -1, // Updated to real value later
             Blocks = [], // TODO
@@ -262,7 +262,7 @@ public static class OcrPostProcessingBlock
     }
 
 
-    private static BoundingBox CreateBoundingBox(TextBoundary textBoundary, int imageWidth, int imageHeight)
+    private static JsonBoundingBox CreateBoundingBox(TextBoundary textBoundary, int imageWidth, int imageHeight)
     {
         var rect = textBoundary.AARectangle;
 
@@ -295,7 +295,7 @@ public static class OcrPostProcessingBlock
             Height = normalizedHeight
         };
 
-        return new BoundingBox
+        return new JsonBoundingBox
         {
             Polygon = polygon,
             ORectangle = oRectangle,
@@ -303,7 +303,7 @@ public static class OcrPostProcessingBlock
         };
     }
 
-    private static BoundingBox CreateBoundingBox(Rectangle rect, int imageWidth, int imageHeight)
+    private static JsonBoundingBox CreateBoundingBox(Rectangle rect, int imageWidth, int imageHeight)
     {
         // Create normalized coordinates (0-1 range) with 6 decimal digits
         double normalizedX = Math.Round((double)rect.X / imageWidth, 6);
@@ -332,7 +332,7 @@ public static class OcrPostProcessingBlock
             Height = normalizedHeight
         };
 
-        return new BoundingBox
+        return new JsonBoundingBox
         {
             Polygon = polygon,
             ORectangle = oRectangle,

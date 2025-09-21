@@ -4,12 +4,14 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
+using Experimental.BoundingBoxes;
 using Experimental.Detection;
 using Experimental.Inference;
 using Ocr;
 using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Point = Experimental.BoundingBoxes.Point;
 
 namespace Experimental;
 
@@ -20,7 +22,7 @@ public class TextDetector
     public TextDetector(ModelRunner modelRunner) => _modelRunner = modelRunner;
 
     // Override for testing only
-    public virtual async Task<List<TextBoundary>> Detect(Image<Rgb24> image, VizBuilder vizBuilder)
+    public virtual async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder)
     {
         vizBuilder.AddBaseImage(image);
 
@@ -36,11 +38,15 @@ public class TextDetector
 
         var result = Postprocess(modelOutput, image, modelInputHeight, modelInputWidth);
 
-        vizBuilder.AddAxisAlignedBBoxes(result.Select(r => r.AARectangle).ToList());
-        vizBuilder.AddOrientedBBoxes(result.Select(r => r.ORectangle).ToList(), true);
-        vizBuilder.AddPolygonBBoxes(result.Select(r => r.Polygon).ToList());
+        // vizBuilder.AddAxisAlignedBBoxes(result.Select(r => r.AARectangle).ToList());
+        // vizBuilder.AddOrientedBBoxes(result.Select(r => r.ORectangle).ToList(), true);
+        // vizBuilder.AddPolygonBBoxes(result.Select(r => r.Polygon).ToList());
 
-        return result;
+        return result
+            .Select(r => r.Polygon.Select(p => (Point)p).ToList())
+            .Select(points => new Polygon { Points = points })
+            .Select(polygon => new BoundingBox(polygon))
+            .ToList();
     }
 
     private float[] Preprocess(Image<Rgb24> image, int height, int width)

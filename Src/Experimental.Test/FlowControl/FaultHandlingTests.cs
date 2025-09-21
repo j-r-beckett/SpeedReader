@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using Experimental.BoundingBoxes;
 using Experimental.Inference;
 using Ocr;
 using SixLabors.ImageSharp;
@@ -15,7 +16,7 @@ public class FaultHandlingTests
     {
         Func<(TextDetector, TextRecognizer)> factory = () =>
         {
-            var detector = new MockTextDetector((Func<List<TextBoundary>>)(() => throw new TestException()));
+            var detector = new MockTextDetector((Func<List<BoundingBox>>)(() => throw new TestException()));
             var recognizer = new MockTextRecognizer();
             return (detector, recognizer);
         };

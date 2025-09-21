@@ -1,19 +1,21 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using Experimental.BoundingBoxes;
 using Experimental.Inference;
 using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Point = Experimental.BoundingBoxes.Point;
 
 namespace Experimental.Test.FlowControl;
 
 public class MockTextDetector : TextDetector
 {
-    public static readonly List<TextBoundary> SimpleResult
-        = [TextBoundary.Create([(100, 100), (200, 100), (200, 200), (100, 200)])];
+    public static readonly List<BoundingBox> SimpleResult
+        = [new BoundingBox(new Polygon { Points = new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) } })];
 
-    private readonly Func<Task<List<TextBoundary>>> _detect;
+    private readonly Func<Task<List<BoundingBox>>> _detect;
 
     public MockTextDetector() : this(() => Task.FromResult(SimpleResult)) { }
 
@@ -25,11 +27,11 @@ public class MockTextDetector : TextDetector
     {
     }
 
-    public MockTextDetector(Func<List<TextBoundary>> detect) : this(() => Task.FromResult(detect())) { }
+    public MockTextDetector(Func<List<BoundingBox>> detect) : this(() => Task.FromResult(detect())) { }
 
-    public MockTextDetector(Func<Task<List<TextBoundary>>> detect) : base(null!) => _detect = detect;
+    public MockTextDetector(Func<Task<List<BoundingBox>>> detect) : base(null!) => _detect = detect;
 
-    public override async Task<List<TextBoundary>> Detect(Image<Rgb24> image, VizBuilder vizBuilder) => await _detect();
+    public override async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder) => await _detect();
 }
 
 

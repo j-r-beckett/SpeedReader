@@ -22,7 +22,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "hello", 10, 10),
             CreateWord("word_1", "world", 50, 10)
         };
-        var ocrResult = new OcrResult { Words = words };
+        var ocrResult = new JsonOcrResult { Words = words };
 
         var result = await await multiplexer.ProcessSingle(ocrResult, CancellationToken.None, CancellationToken.None);
 
@@ -44,7 +44,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "hello", 10, 10),
             CreateWord("word_1", "world", 50, 10)
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await (await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
 
         // Second result with exact matches
@@ -53,7 +53,7 @@ public class DeduplicatorBlockTests
             CreateWord("newid1", "hello", 10, 10),
             CreateWord("newid2", "world", 50, 10)
         };
-        var secondResult = new OcrResult { Words = secondWords };
+        var secondResult = new JsonOcrResult { Words = secondWords };
 
         var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
@@ -75,7 +75,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "hello", 10, 10),
             CreateWord("word_1", "world", 50, 10)
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await (await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
 
         // Second result with completely different words
@@ -84,7 +84,7 @@ public class DeduplicatorBlockTests
             CreateWord("newid1", "goodbye", 100, 100),
             CreateWord("newid2", "universe", 150, 100)
         };
-        var secondResult = new OcrResult { Words = secondWords };
+        var secondResult = new JsonOcrResult { Words = secondWords };
 
         var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
@@ -107,7 +107,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_1", "world", 50, 10),
             CreateWord("word_2", "test", 90, 10)
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await (await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None));
 
         // Second result with all new words
@@ -118,7 +118,7 @@ public class DeduplicatorBlockTests
             CreateWord("newid3", "gamma", 300, 200),
             CreateWord("newid4", "delta", 350, 200)
         };
-        var secondResult = new OcrResult { Words = secondWords };
+        var secondResult = new JsonOcrResult { Words = secondWords };
 
         var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
@@ -144,7 +144,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "hello", 10, 10),
             CreateWord("word_1", "world", 50, 10)
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with mix: one match, one new
@@ -153,7 +153,7 @@ public class DeduplicatorBlockTests
             CreateWord("newid1", "hello", 10, 10),    // Should match word_0
             CreateWord("newid2", "goodbye", 100, 100) // Should get word_2
         };
-        var secondResult = new OcrResult { Words = secondWords };
+        var secondResult = new JsonOcrResult { Words = secondWords };
 
         var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
@@ -174,11 +174,11 @@ public class DeduplicatorBlockTests
         {
             CreateWord("word_0", "hello", 10, 10)
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with no words
-        var emptyResult = new OcrResult { Words = new List<Word>() };
+        var emptyResult = new JsonOcrResult { Words = new List<Word>() };
 
         var result = await await multiplexer.ProcessSingle(emptyResult, CancellationToken.None, CancellationToken.None);
 
@@ -195,7 +195,7 @@ public class DeduplicatorBlockTests
         {
             CreateWord("word_0", "hello", 10, 10)
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Test word at distance 1 - should match
@@ -203,7 +203,7 @@ public class DeduplicatorBlockTests
         {
             CreateWord("id1", "hell", 10, 10) // Distance 1 - should match
         };
-        var withinThresholdResult = new OcrResult { Words = withinThresholdWords };
+        var withinThresholdResult = new JsonOcrResult { Words = withinThresholdWords };
 
         var result1 = await await multiplexer.ProcessSingle(withinThresholdResult, CancellationToken.None, CancellationToken.None);
 
@@ -215,7 +215,7 @@ public class DeduplicatorBlockTests
         {
             CreateWord("id2", "world", 50, 50) // Distance 5 - should NOT match
         };
-        var exceedsThresholdResult = new OcrResult { Words = exceedsThresholdWords };
+        var exceedsThresholdResult = new JsonOcrResult { Words = exceedsThresholdWords };
 
         var result2 = await await multiplexer.ProcessSingle(exceedsThresholdResult, CancellationToken.None, CancellationToken.None);
 
@@ -234,7 +234,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_0", "test", 10, 10),   // Close position
             CreateWord("word_1", "test", 1000, 1000) // Far position
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with word close to first position
@@ -242,7 +242,7 @@ public class DeduplicatorBlockTests
         {
             CreateWord("newid", "test", 12, 12) // Very close to first word (10,10)
         };
-        var secondResult = new OcrResult { Words = secondWords };
+        var secondResult = new JsonOcrResult { Words = secondWords };
 
         var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
@@ -263,7 +263,7 @@ public class DeduplicatorBlockTests
             CreateWord("word_1", "help", 50, 10),    // Distance 2 from "hell"
             CreateWord("word_2", "held", 90, 10)     // Distance 2 from "hell"
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with word that could match multiple previous words
@@ -271,7 +271,7 @@ public class DeduplicatorBlockTests
         {
             CreateWord("newid", "hell", 30, 30) // Closest to "hello" (distance 1)
         };
-        var secondResult = new OcrResult { Words = secondWords };
+        var secondResult = new JsonOcrResult { Words = secondWords };
 
         var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
@@ -290,7 +290,7 @@ public class DeduplicatorBlockTests
         {
             CreateWord("word_0", "hello", 10, 10)
         };
-        var firstResult = new OcrResult { Words = firstWords };
+        var firstResult = new JsonOcrResult { Words = firstWords };
         await await multiplexer.ProcessSingle(firstResult, CancellationToken.None, CancellationToken.None);
 
         // Second result with multiple words that could all match the previous word
@@ -300,7 +300,7 @@ public class DeduplicatorBlockTests
             CreateWord("id2", "help", 100, 100), // Distance 2 - could match
             CreateWord("id3", "held", 150, 150)  // Distance 2 - could match
         };
-        var secondResult = new OcrResult { Words = secondWords };
+        var secondResult = new JsonOcrResult { Words = secondWords };
 
         var result = await await multiplexer.ProcessSingle(secondResult, CancellationToken.None, CancellationToken.None);
 
@@ -313,11 +313,11 @@ public class DeduplicatorBlockTests
         Assert.Equal("held", result.Words[2].Text);
     }
 
-    private static BlockMultiplexer<OcrResult, OcrResult> CreateMultiplexer(int maxLevDist)
+    private static BlockMultiplexer<JsonOcrResult, JsonOcrResult> CreateMultiplexer(int maxLevDist)
     {
         var deduplicator = new DeduplicatorBlock(maxLevDist);
         var block = DataflowBlock.Encapsulate(deduplicator.Target, deduplicator.Source);
-        return new BlockMultiplexer<OcrResult, OcrResult>(block);
+        return new BlockMultiplexer<JsonOcrResult, JsonOcrResult>(block);
     }
 
     private static Word CreateWord(string id, string text, double x, double y)
@@ -335,7 +335,7 @@ public class DeduplicatorBlockTests
             Id = id,
             Text = text,
             Confidence = 0.95,
-            BoundingBox = new BoundingBox
+            BoundingBox = new JsonBoundingBox
             {
                 Polygon = polygon,
                 AARectangle = new AARectangle

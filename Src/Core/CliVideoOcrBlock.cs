@@ -16,7 +16,7 @@ namespace Core;
 
 public class CliVideoOcrBlock
 {
-    public ISourceBlock<OcrResult> ResultsBlock
+    public ISourceBlock<JsonOcrResult> ResultsBlock
     {
         get; init;
     }
@@ -40,7 +40,7 @@ public class CliVideoOcrBlock
         Task<Stream>? videoOutputTask = null;
 
         var counter = 0;
-        var transformer = new TransformBlock<(Image<Rgb24> Img, OcrResult Result, VizData? VizData), OcrResult>(async item =>
+        var transformer = new TransformBlock<(Image<Rgb24> Img, JsonOcrResult Result, VizData? VizData), JsonOcrResult>(async item =>
         {
             // Render the visualization with OCR results
             var visualizedImage = PngRenderer.Render(item.Img, item.Result, item.VizData);

@@ -128,7 +128,7 @@ public class Program
         var cliVideoOcrBlock = new CliVideoOcrBlock(path, frameRate);
 
         var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-        var consoleOutputBlock = new ActionBlock<OcrResult>(result =>
+        var consoleOutputBlock = new ActionBlock<JsonOcrResult>(result =>
         {
             var json = JsonSerializer.Serialize(result, jsonOptions);
             Console.WriteLine(json);

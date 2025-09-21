@@ -100,7 +100,7 @@ public static class SvgRenderer
         public LegendItem[] LegendItems { get; set; } = [];
     }
 
-    public static Svg Render(Image<Rgb24> sourceImage, OcrResult ocrResult, VizData? vizData)
+    public static Svg Render(Image<Rgb24> sourceImage, JsonOcrResult ocrResult, VizData? vizData)
     {
         var template = _template.Value;
 

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Core;
+using Experimental.BoundingBoxes;
 using Experimental.Inference;
 using Microsoft.Extensions.Logging;
 using Resources;
@@ -72,7 +73,7 @@ public class TextRecognizerE2ETests
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        List<(double, double)> bbox = [(100, 100), (200, 100), (200, 200), (100, 200)];
+        RotatedRectangle bbox = new() { X = 100, Y = 100, Width = 100, Height = 100, Angle = 0 };
 
         var (actualText, confidence) = await RunRecognition(image, bbox);
 
@@ -80,18 +81,18 @@ public class TextRecognizerE2ETests
         Assert.True(confidence <= 0.01);
     }
 
-    private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, List<(double X, double Y)> bbox)
+    private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, RotatedRectangle bbox)
     {
         var session = _modelProvider.GetSession(Model.SVTRv2);
         var svtrRunner = new CpuModelRunner(session, 1);
         var vizBuilder = new VizBuilder();
         vizBuilder.AddBaseImage(image);
-        vizBuilder.AddOrientedBBoxes([bbox], true);
+        // vizBuilder.AddOrientedBBoxes([bbox], true);
         var recognizer = new TextRecognizer(svtrRunner);
-        var result = await recognizer.Recognize(bbox, image, vizBuilder);
+        var result = await recognizer.Recognize(bbox.Corners().Select(p => ((double)p.X, (double)p.Y)).ToList(), image, vizBuilder);
 
-        var svg = vizBuilder.RenderSvg();
-        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+        // var svg = vizBuilder.RenderSvg();
+        // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         return result;
     }

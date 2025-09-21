@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Core;
+using Experimental.BoundingBoxes;
 using Experimental.Inference;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
@@ -29,7 +30,7 @@ public class TextDetectorE2ETests : IDisposable
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        List<List<(double X, double Y)>> expected =
+        List<RotatedRectangle> expected =
         [
             Utils.DrawText(image, "undertake", 100, 400),
             Utils.DrawText(image, "yup", 300, 150),
@@ -45,7 +46,7 @@ public class TextDetectorE2ETests : IDisposable
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        List<List<(double X, double Y)>> expected =
+        List<RotatedRectangle> expected =
         [
             Utils.DrawText(image, "dastardly", 450, 450, 35),
             Utils.DrawText(image, "citizen", 300, 150, 15),
@@ -61,12 +62,12 @@ public class TextDetectorE2ETests : IDisposable
     {
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        List<List<(double X, double Y)>> expected = [];
+        List<RotatedRectangle> expected = [];
 
         await TestTextDetection(image, expected);
     }
 
-    private async Task TestTextDetection(Image<Rgb24> image, List<List<(double X, double Y)>> expectedBBoxes)
+    private async Task TestTextDetection(Image<Rgb24> image, List<RotatedRectangle> expectedBBoxes)
     {
         // Set IntraOpNumThreads to maximize throughput for non-parallelized CPU execution
         var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions
@@ -80,21 +81,21 @@ public class TextDetectorE2ETests : IDisposable
 
         var results = await detector.Detect(image, vizBuilder);
 
-        var expectedAxisAligned = expectedBBoxes.Select(Utils.ToAxisAlignedRectangle).ToList();
+        var expectedAxisAligned = expectedBBoxes.Select(r => r.ToAxisAlignedRectangle()).ToList();
 
-        var svg = vizBuilder
-            .AddExpectedAxisAlignedBBoxes(expectedAxisAligned)
-            .AddExpectedOrientedBBoxes(expectedBBoxes, true)
-            .RenderSvg();
+        // var svg = vizBuilder
+        //     .AddExpectedAxisAlignedBBoxes(expectedAxisAligned)
+        //     .AddExpectedOrientedBBoxes(expectedBBoxes, true)
+        //     .RenderSvg();
 
-        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+        // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
-        Utils.ValidateOrientedBBoxes(expectedBBoxes, results.Select(r => r.ORectangle).ToList());
-        Utils.ValidateAxisAlignedBBoxes(expectedAxisAligned, results.Select(r => r.AARectangle).ToList());
+        Utils.ValidateOrientedBBoxes(expectedBBoxes, results.Select(r => r.RotatedRectangle).ToList());
+        Utils.ValidateAxisAlignedBBoxes(expectedAxisAligned, results.Select(r => r.AxisAlignedRectangle).ToList());
 
         foreach (var result in results)
         {
-            Assert.True(result.Polygon.Count >= 4);
+            Assert.True(result.Polygon.Points.Count >= 4);
         }
     }
 

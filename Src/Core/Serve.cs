@@ -35,14 +35,14 @@ public static class Serve
 
         // Create OcrBlock and register single multiplexer for access
         var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        var ocrMultiplexer = new BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, OcrResult, VizData?)>(ocrBlock.Block);
+        var ocrMultiplexer = new BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, JsonOcrResult, VizData?)>(ocrBlock.Block);
         builder.Services.AddSingleton(ocrMultiplexer);
 
         var app = builder.Build();
 
         app.MapGet("/api/health", () => "Healthy");
 
-        app.MapPost("api/ocr", async (HttpContext context, BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, OcrResult, VizData?)> multiplexer) =>
+        app.MapPost("api/ocr", async (HttpContext context, BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, JsonOcrResult, VizData?)> multiplexer) =>
         {
             // var tasks = new List<Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)>>();
 
@@ -57,7 +57,7 @@ public static class Serve
             }
 
             // Process results and create response
-            var ocrResults = new List<OcrResult>();
+            var ocrResults = new List<JsonOcrResult>();
             for (int i = 0; i < results.Length; i++)
             {
                 var (image, result, _) = results[i];
