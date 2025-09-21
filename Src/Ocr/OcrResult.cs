@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace Ocr
 {
-    public record OcrResult
+    public record JsonOcrResult
     {
         [JsonPropertyName("pageNumber")]
         public int PageNumber
@@ -23,7 +23,7 @@ namespace Ocr
         public List<Word> Words { get; init; } = new();
     }
 
-    public record BoundingBox
+    public record JsonBoundingBox
     {
         [JsonPropertyName("polygon")]
         public List<JsonPoint> Polygon { get; init; } = new();
@@ -86,7 +86,7 @@ namespace Ocr
         public string Id { get; init; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public required BoundingBox BoundingBox
+        public required JsonBoundingBox BoundingBox
         {
             get; init;
         }
@@ -107,7 +107,7 @@ namespace Ocr
         public string Id { get; init; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public required BoundingBox BoundingBox
+        public required JsonBoundingBox BoundingBox
         {
             get; init;
         }
@@ -131,7 +131,7 @@ namespace Ocr
         public string Id { get; set; } = string.Empty;
 
         [JsonPropertyName("boundingBox")]
-        public required BoundingBox BoundingBox
+        public required JsonBoundingBox BoundingBox
         {
             get; init;
         }

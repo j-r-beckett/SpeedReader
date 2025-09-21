@@ -12,7 +12,7 @@ namespace Ocr;
 
 public class VideoOcrBlock
 {
-    public ISourceBlock<(Image<Rgb24>, OcrResult, VizData?)> Source
+    public ISourceBlock<(Image<Rgb24>, JsonOcrResult, VizData?)> Source
     {
         get; init;
     }
@@ -25,13 +25,13 @@ public class VideoOcrBlock
             new TransformBlock<Image<Rgb24>, (Image<Rgb24>, VizData?)>(img => (img, new VizData()));
 
         var splitBlock =
-            new SplitBlock<(Image<Rgb24> Img, OcrResult Result, VizData? Viz), OcrResult, (Image<Rgb24>, VizData?)>(item =>
+            new SplitBlock<(Image<Rgb24> Img, JsonOcrResult Result, VizData? Viz), JsonOcrResult, (Image<Rgb24>, VizData?)>(item =>
                 (item.Result, (item.Img, item.Viz)));
 
         var deduplicatorBlock = new DeduplicatorBlock(1);  // TODO: make configurable
 
         var mergeBlock =
-            new MergeBlock<OcrResult, (Image<Rgb24>, VizData?), (Image<Rgb24>, OcrResult, VizData?)>((result, imgViz) => (imgViz.Item1, result, imgViz.Item2));
+            new MergeBlock<JsonOcrResult, (Image<Rgb24>, VizData?), (Image<Rgb24>, JsonOcrResult, VizData?)>((result, imgViz) => (imgViz.Item1, result, imgViz.Item2));
 
         decoderBlock.LinkTo(preprocessingBlock, new DataflowLinkOptions { PropagateCompletion = true });
         preprocessingBlock.LinkTo(ocrBlock.Block, new DataflowLinkOptions { PropagateCompletion = true });

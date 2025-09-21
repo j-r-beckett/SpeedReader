@@ -8,21 +8,21 @@ namespace Video;
 
 public class DeduplicatorBlock
 {
-    public ITargetBlock<OcrResult> Target
+    public ITargetBlock<JsonOcrResult> Target
     {
         get; set;
     }
-    public ISourceBlock<OcrResult> Source
+    public ISourceBlock<JsonOcrResult> Source
     {
         get; set;
     }
 
     public DeduplicatorBlock(int maxLevDist)
     {
-        OcrResult? previousResult = null;
+        JsonOcrResult? previousResult = null;
         int wordIdCounter = 0;
 
-        var deduplicator = new TransformBlock<OcrResult, OcrResult>(result =>
+        var deduplicator = new TransformBlock<JsonOcrResult, JsonOcrResult>(result =>
         {
             if (previousResult is null)
             {

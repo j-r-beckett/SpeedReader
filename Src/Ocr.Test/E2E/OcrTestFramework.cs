@@ -51,7 +51,7 @@ public class OcrTestFramework
         using var meter = new Meter("OcrTestFramework");
 
         var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        await using var multiplexer = new BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, OcrResult, VizData?)>(ocrBlock.Block);
+        await using var multiplexer = new BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, JsonOcrResult, VizData?)>(ocrBlock.Block);
 
         var processTask = await multiplexer.ProcessSingle((scenario.Image, null), CancellationToken.None, CancellationToken.None);
 
