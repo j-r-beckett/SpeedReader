@@ -87,12 +87,12 @@ public class TextRecognizerE2ETests
         var svtrRunner = new CpuModelRunner(session, 1);
         var vizBuilder = new VizBuilder();
         vizBuilder.AddBaseImage(image);
-        // vizBuilder.AddOrientedBBoxes([bbox], true);
+        vizBuilder.AddOrientedBBoxes([bbox], true);
         var recognizer = new TextRecognizer(svtrRunner);
-        var result = await recognizer.Recognize(bbox.Corners().Select(p => ((double)p.X, (double)p.Y)).ToList(), image, vizBuilder);
+        var result = await recognizer.Recognize(bbox.Corners().Select(p => (p.X, p.Y)).ToList(), image, vizBuilder);
 
-        // var svg = vizBuilder.RenderSvg();
-        // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+        var svg = vizBuilder.RenderSvg();
+        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         return result;
     }
