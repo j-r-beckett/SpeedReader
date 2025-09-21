@@ -8,18 +8,17 @@ namespace Experimental.BoundingBoxes;
 public record Point
 {
     [JsonPropertyName("x")]
-    public required int X
-    {
-        get;
-        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-    }
+    public required int X { get; set; }
 
     [JsonPropertyName("y")]
-    public required int Y
+    public required int Y { get; set; }
+
+    public static explicit operator Point(PointF point) => new()
     {
-        get;
-        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-    }
+        X = (int)Math.Round(point.X),
+        Y = (int)Math.Round(point.Y)
+    };
+
 
     public void Deconstruct(out int x, out int y) { x = X; y = Y; }
 

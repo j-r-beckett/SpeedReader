@@ -7,7 +7,8 @@ public static partial class RotatedRectangleExtensions
 {
     public static RotatedRectangle ToRotatedRectangle(this ConvexHull convexHull)
     {
-        if (convexHull.Points.Count < 3) throw new ArgumentException("Convex hull must have at least 3 points");
+        if (convexHull.Points.Count < 3)
+            throw new ArgumentException("Convex hull must have at least 3 points");
 
         double minArea = double.MaxValue;
         RotatedRectangle? bestRectangle = null;
@@ -24,9 +25,7 @@ public static partial class RotatedRectangleExtensions
 
             // Skip zero-length edges
             if (edge.Item1 == 0 && edge.Item2 == 0)
-            {
                 continue;
-            }
 
             // Find the rectangle aligned with this edge
             var rectangle = FindRectangleAlignedWithEdge(points, edge);

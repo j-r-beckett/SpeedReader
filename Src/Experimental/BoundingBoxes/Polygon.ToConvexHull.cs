@@ -33,7 +33,8 @@ public static partial class PolygonExtensions
 
         var lastPoint = stack[^1];
         stack.RemoveAt(stack.Count - 1);
-        if (CrossProductZ(stack[^1], lastPoint, minYPoint) > 0) stack.Add(lastPoint);
+        if (CrossProductZ(stack[^1], lastPoint, minYPoint) > 0)
+            stack.Add(lastPoint);
 
         stack.Reverse();
 
@@ -62,8 +63,10 @@ public static partial class PolygonExtensions
     {
         var crossZ = CrossProductZ(anchor, p1, p2);
 
-        if (crossZ < 0) return 1;
-        if (crossZ > 0) return -1;
+        if (crossZ < 0)
+            return 1;
+        if (crossZ > 0)
+            return -1;
 
         // Points are collinear, break ties by distance
         (int X, int Y) v1 = (p1.X - anchor.X, p1.Y - anchor.Y);
