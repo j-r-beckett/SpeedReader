@@ -254,8 +254,8 @@ public static class OrientedRectangleTestUtils
     public static Image<Rgb24> CreateDebugVisualization(
         List<(int X, int Y)> convexHull,
         List<(double X, double Y)> orientedRect,
-        int imageWidth = 200,
-        int imageHeight = 150)
+        int imageWidth = 400,
+        int imageHeight = 300)
     {
         var image = new Image<Rgb24>(imageWidth, imageHeight);
         image.Mutate(ctx => ctx.BackgroundColor(Color.White));
