@@ -40,14 +40,14 @@ public class TextRecognizer
         var tensor = resized.ToTensor([height, width, 3], 127.5f);
         tensor.NhwcToNchwInPlace([height, width, 3]);
 
-        // Normalize: [0,255] -> [-1,1]
+        // Normalize
         for (int channel = 0; channel < 3; channel++)
         {
             int channelOffset = channel * height * width;
             var channelTensor = Tensor.Create(tensor, channelOffset, [height, width], default);
 
-            Tensor.Divide(channelTensor, 127.5f, channelTensor);
-            Tensor.Subtract(channelTensor, 1.0f, channelTensor);
+            Tensor.Divide(channelTensor, 127.5f, channelTensor);  // [0,255] -> [0,2]
+            Tensor.Subtract(channelTensor, 1.0f, channelTensor);  // [0,2] -> [-1,1]
         }
 
         return tensor;

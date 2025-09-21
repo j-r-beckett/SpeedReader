@@ -36,12 +36,7 @@ public class TextDetector
         var probabilityMapSpan = modelOutput.AsSpan().AsSpan2D(modelInputHeight, modelInputWidth);
         vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, image.Width, image.Height);
 
-        var result = Postprocess(modelOutput, image, modelInputHeight, modelInputWidth);
-
-        var boundingBoxes = result
-            .Select(r => new Polygon { Points = r.Polygon.Select(p => (Point)p).ToList() })
-            .Select(polygon => new BoundingBox(polygon))
-            .ToList();
+        var boundingBoxes = Postprocess(modelOutput, image, modelInputHeight, modelInputWidth);
 
         vizBuilder.AddBoundingBoxes(boundingBoxes);
 
@@ -71,32 +66,34 @@ public class TextDetector
         return tensor;
     }
 
-    private List<TextBoundary> Postprocess(float[] modelOutput, Image<Rgb24> image, int height, int width)
+    private List<BoundingBox> Postprocess(float[] modelOutput, Image<Rgb24> image, int height, int width)
     {
         modelOutput.BinarizeInPlace(0.2f);
         var probabilityMapSpan = modelOutput.AsSpan().AsSpan2D(height, width);
         var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan)
             .Select(b => b.Select(p => (Point)p).ToList())
             .Select(points => new Polygon { Points = points });
-        List<TextBoundary> textBoundaries = [];
 
-        foreach (var boundary in boundaries)
+        // Multiplying by this undoes the transformation from image coordinates to model coordinates that we did in preprocessing with AspectResizeInPlace and ToTensor
+        var scale = Math.Max((double)image.Width / probabilityMapSpan.Width, (double)image.Height / probabilityMapSpan.Height);
+
+        return boundaries
+            .Select(BoundaryToBBox)
+            .OfType<BoundingBox>()  // Filter out nulls
+            .ToList();
+
+        BoundingBox? BoundaryToBBox(Polygon boundary)
         {
-            double scale = Math.Max((double)image.Width / probabilityMapSpan.Width, (double)image.Height / probabilityMapSpan.Height);
+            var polygon = boundary
+                .Simplify()  // Remove redundant points
+                .Dilate(1.5)  // Undo contraction baked into DBNet during training; 1.5 is a model-specific constant
+                .Scale(scale)  // Convert from model coordinates to image coordinates
+                .Clamp(image.Height - 1, image.Width - 1);  // Make sure we don't go out of bounds
 
-            var dilatedPolygon = boundary
-                .Simplify()
-                .Dilate(1.5)  // The DBNet model we're using has a 1.5x dilation factor
-                .Scale(scale)  // Convert back to original coordinate system
-                .Clamp(image.Height - 1, image.Width - 1)  // Make sure we don't go out of bounds
-                .Points.Select(p => (p.X, p.Y)).ToList();
+            if (polygon.Points.Count <= 4)
+                return null;  // Not enough points to define a polygon
 
-            if (dilatedPolygon.Count >= 4)
-            {
-                textBoundaries.Add(TextBoundary.Create(dilatedPolygon));
-            }
+            return new BoundingBox(polygon);  // Bounding box construction creates rotated rectangle and axis-aligned rectangle
         }
-
-        return textBoundaries;
     }
 }

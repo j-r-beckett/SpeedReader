@@ -68,10 +68,8 @@ public class SpeedReader
                 var vizBuilder = new VizBuilder();
 
                 var detections = await detector.Detect(image, vizBuilder);
-                var recognitionTasks = detections
-                    // .Select(b => b.RotatedRectangle.Corners())
-                    // .Select(c => c.Select(p => (p.X, p.Y)).ToList())
-                    .Select(d => recognizer.Recognize(d.RotatedRectangle, image, vizBuilder)).ToList();
+                var recognitionTasks = detections.Select(d =>
+                    recognizer.Recognize(d.RotatedRectangle, image, vizBuilder));
                 var recognitions = await Task.WhenAll(recognitionTasks);
                 Debug.Assert(detections.Count == recognitions.Length);
                 return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
