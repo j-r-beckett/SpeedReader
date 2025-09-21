@@ -9,7 +9,7 @@ namespace Experimental.Detection;
 
 public static class PixelsToFloatsExtensions
 {
-    public static float[] ToFloatArray(this Image<Rgb24> image, nint[] shape, float padding = 0)
+    public static float[] ToTensor(this Image<Rgb24> image, nint[] shape, float padding = 0)
     {
         var height = shape[0];
         var width = shape[1];

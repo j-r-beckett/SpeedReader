@@ -50,11 +50,10 @@ public class TextDetector
 
     private float[] Preprocess(Image<Rgb24> image, int height, int width)
     {
-        var data = image
-            .Clone()
-            .AspectResizeInPlace(width, height)
-            .ToFloatArray([height, width, 3])
-            .NhwcToNchwInPlace([height, width, 3]);
+        using var resized = image.Clone().AspectResizeInPlace(width, height);
+
+        var tensor = resized.ToTensor([height, width, 3]);
+        tensor.NhwcToNchwInPlace([height, width, 3]);
 
         // Apply ImageNet normalization
         float[] means = [123.675f, 116.28f, 103.53f];
@@ -62,14 +61,14 @@ public class TextDetector
 
         for (int channel = 0; channel < 3; channel++)
         {
-            var tensor = Tensor.Create(data, channel * height * width, [height, width], default);
+            var channelTensor = Tensor.Create(tensor, channel * height * width, [height, width], default);
 
             // Subtract mean and divide by std in place
-            Tensor.Subtract(tensor, means[channel], tensor);
-            Tensor.Divide(tensor, stds[channel], tensor);
+            Tensor.Subtract(channelTensor, means[channel], channelTensor);
+            Tensor.Divide(channelTensor, stds[channel], channelTensor);
         }
 
-        return data;
+        return tensor;
     }
 
     private List<TextBoundary> Postprocess(float[] modelOutput, Image<Rgb24> image, int height, int width)

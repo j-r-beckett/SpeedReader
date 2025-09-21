@@ -11,7 +11,7 @@ public static class NhwcToNchwExtensions
     // Pool with maxArrayLength of 1 Gb (bigger than the ArrayPool.Shared maxArrayLength of 1 Mb)
     private static readonly ArrayPool<float> _pool = ArrayPool<float>.Create(1 << 30, 64);
 
-    public static float[] NhwcToNchwInPlace(this float[] tensor, nint[] shape)
+    public static void NhwcToNchwInPlace(this float[] tensor, nint[] shape)
     {
         if (shape.Length != 3)
         {
@@ -53,7 +53,5 @@ public static class NhwcToNchwExtensions
         {
             _pool.Return(workspace);
         }
-
-        return tensor;
     }
 }
