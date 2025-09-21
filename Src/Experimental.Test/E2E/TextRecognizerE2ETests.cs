@@ -89,7 +89,7 @@ public class TextRecognizerE2ETests
         vizBuilder.AddBaseImage(image);
         vizBuilder.AddOrientedBBoxes([bbox], true);
         var recognizer = new TextRecognizer(svtrRunner);
-        var result = await recognizer.Recognize(bbox.Corners().Select(p => (p.X, p.Y)).ToList(), image, vizBuilder);
+        var result = await recognizer.Recognize(bbox, image, vizBuilder);
 
         var svg = vizBuilder.RenderSvg();
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");

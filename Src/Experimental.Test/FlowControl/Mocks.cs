@@ -55,7 +55,7 @@ public class MockTextRecognizer : TextRecognizer
 
     public MockTextRecognizer(Func<Task<(string, double)>> recognize) : base(null!) => _recognize = recognize;
 
-    public override async Task<(string Text, double Confidence)> Recognize(List<(double X, double Y)> oRectangle, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
+    public override async Task<(string Text, double Confidence)> Recognize(RotatedRectangle region, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
 }
 
 public class MockCpuModelRunner : CpuModelRunner
