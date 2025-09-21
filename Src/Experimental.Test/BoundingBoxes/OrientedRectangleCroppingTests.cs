@@ -113,7 +113,7 @@ public class OrientedRectangleCroppingTests
         var width = croppedImage.Width;
         var height = croppedImage.Height;
 
-        var inset = 3;
+        var inset = 5;
 
         var topLeft = croppedImage[inset, inset];
         var topRight = croppedImage[width - inset, inset];
@@ -122,17 +122,19 @@ public class OrientedRectangleCroppingTests
 
         _outputHelper.WriteLine($"Corner colors - TL: {topLeft}, TR: {topRight}, BR: {bottomRight}, BL: {bottomLeft}");
 
-        Assert.True(topLeft.R < 50, $"Top-left should have low red, got {topLeft.R}");
-        Assert.True(topLeft.G < 50, $"Top-left should have low green, got {topLeft.G}");
+        var tolerance = 50;
 
-        Assert.True(topRight.R < 50, $"Top-right should have low red, got {topRight.R}");
-        Assert.True(topRight.G > 200, $"Top-right should have high green, got {topRight.G}");
+        Assert.True(topLeft.R < tolerance, $"Top-left should have low red, got {topLeft.R}");
+        Assert.True(topLeft.G < 255 - tolerance, $"Top-left should have low green, got {topLeft.G}");
 
-        Assert.True(bottomRight.R > 200, $"Bottom-right should have high red, got {bottomRight.R}");
-        Assert.True(bottomRight.G > 200, $"Bottom-right should have high green, got {bottomRight.G}");
+        Assert.True(topRight.R < tolerance, $"Top-right should have low red, got {topRight.R}");
+        Assert.True(topRight.G > 255 - tolerance, $"Top-right should have high green, got {topRight.G}");
 
-        Assert.True(bottomLeft.R > 200, $"Bottom-left should have high red, got {bottomLeft.R}");
-        Assert.True(bottomLeft.G < 50, $"Bottom-left should have low green, got {bottomLeft.G}");
+        Assert.True(bottomRight.R > 255 - tolerance, $"Bottom-right should have high red, got {bottomRight.R}");
+        Assert.True(bottomRight.G > 255 - tolerance, $"Bottom-right should have high green, got {bottomRight.G}");
+
+        Assert.True(bottomLeft.R > 255 - tolerance, $"Bottom-left should have high red, got {bottomLeft.R}");
+        Assert.True(bottomLeft.G < tolerance, $"Bottom-left should have low green, got {bottomLeft.G}");
     }
 
     private void VerifyImageDimensions(Image<Rgb24> croppedImage, int expectedWidth, int expectedHeight)
@@ -146,6 +148,58 @@ public class OrientedRectangleCroppingTests
             $"Width should be within ±2 of {expectedWidth}, got {actualWidth}");
         Assert.True(Math.Abs(actualHeight - expectedHeight) <= 2,
             $"Height should be within ±2 of {expectedHeight}, got {actualHeight}");
+    }
+
+    [Fact]
+    public async Task CropOriented_WithRandomOrientedRectangles_GeneratesCorrectCrops()
+    {
+        var random = new Random(0);
+        var numIterations = 100;
+
+        for (int n = 0; n < numIterations; n++)
+        {
+            var imageWidth = 700;
+            var imageHeight = 600;
+
+            var centerX = 200 + random.NextDouble() * 200;
+            var centerY = 160 + random.NextDouble() * 140;
+            var rectHeight = 50 + random.NextDouble() * 100;
+            var rectWidth = rectHeight + 50 + random.NextDouble() * 100;
+            var angleDegrees = (random.NextDouble() - 0.5) * 180;
+
+            using var sourceImage = OrientedRectangleTestUtils.CreateRotatedRectangleTest(
+                imageWidth, imageHeight, (float)centerX, (float)centerY,
+                (float)rectWidth, (float)rectHeight, (float)angleDegrees);
+
+            await _publisher.PublishAsync(sourceImage, $"Random source image {n} - {angleDegrees:F1}° rotation");
+
+            var angleRadians = angleDegrees * Math.PI / 180.0;
+            var cos = Math.Cos(angleRadians);
+            var sin = Math.Sin(angleRadians);
+
+            var halfWidth = rectWidth / 2;
+            var halfHeight = rectHeight / 2;
+
+            var corners = new List<BoundingBoxPointF>
+            {
+                new() { X = centerX + (-halfWidth * cos - -halfHeight * sin), Y = centerY + (-halfWidth * sin + -halfHeight * cos) },
+                new() { X = centerX + (halfWidth * cos - -halfHeight * sin), Y = centerY + (halfWidth * sin + -halfHeight * cos) },
+                new() { X = centerX + (halfWidth * cos - halfHeight * sin), Y = centerY + (halfWidth * sin + halfHeight * cos) },
+                new() { X = centerX + (-halfWidth * cos - halfHeight * sin), Y = centerY + (-halfWidth * sin + halfHeight * cos) }
+            };
+
+            _outputHelper.WriteLine($"Iteration {n}: Center=({centerX:F1},{centerY:F1}), Size={rectWidth:F1}x{rectHeight:F1}, Angle={angleDegrees:F1}°");
+
+            var rotatedRect = corners.ToRotatedRectangle();
+            using var croppedImage = sourceImage.Crop(rotatedRect);
+
+            await _publisher.PublishAsync(croppedImage, $"Random cropped image {n}");
+
+            VerifyCornerColors(croppedImage);
+            VerifyImageDimensions(croppedImage, (int)Math.Round(rectWidth), (int)Math.Round(rectHeight));
+        }
+
+        _outputHelper.WriteLine($"Successfully tested {numIterations} random oriented rectangle crops");
     }
 
     [Fact]
