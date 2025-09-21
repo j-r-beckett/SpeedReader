@@ -9,28 +9,20 @@ namespace Experimental.BoundingBoxes;
 public record RotatedRectangle
 {
     [JsonPropertyName("x")]
-    public required int X  // Top left x
-    {
-        get;
-        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-    }
+    public required int X { get; set; }  // Top left x
 
     [JsonPropertyName("y")]
-    public required int Y  // Top left y
-    {
-        get;
-        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-    }
+    public required int Y { get; set; }  // Top left y
 
     [JsonPropertyName("height")]
-    public required int Height  // Height in pixels
+    public required double Height  // Height
     {
         get;
         set => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
 
     [JsonPropertyName("width")]
-    public required int Width  // Width in pixels
+    public required double Width  // Width
     {
         get;
         set => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));

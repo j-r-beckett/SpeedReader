@@ -16,8 +16,8 @@ public static partial class RotatedRectangleExtensions
         var topRight = corners[1];
         var bottomLeft = corners[3];
 
-        var outputWidth = rotatedRectangle.Width;
-        var outputHeight = rotatedRectangle.Height;
+        var outputWidth = (int)Math.Ceiling(rotatedRectangle.Width);
+        var outputHeight = (int)Math.Ceiling(rotatedRectangle.Height);
 
         var outputImage = new Image<Rgb24>(outputWidth, outputHeight);
 

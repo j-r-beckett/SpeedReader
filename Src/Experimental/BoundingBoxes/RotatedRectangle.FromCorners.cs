@@ -9,7 +9,8 @@ public static partial class RotatedRectangleExtensions
 {
     public static RotatedRectangle ToRotatedRectangle(this List<PointF> corners)  // corners must be convex and in clockwise order
     {
-        if (corners.Count != 4) throw new ArgumentException("Must have 4 corners");
+        if (corners.Count != 4)
+            throw new ArgumentException("Must have 4 corners");
 
         // Set 1 of parallel edges: corners[0] -> corners[1] and corners[2] -> corners[3]
         List<(PointF Start, PointF End)> parallelEdges1 = [(corners[0], corners[1]), (corners[2], corners[3])];
@@ -45,8 +46,8 @@ public static partial class RotatedRectangleExtensions
         {
             X = (int)Math.Round(topLeft.X),
             Y = (int)Math.Round(topLeft.Y),
-            Height = (int)Math.Round(height),
-            Width = (int)Math.Round(width),
+            Height = height,
+            Width = width,
             Angle = angle
         };
 
