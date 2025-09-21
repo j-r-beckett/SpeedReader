@@ -7,6 +7,9 @@ namespace Experimental.BoundingBoxes;
 
 public static partial class RotatedRectangleExtensions
 {
+    public static RotatedRectangle ToRotatedRectangle(this List<Point> points) =>
+        ToRotatedRectangle(points.Select(p => (PointF)p).ToList());
+
     public static RotatedRectangle ToRotatedRectangle(this List<PointF> corners)  // corners must be convex and in clockwise order
     {
         if (corners.Count != 4)
@@ -37,6 +40,11 @@ public static partial class RotatedRectangleExtensions
 
         // Calculate angle
         var angle = Math.Atan2(topRight.Y - topLeft.Y, topRight.X - topLeft.X);
+
+        if (Math.Abs(angle - Math.PI / 2) < 0.00001)
+        {
+
+        }
 
         // Calculate height and width
         var height = EdgeLength(shortEdges[0]);
