@@ -8,18 +8,10 @@ namespace Experimental.BoundingBoxes;
 public record PointF
 {
     [JsonPropertyName("x")]
-    public required double X
-    {
-        get;
-        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-    }
+    public required double X { get; set; }
 
     [JsonPropertyName("y")]
-    public required double Y
-    {
-        get;
-        set => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-    }
+    public required double Y { get; set; }
 
     // No loss in precision
     public static implicit operator PointF(Point point) => new() { X = point.X, Y = point.Y };
