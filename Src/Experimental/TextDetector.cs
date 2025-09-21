@@ -81,7 +81,10 @@ public class TextDetector
         foreach (var boundary in boundaries)
         {
             // Simplify
-            var simplifiedPolygon = PolygonSimplification.DouglasPeucker(boundary);
+            // var simplifiedPolygon = PolygonSimplification.DouglasPeucker(boundary);
+            var boundaryPolygon = new Polygon { Points = boundary.Select(p => (Point)p).ToList() };
+            var simplifiedPolygon = boundaryPolygon.Simplify().Points.Select(p => (p.X, p.Y)).ToList();
+            // boundary = simplifiedPolygon.Points.Select(p => (float)p.X, (float)p.Y).ToList();
 
             // Dilate
             var dilatedPolygon = Dilation.DilatePolygon(simplifiedPolygon.ToList());
