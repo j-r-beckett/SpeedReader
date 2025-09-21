@@ -34,6 +34,9 @@ public record RotatedRectangle
 
 public static partial class RotatedRectangleExtensions
 {
+    public static Polygon ToPolygon(this RotatedRectangle rotatedRectangle) =>
+        new() { Points = rotatedRectangle.Corners().Select(p => (Point)p).ToList() };
+
     public static List<PointF> Corners(this RotatedRectangle rotatedRectangle)
     {
         var cos = Math.Cos(rotatedRectangle.Angle);

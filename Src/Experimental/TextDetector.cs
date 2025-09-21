@@ -39,8 +39,7 @@ public class TextDetector
         var result = Postprocess(modelOutput, image, modelInputHeight, modelInputWidth);
 
         var boundingBoxes = result
-            .Select(r => r.Polygon.Select(p => (Point)p).ToList())
-            .Select(points => new Polygon { Points = points })
+            .Select(r => new Polygon { Points = r.Polygon.Select(p => (Point)p).ToList() })
             .Select(polygon => new BoundingBox(polygon))
             .ToList();
 

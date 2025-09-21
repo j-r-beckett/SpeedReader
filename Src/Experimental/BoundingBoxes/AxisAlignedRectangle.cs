@@ -39,10 +39,14 @@ public record AxisAlignedRectangle
 
 public static class AxisAlignedRectangleExtensions
 {
-    public static List<Point> Corners(this AxisAlignedRectangle rectangle) => [
+    public static Polygon ToPolygon(this AxisAlignedRectangle rectangle) =>
+        new()
+        {
+            Points = [
             new Point { X = rectangle.X, Y = rectangle.Y },
             new Point { X = rectangle.X + rectangle.Width, Y = rectangle.Y },
             new Point { X = rectangle.X + rectangle.Width, Y = rectangle.Y + rectangle.Height },
             new Point { X = rectangle.X, Y = rectangle.Y + rectangle.Height }
-        ];
+        ]
+        };
 }
