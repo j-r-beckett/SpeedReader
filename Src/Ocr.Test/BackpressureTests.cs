@@ -294,7 +294,7 @@ public class BackpressureTests : IAsyncDisposable
                 image.Mutate(ctx => ctx.DrawText("hello", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
                 return (image, null);
             },
-            initialDelay: TimeSpan.FromMilliseconds(1000)
+            initialDelay: TimeSpan.FromMilliseconds(1500)
         );
     }
 

@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
+using Experimental.Detection;
 using Experimental.Inference;
 using Ocr;
 using Ocr.Algorithms;
@@ -44,13 +45,11 @@ public class TextDetector
 
     private float[] Preprocess(Image<Rgb24> image, int height, int width)
     {
-        float[] data = new float[height * width * 3];
-
-        // Resize
-        Resampling.AspectResizeInto(image, data, width, height);
-
-        // Convert to CHW format
-        TensorOps.NhwcToNchw(data, [height, width, 3]);
+        var data = image
+            .Clone()
+            .AspectResizeInPlace(width, height)
+            .ToFloatArray([height, width, 3])
+            .NhwcToNchwInPlace([height, width, 3]);
 
         // Apply ImageNet normalization
         float[] means = [123.675f, 116.28f, 103.53f];
@@ -70,7 +69,7 @@ public class TextDetector
 
     private List<TextBoundary> Postprocess(float[] modelOutput, Image<Rgb24> image, int height, int width)
     {
-        Thresholding.BinarizeInPlace(modelOutput, 0.2f);
+        modelOutput.BinarizeInPlace(0.2f);
         var probabilityMapSpan = modelOutput.AsSpan().AsSpan2D(height, width);
         var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan);
         List<TextBoundary> textBoundaries = [];

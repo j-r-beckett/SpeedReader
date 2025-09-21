@@ -37,12 +37,25 @@ public static class Resampling
         int targetWidth = (int)Math.Round(src.Width * scale);
         int targetHeight = (int)Math.Round(src.Height * scale);
 
-        ResizeToExactDimensions(src, targetWidth, targetHeight, out Memory<Rgb24> resizedMemory);
+        var config = Configuration.Default.Clone();
+        config.PreferContiguousImageBuffers = true;
+        using var resized = src.Clone(config, x => x
+            .Resize(new ResizeOptions
+            {
+                Size = new Size(targetWidth, targetHeight),
+                Mode = ResizeMode.Stretch,
+                Sampler = KnownResamplers.Bicubic
+            }));
+
+        // ResizeToExactDimensions(src, targetWidth, targetHeight, out Memory<Rgb24> resizedMemory);
 
         // Clear destination to specified fill color (padding)
         dest.Fill(fillColor);
 
         // Copy resized image to top-left of destination buffer in HWC format
+
+        resized.DangerousTryGetSinglePixelMemory(out var resizedMemory);
+
         for (int y = 0; y < targetHeight; y++)
         {
             for (int x = 0; x < targetWidth; x++)
