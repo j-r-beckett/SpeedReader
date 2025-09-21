@@ -75,6 +75,12 @@ public static partial class RotatedRectangleExtensions
 
         List<PointF> corners = [corner0, corner1, corner2, corner3];
 
-        return corners.ToRotatedRectangle();
+        var rect = corners.ToRotatedRectangle();
+        if (Math.Abs(rect.Angle - Math.PI / 2) < 0.00001)
+        {
+
+        }
+
+        return rect;
     }
 }
