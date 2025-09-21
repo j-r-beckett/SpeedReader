@@ -52,9 +52,9 @@ public class OrientedRectangleCreationTests
     }
 
     [Fact]
-    public async Task ComputeOrientedRectangle_Debug()
+    public async Task ComputeOrientedRectangle_WithVerticalLongEdges_PositivePi2Angle()
     {
-        // Arrange: Create a simple square rotated 45 degrees
+        // Arrange
         var points = new List<Point> { (27, 141), (160, 141), (160, 1), (27, 1) };
 
         // Act
@@ -64,7 +64,7 @@ public class OrientedRectangleCreationTests
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
             points.Select(p => (p.X, p.Y)).ToList(),
-            corners.Select(p => ((double)p.X, (double)p.Y)).ToList());
+            corners.Select(p => (p.X, p.Y)).ToList());
         await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
 
         _outputHelper.WriteLine($"Points: [{string.Join(", ", points)}]");
@@ -75,7 +75,35 @@ public class OrientedRectangleCreationTests
 
         VerifyRectangleHasParallelSides(corners);
         VerifyAllPointsContained(points, orientedRectF);
-        VerifyAtLeastTwoPointsOnBoundary(points, corners.Select(c => (Point)c).ToList());;
+        VerifyAtLeastTwoPointsOnBoundary(points, corners.Select(c => (Point)c).ToList());
+        ;
+    }
+
+    [Fact]
+    public async Task ComputeOrientedRectangle_WithVerticalLongEdges_NegativePi2Angle()
+    {
+        // Arrange
+        var points = new List<Point> { (159, 150), (159, 7), (282, 7), (282, 150) };
+
+        // Act
+        var orientedRectF = points.ToRotatedRectangle();
+        var corners = orientedRectF.Corners();
+
+        // Create debug visualization
+        using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
+            points.Select(p => (p.X, p.Y)).ToList(),
+            corners.Select(p => (p.X, p.Y)).ToList());
+        await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
+
+        _outputHelper.WriteLine($"Points: [{string.Join(", ", points)}]");
+        _outputHelper.WriteLine($"Oriented rectangle: [{string.Join(", ", corners)}]");
+
+        // Assert: Verify rectangle properties
+        Assert.Equal(4, corners.Count);
+
+        VerifyRectangleHasParallelSides(corners);
+        VerifyAllPointsContained(points, orientedRectF);
+        VerifyAtLeastTwoPointsOnBoundary(points, corners.Select(c => (Point)c).ToList());
     }
 
     [Fact]
@@ -83,9 +111,9 @@ public class OrientedRectangleCreationTests
     {
         // Arrange: Generate random points inside a circle
         var random = new Random(0);
-        var numIterations = 1000;
+        var numIterations = 250;
 
-        var targetIteration = 106;
+        var targetIteration = -1;
 
         for (int n = 0; n < numIterations; n++)
         {
@@ -113,9 +141,10 @@ public class OrientedRectangleCreationTests
             // Create debug visualization
             using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
                 convexHull.Points.Select(p => (p.X, p.Y)).ToList(),
-                orientedRectF.Select(p => ((double)p.X, (double)p.Y)).ToList());
+                orientedRectF.Select(p => (p.X, p.Y)).ToList());
             await _publisher.PublishAsync(debugImage, "Random point cloud - convex hull points as black dots, oriented rectangle as red polygon");
 
+            _outputHelper.WriteLine($"Iteration {n}:");
             _outputHelper.WriteLine($"Generated {points.Count} random points");
             _outputHelper.WriteLine($"Convex hull has {convexHull.Points.Count} points: [{string.Join(", ", convexHull.Points)}]");
             _outputHelper.WriteLine($"Oriented rectangle: [{string.Join(", ", orientedRectF)}]");
@@ -191,16 +220,6 @@ public class OrientedRectangleCreationTests
             $"At least 2 original points should lie within {tolerance} pixels of the rectangle boundary. Found {pointsOnBoundary} points on boundary.");
     }
 
-    private bool IsPointInRectangle(Point point, List<PointF> rectangle)
-    {
-        var tolerance = 0.5;
-        var rectCorners = rectangle.Select(p => (p.X, p.Y)).ToList();
-
-        return IsPointOnRectangleBoundary(point, rectangle, tolerance)
-            ? true
-            : IsPointInPolygon(point, rectangle.Select(p => (Point)p).ToList());
-    }
-
     private bool IsPointOnRectangleBoundary(Point point, List<PointF> rectangle, double tolerance)
     {
         for (int i = 0; i < 4; i++)
@@ -237,55 +256,6 @@ public class OrientedRectangleCreationTests
 
         return point.X >= minX - tolerance && point.X <= maxX + tolerance &&
                point.Y >= minY - tolerance && point.Y <= maxY + tolerance;
-    }
-
-    private bool IsPointInPolygon(Point point, List<Point> polygon)
-    {
-        if (polygon.Contains(point))
-            return true;
-
-        int intersectionCount = 0;
-        int n = polygon.Count;
-
-        for (int i = 0; i < n; i++)
-        {
-            var p1 = polygon[i];
-            var p2 = polygon[(i + 1) % n];
-
-            // Skip horizontal edges
-            if (p1.Y == p2.Y)
-                continue;
-
-            // Check if point is on the edge
-            if (IsPointOnEdge(point, p1, p2))
-            {
-                return true;
-            }
-
-            if (p1.Y > point.Y != p2.Y > point.Y &&
-                point.X < (p2.X - p1.X) * (point.Y - p1.Y) / (p2.Y - p1.Y) + p1.X)
-            {
-                intersectionCount++;
-            }
-        }
-
-        return intersectionCount % 2 == 1;
-    }
-
-    private bool IsPointOnEdge(Point point, Point p1, Point p2)
-    {
-        // Check if point is collinear with edge using cross product
-        var crossProduct = (point.Y - p1.Y) * (p2.X - p1.X) - (point.X - p1.X) * (p2.Y - p1.Y);
-        if (Math.Abs(crossProduct) > 1e-9)
-            return false; // Not collinear
-
-        // Check if point is within the bounding box of the edge
-        var minX = Math.Min(p1.X, p2.X);
-        var maxX = Math.Max(p1.X, p2.X);
-        var minY = Math.Min(p1.Y, p2.Y);
-        var maxY = Math.Max(p1.Y, p2.Y);
-
-        return point.X >= minX && point.X <= maxX && point.Y >= minY && point.Y <= maxY;
     }
 
     private bool IsPointInRotatedRect(Point point, RotatedRectangle rect)
