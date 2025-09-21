@@ -51,7 +51,34 @@ public class OrientedRectangleCreationTests
         VerifyAtLeastTwoPointsOnBoundary(convexHull.Points, orientedRect);
     }
 
-    [Fact(Skip = "Bug in ToCorners")]
+    [Fact]
+    public async Task ComputeOrientedRectangle_Debug()
+    {
+        // Arrange: Create a simple square rotated 45 degrees
+        var points = new List<Point> { (27, 141), (160, 141), (160, 1), (27, 1) };
+
+        // Act
+        var orientedRectF = points.ToRotatedRectangle();
+        var corners = orientedRectF.Corners();
+
+        // Create debug visualization
+        using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
+            points.Select(p => (p.X, p.Y)).ToList(),
+            corners.Select(p => ((double)p.X, (double)p.Y)).ToList());
+        await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
+
+        _outputHelper.WriteLine($"Points: [{string.Join(", ", points)}]");
+        _outputHelper.WriteLine($"Oriented rectangle: [{string.Join(", ", corners)}]");
+
+        // Assert: Verify rectangle properties
+        Assert.Equal(4, corners.Count);
+
+        VerifyRectangleHasParallelSides(corners);
+        VerifyAllPointsContained(points, orientedRectF);
+        VerifyAtLeastTwoPointsOnBoundary(points, corners.Select(c => (Point)c).ToList());;
+    }
+
+    [Fact]
     public async Task ComputeOrientedRectangle_WithRandomPointCloud_ReturnsValidRectangle()
     {
         // Arrange: Generate random points inside a circle
