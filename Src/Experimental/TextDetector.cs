@@ -75,19 +75,17 @@ public class TextDetector
     {
         modelOutput.BinarizeInPlace(0.2f);
         var probabilityMapSpan = modelOutput.AsSpan().AsSpan2D(height, width);
-        var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan);
+        var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan)
+            .Select(b => b.Select(p => (Point)p).ToList())
+            .Select(points => new Polygon { Points = points });
         List<TextBoundary> textBoundaries = [];
 
         foreach (var boundary in boundaries)
         {
-            // Simplify
-            // var simplifiedPolygon = PolygonSimplification.DouglasPeucker(boundary);
-            var boundaryPolygon = new Polygon { Points = boundary.Select(p => (Point)p).ToList() };
-            var simplifiedPolygon = boundaryPolygon.Simplify().Points.Select(p => (p.X, p.Y)).ToList();
-            // boundary = simplifiedPolygon.Points.Select(p => (float)p.X, (float)p.Y).ToList();
-
-            // Dilate
-            var dilatedPolygon = Dilation.DilatePolygon(simplifiedPolygon.ToList());
+            var dilatedPolygon = boundary
+                .Simplify()
+                .Dilate(1.5)
+                .Points.Select(p => (p.X, p.Y)).ToList();
 
             // Convert back to original coordinate system
             double scale = Math.Max((double)image.Width / probabilityMapSpan.Width, (double)image.Height / probabilityMapSpan.Height);
