@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Numerics.Tensors;
+using Experimental.Detection;
 using Experimental.Inference;
 using Ocr.Algorithms;
 using Resources;
@@ -32,14 +33,12 @@ public class TextRecognizer
 
     private float[] Preprocess(List<(double X, double Y)> oRectangle, Image<Rgb24> image, int height, int width)
     {
-        float[] data = new float[height * width * 3];
+        using var cropped = ImageCropping.CropOriented(image, oRectangle);
 
-        using var croppedImage = ImageCropping.CropOriented(image, oRectangle);
-
-        Resampling.AspectResizeInto(croppedImage, data, width, height, 127.5f);
-
-        // Convert to CHW format in place
-        TensorOps.NhwcToNchw(data, [height, width, 3]);
+        var data = cropped
+            .AspectResizeInPlace(width, height)
+            .ToFloatArray([height, width, 3], 127.5f)
+            .NhwcToNchwInPlace([height, width, 3]);
 
         // Normalize: [0,255] -> [-1,1]
         for (int channel = 0; channel < 3; channel++)
