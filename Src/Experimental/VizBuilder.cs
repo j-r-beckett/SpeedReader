@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using CommunityToolkit.HighPerformance;
+using Experimental.BoundingBoxes;
 using Fluid;
 using Ocr.Algorithms;
 using Ocr.Visualization;
@@ -14,17 +15,6 @@ namespace Experimental;
 
 public class VizBuilder
 {
-    public class Point
-    {
-        public required double X;
-        public required double Y;
-    }
-
-    public class Polygon
-    {
-        public required List<Point> Points;
-    }
-
     public class TextItem
     {
         public required string Text;
@@ -60,6 +50,7 @@ public class VizBuilder
     private Image<L8>? _probabilityMap;
     private bool _displayProbabilityMapByDefault;
 
+
     private List<Polygon>? _axisAlignedBBoxes;
     private bool _displayAxisAlignedBBoxesByDefault;
 
@@ -93,103 +84,6 @@ public class VizBuilder
         return this;
     }
 
-    public VizBuilder AddAxisAlignedBBoxes(List<Rectangle> axisAlignedBBoxes, bool displayByDefault = false)
-    {
-        if (_axisAlignedBBoxes != null)
-        {
-            throw new MultipleAddException($"{nameof(AddAxisAlignedBBoxes)} cannot be called twice");
-        }
-
-        var polygons = axisAlignedBBoxes.Select(bbox =>
-        {
-            var topLeft = new Point { X = bbox.X, Y = bbox.Y };
-            var topRight = new Point { X = bbox.X + bbox.Width, Y = bbox.Y };
-            var bottomRight = new Point { X = bbox.X + bbox.Width, Y = bbox.Y + bbox.Height };
-            var bottomLeft = new Point { X = bbox.X, Y = bbox.Y + bbox.Height };
-            return new Polygon { Points = [topLeft, topRight, bottomRight, bottomLeft] };
-        });
-
-        _axisAlignedBBoxes = polygons.ToList();
-        _displayAxisAlignedBBoxesByDefault = displayByDefault;
-
-        return this;
-    }
-
-    public VizBuilder AddOrientedBBoxes(List<List<(double X, double Y)>> orientedBBoxes, bool displayByDefault = false)
-    {
-        if (_orientedBBoxes != null)
-        {
-            throw new MultipleAddException($"{nameof(AddOrientedBBoxes)} cannot be called twice");
-        }
-
-        var polygons = orientedBBoxes
-            .Select(bbox => bbox.Select(p => new Point { X = p.X, Y = p.Y }))
-            .Select(points => new Polygon { Points = points.ToList() })
-            .ToList();
-
-        _orientedBBoxes = polygons;
-        _displayOrientedBBoxesByDefault = displayByDefault;
-
-        return this;
-    }
-
-    public VizBuilder AddExpectedAxisAlignedBBoxes(List<Rectangle> expectedAxisAlignedBBoxes, bool displayByDefault = false)
-    {
-        if (_expectedAxisAlignedBBoxes != null)
-        {
-            throw new MultipleAddException($"{nameof(AddExpectedAxisAlignedBBoxes)} cannot be called twice");
-        }
-
-        var polygons = expectedAxisAlignedBBoxes.Select(bbox =>
-        {
-            var topLeft = new Point { X = bbox.X, Y = bbox.Y };
-            var topRight = new Point { X = bbox.X + bbox.Width, Y = bbox.Y };
-            var bottomRight = new Point { X = bbox.X + bbox.Width, Y = bbox.Y + bbox.Height };
-            var bottomLeft = new Point { X = bbox.X, Y = bbox.Y + bbox.Height };
-            return new Polygon { Points = [topLeft, topRight, bottomRight, bottomLeft] };
-        });
-
-        _expectedAxisAlignedBBoxes = polygons.ToList();
-        _displayExpectedAxisAlignedBBoxesByDefault = displayByDefault;
-
-        return this;
-    }
-
-    public VizBuilder AddExpectedOrientedBBoxes(List<List<(double X, double Y)>> expectedOrientedBBoxes, bool displayByDefault = false)
-    {
-        if (_expectedOrientedBBoxes != null)
-        {
-            throw new MultipleAddException($"{nameof(AddExpectedOrientedBBoxes)} cannot be called twice");
-        }
-
-        var polygons = expectedOrientedBBoxes
-            .Select(bbox => bbox.Select(p => new Point { X = p.X, Y = p.Y }))
-            .Select(points => new Polygon { Points = points.ToList() })
-            .ToList();
-
-        _expectedOrientedBBoxes = polygons;
-        _displayExpectedOrientedBBoxesByDefault = displayByDefault;
-
-        return this;
-    }
-
-    public VizBuilder AddPolygonBBoxes(List<List<(int X, int Y)>> polygonBBoxes, bool displayByDefault = false)
-    {
-        if (_polygonBBoxes != null)
-        {
-            throw new MultipleAddException($"{nameof(AddPolygonBBoxes)} cannot be called twice");
-        }
-
-        var polygons = polygonBBoxes
-            .Select(bbox => bbox.Select(p => new Point { X = p.X, Y = p.Y }))
-            .Select(points => new Polygon { Points = points.ToList() })
-            .ToList();
-
-        _polygonBBoxes = polygons;
-        _displayPolygonBBoxesByDefault = displayByDefault;
-
-        return this;
-    }
 
     public VizBuilder AddTextItems(List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)> textItems, bool displayByDefault = false)
     {
@@ -200,6 +94,75 @@ public class VizBuilder
 
         _textItemsData = textItems;
         _displayTextItemsByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder AddBoundingBoxes(List<BoundingBox> boundingBoxes) => AddAxisAlignedBBoxes(boundingBoxes.Select(bb => bb.AxisAlignedRectangle).ToList())
+            .AddOrientedBBoxes(boundingBoxes.Select(bb => bb.RotatedRectangle).ToList(), true)
+            .AddPolygonBBoxes(boundingBoxes.Select(bb => bb.Polygon).ToList());
+
+    public VizBuilder AddAxisAlignedBBoxes(List<AxisAlignedRectangle> axisAlignedBBoxes, bool displayByDefault = false)
+    {
+        if (_axisAlignedBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddAxisAlignedBBoxes)} cannot be called twice");
+        }
+
+        _axisAlignedBBoxes = axisAlignedBBoxes.Select(rect => new Polygon { Points = rect.Corners() }).ToList();
+        _displayAxisAlignedBBoxesByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder AddOrientedBBoxes(List<RotatedRectangle> orientedBBoxes, bool displayByDefault = false)
+    {
+        if (_orientedBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddOrientedBBoxes)} cannot be called twice");
+        }
+
+        _orientedBBoxes = orientedBBoxes.Select(rect => new Polygon { Points = rect.Corners().Select(pf => (BoundingBoxes.Point)pf).ToList() }).ToList();
+        _displayOrientedBBoxesByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder AddExpectedAxisAlignedBBoxes(List<AxisAlignedRectangle> expectedAxisAlignedBBoxes, bool displayByDefault = false)
+    {
+        if (_expectedAxisAlignedBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddExpectedAxisAlignedBBoxes)} cannot be called twice");
+        }
+
+        _expectedAxisAlignedBBoxes = expectedAxisAlignedBBoxes.Select(rect => new Polygon { Points = rect.Corners() }).ToList();
+        _displayExpectedAxisAlignedBBoxesByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder AddExpectedOrientedBBoxes(List<RotatedRectangle> expectedOrientedBBoxes, bool displayByDefault = false)
+    {
+        if (_expectedOrientedBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddExpectedOrientedBBoxes)} cannot be called twice");
+        }
+
+        _expectedOrientedBBoxes = expectedOrientedBBoxes.Select(rect => new Polygon { Points = rect.Corners().Select(pf => (BoundingBoxes.Point)pf).ToList() }).ToList();
+        _displayExpectedOrientedBBoxesByDefault = displayByDefault;
+
+        return this;
+    }
+
+    public VizBuilder AddPolygonBBoxes(List<Polygon> polygonBBoxes, bool displayByDefault = false)
+    {
+        if (_polygonBBoxes != null)
+        {
+            throw new MultipleAddException($"{nameof(AddPolygonBBoxes)} cannot be called twice");
+        }
+
+        _polygonBBoxes = polygonBBoxes;
+        _displayPolygonBBoxesByDefault = displayByDefault;
 
         return this;
     }
@@ -264,7 +227,7 @@ public class VizBuilder
 
         var options = new TemplateOptions();
         options.MemberAccessStrategy.Register<TemplateData>();
-        options.MemberAccessStrategy.Register<Point>();
+        options.MemberAccessStrategy.Register<BoundingBoxes.Point>();
         options.MemberAccessStrategy.Register<Polygon>();
         options.MemberAccessStrategy.Register<TextItem>();
 

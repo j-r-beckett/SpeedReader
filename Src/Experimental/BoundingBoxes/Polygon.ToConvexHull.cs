@@ -9,7 +9,7 @@ public static partial class PolygonExtensions
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(polygon.Points.Count, 3);
 
-        var points = polygon.Points;
+        var points = polygon.Points.ToList();  // Copy the points to avoid modifying the original polygon
 
         var stack = new List<Point>();
         var minYPoint = GetStartPoint(points);

@@ -40,8 +40,8 @@ public class TextReaderE2ETests
         var readerResult = await await reader.ReadOne(image);
         var results = readerResult.Results;
 
-        // var svg = readerResult.VizBuilder.RenderSvg();
-        // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+        var svg = readerResult.VizBuilder.RenderSvg();
+        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         Assert.Single(results);
 
@@ -63,7 +63,6 @@ public class TextReaderE2ETests
     [Fact]
     public async Task ReadMany_ReturnsCorrectResults()
     {
-
         using var image1 = new Image<Rgb24>(720, 640, Color.White);
         const string text1 = "yanked";
         var bbox1 = Utils.DrawText(image1, text1, 200, 200);
@@ -90,8 +89,8 @@ public class TextReaderE2ETests
         var i = 0;
         await foreach (var item in reader.ReadMany(images))
         {
-            // var svg = item.VizBuilder.RenderSvg();
-            // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+            var svg = item.VizBuilder.RenderSvg();
+            _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
             var results = item.Results;
             var text = cases[i].Text;
