@@ -38,15 +38,15 @@ public class TextDetector
 
         var result = Postprocess(modelOutput, image, modelInputHeight, modelInputWidth);
 
-        // vizBuilder.AddAxisAlignedBBoxes(result.Select(r => r.AARectangle).ToList());
-        // vizBuilder.AddOrientedBBoxes(result.Select(r => r.ORectangle).ToList(), true);
-        // vizBuilder.AddPolygonBBoxes(result.Select(r => r.Polygon).ToList());
-
-        return result
+        var boundingBoxes = result
             .Select(r => r.Polygon.Select(p => (Point)p).ToList())
             .Select(points => new Polygon { Points = points })
             .Select(polygon => new BoundingBox(polygon))
             .ToList();
+
+        vizBuilder.AddBoundingBoxes(boundingBoxes);
+
+        return boundingBoxes;
     }
 
     private float[] Preprocess(Image<Rgb24> image, int height, int width)

@@ -83,12 +83,12 @@ public class TextDetectorE2ETests : IDisposable
 
         var expectedAxisAligned = expectedBBoxes.Select(r => r.ToAxisAlignedRectangle()).ToList();
 
-        // var svg = vizBuilder
-        //     .AddExpectedAxisAlignedBBoxes(expectedAxisAligned)
-        //     .AddExpectedOrientedBBoxes(expectedBBoxes, true)
-        //     .RenderSvg();
+        var svg = vizBuilder
+            .AddExpectedAxisAlignedBBoxes(expectedAxisAligned)
+            .AddExpectedOrientedBBoxes(expectedBBoxes, true)
+            .RenderSvg();
 
-        // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         Utils.ValidateOrientedBBoxes(expectedBBoxes, results.Select(r => r.RotatedRectangle).ToList());
         Utils.ValidateAxisAlignedBBoxes(expectedAxisAligned, results.Select(r => r.AxisAlignedRectangle).ToList());

@@ -36,3 +36,13 @@ public record AxisAlignedRectangle
         set => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
 }
+
+public static class AxisAlignedRectangleExtensions
+{
+    public static List<Point> Corners(this AxisAlignedRectangle rectangle) => [
+            new Point { X = rectangle.X, Y = rectangle.Y },
+            new Point { X = rectangle.X + rectangle.Width, Y = rectangle.Y },
+            new Point { X = rectangle.X + rectangle.Width, Y = rectangle.Y + rectangle.Height },
+            new Point { X = rectangle.X, Y = rectangle.Y + rectangle.Height }
+        ];
+}
