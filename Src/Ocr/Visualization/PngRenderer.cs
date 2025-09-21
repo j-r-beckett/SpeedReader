@@ -10,7 +10,7 @@ namespace Ocr.Visualization;
 
 public static class PngRenderer
 {
-    public static Image<Rgb24> Render(Image<Rgb24> sourceImage, OcrResult ocrResult, VizData? vizData)
+    public static Image<Rgb24> Render(Image<Rgb24> sourceImage, JsonOcrResult ocrResult, VizData? vizData)
     {
         var result = sourceImage.Clone();
 

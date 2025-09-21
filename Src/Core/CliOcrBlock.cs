@@ -44,7 +44,7 @@ public class CliOcrBlock
         var svtrSession = modelProvider.GetSession(Model.SVTRv2);
         var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), _config.Meter);
 
-        var mergeBlock = new MergeBlock<(Image<Rgb24> Image, OcrResult Result, VizData? VizData), string, (Image<Rgb24> Image, OcrResult Result, VizData? VizData, string Filename)>(
+        var mergeBlock = new MergeBlock<(Image<Rgb24> Image, JsonOcrResult Result, VizData? VizData), string, (Image<Rgb24> Image, JsonOcrResult Result, VizData? VizData, string Filename)>(
             (ocrResult, filename) => (ocrResult.Image, ocrResult.Result, ocrResult.VizData, filename)
         );
 
@@ -95,11 +95,11 @@ public class CliOcrBlock
             }
         }, new ExecutionDataflowBlockOptions { BoundedCapacity = 1 });
 
-    private ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizData? VizData, string Filename)> CreateOutputEmitterBlock()
+    private ActionBlock<(Image<Rgb24> Image, JsonOcrResult Result, VizData? VizData, string Filename)> CreateOutputEmitterBlock()
     {
         int pageNumber = 0;
 
-        return new ActionBlock<(Image<Rgb24> Image, OcrResult Result, VizData? VizData, string Filename)>(async output =>
+        return new ActionBlock<(Image<Rgb24> Image, JsonOcrResult Result, VizData? VizData, string Filename)>(async output =>
         {
             var (image, ocrResult, vizData, filename) = output;
 

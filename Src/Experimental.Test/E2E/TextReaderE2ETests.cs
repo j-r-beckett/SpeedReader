@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Core;
+using Experimental.BoundingBoxes;
 using Experimental.Inference;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
@@ -39,21 +40,21 @@ public class TextReaderE2ETests
         var readerResult = await await reader.ReadOne(image);
         var results = readerResult.Results;
 
-        var svg = readerResult.VizBuilder.RenderSvg();
-        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+        // var svg = readerResult.VizBuilder.RenderSvg();
+        // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
         Assert.Single(results);
 
         var bboxes = results.Select(r => r.BBox).ToList();
-        var axisAlignedBBoxes = bboxes.Select(d => d.AARectangle).ToList();
-        var orientedBBoxes = bboxes.Select(d => d.ORectangle).ToList();
+        var axisAlignedBBoxes = bboxes.Select(d => d.AxisAlignedRectangle).ToList();
+        var orientedBBoxes = bboxes.Select(d => d.RotatedRectangle).ToList();
         var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
 
-        Utils.ValidateAxisAlignedBBoxes([Utils.ToAxisAlignedRectangle(bbox)], axisAlignedBBoxes);
+        Utils.ValidateAxisAlignedBBoxes([bbox.ToAxisAlignedRectangle()], axisAlignedBBoxes);
         Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
         foreach (var polygon in polygonBBoxes)
         {
-            Assert.True(polygon.Count >= 4);
+            Assert.True(polygon.Points.Count >= 4);
         }
 
         Assert.True(results[0].Text == text);
@@ -77,7 +78,7 @@ public class TextReaderE2ETests
 
         var reader = CreateTextReader();
 
-        List<(Image<Rgb24> Image, List<(double, double)> BBox, string Text)> cases =
+        List<(Image<Rgb24> Image, RotatedRectangle BBox, string Text)> cases =
             [
                 (image1, bbox1, text1),
                 (image2, bbox2, text2),
@@ -89,23 +90,23 @@ public class TextReaderE2ETests
         var i = 0;
         await foreach (var item in reader.ReadMany(images))
         {
-            var svg = item.VizBuilder.RenderSvg();
-            _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
+            // var svg = item.VizBuilder.RenderSvg();
+            // _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
             var results = item.Results;
             var text = cases[i].Text;
             var bbox = cases[i++].BBox;
 
             var bboxes = results.Select(r => r.BBox).ToList();
-            var axisAlignedBBoxes = bboxes.Select(d => d.AARectangle).ToList();
-            var orientedBBoxes = bboxes.Select(d => d.ORectangle).ToList();
+            var axisAlignedBBoxes = bboxes.Select(d => d.AxisAlignedRectangle).ToList();
+            var orientedBBoxes = bboxes.Select(d => d.RotatedRectangle).ToList();
             var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
 
-            Utils.ValidateAxisAlignedBBoxes([Utils.ToAxisAlignedRectangle(bbox)], axisAlignedBBoxes);
+            Utils.ValidateAxisAlignedBBoxes([bbox.ToAxisAlignedRectangle()], axisAlignedBBoxes);
             Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
             foreach (var polygon in polygonBBoxes)
             {
-                Assert.True(polygon.Count >= 4);
+                Assert.True(polygon.Points.Count >= 4);
             }
 
             Assert.True(results[0].Text == text);

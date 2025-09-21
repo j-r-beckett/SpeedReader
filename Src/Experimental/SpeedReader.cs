@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Threading.Channels;
+using Experimental.BoundingBoxes;
 using Experimental.Inference;
 using Ocr;
 using SixLabors.ImageSharp;
@@ -67,7 +68,10 @@ public class SpeedReader
                 var vizBuilder = new VizBuilder();
 
                 var detections = await detector.Detect(image, vizBuilder);
-                var recognitionTasks = detections.Select(d => recognizer.Recognize(d.ORectangle, image, vizBuilder)).ToList();
+                var recognitionTasks = detections
+                    .Select(b => b.RotatedRectangle.Corners())
+                    .Select(c => c.Select(p => (p.X, p.Y)).ToList())
+                    .Select(d => recognizer.Recognize(d, image, vizBuilder)).ToList();
                 var recognitions = await Task.WhenAll(recognitionTasks);
                 Debug.Assert(detections.Count == recognitions.Length);
                 return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
