@@ -82,17 +82,14 @@ public class TextDetector
 
         foreach (var boundary in boundaries)
         {
+            double scale = Math.Max((double)image.Width / probabilityMapSpan.Width, (double)image.Height / probabilityMapSpan.Height);
+
             var dilatedPolygon = boundary
                 .Simplify()
-                .Dilate(1.5)
+                .Dilate(1.5)  // The DBNet model we're using has a 1.5x dilation factor
+                .Scale(scale)  // Convert back to original coordinate system
+                .Clamp(image.Height - 1, image.Width - 1)  // Make sure we don't go out of bounds
                 .Points.Select(p => (p.X, p.Y)).ToList();
-
-            // Convert back to original coordinate system
-            double scale = Math.Max((double)image.Width / probabilityMapSpan.Width, (double)image.Height / probabilityMapSpan.Height);
-            Scale(dilatedPolygon, scale);
-
-            // Clamp coordinates to image bounds
-            ClampToImageBounds(dilatedPolygon, image.Height, image.Width);
 
             if (dilatedPolygon.Count >= 4)
             {
@@ -101,25 +98,5 @@ public class TextDetector
         }
 
         return textBoundaries;
-
-        void Scale(List<(int X, int Y)> polygon, double scale)
-        {
-            for (int i = 0; i < polygon.Count; i++)
-            {
-                int originalX = (int)Math.Round(polygon[i].X * scale);
-                int originalY = (int)Math.Round(polygon[i].Y * scale);
-                polygon[i] = (originalX, originalY);
-            }
-        }
-
-        void ClampToImageBounds(List<(int X, int Y)> polygon, int imageHeight, int imageWidth)
-        {
-            for (int i = 0; i < polygon.Count; i++)
-            {
-                int clampedX = Math.Max(0, Math.Min(imageWidth - 1, polygon[i].X));
-                int clampedY = Math.Max(0, Math.Min(imageHeight - 1, polygon[i].Y));
-                polygon[i] = (clampedX, clampedY);
-            }
-        }
     }
 }
