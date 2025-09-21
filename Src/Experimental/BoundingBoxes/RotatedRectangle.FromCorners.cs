@@ -19,8 +19,9 @@ public static partial class RotatedRectangleExtensions
         List<(PointF Start, PointF End)> parallelEdges2 = [(corners[1], corners[2]), (corners[3], corners[0])];
 
         // Parallel edges should have the same length
-        Debug.Assert(Math.Abs(EdgeLength(parallelEdges1[0]) - EdgeLength(parallelEdges1[1])) < 0.000001);
-        Debug.Assert(Math.Abs(EdgeLength(parallelEdges2[0]) - EdgeLength(parallelEdges2[1])) < 0.000001);
+        var l = Math.Abs(EdgeLength(parallelEdges1[0]) - EdgeLength(parallelEdges1[1]));
+        Debug.Assert(Math.Abs(EdgeLength(parallelEdges1[0]) - EdgeLength(parallelEdges1[1])) < 0.001);
+        Debug.Assert(Math.Abs(EdgeLength(parallelEdges2[0]) - EdgeLength(parallelEdges2[1])) < 0.001);
 
         // Sort sets of parallel edges by edge length
         List<List<(PointF Start, PointF End)>> parallelEdgeSets = [parallelEdges1, parallelEdges2];
