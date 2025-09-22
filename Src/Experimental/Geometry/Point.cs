@@ -8,10 +8,10 @@ namespace Experimental.Geometry;
 public record Point
 {
     [JsonPropertyName("x")]
-    public required int X { get; set; }
+    public required int X { get; init; }
 
     [JsonPropertyName("y")]
-    public required int Y { get; set; }
+    public required int Y { get; init; }
 
     public static explicit operator Point(PointF point) => new()
     {

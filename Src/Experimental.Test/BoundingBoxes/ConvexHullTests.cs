@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
 using Experimental.Geometry;
 
 namespace Experimental.Test.BoundingBoxes;
@@ -15,7 +16,7 @@ public class ConvexHullTests
     {
         // Arrange
         var points = xCoords.Zip(yCoords, (x, y) => (Point)(x, y)).ToList();
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => polygon.ToConvexHull());
@@ -26,7 +27,7 @@ public class ConvexHullTests
     {
         // Arrange
         var points = new List<Point> { (0, 0), (4, 0), (2, 3) };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -43,7 +44,7 @@ public class ConvexHullTests
     {
         // Arrange
         var points = new List<Point> { (0, 0), (4, 0), (4, 4), (0, 4) };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -65,7 +66,7 @@ public class ConvexHullTests
             (0, 0), (4, 0), (4, 4), (0, 4),  // corners
             (2, 2), (1, 1), (3, 3)           // interior points
         };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -88,9 +89,9 @@ public class ConvexHullTests
         var horizontal = new List<Point> { (7, 3), (0, 3), (2, 3), (1, 3) };
         var vertical = new List<Point> { (3, 9), (3, 1), (3, 5), (3, 3) };
 
-        var diagonalPolygon = new Polygon { Points = diagonal };
-        var horizontalPolygon = new Polygon { Points = horizontal };
-        var verticalPolygon = new Polygon { Points = vertical };
+        var diagonalPolygon = new Polygon { Points = diagonal.ToImmutableList() };
+        var horizontalPolygon = new Polygon { Points = horizontal.ToImmutableList() };
+        var verticalPolygon = new Polygon { Points = vertical.ToImmutableList() };
 
         // Act
         var diagonalResult = diagonalPolygon.ToConvexHull();
@@ -121,7 +122,7 @@ public class ConvexHullTests
             (2, 3),   // top left
             (1, 1)    // bottom left
         };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -145,7 +146,7 @@ public class ConvexHullTests
             // Inner points (should not be in hull)
             (5, 6), (6, 5), (5, 4), (4, 5)
         };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -166,7 +167,7 @@ public class ConvexHullTests
         {
             (0, 0), (0, 0), (4, 0), (4, 0), (4, 4), (4, 4), (0, 4), (0, 4)
         };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -184,7 +185,7 @@ public class ConvexHullTests
     {
         // Arrange
         var points = new List<Point> { (0, 4), (2, 2), (0, 0), (4, 4), (4, 0) };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -205,7 +206,7 @@ public class ConvexHullTests
         {
             (1000, 1000), (2000, 1000), (2000, 2000), (1000, 2000), (1500, 1500)
         };
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
@@ -235,7 +236,7 @@ public class ConvexHullTests
             points.Add((x, y));
         }
 
-        var polygon = new Polygon { Points = points };
+        var polygon = new Polygon { Points = points.ToImmutableList() };
 
         // Act
         var result = polygon.ToConvexHull();
