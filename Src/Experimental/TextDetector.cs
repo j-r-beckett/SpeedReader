@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
@@ -72,7 +73,7 @@ public class TextDetector
         var probabilityMapSpan = modelOutput.AsSpan().AsSpan2D(height, width);
         var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan)
             .Select(b => b.Select(p => (Point)p).ToList())
-            .Select(points => new Polygon { Points = points });
+            .Select(points => new Polygon { Points = points.ToImmutableList() });
 
         // Multiplying by this undoes the transformation from image coordinates to model coordinates that we did in preprocessing with AspectResizeInPlace and ToTensor
         var scale = Math.Max((double)image.Width / probabilityMapSpan.Width, (double)image.Height / probabilityMapSpan.Height);

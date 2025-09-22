@@ -8,10 +8,10 @@ namespace Experimental.Geometry;
 public record PointF
 {
     [JsonPropertyName("x")]
-    public required double X { get; set; }
+    public required double X { get; init; }
 
     [JsonPropertyName("y")]
-    public required double Y { get; set; }
+    public required double Y { get; init; }
 
     // No loss in precision
     public static implicit operator PointF(Point point) => new() { X = point.X, Y = point.Y };

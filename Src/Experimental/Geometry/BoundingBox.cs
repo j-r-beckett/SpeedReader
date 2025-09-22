@@ -8,13 +8,13 @@ namespace Experimental.Geometry;
 public record BoundingBox
 {
     [JsonPropertyName("polygon")]
-    public Polygon Polygon { get; set; }
+    public Polygon Polygon { get; }
 
     [JsonPropertyName("rotatedRectangle")]
-    public RotatedRectangle RotatedRectangle { get; set; }
+    public RotatedRectangle RotatedRectangle { get; }
 
     [JsonPropertyName("rectangle")]
-    public AxisAlignedRectangle AxisAlignedRectangle { get; set; }
+    public AxisAlignedRectangle AxisAlignedRectangle { get; }
 
     public BoundingBox(Polygon polygon, RotatedRectangle rotatedRectangle, AxisAlignedRectangle axisAlignedRectangle)
     {

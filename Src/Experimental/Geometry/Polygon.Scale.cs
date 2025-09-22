@@ -1,13 +1,15 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
+
 namespace Experimental.Geometry;
 
 public static partial class PolygonExtensions
 {
     public static Polygon Scale(this Polygon polygon, double scale)
     {
-        return new Polygon { Points = polygon.Points.Select(ScalePoint).ToList() };
+        return new Polygon { Points = polygon.Points.Select(ScalePoint).ToImmutableList() };
 
         Point ScalePoint(Point p) => new()
         {
