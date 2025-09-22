@@ -1,12 +1,17 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
+
 namespace Experimental.Geometry;
 
 public static partial class RotatedRectangleExtensions
 {
     public static AxisAlignedRectangle ToAxisAlignedRectangle(this RotatedRectangle rotatedRectangle) =>
         rotatedRectangle.Corners().ToAxisAlignedRectangle();
+
+    public static AxisAlignedRectangle ToAxisAlignedRectangle(this ImmutableList<PointF> points) =>
+        points.ToList().ToAxisAlignedRectangle();
 
     public static AxisAlignedRectangle ToAxisAlignedRectangle(this List<Point> points) => points
         .Select(p => (PointF)p)

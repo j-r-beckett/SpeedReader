@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
 using Experimental.Geometry;
 using Experimental.Inference;
 using Ocr;
@@ -13,7 +14,7 @@ namespace Experimental.Test.FlowControl;
 public class MockTextDetector : TextDetector
 {
     public static readonly List<BoundingBox> SimpleResult
-        = [new BoundingBox(new Polygon { Points = new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) } })];
+        = [new BoundingBox(new Polygon { Points = new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) }.ToImmutableList() })];
 
     private readonly Func<Task<List<BoundingBox>>> _detect;
 

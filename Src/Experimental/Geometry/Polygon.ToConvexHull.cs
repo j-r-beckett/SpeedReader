@@ -1,6 +1,8 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
+
 namespace Experimental.Geometry;
 
 public static partial class PolygonExtensions
@@ -38,7 +40,7 @@ public static partial class PolygonExtensions
 
         stack.Reverse();
 
-        return new ConvexHull { Points = stack };
+        return new ConvexHull { Points = stack.ToImmutableList() };
     }
 
     private static Point GetStartPoint(List<Point> points)

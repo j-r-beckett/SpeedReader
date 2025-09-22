@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
 using Clipper2Lib;
 
 namespace Experimental.Geometry;
@@ -15,7 +16,7 @@ public static partial class PolygonExtensions
 
         if (points.Count < 3)
         {
-            return new Polygon { Points = [] };
+            return new Polygon { Points = ImmutableList<Point>.Empty };
         }
 
         var clipperPathD = new PathD();
@@ -29,7 +30,7 @@ public static partial class PolygonExtensions
 
         if (perimeter <= 0 || area < MinimumArea)
         {
-            return new Polygon { Points = [] };
+            return new Polygon { Points = ImmutableList<Point>.Empty };
         }
 
         double offset = area * dilationRatio / perimeter;
@@ -43,7 +44,7 @@ public static partial class PolygonExtensions
 
         if (solution.Count == 0 || solution[0].Count < 3)
         {
-            return new Polygon { Points = [] };
+            return new Polygon { Points = ImmutableList<Point>.Empty };
         }
 
         var dilatedPolygon = new List<Point>(solution[0].Count);
@@ -53,7 +54,7 @@ public static partial class PolygonExtensions
             dilatedPolygon.Add(((int)point.X, (int)point.Y));
         }
 
-        return new Polygon { Points = dilatedPolygon };
+        return new Polygon { Points = dilatedPolygon.ToImmutableList() };
     }
 
     private static double CalculatePerimeter(PathD path)
