@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using System.Threading.Channels;
-using Experimental.BoundingBoxes;
 using Experimental.Inference;
 using Ocr;
 using SixLabors.ImageSharp;

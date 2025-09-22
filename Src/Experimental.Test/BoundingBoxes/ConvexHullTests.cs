@@ -1,7 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Experimental.BoundingBoxes;
+using Experimental.Geometry;
 
 namespace Experimental.Test.BoundingBoxes;
 

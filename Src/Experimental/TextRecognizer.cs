@@ -3,8 +3,8 @@
 
 using System.Diagnostics;
 using System.Numerics.Tensors;
-using Experimental.BoundingBoxes;
 using Experimental.Detection;
+using Experimental.Geometry;
 using Experimental.Inference;
 using Ocr.Algorithms;
 using Resources;

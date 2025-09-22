@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using CommunityToolkit.HighPerformance;
-using Experimental.BoundingBoxes;
+using Experimental.Geometry;
 using Fluid;
 using Ocr.Algorithms;
 using Ocr.Visualization;
@@ -10,6 +10,7 @@ using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Point = Experimental.Geometry.Point;
 
 namespace Experimental;
 
@@ -227,7 +228,7 @@ public class VizBuilder
 
         var options = new TemplateOptions();
         options.MemberAccessStrategy.Register<TemplateData>();
-        options.MemberAccessStrategy.Register<BoundingBoxes.Point>();
+        options.MemberAccessStrategy.Register<Point>();
         options.MemberAccessStrategy.Register<Polygon>();
         options.MemberAccessStrategy.Register<TextItem>();
 

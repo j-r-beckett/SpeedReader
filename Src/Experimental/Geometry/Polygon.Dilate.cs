@@ -3,7 +3,7 @@
 
 using Clipper2Lib;
 
-namespace Experimental.BoundingBoxes;
+namespace Experimental.Geometry;
 
 public static partial class PolygonExtensions
 {

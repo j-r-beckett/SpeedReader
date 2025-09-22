@@ -3,14 +3,14 @@
 
 using System.Diagnostics;
 using Clipper2Lib;
-using Experimental.BoundingBoxes;
+using Experimental.Geometry;
 using Resources;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
-using Point = Experimental.BoundingBoxes.Point;
-using PointF = Experimental.BoundingBoxes.PointF;
+using Point = Experimental.Geometry.Point;
+using PointF = Experimental.Geometry.PointF;
 
 namespace Experimental.Test.E2E;
 

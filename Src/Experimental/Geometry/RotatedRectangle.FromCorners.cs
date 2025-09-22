@@ -1,9 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Diagnostics;
-
-namespace Experimental.BoundingBoxes;
+namespace Experimental.Geometry;
 
 public static partial class RotatedRectangleExtensions
 {

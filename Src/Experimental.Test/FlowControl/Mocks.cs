@@ -1,12 +1,12 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Experimental.BoundingBoxes;
+using Experimental.Geometry;
 using Experimental.Inference;
 using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Point = Experimental.BoundingBoxes.Point;
+using Point = Experimental.Geometry.Point;
 
 namespace Experimental.Test.FlowControl;
 
