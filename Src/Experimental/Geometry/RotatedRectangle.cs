@@ -1,10 +1,9 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 
-namespace Experimental.BoundingBoxes;
+namespace Experimental.Geometry;
 
 public record RotatedRectangle
 {

@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Experimental.BoundingBoxes;
+namespace Experimental.Geometry;
 
 public record BoundingBox
 {

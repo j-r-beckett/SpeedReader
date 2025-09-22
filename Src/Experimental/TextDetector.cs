@@ -4,14 +4,14 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
-using Experimental.BoundingBoxes;
 using Experimental.Detection;
+using Experimental.Geometry;
 using Experimental.Inference;
 using Ocr;
 using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Point = Experimental.BoundingBoxes.Point;
+using Point = Experimental.Geometry.Point;
 
 namespace Experimental;
 

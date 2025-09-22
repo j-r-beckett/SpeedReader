@@ -4,7 +4,7 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Experimental.BoundingBoxes;
+namespace Experimental.Geometry;
 
 public static partial class RotatedRectangleExtensions
 {

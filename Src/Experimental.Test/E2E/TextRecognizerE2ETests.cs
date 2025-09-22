@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Core;
-using Experimental.BoundingBoxes;
+using Experimental.Geometry;
 using Experimental.Inference;
 using Microsoft.Extensions.Logging;
 using Resources;
