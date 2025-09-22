@@ -1,13 +1,13 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Experimental.BoundingBoxes;
+using Experimental.Geometry;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using TestUtils;
 using Xunit.Abstractions;
-using BoundingBoxPointF = Experimental.BoundingBoxes.PointF;
+using BoundingBoxPointF = Experimental.Geometry.PointF;
 
 namespace Experimental.Test.BoundingBoxes;
 
