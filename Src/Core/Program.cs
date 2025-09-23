@@ -106,27 +106,6 @@ public class Program
 
     private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode, bool jsonOutput)
     {
-        // var meter = new Meter("SpeedReader.Ocr");
-        //
-        // var config = new CliOcrBlock.Config
-        // {
-        //     VizMode = vizMode,
-        //     JsonOutput = jsonOutput,
-        //     Meter = meter
-        // };
-        // var cliOcrBlock = new CliOcrBlock(config);
-        //
-        // var inputBuffer = new BufferBlock<string>();
-        //
-        // inputBuffer.LinkTo(cliOcrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
-        //
-        // foreach (var input in inputs)
-        // {
-        //     await inputBuffer.SendAsync(input.FullName);
-        // }
-
-        // inputBuffer.Complete();
-        // await cliOcrBlock.Completion;
         if (inputs.Length == 0)
             return;
 
@@ -135,18 +114,16 @@ public class Program
         var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
         var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
         var paths = inputs.Select(f => f.FullName).ToList();
-        await PrintJson(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths);
+        await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, vizMode);
     }
 
-    private static async Task PrintJson(IAsyncEnumerable<SpeedReaderResult> results, List<string> filenames)
+    private static async Task EmitOutput(IAsyncEnumerable<SpeedReaderResult> results, List<string> filenames, VizMode vizMode)
     {
         var jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-
-        Console.WriteLine("[");
 
         var idx = 0;
         await foreach (var result in results)
@@ -167,11 +144,21 @@ public class Program
                 var json = JsonSerializer.Serialize(jsonResult, jsonOptions);
                 var indentedJson = string.Join('\n', json.Split('\n').Select(line => "  " + line));
 
-                if (idx > 0)
-                {
-                    Console.WriteLine(",");
-                }
+                Console.WriteLine(idx == 0 ? "[" : ",");
+
                 Console.Write(indentedJson);
+
+                // Generate visualization if configured
+                if (vizMode != VizMode.None)
+                {
+                    var filename = filenames[idx];
+                    var inputDir = Path.GetDirectoryName(filename) ?? ".";
+                    var inputName = Path.GetFileNameWithoutExtension(filename);
+                    var vizFilePath = Path.Combine(inputDir, $"{inputName}_viz.svg");
+
+                    var svg = result.VizBuilder.RenderSvg();
+                    await svg.Save(vizFilePath);
+                }
             }
             finally
             {
