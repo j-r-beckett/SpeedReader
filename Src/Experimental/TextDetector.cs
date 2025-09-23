@@ -46,7 +46,7 @@ public class TextDetector
 
     private float[] Preprocess(Image<Rgb24> image, int height, int width)
     {
-        using var resized = image.Clone().AspectResizeInPlace(width, height);
+        using var resized = image.AspectResize(width, height);
 
         var tensor = resized.ToTensor([height, width, 3]);
         tensor.NhwcToNchwInPlace([height, width, 3]);

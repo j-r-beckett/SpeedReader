@@ -49,12 +49,17 @@ public class SpeedReader
 
         var processingTaskStarter = Task.Run(async () =>
         {
-            await foreach (var image in images)
+            try
             {
-                await processingTasks.Writer.WriteAsync(await ReadOne(image));
+                await foreach (var image in images)
+                {
+                    await processingTasks.Writer.WriteAsync(await ReadOne(image));
+                }
             }
-
-            processingTasks.Writer.Complete();
+            finally
+            {
+                processingTasks.Writer.Complete();
+            }
         });
 
         await foreach (var task in processingTasks.Reader.ReadAllAsync())

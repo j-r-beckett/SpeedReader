@@ -35,7 +35,8 @@ public class TextRecognizer
 
     private float[] Preprocess(RotatedRectangle region, Image<Rgb24> image, int height, int width)
     {
-        using var resized = image.Crop(region).AspectResizeInPlace(width, height);
+        using var cropped = image.Crop(region);
+        using var resized = cropped.AspectResize(width, height);
 
         var tensor = resized.ToTensor([height, width, 3], 127.5f);
         tensor.NhwcToNchwInPlace([height, width, 3]);

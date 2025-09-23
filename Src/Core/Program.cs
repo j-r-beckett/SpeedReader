@@ -127,7 +127,8 @@ public class Program
 
         // inputBuffer.Complete();
         // await cliOcrBlock.Completion;
-        if (inputs.Length == 0) return;
+        if (inputs.Length == 0)
+            return;
 
         var modelProvider = new ModelProvider();
         var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
@@ -158,8 +159,8 @@ public class Program
                     Results = result.Results.Select(r => new
                     {
                         BoundingBox = r.BBox,
-                        Text = r.Text,
-                        Confidence = r.Confidence
+                        r.Text,
+                        r.Confidence
                     }).ToList()
                 };
 

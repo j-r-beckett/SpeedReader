@@ -68,7 +68,6 @@ public class VizBuilder
     private bool _displayPolygonBBoxesByDefault;
 
     private List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)>? _textItemsData;
-    private bool _displayTextItemsByDefault;
 
     private static readonly FluidParser _parser = new();
     private static readonly Lazy<IFluidTemplate> _template = new(LoadTemplate);
@@ -86,15 +85,12 @@ public class VizBuilder
     }
 
 
-    public VizBuilder AddTextItems(List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)> textItems, bool displayByDefault = false)
+    public VizBuilder AddTextItems(List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)> textItems)
     {
-        if (_textItemsData != null)
-        {
-            throw new MultipleAddException($"{nameof(AddTextItems)} cannot be called twice");
-        }
+        // Allow adding text items multiple times
 
-        _textItemsData = textItems;
-        _displayTextItemsByDefault = displayByDefault;
+        _textItemsData ??= [];
+        _textItemsData.AddRange(textItems);
 
         return this;
     }
@@ -305,7 +301,7 @@ public class VizBuilder
                 Color = "white",
                 Description = "Recognized Text",
                 ElementClass = "text-overlay",
-                DefaultVisible = _displayTextItemsByDefault
+                DefaultVisible = false
             });
         }
 

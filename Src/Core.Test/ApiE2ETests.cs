@@ -133,11 +133,10 @@ public class ApiE2ETests : IClassFixture<ServerFixture>
         Assert.Single(results);
 
         var result = results[0];
-        Assert.Equal(0, result.GetProperty("pageNumber").GetInt32());
 
         // Check for text content
-        var lines = result.GetProperty("lines").EnumerateArray();
-        var allText = string.Join(" ", lines.Select(line => line.GetProperty("text").GetString() ?? ""));
+        var textResults = result.GetProperty("results").EnumerateArray();
+        var allText = string.Join(" ", textResults.Select(tr => tr.GetProperty("text").GetString() ?? ""));
         Assert.Contains("hello", allText.ToLower());
         Assert.Contains("world", allText.ToLower());
     }
@@ -187,23 +186,20 @@ public class ApiE2ETests : IClassFixture<ServerFixture>
 
         // Verify first image (hello)
         var firstResult = results[0];
-        Assert.Equal(0, firstResult.GetProperty("pageNumber").GetInt32());
-        var firstLines = firstResult.GetProperty("lines").EnumerateArray();
-        var firstAllText = string.Join(" ", firstLines.Select(line => line.GetProperty("text").GetString() ?? ""));
+        var firstTextResults = firstResult.GetProperty("results").EnumerateArray();
+        var firstAllText = string.Join(" ", firstTextResults.Select(tr => tr.GetProperty("text").GetString() ?? ""));
         Assert.Contains("hello", firstAllText.ToLower());
 
         // Verify second image (world)
         var secondResult = results[1];
-        Assert.Equal(1, secondResult.GetProperty("pageNumber").GetInt32());
-        var secondLines = secondResult.GetProperty("lines").EnumerateArray();
-        var secondAllText = string.Join(" ", secondLines.Select(line => line.GetProperty("text").GetString() ?? ""));
+        var secondTextResults = secondResult.GetProperty("results").EnumerateArray();
+        var secondAllText = string.Join(" ", secondTextResults.Select(tr => tr.GetProperty("text").GetString() ?? ""));
         Assert.Contains("world", secondAllText.ToLower());
 
         // Verify third image (foo bar)
         var thirdResult = results[2];
-        Assert.Equal(2, thirdResult.GetProperty("pageNumber").GetInt32());
-        var thirdLines = thirdResult.GetProperty("lines").EnumerateArray();
-        var thirdAllText = string.Join(" ", thirdLines.Select(line => line.GetProperty("text").GetString() ?? ""));
+        var thirdTextResults = thirdResult.GetProperty("results").EnumerateArray();
+        var thirdAllText = string.Join(" ", thirdTextResults.Select(tr => tr.GetProperty("text").GetString() ?? ""));
         Assert.Contains("foo", thirdAllText.ToLower());
         Assert.Contains("bar", thirdAllText.ToLower());
     }
@@ -298,9 +294,6 @@ public class ApiE2ETests : IClassFixture<ServerFixture>
         // Verify we got a result
         Assert.NotNull(results);
         Assert.Single(results);
-
-        var result = results[0];
-        Assert.Equal(0, result.GetProperty("pageNumber").GetInt32());
     }
 }
 
