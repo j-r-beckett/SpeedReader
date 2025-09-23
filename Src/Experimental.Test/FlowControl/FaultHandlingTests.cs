@@ -73,6 +73,43 @@ public class FaultHandlingTests
 
         await runner.DisposeAsync();
     }
+
+    [Fact]
+    public async Task ReadMany_PropagatesImageLoadException()
+    {
+        Func<(TextDetector, TextRecognizer)> factory = () =>
+        {
+            var detector = new MockTextDetector();
+            var recognizer = new MockTextRecognizer();
+            return (detector, recognizer);
+        };
+
+        var reader = new SpeedReader(factory, 1, 1);
+
+        static async IAsyncEnumerable<Image<Rgb24>> GetImages()
+        {
+            yield return new Image<Rgb24>(100, 100); // Valid image
+
+            // Simulate an image loading failure
+            await Task.CompletedTask;
+            throw new TestException();
+        }
+
+        var results = reader.ReadMany(GetImages());
+
+        // First result should succeed
+        var enumerator = results.GetAsyncEnumerator();
+        Assert.True(await enumerator.MoveNextAsync());
+        var firstResult = enumerator.Current;
+        Assert.NotNull(firstResult);
+        firstResult.Image.Dispose();
+
+        // Second result should fail with TestException
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        await Assert.ThrowsAsync<TestException>(async () => await enumerator.MoveNextAsync().AsTask().WaitAsync(cts.Token));
+
+        await enumerator.DisposeAsync();
+    }
 }
 
 public class TestException : Exception

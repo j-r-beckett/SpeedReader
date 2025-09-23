@@ -3,6 +3,8 @@
 
 using System.Diagnostics.Metrics;
 using System.Text.Json;
+using Experimental;
+using Experimental.Inference;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
@@ -22,52 +24,50 @@ public static class Serve
 {
     public static async Task RunServer()
     {
-        // Initialize metrics
-        var meter = new Meter("SpeedReader.Ocr");
-
         // Create shared inference sessions
         using var modelProvider = new ModelProvider();
-        var dbnetSession = modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
-        var svtrSession = modelProvider.GetSession(Model.SVTRv2);
+        var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
+        var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
+        var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
-
-        // Create OcrBlock and register single multiplexer for access
-        var ocrBlock = new OcrBlock(dbnetSession, svtrSession, new OcrConfiguration(), meter);
-        var ocrMultiplexer = new BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, JsonOcrResult, VizData?)>(ocrBlock.Block);
-        builder.Services.AddSingleton(ocrMultiplexer);
+        builder.Services.AddSingleton(speedReader);
 
         var app = builder.Build();
 
         app.MapGet("/api/health", () => "Healthy");
 
-        app.MapPost("api/ocr", async (HttpContext context, BlockMultiplexer<(Image<Rgb24>, VizData?), (Image<Rgb24>, JsonOcrResult, VizData?)> multiplexer) =>
+        app.MapPost("/api/ocr", async (HttpContext context, SpeedReader speedReader) =>
         {
-            // var tasks = new List<Task<(Image<Rgb24> Image, OcrResult Result, VizBuilder VizBuilder)>>();
+            var images = ParseImagesFromRequest(context.Request);
+            var results = speedReader.ReadMany(images);
 
-            var inputs = ParseImagesFromRequest(context.Request)
-                .Select(image => (image, (VizData?)null));
-
-            var results = await await multiplexer.ProcessMultiple(inputs, CancellationToken.None, CancellationToken.None);
-
-            if (results.Length == 0)
+            var ocrResults = new List<object>();
+            await foreach (var result in results)
             {
-                throw new BadHttpRequestException("No images found in request");
+                try
+                {
+                    var jsonResult = new
+                    {
+                        Results = result.Results.Select(r => new
+                        {
+                            BoundingBox = r.BBox,
+                            r.Text,
+                            r.Confidence
+                        }).ToList()
+                    };
+                    ocrResults.Add(jsonResult);
+                }
+                finally
+                {
+                    result.Image.Dispose();
+                }
             }
 
-            // Process results and create response
-            var ocrResults = new List<JsonOcrResult>();
-            for (int i = 0; i < results.Length; i++)
+            if (ocrResults.Count == 0)
             {
-                var (image, result, _) = results[i];
-                ocrResults.Add(result with
-                {
-                    PageNumber = i
-                });
-
-                // Dispose image after processing
-                image.Dispose();
+                throw new BadHttpRequestException("No images found in request");
             }
 
             // Return JSON response
@@ -78,7 +78,6 @@ public static class Serve
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
 
-            // Always return array for consistent API
             var json = JsonSerializer.Serialize(ocrResults, jsonOptions);
             await context.Response.WriteAsync(json);
         });
