@@ -46,14 +46,9 @@ public class Program
             description: "Visualization mode",
             getDefaultValue: () => VizMode.None);
 
-        var jsonOption = new Option<bool>(
-            name: "--json",
-            description: "Full JSON output with detailed metadata and confidence scores");
-
         rootCommand.AddArgument(inputArgument);
         rootCommand.AddOption(serveOption);
         rootCommand.AddOption(vizOption);
-        rootCommand.AddOption(jsonOption);
 
         // Video support is currently disabled. Do not remove
         /*
@@ -76,10 +71,10 @@ public class Program
         rootCommand.AddCommand(videoCommand);
         */
 
-        rootCommand.SetHandler(async (inputs, serve, vizMode, jsonOutput) =>
+        rootCommand.SetHandler(async (inputs, serve, vizMode) =>
         {
             // Validate arguments
-            if (serve && (inputs.Length > 0 || vizMode != VizMode.None || jsonOutput))
+            if (serve && (inputs.Length > 0 || vizMode != VizMode.None))
             {
                 Console.Error.WriteLine("Error: --serve cannot be used with input files, --viz option, or --json option.");
                 Environment.Exit(1);
@@ -97,14 +92,14 @@ public class Program
                     Environment.Exit(1);
                 }
 
-                await ProcessFiles(inputs, vizMode, jsonOutput);
+                await ProcessFiles(inputs, vizMode);
             }
-        }, inputArgument, serveOption, vizOption, jsonOption);
+        }, inputArgument, serveOption, vizOption);
 
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode, bool jsonOutput)
+    private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode)
     {
         if (inputs.Length == 0)
             return;
