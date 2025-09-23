@@ -41,10 +41,9 @@ public class Program
             name: "--serve",
             description: "Run as HTTP server");
 
-        var vizOption = new Option<VizMode>(
+        var vizOption = new Option<bool>(
             name: "--viz",
-            description: "Visualization mode",
-            getDefaultValue: () => VizMode.None);
+            description: "Generate visualization files");
 
         rootCommand.AddArgument(inputArgument);
         rootCommand.AddOption(serveOption);
@@ -71,12 +70,12 @@ public class Program
         rootCommand.AddCommand(videoCommand);
         */
 
-        rootCommand.SetHandler(async (inputs, serve, vizMode) =>
+        rootCommand.SetHandler(async (inputs, serve, viz) =>
         {
             // Validate arguments
-            if (serve && (inputs.Length > 0 || vizMode != VizMode.None))
+            if (serve && (inputs.Length > 0 || viz))
             {
-                Console.Error.WriteLine("Error: --serve cannot be used with input files, --viz option, or --json option.");
+                Console.Error.WriteLine("Error: --serve cannot be used with input files or --viz option.");
                 Environment.Exit(1);
             }
 
@@ -92,14 +91,14 @@ public class Program
                     Environment.Exit(1);
                 }
 
-                await ProcessFiles(inputs, vizMode);
+                await ProcessFiles(inputs, viz);
             }
         }, inputArgument, serveOption, vizOption);
 
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode)
+    private static async Task ProcessFiles(FileInfo[] inputs, bool viz)
     {
         if (inputs.Length == 0)
             return;
@@ -109,10 +108,10 @@ public class Program
         var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
         var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
         var paths = inputs.Select(f => f.FullName).ToList();
-        await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, vizMode);
+        await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }
 
-    private static async Task EmitOutput(IAsyncEnumerable<SpeedReaderResult> results, List<string> filenames, VizMode vizMode)
+    private static async Task EmitOutput(IAsyncEnumerable<SpeedReaderResult> results, List<string> filenames, bool viz)
     {
         var jsonOptions = new JsonSerializerOptions
         {
@@ -143,8 +142,7 @@ public class Program
 
                 Console.Write(indentedJson);
 
-                // Generate visualization if configured
-                if (vizMode != VizMode.None)
+                if (viz)
                 {
                     var filename = filenames[idx];
                     var inputDir = Path.GetDirectoryName(filename) ?? ".";
