@@ -6,8 +6,11 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
+using Experimental;
+using Experimental.Inference;
 using Ocr;
 using Ocr.Visualization;
+using Resources;
 
 namespace Core;
 
@@ -103,27 +106,80 @@ public class Program
 
     private static async Task ProcessFiles(FileInfo[] inputs, VizMode vizMode, bool jsonOutput)
     {
-        var meter = new Meter("SpeedReader.Ocr");
+        // var meter = new Meter("SpeedReader.Ocr");
+        //
+        // var config = new CliOcrBlock.Config
+        // {
+        //     VizMode = vizMode,
+        //     JsonOutput = jsonOutput,
+        //     Meter = meter
+        // };
+        // var cliOcrBlock = new CliOcrBlock(config);
+        //
+        // var inputBuffer = new BufferBlock<string>();
+        //
+        // inputBuffer.LinkTo(cliOcrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
+        //
+        // foreach (var input in inputs)
+        // {
+        //     await inputBuffer.SendAsync(input.FullName);
+        // }
 
-        var config = new CliOcrBlock.Config
+        // inputBuffer.Complete();
+        // await cliOcrBlock.Completion;
+        if (inputs.Length == 0) return;
+
+        var modelProvider = new ModelProvider();
+        var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
+        var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
+        var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
+        var paths = inputs.Select(f => f.FullName).ToList();
+        await PrintJson(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths);
+    }
+
+    private static async Task PrintJson(IAsyncEnumerable<SpeedReaderResult> results, List<string> filenames)
+    {
+        var jsonOptions = new JsonSerializerOptions
         {
-            VizMode = vizMode,
-            JsonOutput = jsonOutput,
-            Meter = meter
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        var cliOcrBlock = new CliOcrBlock(config);
 
-        var inputBuffer = new BufferBlock<string>();
+        Console.WriteLine("[");
 
-        inputBuffer.LinkTo(cliOcrBlock.Target, new DataflowLinkOptions { PropagateCompletion = true });
-
-        foreach (var input in inputs)
+        var idx = 0;
+        await foreach (var result in results)
         {
-            await inputBuffer.SendAsync(input.FullName);
+            try
+            {
+                var jsonResult = new
+                {
+                    Filename = filenames[idx],
+                    Results = result.Results.Select(r => new
+                    {
+                        BoundingBox = r.BBox,
+                        Text = r.Text,
+                        Confidence = r.Confidence
+                    }).ToList()
+                };
+
+                var json = JsonSerializer.Serialize(jsonResult, jsonOptions);
+                var indentedJson = string.Join('\n', json.Split('\n').Select(line => "  " + line));
+
+                if (idx > 0)
+                {
+                    Console.WriteLine(",");
+                }
+                Console.Write(indentedJson);
+            }
+            finally
+            {
+                result.Image.Dispose();
+                idx++;
+            }
         }
 
-        inputBuffer.Complete();
-        await cliOcrBlock.Completion;
+        Console.WriteLine("\n]");
     }
 
     // Video support is currently disabled. Do not remove
