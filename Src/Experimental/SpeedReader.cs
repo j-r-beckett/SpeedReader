@@ -33,7 +33,17 @@ public class SpeedReader
     {
     }
 
-    public async IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images)
+    public IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<string> paths) =>
+        ReadMany(paths.Select(path => Image.LoadAsync<Rgb24>(path)));
+
+    public Task<Task<SpeedReaderResult>> ReadOne(string path) => ReadOne(Image.LoadAsync<Rgb24>(path));
+
+    public IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images) =>
+        ReadMany(images.Select(Task.FromResult));
+
+    public Task<Task<SpeedReaderResult>> ReadOne(Image<Rgb24> image) => ReadOne(Task.FromResult(image));
+
+    private async IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<Task<Image<Rgb24>>> images)
     {
         var processingTasks = Channel.CreateUnbounded<Task<SpeedReaderResult>>();
 
@@ -55,8 +65,7 @@ public class SpeedReader
         await processingTaskStarter;
     }
 
-    // Outer task (first await) is the handoff, inner task (second await) is actual processing
-    public async Task<Task<SpeedReaderResult>> ReadOne(Image<Rgb24> image)
+    private async Task<Task<SpeedReaderResult>> ReadOne(Task<Image<Rgb24>> imageTask)
     {
         await _semaphore.WaitAsync();
         return Task.Run(async () =>
@@ -66,6 +75,7 @@ public class SpeedReader
                 var (detector, recognizer) = _factory();
                 var vizBuilder = new VizBuilder();
 
+                var image = await imageTask;
                 var detections = await detector.Detect(image, vizBuilder);
                 var recognitionTasks = detections.Select(d =>
                     recognizer.Recognize(d.RotatedRectangle, image, vizBuilder));
