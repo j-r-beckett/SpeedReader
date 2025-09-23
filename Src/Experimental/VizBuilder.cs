@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Concurrent;
 using CommunityToolkit.HighPerformance;
 using Experimental.Geometry;
 using Fluid;
@@ -67,7 +68,7 @@ public class VizBuilder
     private List<Polygon>? _polygonBBoxes;
     private bool _displayPolygonBBoxesByDefault;
 
-    private List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)>? _textItemsData;
+    private ConcurrentBag<(string Text, double Confidence, List<(double X, double Y)> ORectangle)>? _textItemsData;
 
     private static readonly FluidParser _parser = new();
     private static readonly Lazy<IFluidTemplate> _template = new(LoadTemplate);
@@ -85,12 +86,14 @@ public class VizBuilder
     }
 
 
+    // Supports being called from multiple threads
     public VizBuilder AddTextItems(List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)> textItems)
     {
         // Allow adding text items multiple times
 
         _textItemsData ??= [];
-        _textItemsData.AddRange(textItems);
+        foreach (var item in textItems)
+            _textItemsData.Add(item);
 
         return this;
     }
