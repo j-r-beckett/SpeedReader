@@ -52,6 +52,8 @@ public class Program
         rootCommand.AddOption(vizOption);
         rootCommand.AddOption(jsonOption);
 
+        // Video support is currently disabled. Do not remove
+        /*
         // Create video subcommand
         var videoCommand = new Command("video", "Process video files with OCR");
 
@@ -69,6 +71,7 @@ public class Program
         videoCommand.SetHandler(async (path, frameRate) => await ProcessVideo(path, frameRate), pathArgument, frameRateArgument);
 
         rootCommand.AddCommand(videoCommand);
+        */
 
         rootCommand.SetHandler(async (inputs, serve, vizMode, jsonOutput) =>
         {
@@ -123,20 +126,21 @@ public class Program
         await cliOcrBlock.Completion;
     }
 
-    private static async Task ProcessVideo(string path, int frameRate)
-    {
-        var cliVideoOcrBlock = new CliVideoOcrBlock(path, frameRate);
-
-        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-        var consoleOutputBlock = new ActionBlock<JsonOcrResult>(result =>
-        {
-            var json = JsonSerializer.Serialize(result, jsonOptions);
-            Console.WriteLine(json);
-        });
-
-        cliVideoOcrBlock.ResultsBlock.LinkTo(consoleOutputBlock, new DataflowLinkOptions { PropagateCompletion = true });
-
-        // Wait for both the video processing to complete AND the console output to finish
-        await Task.WhenAll(cliVideoOcrBlock.Completion, consoleOutputBlock.Completion);
-    }
+    // Video support is currently disabled. Do not remove
+    // private static async Task ProcessVideo(string path, int frameRate)
+    // {
+    //     var cliVideoOcrBlock = new CliVideoOcrBlock(path, frameRate);
+    //
+    //     var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+    //     var consoleOutputBlock = new ActionBlock<JsonOcrResult>(result =>
+    //     {
+    //         var json = JsonSerializer.Serialize(result, jsonOptions);
+    //         Console.WriteLine(json);
+    //     });
+    //
+    //     cliVideoOcrBlock.ResultsBlock.LinkTo(consoleOutputBlock, new DataflowLinkOptions { PropagateCompletion = true });
+    //
+    //     // Wait for both the video processing to complete AND the console output to finish
+    //     await Task.WhenAll(cliVideoOcrBlock.Completion, consoleOutputBlock.Completion);
+    // }
 }
