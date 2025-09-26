@@ -26,5 +26,15 @@ public record BoundingBox
     public BoundingBox(Polygon polygon, RotatedRectangle rotatedRectangle)
         : this(polygon, rotatedRectangle, rotatedRectangle.ToAxisAlignedRectangle()) { }
 
-    public BoundingBox(Polygon polygon) : this(polygon, polygon.ToRotatedRectangle()) { }
+    private BoundingBox(Polygon polygon) : this(polygon, polygon.ToRotatedRectangle()) { }
+
+    public static BoundingBox? Create(Polygon polygon)
+    {
+        var convexHull = polygon.ToConvexHull();
+        if (convexHull.Points.Count < 3)
+            return null;
+
+        var rotatedRectangle = convexHull.ToRotatedRectangle();
+        return new BoundingBox(polygon, rotatedRectangle);
+    }
 }
