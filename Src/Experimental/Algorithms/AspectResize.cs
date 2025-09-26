@@ -5,8 +5,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace Experimental.Detection;
-
+namespace Experimental.Algorithms;
 
 public static class AspectResizeExtensions
 {

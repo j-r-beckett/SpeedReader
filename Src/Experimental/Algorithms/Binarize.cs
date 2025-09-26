@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Numerics.Tensors;
 
-namespace Experimental.Detection;
+namespace Experimental.Algorithms;
 
 public static class Binarize
 {
