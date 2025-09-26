@@ -17,4 +17,26 @@ public static partial class PolygonExtensions
             Y = (int)Math.Round(p.Y * scale)
         };
     }
+
+    public static Polygon ScaleX(this Polygon polygon, double scaleX)
+    {
+        return new Polygon { Points = polygon.Points.Select(ScalePointX).ToImmutableList() };
+
+        Point ScalePointX(Point p) => new()
+        {
+            X = (int)Math.Round(p.X * scaleX),
+            Y = p.Y
+        };
+    }
+
+    public static Polygon ScaleY(this Polygon polygon, double scaleY)
+    {
+        return new Polygon { Points = polygon.Points.Select(ScalePointY).ToImmutableList() };
+
+        Point ScalePointY(Point p) => new()
+        {
+            X = p.X,
+            Y = (int)Math.Round(p.Y * scaleY)
+        };
+    }
 }

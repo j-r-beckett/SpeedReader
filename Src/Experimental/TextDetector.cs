@@ -145,39 +145,15 @@ public class TextDetector
         modelOutput.BinarizeInPlace(0.2f);
         var tiledProbabilityMapSpan = modelOutput.AsSpan().AsSpan2D(height, width);
 
-        // Create a temporary image from the probability map for undoing the resize
-        using var tiledProbabilityImage = new Image<Rgb24>(tiledProbabilityMapSpan.Width, tiledProbabilityMapSpan.Height);
-
-        // Convert probability map to image (for demonstration - in practice we'd want to work directly with spans)
-        for (int y = 0; y < tiledProbabilityMapSpan.Height; y++)
-        {
-            for (int x = 0; x < tiledProbabilityMapSpan.Width; x++)
-            {
-                var probability = tiledProbabilityMapSpan[y, x];
-                var gray = (byte)(probability * 255);
-                tiledProbabilityImage[x, y] = new Rgb24(gray, gray, gray);
-            }
-        }
-
-        // Undo the resize to get back to original coordinate space
-        using var originalProbabilityImage = AspectResizeExtensions.UndoHardAspectResize(originalImage, tiledProbabilityImage);
-
-        // Convert back to span for boundary tracing
-        var originalProbabilitySpan = new float[originalProbabilityImage.Width * originalProbabilityImage.Height];
-        for (int y = 0; y < originalProbabilityImage.Height; y++)
-        {
-            for (int x = 0; x < originalProbabilityImage.Width; x++)
-            {
-                originalProbabilitySpan[y * originalProbabilityImage.Width + x] = originalProbabilityImage[x, y].R / 255.0f;
-            }
-        }
-
-        var probabilityMapSpan = originalProbabilitySpan.AsSpan().AsSpan2D(originalProbabilityImage.Height, originalProbabilityImage.Width);
-        var boundaries = BoundaryTracing.FindBoundaries(probabilityMapSpan)
+        // Work directly in tiled coordinate space
+        var boundaries = BoundaryTracing.FindBoundaries(tiledProbabilityMapSpan)
             .Select(b => b.Select(p => (Point)p).ToList())
             .Select(points => new Polygon { Points = points.ToImmutableList() });
 
-        // No coordinate transformations needed - we're already in original image space!
+        var scaleX = (double)width / originalImage.Width;
+        var scaleY = (double)height / originalImage.Height;
+        var scale = Math.Min(scaleX, scaleY);  // The same scale used in HardAspectResize
+
         return boundaries
             .Select(BoundaryToBBox)
             .OfType<BoundingBox>()  // Filter out nulls
@@ -186,6 +162,7 @@ public class TextDetector
         BoundingBox? BoundaryToBBox(Polygon boundary)
         {
             var polygon = boundary
+                .Scale(1 / scale)  // Undo HardAspectResize scaling; convert from tiled to original coordinates
                 .Simplify()  // Remove redundant points
                 .Dilate(1.5)  // Undo contraction baked into DBNet during training; 1.5 is a model-specific constant
                 .Clamp(originalImage.Height - 1, originalImage.Width - 1);  // Make sure we don't go out of bounds

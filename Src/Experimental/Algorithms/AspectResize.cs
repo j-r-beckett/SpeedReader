@@ -39,13 +39,13 @@ public static class AspectResizeExtensions
         return src.Clone(config, x => x
             .Resize(new ResizeOptions
             {
-                Size = targetSize,
+                Size = targetSize,  // result outside contentRect will be filled Black
                 Mode = ResizeMode.Manual,
-                TargetRectangle = contentRect
+                TargetRectangle = contentRect  // Top-left of result
             }));
     }
 
-    // Reverses a HardAspectResize operation by cropping out the content and resizing back to original dimensions.
+    // Reverses a HardAspectResize operation
     public static Image<Rgb24> UndoHardAspectResize(Image<Rgb24> originalImage, Image<Rgb24> resizedImage)
     {
         var config = Configuration.Default.Clone();
@@ -66,13 +66,11 @@ public static class AspectResizeExtensions
         var scaleY = (double)targetSize.Height / originalSize.Height;
         var scale = Math.Min(scaleX, scaleY);
 
-        // Calculate content dimensions and position (centered)
+        // Calculate content dimensions and position
         var contentWidth = (int)Math.Round(originalSize.Width * scale);
         var contentHeight = (int)Math.Round(originalSize.Height * scale);
-        var contentX = (targetSize.Width - contentWidth) / 2;
-        var contentY = (targetSize.Height - contentHeight) / 2;
 
-        return new Rectangle(contentX, contentY, contentWidth, contentHeight);
+        return new Rectangle(0, 0, contentWidth, contentHeight);
     }
 }
 
