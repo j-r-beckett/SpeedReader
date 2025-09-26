@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Numerics.Tensors;
 using System.Runtime.InteropServices.Marshalling;
 using CommunityToolkit.HighPerformance;
-using Experimental.Detection;
+using Experimental.Algorithms;
 using Experimental.Geometry;
 using Experimental.Inference;
 using Ocr;
