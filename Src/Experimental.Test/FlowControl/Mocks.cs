@@ -14,7 +14,7 @@ namespace Experimental.Test.FlowControl;
 public class MockTextDetector : TextDetector
 {
     public static readonly List<BoundingBox> SimpleResult
-        = [new BoundingBox(new Polygon { Points = new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) }.ToImmutableList() })];
+        = [BoundingBox.Create(new Polygon { Points = new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) }.ToImmutableList() })!];
 
     private readonly Func<Task<List<BoundingBox>>> _detect;
 
