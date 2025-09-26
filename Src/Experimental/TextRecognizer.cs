@@ -3,7 +3,7 @@
 
 using System.Diagnostics;
 using System.Numerics.Tensors;
-using Experimental.Detection;
+using Experimental.Algorithms;
 using Experimental.Geometry;
 using Experimental.Inference;
 using Ocr.Algorithms;
@@ -54,6 +54,5 @@ public class TextRecognizer
         return tensor;
     }
 
-    private (string, double) Postprocess(float[] modelOutput)
-        => CTC.DecodeSingleSequence(modelOutput, CharacterDictionary.Count);
+    private (string, double) Postprocess(float[] modelOutput) => modelOutput.GreedyCTCDecode();
 }
