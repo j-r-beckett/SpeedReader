@@ -15,7 +15,7 @@ public static partial class ReliefMapExtensions
     ];
 
     // This method assumes a smooth boundary without any holes, self-intersections, or other gnarly features.
-    // This is achieved by running morphological opening.
+    // To achieve this, the caller can/should use morphological opening as a preprocessing step.
     public static Polygon TraceBoundary(this ReliefMap map, Point start)
     {
         List<Point> boundary = [];
@@ -64,7 +64,7 @@ public static partial class ReliefMapExtensions
 
         return new Polygon { Points = boundary.ToImmutableList() };
 
-        // Helper call hierarchy:
+        // Helper method call graph:
         //   GetStartingDirection -> IsBackground
         //   FindNextBoundaryPixel -> IsBoundaryPixel -> IsBackground
         //                                            -> IsForeground
