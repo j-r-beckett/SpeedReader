@@ -11,7 +11,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Point = Experimental.Geometry.Point;
 
-namespace Experimental;
+namespace Experimental.Visualization;
 
 public class VizBuilder
 {
