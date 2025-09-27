@@ -8,23 +8,24 @@ namespace Experimental.Algorithms;
 
 public static partial class ReliefMapExtensions
 {
-    private static readonly (int dx, int dy)[] _directions = {
+    // Moore neighborhood
+    private static readonly (int dx, int dy)[] _neighborhood = [
         (0, -1), (1, -1), (1, 0), (1, 1),
         (0, 1), (-1, 1), (-1, 0), (-1, -1)
-    };
+    ];
 
+    // This method assumes a smooth boundary without any holes, self-intersections, or other gnarly features.
+    // This is achieved by running morphological opening.
     public static Polygon TraceBoundary(this ReliefMap map, Point start)
     {
         List<Point> boundary = [];
 
         int currentX = start.X, currentY = start.Y;
-        int firstX = start.X, firstY = start.Y;
 
-        // Find initial direction by looking for first background neighbor
-        int direction = FindInitialDirection(currentX, currentY, map);
+        int direction = GetStartingDirection(currentX, currentY);
         if (direction == -1)
         {
-            // Single pixel component
+            // Boundary is a single pixel
             return new Polygon { Points = [start] };
         }
 
@@ -33,7 +34,7 @@ public static partial class ReliefMapExtensions
             boundary.Add((currentX, currentY));
 
             // Find next boundary pixel using Moore neighborhood
-            var next = FindNextBoundaryPixel(currentX, currentY, direction, map);
+            var next = FindNextBoundaryPixel(currentX, currentY, direction);
             if (next.HasValue)
             {
                 currentX = next.Value.x;
@@ -45,98 +46,78 @@ public static partial class ReliefMapExtensions
                 break; // No next pixel found
             }
 
-            // Single-trace stopping criterion: stop when boundary.Count > 2 and current pixel
-            // is either the starting pixel or one of its 8-connected neighbors
-            if (boundary.Count > 2 && IsStartingPixelOrNeighbor(currentX, currentY, firstX, firstY))
-                break;
+            // Stop tracing once we've worked our way back around to the starting pixel.
+            // This effectively gives us a polygon that approximates the boundary, which is exactly what we want.
+            if (boundary.Count > 2)
+            {
+                // Check if we're on the starting pixel
+                if (currentX == start.X && currentY == start.Y)
+                    break;
 
-            // Safety check to prevent infinite loops
-            if (boundary.Count > map.Width * map.Height)
-                break;
-
+                // Check if we're on one of the starting pixel's neighbors
+                int dx = Math.Abs(currentX - start.X);
+                int dy = Math.Abs(currentY - start.Y);
+                if (dx <= 1 && dy <= 1)
+                    break;
+            }
         } while (true);
 
         return new Polygon { Points = boundary.ToImmutableList() };
-    }
 
-    private static bool IsStartingPixelOrNeighbor(int currentX, int currentY, int startX, int startY)
-    {
-        // Check if it's the starting pixel
-        if (currentX == startX && currentY == startY)
-            return true;
+        // Helper call hierarchy:
+        //   GetStartingDirection -> IsBackground
+        //   FindNextBoundaryPixel -> IsBoundaryPixel -> IsBackground
+        //                                            -> IsForeground
 
-        // Check if it's one of the starting pixel's 8-connected neighbors
-        int dx = Math.Abs(currentX - startX);
-        int dy = Math.Abs(currentY - startY);
-        return dx <= 1 && dy <= 1;
-    }
-
-    private static int FindInitialDirection(int x, int y, ReliefMap map)
-    {
-        for (int i = 0; i < 8; i++)
+        // Walks around the Moore neighborhood to find the first direction that leads to a background pixel
+        int GetStartingDirection(int x, int y)
         {
-            var (dx, dy) = _directions[i];
-            if (IsBackground(x + dx, y + dy, map))
+            for (int i = 0; i < 8; i++)
             {
-                return i;
+                var (dx, dy) = _neighborhood[i];
+                if (IsBackground(x + dx, y + dy))
+                    return i;
             }
+            return -1; // No background neighbor found
         }
-        return -1; // No background neighbor found
-    }
 
-    private static (int x, int y, int direction)? FindNextBoundaryPixel(int currentX, int currentY, int startDirection, ReliefMap map)
-    {
-        // Start searching from the direction opposite to where we came from
-        int searchStart = (startDirection + 6) % 8; // Back up 2 positions (opposite direction)
-
-        for (int i = 0; i < 8; i++)
+        (int x, int y, int direction)? FindNextBoundaryPixel(int x, int y, int startDirection)
         {
-            int dir = (searchStart + i) % 8;
-            var (dx, dy) = _directions[dir];
-            int nextX = currentX + dx;
-            int nextY = currentY + dy;
+            int searchStart = (startDirection + 6) % 8; // Back up 2 positions
 
-            if (IsForeground(nextX, nextY, map) && IsBoundaryPixel(nextX, nextY, map))
+            for (int i = 0; i < 8; i++)
             {
-                return (nextX, nextY, dir);
+                int dir = (searchStart + i) % 8;
+                var (dx, dy) = _neighborhood[dir];
+                var (nx, ny) = (x + dx, y + dy);
+
+                if (IsBoundaryPixel(nx, ny))
+                    return (nx, ny, dir);
             }
+
+            return null; // No next boundary pixel found
         }
 
-        return null; // No next boundary pixel found
-    }
-
-    private static bool IsBackground(int x, int y, ReliefMap map)
-    {
-        // Virtual edges: pixels outside bounds are treated as background
-        if (x < 0 || x >= map.Width || y < 0 || y >= map.Height)
+        bool IsBoundaryPixel(int x, int y)
         {
-            return true;
-        }
+            if (!IsForeground(x, y))
+                return false;
 
-        return map[x, y] <= 0; // 0 or -1 (processed)
-    }
+            foreach (var (dx, dy) in _neighborhood)
+            {
+                if (IsBackground(x + dx, y + dy))
+                    return true;
+            }
 
-    /// <summary>
-    /// Checks if a pixel is foreground (value > 0 and within bounds).
-    /// </summary>
-    private static bool IsForeground(int x, int y, ReliefMap map) =>
-        x < 0 || x >= map.Width || y < 0 || y >= map.Height ? false : map[x, y] > 0;
-
-    private static bool IsBoundaryPixel(int x, int y, ReliefMap map)
-    {
-        if (!IsForeground(x, y, map))
-        {
             return false;
         }
 
-        // Check all 8 neighbors - boundary if ANY neighbor is background
-        foreach (var (dx, dy) in _directions)
-        {
-            if (IsBackground(x + dx, y + dy, map))
-            {
-                return true;
-            }
-        }
-        return false;
+        // In bounds and equal to 1
+        bool IsForeground(int x, int y) =>
+            x >= 0 && x < map.Width && y >= 0 && y < map.Height && map[x, y] == 1;
+
+        // Out of bounds or less than or equal to 0
+        bool IsBackground(int x, int y) =>
+            x < 0 || x >= map.Width || y < 0 || y >= map.Height || map[x, y] <= 0;
     }
 }
