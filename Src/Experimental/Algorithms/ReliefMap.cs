@@ -17,6 +17,9 @@ public record ReliefMap
 
     public ReliefMap(float[] probabilities, int width, int height)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(width, 0, nameof(width));
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(height, 0, nameof(height));
+
         if (probabilities.Length != width * height)
         {
             throw new ArgumentException(
