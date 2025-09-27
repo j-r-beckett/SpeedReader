@@ -4,6 +4,7 @@
 using Core;
 using Experimental.Geometry;
 using Experimental.Inference;
+using Experimental.Visualization;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Resources;

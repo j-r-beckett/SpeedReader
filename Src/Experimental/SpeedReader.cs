@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Threading.Channels;
 using Experimental.Inference;
+using Experimental.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
