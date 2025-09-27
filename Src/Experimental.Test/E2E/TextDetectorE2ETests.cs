@@ -29,9 +29,10 @@ public class TextDetectorE2ETests : IDisposable
     [Fact]
     public async Task Detection_ReturnsCorrectResults_StraightText()
     {
+        // Arrange
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        List<RotatedRectangle> expected =
+        List<BoundingBox> expected =
         [
             Utils.DrawText(image, "undertake", 100, 400),
             Utils.DrawText(image, "yup", 300, 150),
@@ -39,15 +40,20 @@ public class TextDetectorE2ETests : IDisposable
             Utils.DrawText(image, "happy", 600, 200),
         ];
 
-        await TestTextDetection(image, expected);
+        // Act
+        var actual = await RunDetection(image, expected);
+
+        // Assert
+        Utils.ValidateDetections(expected, actual);
     }
 
     [Fact]
     public async Task Detection_ReturnsCorrectResults_RotatedText()
     {
+        // Arrange
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        List<RotatedRectangle> expected =
+        List<BoundingBox> expected =
         [
             Utils.DrawText(image, "dastardly", 450, 450, 35),
             Utils.DrawText(image, "citizen", 300, 150, 15),
@@ -55,20 +61,29 @@ public class TextDetectorE2ETests : IDisposable
             Utils.DrawText(image, "guppy", 150, 500, -45),
         ];
 
-        await TestTextDetection(image, expected);
+        // Act
+        var actual = await RunDetection(image, expected);
+
+        // Assert
+        Utils.ValidateDetections(expected, actual);
     }
 
     [Fact]
     public async Task Detection_ReturnsCorrectResults_NoText()
     {
+        // Arrange
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        List<RotatedRectangle> expected = [];
+        List<BoundingBox> expected = [];
 
-        await TestTextDetection(image, expected);
+        // Act
+        var actual = await RunDetection(image, expected);
+
+        // Assert
+        Utils.ValidateDetections(expected, actual);
     }
 
-    private async Task TestTextDetection(Image<Rgb24> image, List<RotatedRectangle> expectedBBoxes)
+    private async Task<List<BoundingBox>> RunDetection(Image<Rgb24> image, List<BoundingBox> expectedBBoxes)
     {
         // Set IntraOpNumThreads to maximize throughput for non-parallelized CPU execution
         var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions
@@ -82,22 +97,14 @@ public class TextDetectorE2ETests : IDisposable
 
         var results = await detector.Detect(image, vizBuilder);
 
-        var expectedAxisAligned = expectedBBoxes.Select(r => r.ToAxisAlignedRectangle()).ToList();
-
         var svg = vizBuilder
-            .AddExpectedAxisAlignedBBoxes(expectedAxisAligned)
-            .AddExpectedOrientedBBoxes(expectedBBoxes, true)
+            .AddExpectedAxisAlignedBBoxes(expectedBBoxes.Select(b => b.AxisAlignedRectangle).ToList())
+            .AddExpectedOrientedBBoxes(expectedBBoxes.Select(b => b.RotatedRectangle).ToList(), true)
             .RenderSvg();
 
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
-        Utils.ValidateOrientedBBoxes(expectedBBoxes, results.Select(r => r.RotatedRectangle).ToList());
-        Utils.ValidateAxisAlignedBBoxes(expectedAxisAligned, results.Select(r => r.AxisAlignedRectangle).ToList());
-
-        foreach (var result in results)
-        {
-            Assert.True(result.Polygon.Points.Count >= 4);
-        }
+        return results;
     }
 
     public void Dispose()
