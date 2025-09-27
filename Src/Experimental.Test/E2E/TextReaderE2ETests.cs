@@ -29,40 +29,26 @@ public class TextReaderE2ETests
     [Fact]
     public async Task ReadOne_ReturnsCorrectResult()
     {
+        // Arrange
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
-        const string text = "greetings";
+        const string expectedText = "greetings";
 
-        var bbox = Utils.DrawText(image, text, 200, 200);
+        var expectedBBox = Utils.DrawText(image, expectedText, 200, 200);
 
-        var reader = CreateTextReader();
+        var expectedResult = new SpeedReaderResult(image, [expectedBBox], [(expectedText, 1.0)], null!);
 
-        var readerResult = await await reader.ReadOne(image);
-        var results = readerResult.Results;
+        // Act
+        var actualResult = await ReadOne(image);
 
-        var svg = readerResult.VizBuilder.RenderSvg();
-        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
-
-        Assert.Single(results);
-
-        var bboxes = results.Select(r => r.BBox).ToList();
-        var axisAlignedBBoxes = bboxes.Select(d => d.AxisAlignedRectangle).ToList();
-        var orientedBBoxes = bboxes.Select(d => d.RotatedRectangle).ToList();
-        var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
-
-        Utils.ValidateAxisAlignedBBoxes([bbox.ToAxisAlignedRectangle()], axisAlignedBBoxes);
-        Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
-        foreach (var polygon in polygonBBoxes)
-        {
-            Assert.True(polygon.Points.Count >= 4);
-        }
-
-        Assert.True(results[0].Text == text);
+        // Assert
+        Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
     }
 
     [Fact]
     public async Task ReadMany_ReturnsCorrectResults()
     {
+        // Arrange
         using var image1 = new Image<Rgb24>(720, 640, Color.White);
         const string text1 = "yanked";
         var bbox1 = Utils.DrawText(image1, text1, 200, 200);
@@ -75,41 +61,51 @@ public class TextReaderE2ETests
         const string text3 = "specimen";
         var bbox3 = Utils.DrawText(image3, text3, 500, 100);
 
+        List<SpeedReaderResult> expectedResults =
+        [
+            new (image1, [bbox1], [(text1, 1.0)], null!),
+            new (image2, [bbox2], [(text2, 1.0)], null!),
+            new (image3, [bbox3], [(text3, 1.0)], null!)
+        ];
+
+        // Act
+        var images = expectedResults.Select(r => r.Image).ToList();
+        var actualResults = await ReadMany(images);
+
+        // Assert
+        Assert.Equal(expectedResults.Count, actualResults.Count);
+
+        foreach (var (expected, actual) in expectedResults.Zip(actualResults))
+        {
+            Utils.ValidateDetectionsAndRecognitions(expected, actual);
+        }
+    }
+
+    private async Task<SpeedReaderResult> ReadOne(Image<Rgb24> image)
+    {
         var reader = CreateTextReader();
 
-        List<(Image<Rgb24> Image, RotatedRectangle BBox, string Text)> cases =
-            [
-                (image1, bbox1, text1),
-                (image2, bbox2, text2),
-                (image3, bbox3, text3)
-            ];
+        var result = await await reader.ReadOne(image);
 
-        var images = cases.Select(c => c.Image).ToAsyncEnumerable();
+        var svg = result.VizBuilder.RenderSvg();
+        _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
-        var i = 0;
-        await foreach (var item in reader.ReadMany(images))
+        return result;
+    }
+
+    private async Task<List<SpeedReaderResult>> ReadMany(List<Image<Rgb24>> images)
+    {
+        var reader = CreateTextReader();
+
+        var results = await reader.ReadMany(images.ToAsyncEnumerable()).ToListAsync();
+
+        foreach (var result in results)
         {
-            var svg = item.VizBuilder.RenderSvg();
+            var svg = result.VizBuilder.RenderSvg();
             _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
-
-            var results = item.Results;
-            var text = cases[i].Text;
-            var bbox = cases[i++].BBox;
-
-            var bboxes = results.Select(r => r.BBox).ToList();
-            var axisAlignedBBoxes = bboxes.Select(d => d.AxisAlignedRectangle).ToList();
-            var orientedBBoxes = bboxes.Select(d => d.RotatedRectangle).ToList();
-            var polygonBBoxes = bboxes.Select(d => d.Polygon).ToList();
-
-            Utils.ValidateAxisAlignedBBoxes([bbox.ToAxisAlignedRectangle()], axisAlignedBBoxes);
-            Utils.ValidateOrientedBBoxes([bbox], orientedBBoxes);
-            foreach (var polygon in polygonBBoxes)
-            {
-                Assert.True(polygon.Points.Count >= 4);
-            }
-
-            Assert.True(results[0].Text == text);
         }
+
+        return results;
     }
 
     private SpeedReader CreateTextReader()

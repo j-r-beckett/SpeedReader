@@ -9,14 +9,12 @@ using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
-using Point = Experimental.Geometry.Point;
-using PointF = Experimental.Geometry.PointF;
 
 namespace Experimental.Test.E2E;
 
 public static class Utils
 {
-    public static RotatedRectangle DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
+    public static BoundingBox DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
     {
         var font = Fonts.GetFont(fontSize: 24f);
         var textRect = TextMeasurer.MeasureAdvance(text, new TextOptions(font));
@@ -31,7 +29,7 @@ public static class Utils
         // Create RotatedRectangle
         var angleRadians = -angleDegrees * Math.PI / 180.0;
 
-        return new RotatedRectangle
+        var rotatedRect = new RotatedRectangle
         {
             X = x,
             Y = y,
@@ -39,23 +37,55 @@ public static class Utils
             Height = height,
             Angle = angleRadians
         };
+
+        return new BoundingBox(new Polygon { Points = [] }, rotatedRect);
     }
 
+    public static void ValidateDetectionsAndRecognitions(SpeedReaderResult expected, SpeedReaderResult actual)
+    {
+        var expectedBBoxes = expected.Results.Select(r => r.BBox).ToList();
+        var actualBBoxes = actual.Results.Select(r => r.BBox).ToList();
+        ValidateDetections(expectedBBoxes, actualBBoxes);
 
-    public static void ValidateAxisAlignedBBoxes(List<AxisAlignedRectangle> expected, List<AxisAlignedRectangle> actual)
-        => ValidateOrientedBBoxes(expected.Select(ToRotatedRectangle).ToList(), actual.Select(ToRotatedRectangle).ToList());
+        var expectedRects = expectedBBoxes.Select(b => b.RotatedRectangle).ToList();
+        var actualRects = actualBBoxes.Select(b => b.RotatedRectangle).ToList();
+        var pairs = PairBBoxes(expectedRects, actualRects);
+
+        for (int i = 0; i < pairs.Count; i++)
+        {
+            Assert.Equal(expected.Results[i].Text, actual.Results[i].Text);
+        }
+    }
+
+    public static void ValidateDetections(List<BoundingBox> expected, List<BoundingBox> actual)
+    {
+        Assert.Equal(expected.Count, actual.Count);
+
+        foreach (var polygon in actual.Select(b => b.Polygon))
+            Assert.True(polygon.Points.Count >= 3);
+
+        var expectedRotatedRects = expected.Select(b => b.RotatedRectangle).ToList();
+        var actualRotatedRects = actual.Select(b => b.RotatedRectangle).ToList();
+        ValidateOrientedBBoxes(expectedRotatedRects, actualRotatedRects);
+
+        var expectedAxisAlignedRects = expected.Select(b => b.AxisAlignedRectangle).ToList();
+        var actualAxisAlignedRects = actual.Select(b => b.AxisAlignedRectangle).ToList();
+        ValidateOrientedBBoxes(expectedAxisAlignedRects.Select(ToRotatedRectangle).ToList(),
+            actualAxisAlignedRects.Select(ToRotatedRectangle).ToList());
+    }
 
     public static void ValidateOrientedBBoxes(List<RotatedRectangle> expected, List<RotatedRectangle> actual)
     {
         Assert.Equal(expected.Count, actual.Count);
         var pairs = PairBBoxes(expected, actual);
-        foreach (var iou in pairs)
+        foreach (var (e, a) in pairs)
         {
+            var iou = IoU(expected[e], actual[a]);
             Assert.True(iou >= 0.5);
         }
     }
 
-    public static List<double> PairBBoxes(
+    public static List<(int, int)> PairBBoxes(
         List<RotatedRectangle> expectedBBoxes, List<RotatedRectangle> actualBBoxes)
     {
         Debug.Assert(expectedBBoxes.Count == actualBBoxes.Count);
@@ -85,7 +115,7 @@ public static class Utils
         }
 
         return pairs
-            .Select(p => IoU(expectedBBoxes[p.Key], actualBBoxes[p.Value]))
+            .Select(p => (p.Key, p.Value))
             .ToList();
     }
 

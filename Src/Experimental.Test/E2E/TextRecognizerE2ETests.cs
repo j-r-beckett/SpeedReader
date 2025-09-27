@@ -36,14 +36,17 @@ public class TextRecognizerE2ETests
     [InlineData("two words")]
     public async Task ReturnsCorrectResult_StraightText(string text)
     {
+        // Arrange
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
         var bbox = Utils.DrawText(image, text, 100, 100);
 
-        var (actualText, confidence) = await RunRecognition(image, bbox);
+        // Act
+        var (actualText, confidence) = await RunRecognition(image, bbox.RotatedRectangle);
 
+        // Assert
         Assert.Equal(text, actualText);
-        Assert.True(confidence >= 0.98);
+        Assert.True(confidence >= 0.98);  // If this fails, there's a bug. Do not tweak to make test pass
     }
 
     [Theory]
@@ -57,27 +60,33 @@ public class TextRecognizerE2ETests
     [InlineData(-90)]
     public async Task ReturnsCorrectResult_AngledText(int angleDegrees)
     {
+        // Arrange
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
         const string text = "greetings";
 
         var bbox = Utils.DrawText(image, text, 100, 100, angleDegrees);
 
-        var (actualText, confidence) = await RunRecognition(image, bbox);
+        // Act
+        var (actualText, confidence) = await RunRecognition(image, bbox.RotatedRectangle);
 
+        // Assert
         Assert.Equal(text, actualText);
-        Assert.True(confidence >= 0.98);
+        Assert.True(confidence >= 0.98);  // If this fails, there's a bug. Do not tweak to make test pass
     }
 
     [Fact]
     public async Task ReturnsCorrectResult_NoText()
     {
+        // Arrange
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
         RotatedRectangle bbox = new() { X = 100, Y = 100, Width = 100, Height = 100, Angle = 0 };
 
+        // Act
         var (actualText, confidence) = await RunRecognition(image, bbox);
 
+        // Assert
         Assert.Equal(string.Empty, actualText);
         Assert.True(confidence <= 0.01);
     }
