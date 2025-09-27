@@ -54,5 +54,9 @@ public class TextRecognizer
         return tensor;
     }
 
-    private (string, double) Postprocess(float[] modelOutput) => modelOutput.GreedyCTCDecode();
+    private (string, double) Postprocess(float[] modelOutput)
+    {
+        var (text, confidence) = modelOutput.GreedyCTCDecode();
+        return (text.Trim(), confidence);
+    }
 }
