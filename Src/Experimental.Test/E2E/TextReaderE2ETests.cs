@@ -179,10 +179,8 @@ public class TextReaderE2ETests
 
     private SpeedReader CreateTextReader()
     {
-        var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions
-        {
-            IntraOpNumThreads = 4
-        });
+        var options =  SessionOptions.MakeSessionOptionWithCudaProvider(1);
+        var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, options);
         var dbnetRunner = new CpuModelRunner(dbnetSession, 1);
 
         var svtrSession = _modelProvider.GetSession(Model.SVTRv2);
