@@ -30,57 +30,49 @@ public class TextDetectorE2ETests : IDisposable
     public async Task Detection_ReturnsCorrectResults_StraightText()
     {
         // Arrange
-        using var image = new Image<Rgb24>(720, 640, Color.White);
-
-        List<BoundingBox> expected =
-        [
-            Utils.DrawText(image, "undertake", 100, 400),
-            Utils.DrawText(image, "yup", 300, 150),
-            Utils.DrawText(image, "anabranch", 500, 100),
-            Utils.DrawText(image, "happy", 600, 200),
-        ];
+        var expected = Utils.CreateTestImage(720, 640, [
+            ("undertake", 100, 400, 0),
+            ("yup", 300, 150, 0),
+            ("anabranch", 500, 100, 0),
+            ("happy", 600, 200, 0)
+        ]);
 
         // Act
-        var actual = await RunDetection(image, expected);
+        var actual = await RunDetection(expected.Image, expected.Detections);
 
         // Assert
-        Utils.ValidateDetections(expected, actual);
+        Utils.ValidateDetections(expected.Detections, actual);
     }
 
     [Fact]
     public async Task Detection_ReturnsCorrectResults_RotatedText()
     {
         // Arrange
-        using var image = new Image<Rgb24>(720, 640, Color.White);
-
-        List<BoundingBox> expected =
-        [
-            Utils.DrawText(image, "dastardly", 450, 450, 35),
-            Utils.DrawText(image, "citizen", 300, 150, 15),
-            Utils.DrawText(image, "nowhere", 600, 100, 50),
-            Utils.DrawText(image, "guppy", 150, 500, -45),
-        ];
+        var expected = Utils.CreateTestImage(720, 640, [
+            ("dastardly", 450, 450, 35),
+            ("citizen", 300, 150, 15),
+            ("nowhere", 600, 100, 50),
+            ("guppy", 150, 500, -45)
+        ]);
 
         // Act
-        var actual = await RunDetection(image, expected);
+        var actual = await RunDetection(expected.Image, expected.Detections);
 
         // Assert
-        Utils.ValidateDetections(expected, actual);
+        Utils.ValidateDetections(expected.Detections, actual);
     }
 
     [Fact]
     public async Task Detection_ReturnsCorrectResults_NoText()
     {
         // Arrange
-        using var image = new Image<Rgb24>(720, 640, Color.White);
-
-        List<BoundingBox> expected = [];
+        var expected = Utils.CreateTestImage(720, 640, []);
 
         // Act
-        var actual = await RunDetection(image, expected);
+        var actual = await RunDetection(expected.Image, expected.Detections);
 
         // Assert
-        Utils.ValidateDetections(expected, actual);
+        Utils.ValidateDetections(expected.Detections, actual);
     }
 
     private async Task<List<BoundingBox>> RunDetection(Image<Rgb24> image, List<BoundingBox> expectedBBoxes)

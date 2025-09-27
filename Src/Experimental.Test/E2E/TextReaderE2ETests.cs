@@ -27,19 +27,89 @@ public class TextReaderE2ETests
     }
 
     [Fact]
-    public async Task ReadOne_ReturnsCorrectResult()
+    public async Task ReadOne_ReturnsCorrectResult_WideImage()
     {
         // Arrange
-        using var image = new Image<Rgb24>(720, 640, Color.White);
-
-        const string expectedText = "greetings";
-
-        var expectedBBox = Utils.DrawText(image, expectedText, 200, 200);
-
-        var expectedResult = new SpeedReaderResult(image, [expectedBBox], [(expectedText, 1.0)], null!);
+        var expectedResult = Utils.CreateTestImage(5000, 300, [
+            ("mountain", 100, 100, 15),
+            ("dump", 1000, 150, -15),
+            ("running", 2500, 120, 30),
+            ("jumping", 4500, 200, -30)
+        ]);
 
         // Act
-        var actualResult = await ReadOne(image);
+        var actualResult = await ReadOne(expectedResult.Image);
+
+        // Assert
+        Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
+    }
+
+    [Fact]
+    public async Task ReadOne_ReturnsCorrectResult_NarrowImage()
+    {
+        // Arrange
+        var expectedResult = Utils.CreateTestImage(300, 5000, [
+            ("mountain", 100, 100, 15),
+            ("dump", 150, 1000, -15),
+            ("running", 120, 2500, 30),
+            ("jumping", 200, 4500, -30)
+        ]);
+
+        // Act
+        var actualResult = await ReadOne(expectedResult.Image);
+
+        // Assert
+        Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
+    }
+
+    [Fact]
+    public async Task ReadOne_ReturnsCorrectResult_SmallImage()
+    {
+        // Arrange
+        var expectedResult = Utils.CreateTestImage(300, 150, [
+            ("munge", 100, 100, 15),
+            ("dump", 10, 30, -15),
+            ("running", 50, 80, 30),
+        ]);
+
+        // Act
+        var actualResult = await ReadOne(expectedResult.Image);
+
+        // Assert
+        Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
+    }
+
+    [Fact]
+    public async Task ReadOne_ReturnsCorrectResult_StraightText()
+    {
+        // Arrange
+        var expectedResult = Utils.CreateTestImage(720, 640, [
+            ("mountain", 100, 400, 0),
+            ("dump", 300, 150, 0),
+            ("running", 500, 100, 0),
+            ("jumping", 600, 200, 0)
+        ]);
+
+        // Act
+        var actualResult = await ReadOne(expectedResult.Image);
+
+        // Assert
+        Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
+    }
+
+    [Fact]
+    public async Task ReadOne_ReturnsCorrectResult_RotatedText()
+    {
+        // Arrange
+        var expectedResult = Utils.CreateTestImage(720, 640, [
+            ("zephyr", 450, 450, 35),
+            ("kludge", 300, 150, 10),
+            ("quixotic", 600, 100, 55),
+            ("flummox", 150, 500, -40)
+        ]);
+
+        // Act
+        var actualResult = await ReadOne(expectedResult.Image);
 
         // Assert
         Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
@@ -49,24 +119,23 @@ public class TextReaderE2ETests
     public async Task ReadMany_ReturnsCorrectResults()
     {
         // Arrange
-        using var image1 = new Image<Rgb24>(720, 640, Color.White);
-        const string text1 = "yanked";
-        var bbox1 = Utils.DrawText(image1, text1, 200, 200);
+        var expectedResult1 = Utils.CreateTestImage(720, 640, [
+            ("velcro", 200, 200, 0),
+            ("jukebox", 400, 300, 15),
+            ("gnome", 100, 500, 0)
+        ]);
+        var expectedResult2 = Utils.CreateTestImage(500, 800, [
+            ("pickle", 300, 250, -15),
+            ("wizard", 150, 600, 0)
+        ]);
+        var expectedResult3 = Utils.CreateTestImage(800, 600, [
+            ("bamboo", 500, 100, 0),
+            ("clockwork", 200, 400, 30),
+            ("pretzels", 600, 300, -20),
+            ("alpaca", 400, 500, 0)
+        ]);
 
-        using var image2 = new Image<Rgb24>(500, 800, Color.White);
-        const string text2 = "Kazakhstan";
-        var bbox2 = Utils.DrawText(image2, text2, 300, 250);
-
-        using var image3 = new Image<Rgb24>(800, 600, Color.White);
-        const string text3 = "specimen";
-        var bbox3 = Utils.DrawText(image3, text3, 500, 100);
-
-        List<SpeedReaderResult> expectedResults =
-        [
-            new (image1, [bbox1], [(text1, 1.0)], null!),
-            new (image2, [bbox2], [(text2, 1.0)], null!),
-            new (image3, [bbox3], [(text3, 1.0)], null!)
-        ];
+        List<SpeedReaderResult> expectedResults = [expectedResult1, expectedResult2, expectedResult3];
 
         // Act
         var images = expectedResults.Select(r => r.Image).ToList();
