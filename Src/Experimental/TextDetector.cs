@@ -1,20 +1,15 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Numerics.Tensors;
-using System.Runtime.InteropServices.Marshalling;
 using CommunityToolkit.HighPerformance;
 using Experimental.Algorithms;
 using Experimental.Geometry;
 using Experimental.Inference;
-using Ocr;
-using Ocr.Algorithms;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using Point = Experimental.Geometry.Point;
 
 namespace Experimental;
 
@@ -142,17 +137,12 @@ public class TextDetector
 
     private List<BoundingBox> Postprocess(float[] modelOutput, Image<Rgb24> originalImage, int height, int width)
     {
-        modelOutput.BinarizeInPlace(0.2f);
-        var tiledProbabilityMapSpan = modelOutput.AsSpan().AsSpan2D(height, width);
+        var boundaries = new ReliefMap(modelOutput, width, height).TraceAllBoundaries();
 
-        // Work directly in tiled coordinate space
-        var boundaries = BoundaryTracing.FindBoundaries(tiledProbabilityMapSpan)
-            .Select(b => b.Select(p => (Point)p).ToList())
-            .Select(points => new Polygon { Points = points.ToImmutableList() });
-
+        // Calculate the scale used in HardAspectResize
         var scaleX = (double)width / originalImage.Width;
         var scaleY = (double)height / originalImage.Height;
-        var scale = Math.Min(scaleX, scaleY);  // The same scale used in HardAspectResize
+        var scale = Math.Min(scaleX, scaleY);
 
         return boundaries
             .Select(BoundaryToBBox)

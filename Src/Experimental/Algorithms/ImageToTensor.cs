@@ -4,7 +4,7 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Experimental.Inference;
+namespace Experimental.Algorithms;
 
 public static class PixelsToFloatsExtensions
 {

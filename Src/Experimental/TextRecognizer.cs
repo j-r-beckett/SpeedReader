@@ -6,7 +6,6 @@ using System.Numerics.Tensors;
 using Experimental.Algorithms;
 using Experimental.Geometry;
 using Experimental.Inference;
-using Ocr.Algorithms;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
