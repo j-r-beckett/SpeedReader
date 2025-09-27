@@ -48,15 +48,11 @@ public static partial class ReliefMapExtensions
             // Single-trace stopping criterion: stop when boundary.Count > 2 and current pixel
             // is either the starting pixel or one of its 8-connected neighbors
             if (boundary.Count > 2 && IsStartingPixelOrNeighbor(currentX, currentY, firstX, firstY))
-            {
                 break;
-            }
 
             // Safety check to prevent infinite loops
             if (boundary.Count > map.Width * map.Height)
-            {
                 break;
-            }
 
         } while (true);
 
@@ -67,9 +63,7 @@ public static partial class ReliefMapExtensions
     {
         // Check if it's the starting pixel
         if (currentX == startX && currentY == startY)
-        {
             return true;
-        }
 
         // Check if it's one of the starting pixel's 8-connected neighbors
         int dx = Math.Abs(currentX - startX);
