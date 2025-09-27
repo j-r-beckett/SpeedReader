@@ -8,12 +8,31 @@ using Resources;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace Experimental.Test.E2E;
 
 public static class Utils
 {
+    public static SpeedReaderResult CreateTestImage(int width, int height, List<(string Text, int X, int Y, int Angle)> texts)
+    {
+        var image = new Image<Rgb24>(width, height, Color.White);
+
+        // Add thin black border around the edge
+        image.Mutate(ctx => ctx.Draw(Color.Black, 1, new RectangleF(0, 0, width - 1, height - 1)));
+
+        List<BoundingBox> detections = [];
+        List<(string Text, double Confidence)> recognitions = [];
+        foreach (var text in texts)
+        {
+            var bbox = DrawText(image, text.Text, text.X, text.Y, text.Angle);
+            detections.Add(bbox);
+            recognitions.Add((text.Text, 1.0));
+        }
+        return new SpeedReaderResult(image, detections, recognitions, null!);
+    }
+
     public static BoundingBox DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
     {
         var font = Fonts.GetFont(fontSize: 24f);
@@ -51,9 +70,9 @@ public static class Utils
         var actualRects = actualBBoxes.Select(b => b.RotatedRectangle).ToList();
         var pairs = PairBBoxes(expectedRects, actualRects);
 
-        for (int i = 0; i < pairs.Count; i++)
+        foreach (var (expectedIdx, actualIdx) in pairs)
         {
-            Assert.Equal(expected.Results[i].Text, actual.Results[i].Text);
+            Assert.Equal(expected.Results[expectedIdx].Text, actual.Results[actualIdx].Text);
         }
     }
 
