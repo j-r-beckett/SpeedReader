@@ -3,7 +3,7 @@
 
 using System.Buffers;
 
-namespace Experimental.Inference;
+namespace Experimental.Algorithms;
 
 public static class NhwcToNchwExtensions
 {

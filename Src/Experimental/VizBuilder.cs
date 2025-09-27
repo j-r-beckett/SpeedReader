@@ -5,8 +5,6 @@ using System.Collections.Concurrent;
 using CommunityToolkit.HighPerformance;
 using Experimental.Geometry;
 using Fluid;
-using Ocr.Algorithms;
-using Ocr.Visualization;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -17,6 +15,14 @@ namespace Experimental;
 
 public class VizBuilder
 {
+    public class LegendItem
+    {
+        public required string Color;
+        public required string Description;
+        public required string ElementClass;
+        public required bool DefaultVisible;
+    }
+
     public class TextItem
     {
         public required string Text;
@@ -39,7 +45,7 @@ public class VizBuilder
         public required List<Polygon> ExpectedOrientedBoundingBoxes;
         public required List<Polygon> Polygons = [];
         public required List<TextItem> TextItems = [];
-        public required SvgRenderer.LegendItem[] Legend;
+        public required LegendItem[] Legend;
     }
 
     public class MultipleAddException : Exception
@@ -231,16 +237,9 @@ public class VizBuilder
         options.MemberAccessStrategy.Register<Polygon>();
         options.MemberAccessStrategy.Register<TextItem>();
 
-        // Currently unused
-        // ----------------
-        options.MemberAccessStrategy.Register<SvgRenderer.TemplateData>();
-        options.MemberAccessStrategy.Register<SvgRenderer.OrientedBoundingBox>();
-        options.MemberAccessStrategy.Register<SvgRenderer.Polygon>();
-        options.MemberAccessStrategy.Register<SvgRenderer.TextItem>();
-        options.MemberAccessStrategy.Register<SvgRenderer.LegendItem>();
-        // ----------------
+        options.MemberAccessStrategy.Register<LegendItem>();
 
-        List<SvgRenderer.LegendItem> legend = [];
+        List<LegendItem> legend = [];
 
         if (_axisAlignedBBoxes != null)
         {
@@ -326,20 +325,24 @@ public class VizBuilder
         {
             textItems = _textItemsData.Select(item =>
             {
-                var corners = ImageCropping.DetectOrientationAndOrderCorners(item.ORectangle);
+                // The corners are already ordered: topLeft, topRight, bottomRight, bottomLeft
+                var topLeft = item.ORectangle[0];
+                var topRight = item.ORectangle[1];
+                var bottomRight = item.ORectangle[2];
+                var bottomLeft = item.ORectangle[3];
 
                 // Calculate center
-                var centerX = (corners.TopLeft.X + corners.TopRight.X + corners.BottomRight.X + corners.BottomLeft.X) / 4.0;
-                var centerY = (corners.TopLeft.Y + corners.TopRight.Y + corners.BottomRight.Y + corners.BottomLeft.Y) / 4.0;
+                var centerX = (topLeft.X + topRight.X + bottomRight.X + bottomLeft.X) / 4.0;
+                var centerY = (topLeft.Y + topRight.Y + bottomRight.Y + bottomLeft.Y) / 4.0;
 
                 // Calculate rotation angle
-                var textVector = (X: corners.TopRight.X - corners.TopLeft.X, Y: corners.TopRight.Y - corners.TopLeft.Y);
+                var textVector = (X: topRight.X - topLeft.X, Y: topRight.Y - topLeft.Y);
                 var rotationAngle = Math.Atan2(textVector.Y, textVector.X) * 180.0 / Math.PI;
 
                 // Calculate font size to use based on text height
                 var textHeight = Math.Sqrt(
-                    Math.Pow(corners.BottomLeft.X - corners.TopLeft.X, 2) +
-                    Math.Pow(corners.BottomLeft.Y - corners.TopLeft.Y, 2));
+                    Math.Pow(bottomLeft.X - topLeft.X, 2) +
+                    Math.Pow(bottomLeft.Y - topLeft.Y, 2));
                 var fontSize = textHeight * 0.70;
 
                 return new TextItem

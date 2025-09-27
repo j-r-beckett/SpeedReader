@@ -12,11 +12,23 @@
 
   <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="System.Numerics.Tensors" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ocr\Ocr.csproj" />
     <ProjectReference Include="..\Resources\Resources.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Clipper2Lib">
+      <HintPath>..\..\..\..\.nuget\packages\clipper2\1.5.3\lib\netstandard2.0\Clipper2Lib.dll</HintPath>
+    </Reference>
+    <Reference Include="CommunityToolkit.HighPerformance">
+      <HintPath>..\..\..\..\.nuget\packages\communitytoolkit.highperformance\8.4.0\lib\net8.0\CommunityToolkit.HighPerformance.dll</HintPath>
+    </Reference>
+    <Reference Include="Fluid">
+      <HintPath>..\..\..\..\.nuget\packages\fluid.core\2.25.0\lib\net9.0\Fluid.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 

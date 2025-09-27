@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0
 
 using Experimental.Geometry;
-using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
