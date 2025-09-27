@@ -4,6 +4,7 @@
 using System.Collections.Immutable;
 using Experimental.Geometry;
 using Experimental.Inference;
+using Experimental.Visualization;
 using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

@@ -4,6 +4,7 @@
 using Core;
 using Experimental.Geometry;
 using Experimental.Inference;
+using Experimental.Visualization;
 using Microsoft.Extensions.Logging;
 using Resources;
 using SixLabors.Fonts;

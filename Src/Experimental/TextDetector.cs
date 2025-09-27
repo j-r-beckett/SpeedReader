@@ -7,6 +7,7 @@ using CommunityToolkit.HighPerformance;
 using Experimental.Algorithms;
 using Experimental.Geometry;
 using Experimental.Inference;
+using Experimental.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
