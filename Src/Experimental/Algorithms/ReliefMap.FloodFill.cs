@@ -13,6 +13,8 @@ public static partial class ReliefMapExtensions
         var stack = new Stack<(int x, int y)>();
         stack.Push((start.X, start.Y));
 
+        Span<Point> neighborBuffer = stackalloc Point[8];
+
         while (stack.Count > 0)
         {
             var (x, y) = stack.Pop();
@@ -25,7 +27,7 @@ public static partial class ReliefMapExtensions
             map[x, y] = value;
 
             // Push neighbors to stack
-            foreach (var (nx, ny) in map.Neighbors((x, y)))
+            foreach (var (nx, ny) in map.GetNeighbors((x, y), neighborBuffer))
                 stack.Push((nx, ny));
         }
     }

@@ -5,13 +5,13 @@ using System.Text.Json.Serialization;
 
 namespace Experimental.Geometry;
 
-public record Point
+public readonly struct Point
 {
     [JsonPropertyName("x")]
-    public required int X { get; init; }
+    public int X { get; init; }
 
     [JsonPropertyName("y")]
-    public required int Y { get; init; }
+    public int Y { get; init; }
 
     public static explicit operator Point(PointF point) => new()
     {

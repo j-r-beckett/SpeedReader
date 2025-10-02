@@ -14,30 +14,29 @@ public static class PixelsToFloatsExtensions
         var width = shape[1];
         var channels = shape[2];
 
-        var result = new float[width * height * 3];
-
-        result.AsSpan().Fill(padding);
 
         if (!image.DangerousTryGetSinglePixelMemory(out var imageData))
         {
             throw new NonContiguousImageException("Image memory is not contiguous");
         }
 
-        image.ProcessPixelRows(accessor =>
+        var result = new float[width * height * 3];
+
+        var imageDataSpan = imageData.Span;
+
+        for (int y = 0; y < image.Height; y++)
         {
-            for (var y = 0; y < accessor.Height; y++)
+            for (int x = 0; x < image.Width; x++)
             {
-                var pixelRow = accessor.GetRowSpan(y);
-                for (var x = 0; x < pixelRow.Length; x++)
-                {
-                    var pixel = imageData.Span[y * image.Width + x];
-                    var destIndex = (y * width + x) * channels;
-                    result[destIndex] = pixel.R;
-                    result[destIndex + 1] = pixel.G;
-                    result[destIndex + 2] = pixel.B;
-                }
+                var destIndex = (y * width + x) * channels;
+                var pixel = x >= width || y >= height
+                    ? new Rgb24(0, 0, 0)
+                    : imageDataSpan[y * image.Width + x];
+                result[destIndex] = pixel.R;
+                result[destIndex + 1] = pixel.G;
+                result[destIndex + 2] = pixel.B;
             }
-        });
+        }
 
         return result;
     }
