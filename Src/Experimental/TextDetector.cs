@@ -54,11 +54,14 @@ public class TextDetector
 
             for (int channel = 0; channel < 3; channel++)
             {
-                var channelTensor = Tensor.Create(tensor, channel * height * width, [height, width], default);
-
-                // Subtract mean and divide by std in place
-                Tensor.Subtract(channelTensor, means[channel], channelTensor);
-                Tensor.Divide(channelTensor, stds[channel], channelTensor);
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        ref var val = ref tensor[channel * width * height + y * width + x];
+                        val = (val - means[channel]) / stds[channel];  // [ 0, 255 ] -> [ -123.675, 116.28]
+                    }
+                }
             }
 
             return tensor;
