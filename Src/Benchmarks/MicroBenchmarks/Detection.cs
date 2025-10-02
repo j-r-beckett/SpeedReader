@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Diagnosers;
 using Core;
 using Experimental;
 using Experimental.Visualization;
@@ -15,6 +16,7 @@ public class Detection
 {
     private readonly TextDetector _detector;
     private readonly Image<Rgb24> _input;
+    private readonly (float[], int[])[] _cachedInference;
 
     public Detection()
     {
@@ -22,12 +24,14 @@ public class Detection
         var dbnetSession = new ModelProvider().GetSession(Model.DbNet18, ModelPrecision.INT8);
         var dbnetRunner = new CachingModelRunner(dbnetSession);
         _detector = new TextDetector(dbnetRunner);
-        _detector.Detect(_input, new VizBuilder()).GetAwaiter().GetResult();  // Warm up
+        var modelInput = _detector.Preprocess(_input, new VizBuilder());
+        _cachedInference = _detector.RunInference(modelInput).GetAwaiter().GetResult();
     }
 
     [Benchmark]
-    public async Task Detect()
+    public void Detect()
     {
-        await _detector.Detect(_input, new VizBuilder());
+        _detector.Preprocess(_input, new VizBuilder());
+        _detector.Postprocess(_cachedInference, _input, new VizBuilder());
     }
 }

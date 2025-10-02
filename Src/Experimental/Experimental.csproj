@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="System.Numerics.Tensors" />
   </ItemGroup>
 

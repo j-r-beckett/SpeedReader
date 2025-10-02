@@ -20,15 +20,13 @@ public class TextDetector
 
     public TextDetector(ModelRunner modelRunner) => _modelRunner = modelRunner;
 
-
     // We pass tiles into the model, so (TileHeight, TileWidth) == (ModelHeight, ModelWidth)
     private const int TileHeight = 640;
     private const int TileWidth = 640;
 
     private const double OverlapMultiplier = 0.05;
 
-    // Override for testing only
-    public virtual async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder)
+    public List<(float[] Data, int[] Shape)> Preprocess(Image<Rgb24> image, VizBuilder vizBuilder)
     {
         vizBuilder.AddBaseImage(image);
 
@@ -39,13 +37,42 @@ public class TextDetector
         using var resized = image.HardAspectResize(new Size(tiledWidth, tiledHeight));
         var tiles = tileRects.Select(r => resized.Clone(cloneConfig, ctx => ctx.Crop(r))).ToList();
 
+        int[] inferenceShape = [3, TileHeight, TileWidth];
+        var inferenceInputs = tiles.Select(t => (PreprocessTile(t), inferenceShape)).ToList();
+        foreach (var tile in tiles) tile.Dispose();
+        return inferenceInputs;
+
+        float[] PreprocessTile(Image<Rgb24> tile)
+        {
+            var (height, width) = (tile.Height, tile.Width);
+            var tensor = tile.ToTensor([height, width, 3]);
+            tensor.NhwcToNchwInPlace([height, width, 3]);
+
+            // Apply ImageNet normalization
+            float[] means = [123.675f, 116.28f, 103.53f];
+            float[] stds = [58.395f, 57.12f, 57.375f];
+
+            for (int channel = 0; channel < 3; channel++)
+            {
+                var channelTensor = Tensor.Create(tensor, channel * height * width, [height, width], default);
+
+                // Subtract mean and divide by std in place
+                Tensor.Subtract(channelTensor, means[channel], channelTensor);
+                Tensor.Divide(channelTensor, stds[channel], channelTensor);
+            }
+
+            return tensor;
+        }
+    }
+
+    public List<BoundingBox> Postprocess((float[] Data, int[] Shape)[] inferenceOutputs, Image<Rgb24> originalImage, VizBuilder vizBuilder)
+    {
+        var tileRects = Tile(originalImage);
+        var tiledWidth = tileRects[^1].Right;
+        var tiledHeight = tileRects[^1].Bottom;
         var compositeModelOutput = new float[tiledWidth * tiledHeight];
 
-        int[] inferenceShape = [3, TileHeight, TileWidth];
-        var inferenceInputs = tiles.Select(t => (Preprocess(t, TileHeight, TileWidth), inferenceShape)).ToList();
-        var inferenceOutputs = await RunInference(inferenceInputs);
-
-        Debug.Assert(tileRects.Count == inferenceOutputs.Length && tileRects.Count == tiles.Count);
+        Debug.Assert(tileRects.Count == inferenceOutputs.Length);
         foreach (var (tileRect, (modelOutput, shape)) in tileRects.Zip(inferenceOutputs))
         {
             Debug.Assert(shape.Length == 2);
@@ -68,19 +95,54 @@ public class TextDetector
         }
 
         var probabilityMapSpan = compositeModelOutput.AsSpan().AsSpan2D(tiledHeight, tiledWidth);
-        vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, image.Width, image.Height);
+        vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, originalImage.Width, originalImage.Height);
 
-        var boundingBoxes = Postprocess(compositeModelOutput, image, tiledHeight, tiledWidth);
+        var boundingBoxes = PostprocessComposite(compositeModelOutput, tiledHeight, tiledWidth);
 
         vizBuilder.AddBoundingBoxes(boundingBoxes);
 
-        foreach (var tile in tiles)
-            tile.Dispose();
-
         return boundingBoxes;
+
+        List<BoundingBox> PostprocessComposite(float[] modelOutput, int height, int width)
+        {
+            var boundaries = new ReliefMap(modelOutput, width, height).TraceAllBoundaries();
+
+            // Calculate the scale used in HardAspectResize
+            var scaleX = (double)width / originalImage.Width;
+            var scaleY = (double)height / originalImage.Height;
+            var scale = Math.Min(scaleX, scaleY);
+
+            return boundaries
+                .Select(BoundaryToBBox)
+                .OfType<BoundingBox>()  // Filter out nulls
+                .ToList();
+
+            BoundingBox? BoundaryToBBox(Polygon boundary)
+            {
+                var polygon = boundary
+                    .Scale(1 / scale)  // Undo HardAspectResize scaling; convert from tiled to original coordinates
+                    .Simplify()  // Remove redundant points
+                    .Dilate(1.5)  // Undo contraction baked into DBNet during training; 1.5 is a model-specific constant
+                    .Clamp(originalImage.Height - 1, originalImage.Width - 1);  // Make sure we don't go out of bounds
+
+                if (polygon.Points.Count <= 4)
+                    return null;  // Not enough points to define a polygon
+
+                return BoundingBox.Create(polygon);  // Bounding box construction creates rotated rectangle and axis-aligned rectangle
+            }
+        }
     }
 
-    public virtual async Task<(float[], int[])[]> RunInference(List<(float[], int[])> tiles) =>
+    // Override for testing only
+    public virtual async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder)
+    {
+        var modelInput = Preprocess(image, vizBuilder);
+        var modelOutput = await RunInference(modelInput);
+        var result = Postprocess(modelOutput, image, vizBuilder);
+        return result;
+    }
+
+    public async Task<(float[], int[])[]> RunInference(List<(float[], int[])> tiles) =>
         await Task.WhenAll(tiles.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
 
     private List<Rectangle> Tile(Image<Rgb24> image)
@@ -106,57 +168,5 @@ public class TextDetector
         }
 
         return tiles;
-    }
-
-    private float[] Preprocess(Image<Rgb24> image, int height, int width)
-    {
-        // using var resized = image.SoftAspectResize(width, height);
-
-        var tensor = image.ToTensor([height, width, 3]);
-        tensor.NhwcToNchwInPlace([height, width, 3]);
-
-        // Apply ImageNet normalization
-        float[] means = [123.675f, 116.28f, 103.53f];
-        float[] stds = [58.395f, 57.12f, 57.375f];
-
-        for (int channel = 0; channel < 3; channel++)
-        {
-            var channelTensor = Tensor.Create(tensor, channel * height * width, [height, width], default);
-
-            // Subtract mean and divide by std in place
-            Tensor.Subtract(channelTensor, means[channel], channelTensor);
-            Tensor.Divide(channelTensor, stds[channel], channelTensor);
-        }
-
-        return tensor;
-    }
-
-    private List<BoundingBox> Postprocess(float[] modelOutput, Image<Rgb24> originalImage, int height, int width)
-    {
-        var boundaries = new ReliefMap(modelOutput, width, height).TraceAllBoundaries();
-
-        // Calculate the scale used in HardAspectResize
-        var scaleX = (double)width / originalImage.Width;
-        var scaleY = (double)height / originalImage.Height;
-        var scale = Math.Min(scaleX, scaleY);
-
-        return boundaries
-            .Select(BoundaryToBBox)
-            .OfType<BoundingBox>()  // Filter out nulls
-            .ToList();
-
-        BoundingBox? BoundaryToBBox(Polygon boundary)
-        {
-            var polygon = boundary
-                .Scale(1 / scale)  // Undo HardAspectResize scaling; convert from tiled to original coordinates
-                .Simplify()  // Remove redundant points
-                .Dilate(1.5)  // Undo contraction baked into DBNet during training; 1.5 is a model-specific constant
-                .Clamp(originalImage.Height - 1, originalImage.Width - 1);  // Make sure we don't go out of bounds
-
-            if (polygon.Points.Count <= 4)
-                return null;  // Not enough points to define a polygon
-
-            return BoundingBox.Create(polygon);  // Bounding box construction creates rotated rectangle and axis-aligned rectangle
-        }
     }
 }
