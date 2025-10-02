@@ -41,21 +41,13 @@ public class TextDetector
 
         var compositeModelOutput = new float[tiledWidth * tiledHeight];
 
-        List<Task<(float[], int[])>> inferenceTasks = [];
+        int[] inferenceShape = [3, TileHeight, TileWidth];
+        var inferenceInputs = tiles.Select(t => (Preprocess(t, TileHeight, TileWidth), inferenceShape)).ToList();
+        var inferenceOutputs = await RunInference(inferenceInputs);
 
-        foreach (var tile in tiles)
+        Debug.Assert(tileRects.Count == inferenceOutputs.Length && tileRects.Count == tiles.Count);
+        foreach (var (tileRect, (modelOutput, shape)) in tileRects.Zip(inferenceOutputs))
         {
-            var modelInput = Preprocess(tile, TileHeight, TileWidth);
-            var inferenceTask = _modelRunner.Run(modelInput, [3, TileHeight, TileWidth]);
-            inferenceTasks.Add(inferenceTask);
-        }
-
-        await Task.WhenAll(inferenceTasks);  // Gives the model runner the option of handling multiple tiles in a single batch
-
-        Debug.Assert(tileRects.Count == inferenceTasks.Count && tileRects.Count == tiles.Count);
-        foreach (var (tileRect, inferenceTask) in tileRects.Zip(inferenceTasks))
-        {
-            var (modelOutput, shape) = await inferenceTask;
             Debug.Assert(shape.Length == 2);
             Debug.Assert(shape[0] == TileHeight);
             Debug.Assert(shape[1] == TileWidth);
@@ -87,6 +79,9 @@ public class TextDetector
 
         return boundingBoxes;
     }
+
+    public virtual async Task<(float[], int[])[]> RunInference(List<(float[], int[])> tiles) =>
+        await Task.WhenAll(tiles.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
 
     private List<Rectangle> Tile(Image<Rgb24> image)
     {
