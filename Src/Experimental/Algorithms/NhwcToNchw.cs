@@ -27,7 +27,8 @@ public static class NhwcToNchwExtensions
             workspaceSize = H * W * C;
         }
 
-        var workspace = _pool.Rent(workspaceSize);  // Array returned by pool may be bigger than workspaceSize!
+        var workspaceData = _pool.Rent(workspaceSize);
+        var workspace = workspaceData.AsSpan()[..workspaceSize];  // Array returned by pool may be bigger than workspaceSize
 
         try
         {
@@ -40,17 +41,17 @@ public static class NhwcToNchwExtensions
                     {
                         int hwcIndex = h * W * C + w * C + c;
                         int chwIndex = c * H * W + h * W + w;
-                        workspace[chwIndex] = tensor[hwcIndex];
+                        workspaceData[chwIndex] = tensor[hwcIndex];
                     }
                 }
             }
 
             // Copy workspace back to tensor slice
-            workspace.AsSpan()[..workspaceSize].CopyTo(tensor.AsSpan());
+            workspace.CopyTo(tensor.AsSpan());
         }
         finally
         {
-            _pool.Return(workspace);
+            _pool.Return(workspaceData);
         }
     }
 }

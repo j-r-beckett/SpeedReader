@@ -217,16 +217,6 @@ public class ReliefMapTests
     }
 
     [Fact]
-    public void ReliefMap_InvalidProbabilities_ThrowsArgumentException()
-    {
-        // Arrange - Values outside [0, 1]
-        float[] data = [0.5f, 1.5f, -0.1f, 0.8f];
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => new ReliefMap(data, width: 2, height: 2));
-    }
-
-    [Fact]
     public void ReliefMap_MismatchedDimensions_ThrowsArgumentException()
     {
         // Arrange

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 using Experimental.Geometry;
@@ -26,8 +27,7 @@ public record ReliefMap
                 $"Expected width x height = length, got {width} x {height} = {probabilities.Length}");
         }
 
-        if (Tensor.Min<float>(probabilities) < 0 || Tensor.Max<float>(probabilities) > 1)
-            throw new ArgumentException("All probabilities must be in [0, 1]");
+        Debug.Assert(Tensor.Min<float>(probabilities) >= 0 && Tensor.Max<float>(probabilities) <= 1, "All probabilities must be in [0, 1]");
 
         Data = probabilities;
         Width = width;
@@ -44,12 +44,12 @@ public record ReliefMap
         return this.TraceAllBoundariesInternal();  // This mutates the relief map, so we can only do it once
     }
 
-    private Span2D<float> Span2D => Data.AsSpan().AsSpan2D(Height, Width);
+    // private Span2D<float> Span2D => Data.AsSpan().AsSpan2D(Height, Width);
 
     internal float this[int x, int y]
     {
-        get => Span2D[y, x];
-        set => Span2D[y, x] = value;
+        get => Data[y * Width + x];
+        set => Data[y * Width + x] = value;
     }
 }
 
@@ -62,8 +62,16 @@ public static partial class ReliefMapExtensions
         (-1, 1), (0, 1), (1, 1)
     ];
 
-    private static Point[] Neighbors(this ReliefMap map, Point point) => _eightConnectivity
-        .Select(dir => new Point { X = point.X + dir.dx, Y = point.Y + dir.dy })
-        .Where(p => p.X >= 0 && p.Y >= 0 && p.X < map.Width && p.Y < map.Height)
-        .ToArray();
+    private static ReadOnlySpan<Point> GetNeighbors(this ReliefMap map, Point point, Span<Point> buffer)
+    {
+        int count = 0;
+        foreach (var (dx, dy) in _eightConnectivity)
+        {
+            int nx = point.X + dx;
+            int ny = point.Y + dy;
+            if (nx >= 0 && ny >= 0 && nx < map.Width && ny < map.Height)
+                buffer[count++] = new Point { X = nx, Y = ny };
+        }
+        return buffer[..count];
+    }
 }

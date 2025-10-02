@@ -54,8 +54,10 @@ public static partial class ReliefMapExtensions
             if (x == 0 || y == 0 || x == map.Width - 1 || y == map.Height - 1)
                 return true;
 
+            Span<Point> neighborBuffer = stackalloc Point[8];
+
             // Check if neighbor is 0
-            foreach (var (nx, ny) in map.Neighbors((x, y)))
+            foreach (var (nx, ny) in map.GetNeighbors((x, y), neighborBuffer))
             {
                 if (map[nx, ny] == 0)
                     return true;
