@@ -26,6 +26,12 @@ public class SpeedReader
         _semaphore = new SemaphoreSlim(capacity, capacity);
     }
 
+    public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int capacity)
+    {
+        _factory = () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner));
+        _semaphore = new SemaphoreSlim(capacity, capacity);
+    }
+
     public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this(
         () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner)),
         maxParallelism,

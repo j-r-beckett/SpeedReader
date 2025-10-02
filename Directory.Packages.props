@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Clipper2" Version="1.5.3" />
     <PackageVersion Include="CLIwrap" Version="3.8.2" />
     <PackageVersion Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
