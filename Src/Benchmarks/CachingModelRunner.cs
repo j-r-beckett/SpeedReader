@@ -10,7 +10,7 @@ namespace Benchmarks;
 public class CachingModelRunner : CpuModelRunner
 {
     private (float[], int[])? _cachedResult = null;
-    private Lock _lock = new();
+    private readonly Lock _lock = new();
 
     public CachingModelRunner(InferenceSession session) : base(session, 1)
     {
