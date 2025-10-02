@@ -42,15 +42,10 @@ public class Program
     {
         var microCommand = new Command("micro", "Run micro benchmarks");
 
-        microCommand.SetHandler(() =>
-        {
-            BenchmarkSwitcher
+        microCommand.SetHandler(() => BenchmarkSwitcher
                 .FromAssembly(typeof(Program).Assembly)
                 .Run(["--filter", "*"], DefaultConfig.Instance
-                    .AddDiagnoser(EventPipeProfiler.Default));
-            // var benchmark = new Detection();
-            // benchmark.Detect();
-        });
+                    .AddDiagnoser(EventPipeProfiler.Default)));
 
         return microCommand;
     }
@@ -105,7 +100,7 @@ public class Program
         return pppCommand;
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        async IAsyncEnumerable<Image<Rgb24>> Repeat(Image<Rgb24> image, [EnumeratorCancellation] CancellationToken cancellationToken)
+        static async IAsyncEnumerable<Image<Rgb24>> Repeat(Image<Rgb24> image, [EnumeratorCancellation] CancellationToken cancellationToken)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             while (!cancellationToken.IsCancellationRequested)

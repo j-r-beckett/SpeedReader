@@ -39,10 +39,11 @@ public class TextDetector
 
         int[] inferenceShape = [3, TileHeight, TileWidth];
         var inferenceInputs = tiles.Select(t => (PreprocessTile(t), inferenceShape)).ToList();
-        foreach (var tile in tiles) tile.Dispose();
+        foreach (var tile in tiles)
+            tile.Dispose();
         return inferenceInputs;
 
-        float[] PreprocessTile(Image<Rgb24> tile)
+        static float[] PreprocessTile(Image<Rgb24> tile)
         {
             var (height, width) = (tile.Height, tile.Width);
             var tensor = tile.ToTensor([height, width, 3]);
