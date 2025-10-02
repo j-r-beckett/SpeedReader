@@ -19,7 +19,7 @@ public static partial class ReliefMapExtensions
         map.Dilate();
 
         // Find all boundaries
-        List<Polygon> boundaries = [];
+        var boundaries = new List<Polygon>();  // Rough estimate of how many words can fit in a 640x640 tile
 
         for (int y = 0; y < map.Height; y++)
         {

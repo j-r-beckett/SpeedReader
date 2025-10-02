@@ -4,6 +4,7 @@
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks.Dataflow;
 using Core;
+using Microsoft.ML.OnnxRuntime;
 using Ocr.Blocks;
 using Ocr.Blocks.DBNet;
 using Ocr.Blocks.SVTR;
@@ -214,7 +215,7 @@ public class BackpressureTests : IAsyncDisposable
     public async Task OcrBlock_Backpressure()
     {
         // Arrange
-        var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
+        var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions { IntraOpNumThreads = 4 });
         var svtrSession = _modelProvider.GetSession(Model.SVTRv2);
         var config = new OcrConfiguration
         {
@@ -235,7 +236,7 @@ public class BackpressureTests : IAsyncDisposable
                 image.Mutate(ctx => ctx.DrawText("test", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
                 return (image, null);
             },
-            initialDelay: TimeSpan.FromMilliseconds(2000)
+            initialDelay: TimeSpan.FromMilliseconds(2500)
         );
     }
 
@@ -271,7 +272,7 @@ public class BackpressureTests : IAsyncDisposable
     public async Task DBNetBlock_Backpressure()
     {
         // Arrange
-        var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8);
+        var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions { IntraOpNumThreads = 4 });
         var config = new OcrConfiguration
         {
             DbNet = new DbNetConfiguration
@@ -294,7 +295,7 @@ public class BackpressureTests : IAsyncDisposable
                 image.Mutate(ctx => ctx.DrawText("hello", Fonts.GetFont(fontSize: 24f), Color.Black, new PointF(20, 20)));
                 return (image, null);
             },
-            initialDelay: TimeSpan.FromMilliseconds(1500)
+            initialDelay: TimeSpan.FromMilliseconds(3000)
         );
     }
 
