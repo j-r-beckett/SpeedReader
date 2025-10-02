@@ -4,6 +4,8 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Running;
 using Benchmarks;
 using Benchmarks.MicroBenchmarks;
@@ -42,7 +44,12 @@ public class Program
 
         microCommand.SetHandler(() =>
         {
-            BenchmarkRunner.Run<Detection>();
+            BenchmarkSwitcher
+                .FromAssembly(typeof(Program).Assembly)
+                .Run(["--filter", "*"], DefaultConfig.Instance
+                    .AddDiagnoser(EventPipeProfiler.Default));
+            // var benchmark = new Detection();
+            // benchmark.Detect();
         });
 
         return microCommand;

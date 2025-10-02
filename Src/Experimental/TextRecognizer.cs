@@ -25,13 +25,18 @@ public class TextRecognizer
         var (modelInputHeight, modelInputWidth) = (48, 160);
         var oRectangle = region.Corners().Select(p => (p.X, p.Y)).ToList();
         var modelInput = Preprocess(region, image, modelInputHeight, modelInputWidth);
-        var (modelOutput, shape) = await _modelRunner.Run(modelInput, [3, modelInputHeight, modelInputWidth]);
+        List<(float[], int[])> inferenceInput = [(modelInput, [3, modelInputHeight, modelInputWidth])];
+        var inferenceOutput = await RunInference(inferenceInput);
+        var (modelOutput, shape) = inferenceOutput[0];
         Debug.Assert(shape.Length == 2);
         Debug.Assert(shape[1] == CharacterDictionary.Count);
         var (text, confidence) = Postprocess(modelOutput);
         vizBuilder.AddTextItems([(text, confidence, oRectangle)]);
         return (text, confidence);
     }
+
+    public virtual async Task<(float[], int[])[]> RunInference(List<(float[], int[])> inputs) =>
+        await Task.WhenAll(inputs.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
 
     private float[] Preprocess(RotatedRectangle region, Image<Rgb24> image, int height, int width)
     {
