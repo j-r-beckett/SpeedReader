@@ -44,7 +44,7 @@ public class TextRecognizer
         using var resized = cropped.SoftAspectResize(width, height);
 
         var tensor = resized.ToTensor([height, width, 3], 127.5f);
-        tensor.NhwcToNchwInPlace([height, width, 3]);
+        tensor.HwcToChwInPlace([height, width, 3]);
 
         // Normalize
         for (int channel = 0; channel < 3; channel++)
