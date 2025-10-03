@@ -59,8 +59,9 @@ public class TextDetector
                 {
                     for (int x = 0; x < width; x++)
                     {
-                        ref var val = ref tensor[channel * width * height + y * width + x];
-                        val = (val - means[channel]) / stds[channel];  // [ 0, 255 ] -> [ -123.675, 116.28]
+                        var idx = channel * width * height + y * width + x;
+                        tensor[idx] -= means[channel];
+                        tensor[idx] /= stds[channel];
                     }
                 }
             }
@@ -98,8 +99,8 @@ public class TextDetector
             }
         }
 
-        var probabilityMapSpan = compositeModelOutput.AsSpan().AsSpan2D(tiledHeight, tiledWidth);
-        vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, originalImage.Width, originalImage.Height);
+        // var probabilityMapSpan = compositeModelOutput.AsSpan().AsSpan2D(tiledHeight, tiledWidth);
+        // vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, originalImage.Width, originalImage.Height);
 
         var boundingBoxes = PostprocessComposite(compositeModelOutput, tiledHeight, tiledWidth);
 
