@@ -4,8 +4,13 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using BenchmarkDotNet.Analysers;
+using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Exporters;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
 using Benchmarks;
 using Benchmarks.MicroBenchmarks;
@@ -42,10 +47,48 @@ public class Program
     {
         var microCommand = new Command("micro", "Run micro benchmarks");
 
-        microCommand.SetHandler(() => BenchmarkSwitcher
-                .FromAssembly(typeof(Program).Assembly)
-                .Run(["--filter", "*"], DefaultConfig.Instance
-                    .AddDiagnoser(EventPipeProfiler.Default)));
+        Debug.Assert(false, "Never run BenchmarkDotnet in debug mode");
+
+        var logFilePath = Path.GetTempFileName().Replace(".tmp", ".log");
+        var artifactsPath = Path.GetTempPath() + Guid.NewGuid();
+        var config = ManualConfig.CreateEmpty()
+            .AddJob(Job.ShortRun)
+            .WithArtifactsPath(artifactsPath)
+            .AddColumnProvider(DefaultColumnProviders.Instance)
+            .AddDiagnoser(EventPipeProfiler.Default)
+            .AddAnalyser(EnvironmentAnalyser.Default)
+            .AddLogger(new StreamLogger(logFilePath))
+            .AddEventProcessor(new SimpleTimeCounter("detection"));
+        var summary = BenchmarkRunner.Run<Detection>(config);
+        if (summary.HasCriticalValidationErrors)
+        {
+            throw new InvalidOperationException($"Benchmark failed with critical validation errors: {string.Join(", ", summary.ValidationErrors)}");
+        }
+
+        if (summary.Reports.Length != 1)
+        {
+            throw new InvalidOperationException($"Expected exactly 1 benchmark report, but got {summary.Reports.Length}");
+        }
+
+        // BenchmarkDotNet returns times in nanoseconds. nanoseconds -> ticks -> TimeSpan
+        var stats = summary.Reports[0].ResultStatistics!;
+        var mean = TimeSpan.FromTicks((long)(stats.Mean / 100));
+        var stdDev = TimeSpan.FromTicks((long)(stats.StandardDeviation / 100));
+
+        // Find where BenchmarkDotNet saved the profile data
+        // var artifactsPath = Path.GetFullPath(Path.Combine(summary.ResultsDirectoryPath, ".."));
+        var rawProfilePaths = Directory.GetFiles(artifactsPath, "*.speedscope.json", SearchOption.AllDirectories);
+        Array.Sort(rawProfilePaths);
+        var rawProfilePath = rawProfilePaths.First();
+
+        var profilePath = Path.GetTempFileName().Replace(".tmp", ".speedscope.json");
+        File.Copy(rawProfilePath, profilePath, overwrite: true);
+
+        // Write output
+        Console.WriteLine($"Mean: {mean.TotalMilliseconds:N2} ms");
+        Console.WriteLine($"Err: {stdDev.TotalMilliseconds:N2} ms");
+        Console.WriteLine($"Logs: {logFilePath}");
+        Console.WriteLine($"Profile: {profilePath}");
 
         return microCommand;
     }

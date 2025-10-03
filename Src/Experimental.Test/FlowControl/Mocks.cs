@@ -39,9 +39,9 @@ public class MockTextDetector : TextDetector
 
 public class MockTextRecognizer : TextRecognizer
 {
-    public static readonly (string, double) SimpleResult = ("", 0);
+    public static readonly List<(string, double)> SimpleResult = [("", 0)];
 
-    private readonly Func<Task<(string, double)>> _recognize;
+    private readonly Func<Task<List<(string, double)>>> _recognize;
 
     public MockTextRecognizer() : this(() => Task.FromResult(SimpleResult)) { }
 
@@ -53,11 +53,11 @@ public class MockTextRecognizer : TextRecognizer
     {
     }
 
-    public MockTextRecognizer(Func<(string, double)> recognize) : this(() => Task.FromResult(recognize())) { }
+    public MockTextRecognizer(Func<List<(string, double)>> recognize) : this(() => Task.FromResult(recognize())) { }
 
-    public MockTextRecognizer(Func<Task<(string, double)>> recognize) : base(null!) => _recognize = recognize;
+    public MockTextRecognizer(Func<Task<List<(string, double)>>> recognize) : base(null!) => _recognize = recognize;
 
-    public override async Task<(string Text, double Confidence)> Recognize(RotatedRectangle region, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
+    public override async Task<List<(string Text, double Confidence)>> Recognize(List<BoundingBox> regions, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
 }
 
 public class MockCpuModelRunner : CpuModelRunner
