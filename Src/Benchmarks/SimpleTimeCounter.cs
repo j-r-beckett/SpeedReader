@@ -28,14 +28,14 @@ public class SimpleTimeCounter : EventProcessor
 
         var elapsed = DateTime.Now - _startTime;
         Console.Out.Write("\r\x1b[K");  // Clear line
-        Console.Out.WriteLine($"Completed {_benchmarkName} benchmark ({elapsed.TotalSeconds:F1}s)");
+        Console.Out.WriteLine($"Completed {_benchmarkName} ({elapsed.TotalSeconds:F1}s)");
     }
 
     private void UpdateTime()
     {
         var elapsed = DateTime.Now - _startTime;
         Console.Out.Write("\r\x1b[K");  // Clear line
-        Console.Out.Write($"\rRunning {_benchmarkName} benchmark... ({elapsed.TotalSeconds:F1}s)");
+        Console.Out.Write($"\rRunning {_benchmarkName}... ({elapsed.TotalSeconds:F1}s)");
         Console.Out.Flush();
     }
 }
