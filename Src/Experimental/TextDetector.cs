@@ -119,8 +119,8 @@ public class TextDetector
             BoundingBox? BoundaryToBBox(Polygon boundary)
             {
                 var polygon = boundary
-                    .Scale(1 / scale)  // Undo HardAspectResize scaling; convert from tiled to original coordinates
                     .Simplify()  // Remove redundant points
+                    .Scale(1 / scale)  // Undo HardAspectResize scaling; convert from tiled to original coordinates
                     .Dilate(1.5)  // Undo contraction baked into DBNet during training; 1.5 is a model-specific constant
                     .Clamp(originalImage.Height - 1, originalImage.Width - 1);  // Make sure we don't go out of bounds
 
