@@ -19,49 +19,64 @@ public class TextRecognizer
 
     public TextRecognizer(ModelRunner modelRunner) => _modelRunner = modelRunner;
 
-    // Override for testing only
-    public virtual async Task<(string Text, double Confidence)> Recognize(RotatedRectangle region, Image<Rgb24> image, VizBuilder vizBuilder)
+    public List<(float[], int[])> Preprocess(List<BoundingBox> regions, Image<Rgb24> image)
     {
-        var (modelInputHeight, modelInputWidth) = (48, 160);
-        var oRectangle = region.Corners().Select(p => (p.X, p.Y)).ToList();
-        var modelInput = Preprocess(region, image, modelInputHeight, modelInputWidth);
-        List<(float[], int[])> inferenceInput = [(modelInput, [3, modelInputHeight, modelInputWidth])];
-        var inferenceOutput = await RunInference(inferenceInput);
-        var (modelOutput, shape) = inferenceOutput[0];
+        var result = new List<(float[], int[])>();
+        foreach (var region in regions)
+        {
+            var (modelInputHeight, modelInputWidth) = (48, 160);
+            var modelInput = PreprocessRegion(region, image, modelInputHeight, modelInputWidth);
+            result.Add((modelInput, [3, modelInputHeight, modelInputWidth]));
+        }
+
+        return result;
+
+        static float[] PreprocessRegion(BoundingBox region, Image<Rgb24> image, int height, int width)
+        {
+            using var cropped = image.Crop(region.RotatedRectangle);
+            using var resized = cropped.SoftAspectResize(width, height);
+
+            var tensor = resized.ToTensor([height, width, 3], 127.5f);
+            tensor.HwcToChwInPlace([height, width, 3]);
+
+            // Normalize
+            for (int channel = 0; channel < 3; channel++)
+            {
+                int channelOffset = channel * height * width;
+                var channelTensor = Tensor.Create(tensor, channelOffset, [height, width], default);
+
+                Tensor.Divide(channelTensor, 127.5f, channelTensor);  // [0,255] -> [0,2]
+                Tensor.Subtract(channelTensor, 1.0f, channelTensor);  // [0,2] -> [-1,1]
+            }
+
+            return tensor;
+        }
+    }
+
+    public List<(string Text, double Confidence)> Postprocess((float[], int[])[] inferenceOutput)
+    {
+#if DEBUG
+        var shape = inferenceOutput[0].Item2;
+        Debug.Assert(inferenceOutput.Select(item => item.Item2).All(item => item.SequenceEqual(shape)));
         Debug.Assert(shape.Length == 2);
         Debug.Assert(shape[1] == CharacterDictionary.Count);
-        var (text, confidence) = Postprocess(modelOutput);
-        vizBuilder.AddTextItems([(text, confidence, oRectangle)]);
-        return (text, confidence);
+#endif
+
+        return inferenceOutput
+            .Select(item => item.Item1.GreedyCTCDecode())
+            .Select(item => (item.Text.Trim(), confidence: item.Confidence))
+            .ToList();
+    }
+
+    // Override for testing only
+    public virtual async Task<List<(string Text, double Confidence)>> Recognize(List<BoundingBox> regions, Image<Rgb24> image, VizBuilder vizBuilder)
+    {
+        var modelInput = Preprocess(regions, image);
+        var inferenceOutput = await RunInference(modelInput);
+        return Postprocess(inferenceOutput);
+
     }
 
     public virtual async Task<(float[], int[])[]> RunInference(List<(float[], int[])> inputs) =>
         await Task.WhenAll(inputs.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
-
-    private float[] Preprocess(RotatedRectangle region, Image<Rgb24> image, int height, int width)
-    {
-        using var cropped = image.Crop(region);
-        using var resized = cropped.SoftAspectResize(width, height);
-
-        var tensor = resized.ToTensor([height, width, 3], 127.5f);
-        tensor.HwcToChwInPlace([height, width, 3]);
-
-        // Normalize
-        for (int channel = 0; channel < 3; channel++)
-        {
-            int channelOffset = channel * height * width;
-            var channelTensor = Tensor.Create(tensor, channelOffset, [height, width], default);
-
-            Tensor.Divide(channelTensor, 127.5f, channelTensor);  // [0,255] -> [0,2]
-            Tensor.Subtract(channelTensor, 1.0f, channelTensor);  // [0,2] -> [-1,1]
-        }
-
-        return tensor;
-    }
-
-    private (string, double) Postprocess(float[] modelOutput)
-    {
-        var (text, confidence) = modelOutput.GreedyCTCDecode();
-        return (text.Trim(), confidence);
-    }
 }

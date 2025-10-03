@@ -32,7 +32,7 @@ public class FaultHandlingTests
         Func<(TextDetector, TextRecognizer)> factory = () =>
         {
             var detector = new MockTextDetector();
-            var recognizer = new MockTextRecognizer((Func<(string, double)>)(() => throw new TestException()));
+            var recognizer = new MockTextRecognizer((Func<List<(string, double)>>)(() => throw new TestException()));
             return (detector, recognizer);
         };
 

@@ -10,7 +10,7 @@ namespace Experimental.Algorithms;
 
 public static class GreedyCTC
 {
-    public static (string text, double confidence) GreedyCTCDecode(this float[] ctcSequence)
+    public static (string Text, double Confidence) GreedyCTCDecode(this float[] ctcSequence)
     {
         var numClasses = CharacterDictionary.Count;
         Debug.Assert(ctcSequence.Length % numClasses == 0);

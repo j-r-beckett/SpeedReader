@@ -88,10 +88,11 @@ public class SpeedReader
 
                 var image = await imageTask;
                 var detections = await detector.Detect(image, vizBuilder);
-                var recognitionTasks = detections.Select(d =>
-                    recognizer.Recognize(d.RotatedRectangle, image, vizBuilder));
-                var recognitions = await Task.WhenAll(recognitionTasks);
-                Debug.Assert(detections.Count == recognitions.Length);
+                var recognitions = await recognizer.Recognize(detections, image, vizBuilder);
+                // var recognitionTasks = detections.Select(d =>
+                // recognizer.Recognize(d.RotatedRectangle, image, vizBuilder));
+                // var recognitions = await Task.WhenAll(recognitionTasks);
+                Debug.Assert(detections.Count == recognitions.Count);
                 return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
             }
             finally

@@ -1,6 +1,8 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
+using System.Diagnostics;
 using Core;
 using Experimental.Geometry;
 using Experimental.Inference;
@@ -91,19 +93,25 @@ public class TextRecognizerE2ETests
         Assert.True(confidence <= 0.01);
     }
 
-    private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, RotatedRectangle bbox)
+    private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, RotatedRectangle rect)
     {
         var session = _modelProvider.GetSession(Model.SVTRv2);
         var svtrRunner = new CpuModelRunner(session, 1);
         var vizBuilder = new VizBuilder();
         vizBuilder.AddBaseImage(image);
-        vizBuilder.AddOrientedBBoxes([bbox], true);
+        vizBuilder.AddOrientedBBoxes([rect], true);
         var recognizer = new TextRecognizer(svtrRunner);
-        var result = await recognizer.Recognize(bbox, image, vizBuilder);
+        var polygon = new Polygon
+        {
+            Points = rect.Corners().Select(p => (Geometry.Point)p).ToImmutableList()
+        };
+        var bbox = new BoundingBox(polygon, rect);
+        var result = await recognizer.Recognize([bbox], image, vizBuilder);
 
         var svg = vizBuilder.RenderSvg();
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
 
-        return result;
+        Debug.Assert(result.Count == 1);
+        return result[0];
     }
 }
