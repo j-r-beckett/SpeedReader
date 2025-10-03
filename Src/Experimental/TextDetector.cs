@@ -41,7 +41,7 @@ public class TextDetector
         {
             var (height, width) = (tile.Height, tile.Width);
             var tensor = resized.ToTensor(tile, [height, width, 3]);
-            tensor.NhwcToNchwInPlace([height, width, 3]);
+            tensor.HwcToChwInPlace([height, width, 3]);
 
             // Apply ImageNet normalization
             float[] means = [123.675f, 116.28f, 103.53f];
