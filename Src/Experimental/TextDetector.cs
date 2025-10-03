@@ -93,8 +93,8 @@ public class TextDetector
             }
         }
 
-        // var probabilityMapSpan = compositeModelOutput.AsSpan().AsSpan2D(tiledHeight, tiledWidth);
-        // vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, originalImage.Width, originalImage.Height);
+        var probabilityMapSpan = compositeModelOutput.AsSpan().AsSpan2D(tiledHeight, tiledWidth);
+        vizBuilder.CreateAndAddProbabilityMap(probabilityMapSpan, originalImage.Width, originalImage.Height);
 
         var boundingBoxes = PostprocessComposite(compositeModelOutput, tiledHeight, tiledWidth);
 
