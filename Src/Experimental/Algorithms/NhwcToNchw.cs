@@ -41,12 +41,12 @@ public static class NhwcToNchwExtensions
                     {
                         int hwcIndex = h * W * C + w * C + c;
                         int chwIndex = c * H * W + h * W + w;
-                        workspaceData[chwIndex] = tensor[hwcIndex];
+                        workspace[chwIndex] = tensor[hwcIndex];
                     }
                 }
             }
 
-            // Copy workspace back to tensor slice
+            // Copy workspace back to tensor
             workspace.CopyTo(tensor.AsSpan());
         }
         finally
