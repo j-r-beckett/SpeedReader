@@ -31,22 +31,16 @@ public class TextDetector
         vizBuilder.AddBaseImage(image);
 
         var tileRects = Tile(image);
-        var cloneConfig = new Configuration { PreferContiguousImageBuffers = true };
         var tiledWidth = tileRects[^1].Right;
         var tiledHeight = tileRects[^1].Bottom;
         using var resized = image.HardAspectResize(new Size(tiledWidth, tiledHeight));
-        var tiles = tileRects.Select(r => resized.Clone(cloneConfig, ctx => ctx.Crop(r))).ToList();
-
         int[] inferenceShape = [3, TileHeight, TileWidth];
-        var inferenceInputs = tiles.Select(t => (PreprocessTile(t), inferenceShape)).ToList();
-        foreach (var tile in tiles)
-            tile.Dispose();
-        return inferenceInputs;
+        return tileRects.Select(t => (PreprocessTile(t), inferenceShape)).ToList();
 
-        static float[] PreprocessTile(Image<Rgb24> tile)
+        float[] PreprocessTile(Rectangle tile)
         {
             var (height, width) = (tile.Height, tile.Width);
-            var tensor = tile.ToTensor([height, width, 3]);
+            var tensor = resized.ToTensor(tile, [height, width, 3]);
             tensor.NhwcToNchwInPlace([height, width, 3]);
 
             // Apply ImageNet normalization

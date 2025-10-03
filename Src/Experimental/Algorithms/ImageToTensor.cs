@@ -8,6 +8,41 @@ namespace Experimental.Algorithms;
 
 public static class PixelsToFloatsExtensions
 {
+    public static float[] ToTensor(this Image<Rgb24> image, Rectangle rect, nint[] shape, float padding = 0)
+    {
+        var height = shape[0];
+        var width = shape[1];
+        var channels = shape[2];
+
+        var result = new float[width * height * 3];
+
+        image.ProcessPixelRows(rowAccessor =>
+        {
+            for (var y = 0; y < rect.Height; y++)
+            {
+                var row = rowAccessor.GetRowSpan(y + rect.Top);
+                for (int x = 0; x < rect.Width; x++)
+                {
+                    var destIndex = (y * width + x) * channels;
+                    var pixel = row[x + rect.Left];
+                    result[destIndex] = pixel.R;
+                    result[destIndex + 1] = pixel.G;
+                    result[destIndex + 2] = pixel.B;
+                }
+            }
+        });
+
+        for (int y = rect.Height + 1; y < height; y++)
+        {
+            for (int x = rect.Width * (int)channels + 1; x < width; x++)
+            {
+                result[y * width * channels + x] = padding;
+            }
+        }
+
+        return result;
+    }
+
     public static float[] ToTensor(this Image<Rgb24> image, nint[] shape, float padding = 0)
     {
         var height = shape[0];
