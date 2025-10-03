@@ -116,12 +116,12 @@ public class MorphTests
     {
         var random = new Random(0);
 
-        var numIterations = 10000;
+        var numIterations = 100000;
 
         for (int iteration = 0; iteration < numIterations; iteration++)
         {
-            const int width = 5;
-            const int height = 5;
+            const int width = 10;
+            const int height = 10;
             var data = new float[width * height];
             for (int i = 0; i < data.Length; i++)
             {
@@ -149,12 +149,12 @@ public class MorphTests
     {
         var random = new Random(0);
 
-        var numIterations = 10000;
+        var numIterations = 100000;
 
         for (int iteration = 0; iteration < numIterations; iteration++)
         {
-            const int width = 5;
-            const int height = 5;
+            const int width = 10;
+            const int height = 10;
             var data = new float[width * height];
             for (int i = 0; i < data.Length; i++)
             {
