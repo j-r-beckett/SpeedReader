@@ -43,22 +43,10 @@ public class TextDetector
             var tensor = resized.ToTensor(tile, [height, width, 3]);
             tensor.HwcToChwInPlace([height, width, 3]);
 
-            // Apply ImageNet normalization
-            float[] means = [123.675f, 116.28f, 103.53f];
-            float[] stds = [58.395f, 57.12f, 57.375f];
-
-            for (int channel = 0; channel < 3; channel++)
-            {
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        var idx = channel * width * height + y * width + x;
-                        tensor[idx] -= means[channel];
-                        tensor[idx] /= stds[channel];
-                    }
-                }
-            }
+            // ImageNet normalization
+            Span<float> means = [ 123.675f, 116.28f, 103.53f ];
+            Span<float> stds = [ 58.395f, 57.12f, 57.375f ];
+            tensor.Normalize(means, stds);
 
             return tensor;
         }

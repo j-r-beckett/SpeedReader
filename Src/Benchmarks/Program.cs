@@ -88,7 +88,8 @@ public class Program
             var logFilePath = Path.GetTempFileName().Replace(".tmp", ".log");
             var artifactsPath = Path.GetTempPath() + Guid.NewGuid();
             var config = ManualConfig.CreateEmpty()
-                .AddJob(Job.ShortRun)
+                // .AddJob(Job.ShortRun)
+                .AddJob(Job.Default)
                 .WithArtifactsPath(artifactsPath)
                 .AddColumnProvider(DefaultColumnProviders.Instance)
                 .AddDiagnoser(EventPipeProfiler.Default)
