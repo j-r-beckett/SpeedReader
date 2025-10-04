@@ -28,13 +28,7 @@ public class Program
 
         rootCommand.AddCommand(MicroCommand());
 
-        rootCommand.SetHandler(() =>
-        {
-            Console.WriteLine("Howdy");
-            var cts = new CancellationTokenSource();
-            var inputs = InputGenerator.GenerateImages(720, 640, 32, cts.Token);
-
-        });
+        rootCommand.SetHandler(() => Console.WriteLine("Howdy"));
 
         await rootCommand.InvokeAsync(args);
 
@@ -53,14 +47,43 @@ public class Program
         recognitionScenarioOption.AddAlias("-r");
         microCommand.AddOption(recognitionScenarioOption);
 
-        microCommand.SetHandler((detection, recognition) =>
+        var tileOption = new Option<bool>("--tile", description: "Use 640x640 input size");
+        microCommand.AddOption(tileOption);
+
+        var fullOption = new Option<bool>("--full", description: "Use 1920x1080 input size");
+        microCommand.AddOption(fullOption);
+
+        microCommand.SetHandler((detection, recognition, tile, full) =>
         {
+            if (tile && full)
+                throw new InvalidOperationException("Cannot specify both --tile and --full");
+
+            int width, height;
+            if (full)
+            {
+                width = 1920;
+                height = 1080;
+            }
+            else
+            {
+                width = 640;
+                height = 640;
+            }
+
+            var input = InputGenerator.GenerateInput(width, height);
+            var inputPath = Path.GetTempFileName().Replace(".tmp", ".png");
+            input.SaveAsPng(inputPath);
+            Console.WriteLine($"Input image ({width}x{height}): {inputPath}");
+
             Debug.Assert(false, "Never run BenchmarkDotnet in debug mode");
 
-            string benchmarkName;
-            if (detection == recognition)
-                benchmarkName = "detection and recognition benchmarks";
-            else benchmarkName = detection ? "detection benchmark" : "recognition benchmark";
+            string benchmarkName = detection == recognition
+                ? "combined detection and recognition benchmark"
+                : detection ? "detection benchmark" : "recognition benchmark";
+
+            // Need to pass config using env vars because BenchmarkDotNet runs benchmarks in a separate process
+            Environment.SetEnvironmentVariable("BENCHMARK_INPUT_WIDTH", width.ToString());
+            Environment.SetEnvironmentVariable("BENCHMARK_INPUT_HEIGHT", height.ToString());
 
             var logFilePath = Path.GetTempFileName().Replace(".tmp", ".log");
             var artifactsPath = Path.GetTempPath() + Guid.NewGuid();
@@ -72,11 +95,13 @@ public class Program
                 .AddAnalyser(EnvironmentAnalyser.Default)
                 .AddLogger(new StreamLogger(logFilePath))
                 .AddEventProcessor(new SimpleTimeCounter(benchmarkName));
-            Summary summary;
 
+            Summary summary;
             if (detection == recognition)
                 summary = BenchmarkRunner.Run<DetectionAndRecognitionPrePostBenchmark>(config);
             else summary = detection ? BenchmarkRunner.Run<DetectionPrePostBenchmark>(config) : BenchmarkRunner.Run<RecognitionPrePostBenchmark>(config);
+
+            Console.WriteLine($"Logs: {logFilePath}");
 
             if (summary.HasCriticalValidationErrors)
                 throw new InvalidOperationException($"Benchmark failed with critical validation errors: {string.Join(", ", summary.ValidationErrors)}");
@@ -97,12 +122,10 @@ public class Program
             var profilePath = Path.GetTempFileName().Replace(".tmp", ".speedscope.json");
             File.Copy(rawProfilePath, profilePath, overwrite: true);
 
-            // Write output
             Console.WriteLine($"Mean: {mean.TotalMilliseconds:N2} ms");
             Console.WriteLine($"Err: {stdDev.TotalMilliseconds:N2} ms");
-            Console.WriteLine($"Logs: {logFilePath}");
             Console.WriteLine($"Profile: {profilePath}");
-        }, detectionScenarioOption, recognitionScenarioOption);
+        }, detectionScenarioOption, recognitionScenarioOption, tileOption, fullOption);
 
         return microCommand;
     }
