@@ -10,11 +10,17 @@ using SixLabors.ImageSharp.Processing;
 
 namespace Benchmarks;
 
+public enum Density
+{
+    Low,
+    High
+}
+
 public static class InputGenerator
 {
     private static readonly Font _font = Fonts.GetFont(fontSize: 28f);
 
-    public static Image<Rgb24> GenerateInput(int width, int height)
+    public static Image<Rgb24> GenerateInput(int width, int height, Density density = Density.High)
     {
         var image = new Image<Rgb24>(width, height, Color.White);
         const string text = "lorem ipsum ";
@@ -29,7 +35,12 @@ public static class InputGenerator
 
         for (var lineIndex = 0; lineIndex < numberOfLines; lineIndex++)
         {
-            var lineText = string.Concat(Enumerable.Repeat(text, repetitionsPerLine));
+            if (density == Density.Low && lineIndex % 2 == 1)
+            {
+                continue;
+            }
+            var reps = density == Density.Low ? 1 : repetitionsPerLine;
+            var lineText = string.Concat(Enumerable.Repeat(text, reps));
             var y = (float)(lineIndex * lineSpacing);
             image.Mutate(ctx => ctx.DrawText(lineText, _font, Color.Black, new PointF(0, y)));
         }

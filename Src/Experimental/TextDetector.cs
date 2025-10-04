@@ -44,8 +44,8 @@ public class TextDetector
             tensor.HwcToChwInPlace([height, width, 3]);
 
             // ImageNet normalization
-            Span<float> means = [ 123.675f, 116.28f, 103.53f ];
-            Span<float> stds = [ 58.395f, 57.12f, 57.375f ];
+            Span<float> means = [123.675f, 116.28f, 103.53f];
+            Span<float> stds = [58.395f, 57.12f, 57.375f];
             tensor.Normalize(means, stds);
 
             return tensor;

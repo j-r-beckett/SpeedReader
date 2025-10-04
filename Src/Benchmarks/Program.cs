@@ -53,7 +53,10 @@ public class Program
         var fullOption = new Option<bool>("--full", description: "Use 1920x1080 input size");
         microCommand.AddOption(fullOption);
 
-        microCommand.SetHandler((detection, recognition, tile, full) =>
+        var densityOption = new Option<string>("--density", description: "Text density (low or high)", getDefaultValue: () => "high");
+        microCommand.AddOption(densityOption);
+
+        microCommand.SetHandler((detection, recognition, tile, full, densityStr) =>
         {
             if (tile && full)
                 throw new InvalidOperationException("Cannot specify both --tile and --full");
@@ -70,7 +73,14 @@ public class Program
                 height = 640;
             }
 
-            var input = InputGenerator.GenerateInput(width, height);
+            var density = densityStr.ToLower() switch
+            {
+                "low" => Density.Low,
+                "high" => Density.High,
+                _ => throw new InvalidOperationException($"Invalid density value: {densityStr}. Must be 'low' or 'high'.")
+            };
+
+            var input = InputGenerator.GenerateInput(width, height, density);
             var inputPath = Path.GetTempFileName().Replace(".tmp", ".png");
             input.SaveAsPng(inputPath);
             Console.WriteLine($"Input image ({width}x{height}): {inputPath}");
@@ -84,6 +94,7 @@ public class Program
             // Need to pass config using env vars because BenchmarkDotNet runs benchmarks in a separate process
             Environment.SetEnvironmentVariable("BENCHMARK_INPUT_WIDTH", width.ToString());
             Environment.SetEnvironmentVariable("BENCHMARK_INPUT_HEIGHT", height.ToString());
+            Environment.SetEnvironmentVariable("BENCHMARK_DENSITY", densityStr.ToLower());
 
             var logFilePath = Path.GetTempFileName().Replace(".tmp", ".log");
             var artifactsPath = Path.GetTempPath() + Guid.NewGuid();
@@ -97,10 +108,9 @@ public class Program
                 .AddLogger(new StreamLogger(logFilePath))
                 .AddEventProcessor(new SimpleTimeCounter(benchmarkName));
 
-            Summary summary;
-            if (detection == recognition)
-                summary = BenchmarkRunner.Run<DetectionAndRecognitionPrePostBenchmark>(config);
-            else summary = detection ? BenchmarkRunner.Run<DetectionPrePostBenchmark>(config) : BenchmarkRunner.Run<RecognitionPrePostBenchmark>(config);
+            Summary summary = detection == recognition
+                ? BenchmarkRunner.Run<DetectionAndRecognitionPrePostBenchmark>(config)
+                : detection ? BenchmarkRunner.Run<DetectionPrePostBenchmark>(config) : BenchmarkRunner.Run<RecognitionPrePostBenchmark>(config);
 
             Console.WriteLine($"Logs: {logFilePath}");
 
@@ -126,7 +136,7 @@ public class Program
             Console.WriteLine($"Mean: {mean.TotalMilliseconds:N2} ms");
             Console.WriteLine($"Err: {stdDev.TotalMilliseconds:N2} ms");
             Console.WriteLine($"Profile: {profilePath}");
-        }, detectionScenarioOption, recognitionScenarioOption, tileOption, fullOption);
+        }, detectionScenarioOption, recognitionScenarioOption, tileOption, fullOption, densityOption);
 
         return microCommand;
     }
