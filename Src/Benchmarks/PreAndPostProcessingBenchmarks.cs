@@ -23,7 +23,14 @@ public class DetectionPrePostBenchmark
     {
         var width = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_WIDTH") ?? throw new InvalidOperationException("BENCHMARK_INPUT_WIDTH must be set"));
         var height = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_HEIGHT") ?? throw new InvalidOperationException("BENCHMARK_INPUT_HEIGHT must be set"));
-        _input = InputGenerator.GenerateInput(width, height);
+        var densityStr = Environment.GetEnvironmentVariable("BENCHMARK_DENSITY") ?? "high";
+        var density = densityStr.ToLower() switch
+        {
+            "low" => Density.Low,
+            "high" => Density.High,
+            _ => throw new InvalidOperationException($"Invalid BENCHMARK_DENSITY value: {densityStr}. Must be 'low' or 'high'.")
+        };
+        _input = InputGenerator.GenerateInput(width, height, density);
     }
 
     [GlobalSetup]
@@ -57,7 +64,14 @@ public class RecognitionPrePostBenchmark
     {
         var width = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_WIDTH") ?? throw new InvalidOperationException("BENCHMARK_INPUT_WIDTH must be set"));
         var height = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_HEIGHT") ?? throw new InvalidOperationException("BENCHMARK_INPUT_HEIGHT must be set"));
-        _input = InputGenerator.GenerateInput(width, height);
+        var densityStr = Environment.GetEnvironmentVariable("BENCHMARK_DENSITY") ?? "high";
+        var density = densityStr.ToLower() switch
+        {
+            "low" => Density.Low,
+            "high" => Density.High,
+            _ => throw new InvalidOperationException($"Invalid BENCHMARK_DENSITY value: {densityStr}. Must be 'low' or 'high'.")
+        };
+        _input = InputGenerator.GenerateInput(width, height, density);
     }
 
     [GlobalSetup]

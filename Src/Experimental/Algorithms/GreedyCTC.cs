@@ -69,7 +69,8 @@ public static class GreedyCTC
 
     internal static int IndexOfMax(ReadOnlySpan<float> span)
     {
-        if (span.IsEmpty) return -1;
+        if (span.IsEmpty)
+            return -1;
 
         int maxIndex = 0;
         float maxValue = span[0];
@@ -112,7 +113,8 @@ public static class GreedyCTC
         int maxIndex = 0;
         for (int i = 1; i < Vector<float>.Count; i++)
         {
-            if (vec[i] > vec[maxIndex]) maxIndex = i;
+            if (vec[i] > vec[maxIndex])
+                maxIndex = i;
         }
         return maxIndex;
     }
