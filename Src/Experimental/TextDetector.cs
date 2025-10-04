@@ -40,15 +40,10 @@ public class TextDetector
         float[] PreprocessTile(Rectangle tile)
         {
             var (height, width) = (tile.Height, tile.Width);
-            var tensor = resized.ToTensor(tile, [height, width, 3]);
-            tensor.HwcToChwInPlace([height, width, 3]);
-
             // ImageNet normalization
             Span<float> means = [123.675f, 116.28f, 103.53f];
             Span<float> stds = [58.395f, 57.12f, 57.375f];
-            tensor.Normalize(means, stds);
-
-            return tensor;
+            return resized.ToNormalizedChwTensor(tile, height, width, means, stds);
         }
     }
 

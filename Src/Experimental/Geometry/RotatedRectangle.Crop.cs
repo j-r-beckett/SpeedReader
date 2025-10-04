@@ -25,46 +25,54 @@ public static partial class RotatedRectangleExtensions
         var uVector = (X: topRight.X - topLeft.X, Y: topRight.Y - topLeft.Y);
         var vVector = (X: bottomLeft.X - topLeft.X, Y: bottomLeft.Y - topLeft.Y);
 
-        // For each pixel in the output image
-        for (var j = 0; j < outputHeight; j++)
+        image.ProcessPixelRows(outputImage, (sourceAccessor, destAccessor) =>
         {
-            for (var i = 0; i < outputWidth; i++)
+            // For each pixel in the output image
+            for (var j = 0; j < outputHeight; j++)
             {
-                // Convert output pixel to normalized coordinates [0,1]
-                double u = outputWidth > 1 ? (double)i / (outputWidth - 1) : 0;
-                double v = outputHeight > 1 ? (double)j / (outputHeight - 1) : 0;
+                var destRow = destAccessor.GetRowSpan(j);
 
-                // Map to source image coordinates
-                var sourceX = topLeft.X + u * uVector.X + v * vVector.X;
-                var sourceY = topLeft.Y + u * uVector.Y + v * vVector.Y;
+                for (var i = 0; i < outputWidth; i++)
+                {
+                    // Convert output pixel to normalized coordinates [0,1]
+                    double u = outputWidth > 1 ? (double)i / (outputWidth - 1) : 0;
+                    double v = outputHeight > 1 ? (double)j / (outputHeight - 1) : 0;
 
-                // Sample the source image
-                outputImage[i, j] = BilinearSample(image, sourceX, sourceY);
+                    // Map to source image coordinates
+                    var sourceX = topLeft.X + u * uVector.X + v * vVector.X;
+                    var sourceY = topLeft.Y + u * uVector.Y + v * vVector.Y;
+
+                    // Sample the source image
+                    destRow[i] = BilinearSample(sourceAccessor, sourceX, sourceY);
+                }
             }
-        }
+        });
 
         return outputImage;
     }
 
-    private static Rgb24 BilinearSample(Image<Rgb24> sourceImage, double x, double y)
+    private static Rgb24 BilinearSample(PixelAccessor<Rgb24> sourceAccessor, double x, double y)
     {
-        x = Math.Clamp(x, 0, sourceImage.Width - 1);
-        y = Math.Clamp(y, 0, sourceImage.Height - 1);
+        x = Math.Clamp(x, 0, sourceAccessor.Width - 1);
+        y = Math.Clamp(y, 0, sourceAccessor.Height - 1);
 
         // Get the integer coordinates and fractional parts
         int x0 = (int)Math.Floor(x);
         int y0 = (int)Math.Floor(y);
-        int x1 = Math.Min(x0 + 1, sourceImage.Width - 1);
-        int y1 = Math.Min(y0 + 1, sourceImage.Height - 1);
+        int x1 = Math.Min(x0 + 1, sourceAccessor.Width - 1);
+        int y1 = Math.Min(y0 + 1, sourceAccessor.Height - 1);
 
         double fx = x - x0;
         double fy = y - y0;
 
         // Sample the four surrounding pixels
-        var p00 = sourceImage[x0, y0];
-        var p10 = sourceImage[x1, y0];
-        var p01 = sourceImage[x0, y1];
-        var p11 = sourceImage[x1, y1];
+        var row0 = sourceAccessor.GetRowSpan(y0);
+        var row1 = sourceAccessor.GetRowSpan(y1);
+
+        var p00 = row0[x0];
+        var p10 = row0[x1];
+        var p01 = row1[x0];
+        var p11 = row1[x1];
 
         // Bilinear interpolation
         var r = (byte)Math.Round(
