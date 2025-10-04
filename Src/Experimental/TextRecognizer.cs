@@ -39,15 +39,10 @@ public class TextRecognizer
                 .Resize(new ResizeOptions
                 {
                     Size = new Size(width, height),
-                    Mode = ResizeMode.Max
+                    Mode = ResizeMode.Max,
+                    Sampler = KnownResamplers.Triangle
                 }));
-
-            var tensor = textImg.ToTensor([height, width, 3], 127.5f);
-            tensor.HwcToChwInPlace([height, width, 3]);
-
-            tensor.Normalize(127.5f, 127.5f);
-
-            return tensor;
+            return textImg.ToNormalizedChwTensor(height, width, 127.5f, 127.5f);
         }
     }
 
