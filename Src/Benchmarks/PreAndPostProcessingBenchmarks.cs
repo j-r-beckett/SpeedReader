@@ -16,13 +16,19 @@ namespace Benchmarks;
 public class DetectionPrePostBenchmark
 {
     private TextDetector _detector = null!;
-    private Image<Rgb24> _input = null!;
+    private readonly Image<Rgb24> _input;
     private (float[], int[])[] _cachedInference = null!;
+
+    public DetectionPrePostBenchmark()
+    {
+        var width = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_WIDTH") ?? throw new InvalidOperationException("BENCHMARK_INPUT_WIDTH must be set"));
+        var height = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_HEIGHT") ?? throw new InvalidOperationException("BENCHMARK_INPUT_HEIGHT must be set"));
+        _input = InputGenerator.GenerateInput(width, height);
+    }
 
     [GlobalSetup]
     public async Task Setup()
     {
-        _input = await InputGenerator.GenerateImages(640, 640, 32, CancellationToken.None).FirstAsync();
         var dbnetSession = new ModelProvider().GetSession(Model.DbNet18, ModelPrecision.INT8);
         var dbnetRunner = new CachingModelRunner(dbnetSession);
         _detector = new TextDetector(dbnetRunner);
@@ -43,14 +49,20 @@ public class DetectionPrePostBenchmark
 public class RecognitionPrePostBenchmark
 {
     private TextRecognizer _recognizer = null!;
-    private Image<Rgb24> _input = null!;
+    private readonly Image<Rgb24> _input;
     private List<BoundingBox> _detections = null!;
     private (float[], int[])[] _cachedInference = null!;
+
+    public RecognitionPrePostBenchmark()
+    {
+        var width = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_WIDTH") ?? throw new InvalidOperationException("BENCHMARK_INPUT_WIDTH must be set"));
+        var height = int.Parse(Environment.GetEnvironmentVariable("BENCHMARK_INPUT_HEIGHT") ?? throw new InvalidOperationException("BENCHMARK_INPUT_HEIGHT must be set"));
+        _input = InputGenerator.GenerateInput(width, height);
+    }
 
     [GlobalSetup]
     public async Task Setup()
     {
-        _input = await InputGenerator.GenerateImages(640, 640, 32, CancellationToken.None).FirstAsync();
         var dbnetSession = new ModelProvider().GetSession(Model.DbNet18, ModelPrecision.INT8);
         var dbnetRunner = new CpuModelRunner(dbnetSession, 1);
         var detector = new TextDetector(dbnetRunner);
