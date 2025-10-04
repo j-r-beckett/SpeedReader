@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
+using System.Numerics;
 using System.Numerics.Tensors;
 using System.Text;
 using Resources;
@@ -15,9 +16,6 @@ public static class GreedyCTC
         var numClasses = CharacterDictionary.Count;
         Debug.Assert(ctcSequence.Length % numClasses == 0);
 
-        // Convert to tensor so we can use vectorized IndexOfMax
-        var tensor = Tensor.Create(ctcSequence, [ctcSequence.Length / numClasses, numClasses], default);
-
         var decoded = new StringBuilder();
         var characterConfidences = new List<double>();
 
@@ -25,12 +23,13 @@ public static class GreedyCTC
         double currentCharMaxProb = 0.0;
         int currentCharIndex = -1;
 
-        int numSteps = Convert.ToInt32(tensor.Lengths[0]);
+        int numSteps = ctcSequence.Length / numClasses;
         for (int step = 0; step < numSteps; step++)
         {
-            var probabilities = tensor[[step..(step + 1), Range.All]];
-            int maxIndex = Convert.ToInt32(Tensor.IndexOfMax<float>(probabilities));
-            double maxProb = probabilities[0, maxIndex];
+            int offset = step * numClasses;
+            var sequence = ctcSequence.AsSpan().Slice(offset, numClasses);
+            var maxIndex = IndexOfMax(sequence);
+            double maxProb = ctcSequence[offset + maxIndex];
 
             // CTC greedy decoding rule: only add if different from previous and not blank
             if (maxIndex != prevIndex && maxIndex != CharacterDictionary.Blank)
@@ -67,4 +66,66 @@ public static class GreedyCTC
 
         return (decoded.ToString(), geometricMean);
     }
+
+    internal static int IndexOfMax(ReadOnlySpan<float> span)
+    {
+        if (span.IsEmpty) return -1;
+
+        int maxIndex = 0;
+        float maxValue = span[0];
+
+        int vectorSize = Vector<float>.Count;
+        var maxVec = new Vector<float>(float.MinValue);  // Contains the max value seen so far
+
+        int i = 0;
+        if (Vector.IsHardwareAccelerated && span.Length >= vectorSize)
+        {
+            for (; i <= span.Length - vectorSize; i += vectorSize)
+            {
+                var vec = new Vector<float>(span.Slice(i, vectorSize));
+
+                // Check if this vector contains value greater than any value in the current max vector
+                if (Vector.GreaterThanAny(vec, maxVec))
+                {
+                    maxIndex = i + VectorIndexOfMax(vec);
+                    maxValue = span[maxIndex];
+                    maxVec = new Vector<float>(maxValue);
+                }
+            }
+        }
+
+        // Handle any remaining values
+        for (; i < span.Length; i++)
+        {
+            if (span[i] > maxValue)
+            {
+                maxValue = span[i];
+                maxIndex = i;
+            }
+        }
+
+        return maxIndex;
+    }
+
+    private static int VectorIndexOfMax(Vector<float> vec)
+    {
+        int maxIndex = 0;
+        for (int i = 1; i < Vector<float>.Count; i++)
+        {
+            if (vec[i] > vec[maxIndex]) maxIndex = i;
+        }
+        return maxIndex;
+    }
+
+    // private static int IndexOfMax(Span<float> sequence)
+    // {
+    //     var maxIndex = 0;
+    //     for (var i = 1; i < sequence.Length; i++)
+    //     {
+    //         if (sequence[i] > sequence[maxIndex])
+    //             maxIndex = i;
+    //     }
+    //
+    //     return maxIndex;
+    // }
 }
