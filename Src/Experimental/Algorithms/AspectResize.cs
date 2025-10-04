@@ -9,22 +9,6 @@ namespace Experimental.Algorithms;
 
 public static class AspectResizeExtensions
 {
-    // The src image is scaled, maintaining aspect ratio, until one of its dimensions equals
-    // the corresponding target dimension. The resulting image w x h will have w == width and h <= height,
-    // or h == height and w <= width.
-    public static Image<Rgb24> SoftAspectResize(this Image<Rgb24> src, int width, int height)
-    {
-        var config = Configuration.Default.Clone();
-        config.PreferContiguousImageBuffers = true;
-
-        return src.Clone(config, x => x
-            .Resize(new ResizeOptions
-            {
-                Size = new Size(width, height),
-                Mode = ResizeMode.Max
-            }));
-    }
-
     // Scales the image to the target size, maintaining aspect ratio. Pads with black as necessary.
     // Returns an image of size exactly targetSize.
     public static Image<Rgb24> HardAspectResize(this Image<Rgb24> src, Size targetSize)
