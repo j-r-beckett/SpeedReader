@@ -10,6 +10,7 @@ using Experimental.Visualization;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace Experimental;
 
@@ -33,10 +34,15 @@ public class TextRecognizer
 
         static float[] PreprocessRegion(BoundingBox region, Image<Rgb24> image, int height, int width)
         {
-            using var cropped = image.Crop(region.RotatedRectangle);
-            using var resized = cropped.SoftAspectResize(width, height);
+            using var textImg = image.Crop(region.RotatedRectangle);
+            textImg.Mutate(x => x
+                .Resize(new ResizeOptions
+                {
+                    Size = new Size(width, height),
+                    Mode = ResizeMode.Max
+                }));
 
-            var tensor = resized.ToTensor([height, width, 3], 127.5f);
+            var tensor = textImg.ToTensor([height, width, 3], 127.5f);
             tensor.HwcToChwInPlace([height, width, 3]);
 
             tensor.Normalize(127.5f, 127.5f);
