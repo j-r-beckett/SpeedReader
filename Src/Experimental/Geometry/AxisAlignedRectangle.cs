@@ -12,7 +12,7 @@ public record AxisAlignedRectangle
     public required int X  // Top left x
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        init;
     }
 
 
@@ -20,7 +20,7 @@ public record AxisAlignedRectangle
     public required int Y  // Top left y
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        init;
     }
 
     [JsonPropertyName("height")]
