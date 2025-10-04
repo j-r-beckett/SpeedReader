@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Buffers;
+using System.Numerics;
 using Experimental.Geometry;
 
 namespace Experimental.Algorithms;
@@ -12,48 +13,90 @@ public static partial class ReliefMapExtensions
     {
         var width = map.Width;
         var height = map.Height;
-        var data = map.Data;
+        var data = map.Data.AsSpan();
 
-        var outputArray = ArrayPool<float>.Shared.Rent(data.Length);
-        try
+        Span<Point> neighborBuffer = stackalloc Point[8];
+
+        var vectorSize = Vector<float>.Count;
+
+        for (int y = 0; y < height; y++)
         {
-            var output = outputArray.AsSpan()[..data.Length];
-            data.CopyTo(output);
-            Span<Point> neighborBuffer = stackalloc Point[8];
+            // Set left and right edges to -0.1 if they are 1
+            if (data[y * width] == 1)
+                data[y * width] = -0.1f;
+            if (data[y * width + width - 1] == 1)
+                data[y * width + width - 1] = -0.1f;
 
-            for (int y = 0; y < height; y++)
+            int x = 1;
+            if (Vector.IsHardwareAccelerated && width - 2 >= vectorSize)
             {
-                for (int x = 0; x < width; x++)
+                for (; x <= width - 1 - vectorSize; x += vectorSize)
                 {
-                    int idx = y * width + x;
-
-                    if (data[idx] == 0)
-                        continue;
-
-                    // Set to 0 if on border
-                    if (x == 0 || y == 0 || x == width - 1 || y == height - 1)
+                    var vec = new Vector<float>(data.Slice(y * width + x, vectorSize));
+                    if (Vector.GreaterThanAny(vec, Vector<float>.Zero))
                     {
-                        output[idx] = 0;
-                        continue;
-                    }
-
-                    // Set to zero if any neighbor is 0
-                    foreach (var (nx, ny) in map.GetNeighbors((x, y), neighborBuffer))
-                    {
-                        if (data[ny * width + nx] == 0)
+                        for (int i = 0; i < vectorSize; i++)
                         {
-                            output[idx] = 0;
-                            break;
+                            int idx = y * width + x + i;
+                            if (data[idx] == 1)
+                            {
+                                // Set to -0.1 if any neighbor is 0
+                                foreach (var (nx, ny) in map.GetNeighbors((x + i, y), neighborBuffer))
+                                {
+                                    if (data[ny * width + nx] == 0)
+                                    {
+                                        data[idx] = -0.1f;
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            output.CopyTo(data);
+            for (; x < width - 1; x++)
+            {
+                int idx = y * width + x;
+
+                if (data[idx] == 0)
+                    continue;
+
+                // Set to -0.1 if any neighbor is 0
+                foreach (var (nx, ny) in map.GetNeighbors((x, y), neighborBuffer))
+                {
+                    if (data[ny * width + nx] == 0)
+                    {
+                        data[idx] = -0.1f;
+                        break;
+                    }
+                }
+            }
         }
-        finally
+
+        // Set top and bottom edges to 0
+        for (int x = 0; x < width; x++)
         {
-            ArrayPool<float>.Shared.Return(outputArray);
+            data[x] = 0;
+            data[width * (height - 1) + x] = 0;
+        }
+
+        // Flip -0.1 to 0
+        int j = 0;
+        if (Vector.IsHardwareAccelerated && data.Length >= vectorSize)
+        {
+            for (; j <= data.Length - vectorSize; j += vectorSize)
+            {
+                var vec = new Vector<float>(data.Slice(j, vectorSize));
+                var ceil = Vector.Ceiling(vec);
+                ceil.CopyTo(data.Slice(j, vectorSize));
+            }
+        }
+
+        for (; j < data.Length; j++)
+        {
+            if (data[j] < 0)
+                data[j] = 0;
         }
     }
 
@@ -61,38 +104,72 @@ public static partial class ReliefMapExtensions
     {
         var width = map.Width;
         var height = map.Height;
-        var data = map.Data;
+        var data = map.Data.AsSpan();
 
-        var outputArray = ArrayPool<float>.Shared.Rent(data.Length);
-        try
+        var vectorSize = Vector<float>.Count;
+
+        Span<Point> neighborBuffer = stackalloc Point[8];
+
+        for (int y = 0; y < height; y++)
         {
-            var output = outputArray.AsSpan()[..data.Length];
-            data.CopyTo(output);
-            Span<Point> neighborBuffer = stackalloc Point[8];
-
-            for (int y = 0; y < height; y++)
+            int x = 0;
+            if (Vector.IsHardwareAccelerated && width >= vectorSize)
             {
-                for (int x = 0; x < width; x++)
+                for (; x <= width - vectorSize; x += vectorSize)
                 {
-                    int idx = y * width + x;
-
-                    // If pixel is 1, set neighbors to 1
-                    if (data[idx] == 1)
+                    var vec = new Vector<float>(data.Slice(y * width + x, vectorSize));
+                    if (Vector.GreaterThanAny(vec, Vector<float>.Zero))
                     {
-                        output[idx] = 1;
-                        foreach (var (nx, ny) in map.GetNeighbors((x, y), neighborBuffer))
+                        for (int i = 0; i < vectorSize; i++)
                         {
-                            output[ny * width + nx] = 1;
+                            int idx = y * width + x + i;
+
+                            // If pixel is 1, set neighbors to -1
+                            if (data[idx] == 1)
+                            {
+                                foreach (var (nx, ny) in map.GetNeighbors((x + i, y), neighborBuffer))
+                                {
+                                    if (data[ny * width + nx] == 0)
+                                        data[ny * width + nx] = -1;
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            output.CopyTo(data);
+            for (; x < width; x++)
+            {
+                int idx = y * width + x;
+
+                // If pixel is 1, set neighbors to -1
+                if (data[idx] == 1)
+                {
+                    foreach (var (nx, ny) in map.GetNeighbors((x, y), neighborBuffer))
+                    {
+                        if (data[ny * width + nx] == 0)
+                            data[ny * width + nx] = -1;
+                    }
+                }
+            }
         }
-        finally
+
+        // Flip -1 to 1
+        int j = 0;
+        if (Vector.IsHardwareAccelerated && data.Length >= vectorSize)
         {
-            ArrayPool<float>.Shared.Return(outputArray);
+            for (; j <= data.Length - vectorSize; j += vectorSize)
+            {
+                var vec = new Vector<float>(data.Slice(j, vectorSize));
+                var ceil = Vector.Abs(vec);
+                ceil.CopyTo(data.Slice(j, vectorSize));
+            }
+        }
+
+        for (; j < data.Length; j++)
+        {
+            if (data[j] < 0)
+                data[j] = 1;
         }
     }
 }

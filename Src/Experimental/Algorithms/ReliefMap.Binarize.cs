@@ -29,7 +29,7 @@ public static partial class ReliefMapExtensions
             }
         }
 
-        for ( ; i < data.Length; i++)
+        for (; i < data.Length; i++)
             data[i] = data[i] >= threshold ? 1.0f : 0.0f;
     }
 }
