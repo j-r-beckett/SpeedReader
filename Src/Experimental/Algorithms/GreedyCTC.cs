@@ -59,9 +59,9 @@ public static class GreedyCTC
         if (decoded.Length > 0)
             characterConfidences.Add(currentCharMaxProb);
 
-        // Geometric mean
+        // Calculate geometric mean using log-space
         var geometricMean = characterConfidences.Count > 0
-            ? Math.Pow(characterConfidences.Aggregate(1.0, (a, b) => a * b), 1.0 / characterConfidences.Count)
+            ? Math.Exp(characterConfidences.Average(Math.Log))
             : 0.0;
 
         return (decoded.ToString(), geometricMean);
