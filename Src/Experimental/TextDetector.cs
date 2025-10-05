@@ -124,8 +124,11 @@ public class TextDetector
         return result;
     }
 
-    public async Task<(float[], int[])[]> RunInference(List<(float[], int[])> tiles) =>
-        await Task.WhenAll(tiles.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
+    public async Task<(float[], int[])[]> RunInference(List<(float[], int[])> tiles)
+    {
+        var inferenceTasks = await Task.WhenAll(tiles.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
+        return await Task.WhenAll(inferenceTasks);
+    }
 
     private List<Rectangle> Tile(Image<Rgb24> image)
     {

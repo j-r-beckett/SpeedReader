@@ -12,7 +12,7 @@ public abstract class ModelRunner : IAsyncDisposable
 
     protected ModelRunner(InferenceSession inferenceSession) => _inferenceSession = inferenceSession;
 
-    public abstract Task<(float[] Data, int[] Shape)> Run(float[] batch, int[] shape);
+    public abstract Task<Task<(float[] Data, int[] Shape)>> Run(float[] batch, int[] shape);
 
     protected virtual (float[] Data, int[] Shape) RunInferenceInternal(float[] batch, int[] shape)
     {
