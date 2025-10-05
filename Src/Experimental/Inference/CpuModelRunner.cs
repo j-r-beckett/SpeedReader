@@ -35,13 +35,13 @@ public class CpuModelRunner : ModelRunner
         });
     }
 
-    public override async Task<(float[] Data, int[] Shape)> Run(float[] batch, int[] shape)
+    public override Task<Task<(float[] Data, int[] Shape)>> Run(float[] batch, int[] shape)
     {
         Debug.Assert(shape.Length > 1);  // At least one dimension
         var tcs = new TaskCompletionSource<(float[], int[])>();
         var batchedShape = new[] { 1 }.Concat(shape).ToArray();  // Add a batch size dimension. On CPU we don't batch, so this is just 1
-        await _inferenceRunnerBlock.SendAsync((tcs, batch, batchedShape));
-        return await tcs.Task;
+        return _inferenceRunnerBlock.SendAsync((tcs, batch, batchedShape)).ContinueWith(t => tcs.Task);
+        // return await tcs.Task;
     }
 
     protected override async ValueTask SubclassDisposeAsync()

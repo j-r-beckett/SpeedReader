@@ -56,17 +56,17 @@ public class FaultHandlingTests
         var runner = new MockCpuModelRunner(infer);
 
         // First call should succeed
-        var firstResult = await runner.Run([0], [1, 1]);
+        var firstResult = await await runner.Run([0], [1, 1]);
 
         Assert.Equivalent(firstResult.Data, MockCpuModelRunner.SimpleResult.Data);
         Assert.Equivalent(firstResult.Shape, MockCpuModelRunner.SimpleResult.Shape);
 
         // Second call should fail
-        var ex = await Assert.ThrowsAnyAsync<InferenceException>(() => runner.Run([0], [1, 1]));
+        var ex = await Assert.ThrowsAnyAsync<InferenceException>(async () => await await runner.Run([0], [1, 1]));
         Assert.IsType<TestException>(ex.InnerException);
 
         // Third call should succeed
-        var secondResult = await runner.Run([0], [1, 1]);
+        var secondResult = await await runner.Run([0], [1, 1]);
 
         Assert.Equivalent(secondResult.Data, MockCpuModelRunner.SimpleResult.Data);
         Assert.Equivalent(secondResult.Shape, MockCpuModelRunner.SimpleResult.Shape);

@@ -24,39 +24,96 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        Debug.Assert(false, "Always run benchmarks in Release mode");
+
         var rootCommand = new RootCommand();
 
-        rootCommand.AddCommand(MicroCommand());
+        rootCommand.AddCommand(PppCommand());
 
-        rootCommand.SetHandler(() => Console.WriteLine("Howdy"));
+        rootCommand.AddCommand(InferenceCommand());
 
         await rootCommand.InvokeAsync(args);
 
         return 0;
     }
 
-    private static Command MicroCommand()
+    private static Command InferenceCommand()
     {
-        var microCommand = new Command("ppp", "Run pre and post processing benchmarks");
+        var inferenceCommand = new Command("inference", "Run inference benchmarks");
+
+        var dbnetScenarioOption = new Option<bool>("--dbnet", description: "Run dbnet benchmark");
+        dbnetScenarioOption.AddAlias("-d");
+        inferenceCommand.AddOption(dbnetScenarioOption);
+
+        var tileOption = new Option<bool>("--tile", description: "Use 640x640 input size");
+        inferenceCommand.AddOption(tileOption);
+
+        var fullOption = new Option<bool>("--full", description: "Use 1920x1080 input size");
+        inferenceCommand.AddOption(fullOption);
+
+        var densityOption = new Option<string>("--density", description: "Text density (low or high)", getDefaultValue: () => "high");
+        inferenceCommand.AddOption(densityOption);
+
+        var threadsOption = new Option<int>("--threads", description: "Number of threads to use", getDefaultValue: () => 1);
+        inferenceCommand.AddOption(threadsOption);
+
+        var quantizationOption = new Option<string>("--quantization", description: "Quantization mode (fp32 or int8)", getDefaultValue: () => "fp32");
+        quantizationOption.AddAlias("-q");
+        inferenceCommand.AddOption(quantizationOption);
+
+        inferenceCommand.SetHandler(async (dbnet, tile, full, densityStr, threads, quantizationStr) =>
+        {
+            if (!dbnet) throw new ArgumentException("The only supported scenario is dbnet");
+
+            if (tile && full)
+                throw new InvalidOperationException("Cannot specify both --tile and --full");
+
+            var density = densityStr.ToLower() switch
+            {
+                "low" => Density.Low,
+                "high" => Density.High,
+                _ => throw new InvalidOperationException($"Invalid density value: {densityStr}. Must be 'low' or 'high'.")
+            };
+
+            var quantization = quantizationStr.ToLower() switch
+            {
+                "fp32" => ModelPrecision.FP32,
+                "int8" => ModelPrecision.INT8,
+                _ => throw new InvalidOperationException($"Invalid quantization value: {quantizationStr}. Must be 'fp32' or 'int8'.")
+            };
+
+            var input = InputGenerator.GenerateInput(tile ? 1920 : 640, tile ? 1080 : 640, density);
+
+            var benchmark = new DBNetBenchmark(threads, 1, quantization);
+
+            await benchmark.RunBenchmark(input);
+        }, dbnetScenarioOption, tileOption, fullOption, densityOption, threadsOption, quantizationOption);
+
+        return inferenceCommand;
+    }
+
+    private static Command PppCommand()
+    {
+        var pppCommand = new Command("ppp", "Run pre and post processing benchmarks");
 
         var detectionScenarioOption = new Option<bool>("--detection", description: "Run detection benchmark");
         detectionScenarioOption.AddAlias("-d");
-        microCommand.AddOption(detectionScenarioOption);
+        pppCommand.AddOption(detectionScenarioOption);
 
         var recognitionScenarioOption = new Option<bool>("--recognition", description: "Run recognition benchmark");
         recognitionScenarioOption.AddAlias("-r");
-        microCommand.AddOption(recognitionScenarioOption);
+        pppCommand.AddOption(recognitionScenarioOption);
 
         var tileOption = new Option<bool>("--tile", description: "Use 640x640 input size");
-        microCommand.AddOption(tileOption);
+        pppCommand.AddOption(tileOption);
 
         var fullOption = new Option<bool>("--full", description: "Use 1920x1080 input size");
-        microCommand.AddOption(fullOption);
+        pppCommand.AddOption(fullOption);
 
         var densityOption = new Option<string>("--density", description: "Text density (low or high)", getDefaultValue: () => "high");
-        microCommand.AddOption(densityOption);
+        pppCommand.AddOption(densityOption);
 
-        microCommand.SetHandler((detection, recognition, tile, full, densityStr) =>
+        pppCommand.SetHandler((detection, recognition, tile, full, densityStr) =>
         {
             if (tile && full)
                 throw new InvalidOperationException("Cannot specify both --tile and --full");
@@ -84,8 +141,6 @@ public class Program
             var inputPath = Path.GetTempFileName().Replace(".tmp", ".png");
             input.SaveAsPng(inputPath);
             Console.WriteLine($"Input image ({width}x{height}): {inputPath}");
-
-            Debug.Assert(false, "Never run BenchmarkDotnet in debug mode");
 
             string benchmarkName = detection == recognition
                 ? "combined detection and recognition benchmark"
@@ -138,6 +193,6 @@ public class Program
             Console.WriteLine($"Profile: {profilePath}");
         }, detectionScenarioOption, recognitionScenarioOption, tileOption, fullOption, densityOption);
 
-        return microCommand;
+        return pppCommand;
     }
 }
