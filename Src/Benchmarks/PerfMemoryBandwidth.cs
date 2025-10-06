@@ -14,10 +14,7 @@ public class PerfMemoryBandwidth : IDisposable
     private readonly string _outputFile;
     private bool _isRunning;
 
-    public PerfMemoryBandwidth()
-    {
-        _outputFile = Path.GetTempFileName();
-    }
+    public PerfMemoryBandwidth() => _outputFile = Path.GetTempFileName();
 
     public void Start()
     {
