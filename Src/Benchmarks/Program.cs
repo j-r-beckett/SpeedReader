@@ -28,6 +28,8 @@ public class Program
 
         rootCommand.AddCommand(InferenceCommand());
 
+        rootCommand.AddCommand(SystemCommand());
+
         await rootCommand.InvokeAsync(args);
 
         return 0;
@@ -275,5 +277,36 @@ public class Program
         }, detectionScenarioOption, recognitionScenarioOption, tileOption, fullOption, densityOption);
 
         return pppCommand;
+    }
+
+    private static Command SystemCommand()
+    {
+        var systemCommand = new Command("system", "Run system benchmarks");
+
+        var bwOption = new Option<bool>("--bw", description: "Run memory bandwidth benchmark");
+        systemCommand.AddOption(bwOption);
+
+        var coresOption = new Option<int>("--cores", description: "Number of cores to use", getDefaultValue: () => Environment.ProcessorCount);
+        systemCommand.AddOption(coresOption);
+
+        var testPeriodOption = new Option<int>("--test-period", description: "Test period in seconds", getDefaultValue: () => 1);
+        systemCommand.AddOption(testPeriodOption);
+
+        systemCommand.SetHandler((bw, cores, testPeriod) =>
+        {
+            if (!bw) throw new ArgumentException("The only supported benchmark is --bw");
+
+            Console.WriteLine("System Memory Bandwidth Benchmark");
+            Console.WriteLine($"Cores: {cores}");
+            Console.WriteLine($"Test period: {testPeriod}s");
+            Console.WriteLine();
+
+            var benchmark = new SystemMemoryBandwidthBenchmark(cores, testPeriod);
+            var bandwidth = benchmark.RunBenchmark();
+
+            Console.WriteLine($"Memory Bandwidth: {bandwidth:N2} GB/s");
+        }, bwOption, coresOption, testPeriodOption);
+
+        return systemCommand;
     }
 }
