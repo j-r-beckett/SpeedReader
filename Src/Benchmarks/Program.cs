@@ -3,23 +3,18 @@
 
 using System.CommandLine;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using BenchmarkDotNet.Analysers;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
-using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using Benchmarks;
-using Core;
-using Experimental;
 using Resources;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 public class Program
 {
@@ -150,28 +145,28 @@ public class Program
             }
             Console.WriteLine();
 
-            var results = new List<(int threads, int intraOpThreads, double throughput)>();
+            var results = new List<(int threads, int intraOpThreads, double throughput, double bandwidth)>();
 
             foreach (var (t, i) in GetThreads())
             {
                 var benchmark = new DBNetBenchmark(t, i, quantization, testPeriod);
                 var counter = new SimpleTimeCounter($"(threads={t}, intra op threads={i})");
                 counter.OnStartBuildStage([]);
-                var (completed, time) = await benchmark.RunBenchmark(input);
+                var (completed, time, bandwidth) = await benchmark.RunBenchmark(input);
                 counter.OnEndRunStage();
 
                 var throughput = completed / time.TotalSeconds;
-                results.Add((t, i, throughput));
+                results.Add((t, i, throughput, bandwidth));
             }
 
             // Print summary table
             Console.WriteLine();
             Console.WriteLine("Summary:");
-            Console.WriteLine($"{"Threads",-10} {"Intra-op",-10} {"Throughput (tiles/sec)",20}");
-            Console.WriteLine(new string('-', 42));
-            foreach (var (t, i, throughput) in results)
+            Console.WriteLine($"{"Threads",-10} {"Intra-op",-10} {"Throughput (tiles/sec)",20} {"Memory BW (GB/s)",20}");
+            Console.WriteLine(new string('-', 62));
+            foreach (var (t, i, throughput, bandwidth) in results)
             {
-                Console.WriteLine($"{t,-10} {i,-10} {throughput,20:N2}");
+                Console.WriteLine($"{t,-10} {i,-10} {throughput,20:N2} {bandwidth,20:N2}");
             }
         }, dbnetScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption, totalThreadsOption);
 
