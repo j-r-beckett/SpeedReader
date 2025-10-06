@@ -59,12 +59,23 @@ public class Program
         var testPeriodOption = new Option<int>("--test-period", description: "Test period in seconds", getDefaultValue: () => 10);
         inferenceCommand.AddOption(testPeriodOption);
 
-        inferenceCommand.SetHandler(async (dbnet, threads, intraOpThreads, quantizationStr, testPeriod) =>
+        var totalThreadsOption = new Option<int?>("--total-threads", description: "Total threads (runs all combinations where threads * intra-op-threads = total-threads)", getDefaultValue: () => null);
+        inferenceCommand.AddOption(totalThreadsOption);
+
+        inferenceCommand.SetHandler(async (dbnet, threads, intraOpThreads, quantizationStr, testPeriod, totalThreads) =>
         {
             if (!dbnet) throw new ArgumentException("The only supported scenario is dbnet");
 
-            if (threads != "1" && intraOpThreads != "1")
-                throw new ArgumentException("Cannot specify both --threads and --intra-op-threads");
+            if (totalThreads.HasValue)
+            {
+                if (threads != "1" || intraOpThreads != "1")
+                    throw new ArgumentException("Cannot specify --total-threads with --threads or --intra-op-threads");
+            }
+            else
+            {
+                if (threads != "1" && intraOpThreads != "1")
+                    throw new ArgumentException("Cannot specify both --threads and --intra-op-threads");
+            }
 
             var quantization = quantizationStr.ToLower() switch
             {
@@ -75,52 +86,94 @@ public class Program
 
             IEnumerable<(int Threads, int IntraOpThreads)> GetThreads()
             {
-                (int start, int end) ParseSpec(string spec)
+                if (totalThreads.HasValue)
                 {
-                    if (int.TryParse(spec, out var value))
+                    for (int t = totalThreads.Value; t >= 1; t--)
                     {
-                        ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
-                        return (value, value);
+                        if (totalThreads.Value % t == 0)
+                        {
+                            int i = totalThreads.Value / t;
+                            yield return (t, i);
+                        }
+                    }
+                }
+                else
+                {
+                    (int start, int end) ParseSpec(string spec)
+                    {
+                        if (int.TryParse(spec, out var value))
+                        {
+                            ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
+                            return (value, value);
+                        }
+
+                        var match = Regex.Match(spec, @"^(\d+)\.\.(\d+)$");
+                        if (!match.Success)
+                            throw new ArgumentException($"Invalid value: '{spec}'. Expected a number or a range like '2..4'.");
+
+                        var start = int.Parse(match.Groups[1].Value);
+                        var end = int.Parse(match.Groups[2].Value);
+
+                        ArgumentOutOfRangeException.ThrowIfLessThan(start, 1);
+                        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
+
+                        return (start, end);
                     }
 
-                    var match = Regex.Match(spec, @"^(\d+)\.\.(\d+)$");
-                    if (!match.Success)
-                        throw new ArgumentException($"Invalid value: '{spec}'. Expected a number or a range like '2..4'.");
+                    var (threadStart, threadEnd) = ParseSpec(threads);
+                    var (intraStart, intraEnd) = ParseSpec(intraOpThreads);
 
-                    var start = int.Parse(match.Groups[1].Value);
-                    var end = int.Parse(match.Groups[2].Value);
-
-                    ArgumentOutOfRangeException.ThrowIfLessThan(start, 1);
-                    ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
-
-                    return (start, end);
-                }
-
-                var (threadStart, threadEnd) = ParseSpec(threads);
-                var (intraStart, intraEnd) = ParseSpec(intraOpThreads);
-
-                for (int t = threadStart; t <= threadEnd; t++)
-                {
-                    for (int i = intraStart; i <= intraEnd; i++)
+                    for (int t = threadStart; t <= threadEnd; t++)
                     {
-                        yield return (t, i);
+                        for (int i = intraStart; i <= intraEnd; i++)
+                        {
+                            yield return (t, i);
+                        }
                     }
                 }
             }
 
             var input = InputGenerator.GenerateInput(640, 640, Density.Low);  // Density doesn't affect performance
 
+            // Print benchmark configuration
+            Console.WriteLine("DBNet Inference Benchmark");
+            Console.WriteLine($"Quantization: {quantization}");
+            Console.WriteLine($"Test period: {testPeriod}s");
+            if (totalThreads.HasValue)
+            {
+                Console.WriteLine($"Total threads: {totalThreads.Value}");
+            }
+            else
+            {
+                Console.WriteLine($"Threads: {threads}");
+                Console.WriteLine($"Intra-op threads: {intraOpThreads}");
+            }
+            Console.WriteLine();
+
+            var results = new List<(int threads, int intraOpThreads, double throughput)>();
+
             foreach (var (t, i) in GetThreads())
             {
                 var benchmark = new DBNetBenchmark(t, i, quantization, testPeriod);
-                Console.WriteLine($"Num threads: {t}, IntraOp threads: {i}, Quantization: {quantization}");
-                var counter = new SimpleTimeCounter($"DBNet benchmark (threads={t}, intra op threads={i})");
+                var counter = new SimpleTimeCounter($"(threads={t}, intra op threads={i})");
                 counter.OnStartBuildStage([]);
                 var (completed, time) = await benchmark.RunBenchmark(input);
                 counter.OnEndRunStage();
-                Console.WriteLine($"Throughput: {completed / time.TotalSeconds:N2} tiles/sec");
+
+                var throughput = completed / time.TotalSeconds;
+                results.Add((t, i, throughput));
             }
-        }, dbnetScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption);
+
+            // Print summary table
+            Console.WriteLine();
+            Console.WriteLine("Summary:");
+            Console.WriteLine($"{"Threads",-10} {"Intra-op",-10} {"Throughput (tiles/sec)",20}");
+            Console.WriteLine(new string('-', 42));
+            foreach (var (t, i, throughput) in results)
+            {
+                Console.WriteLine($"{t,-10} {i,-10} {throughput,20:N2}");
+            }
+        }, dbnetScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption, totalThreadsOption);
 
         return inferenceCommand;
     }
