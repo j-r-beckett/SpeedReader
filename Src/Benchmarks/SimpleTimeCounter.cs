@@ -14,7 +14,7 @@ public class SimpleTimeCounter : EventProcessor
 
     public SimpleTimeCounter(string benchmarkName) => _benchmarkName = benchmarkName;
 
-    public override void OnStartBuildStage(IReadOnlyList<BuildPartition> partitions)
+    public override void OnStartBuildStage(IReadOnlyList<BuildPartition> _)
     {
         _startTime = DateTime.Now;
 

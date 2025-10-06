@@ -18,17 +18,19 @@ public class DBNetBenchmark
 {
     private readonly TextDetector _detector;
     private readonly ModelRunner _modelRunner;
+    private readonly int _testPeriodSeconds;
 
-    public DBNetBenchmark(int numThreads, int intraOpNumThreads, ModelPrecision quantization)
+    public DBNetBenchmark(int numThreads, int intraOpNumThreads, ModelPrecision quantization, int testPeriodSeconds)
     {
         var config = new SessionOptions { IntraOpNumThreads = intraOpNumThreads };
         var dbnetSession = new ModelProvider().GetSession(Model.DbNet18, quantization, config);
         var modelRunner = new CpuModelRunner(dbnetSession, numThreads);
         _detector = new TextDetector(modelRunner);
         _modelRunner = modelRunner;
+        _testPeriodSeconds = testPeriodSeconds;
     }
 
-    public async Task RunBenchmark(Image<Rgb24> input)
+    public async Task<(int, TimeSpan)> RunBenchmark(Image<Rgb24> input)
     {
         var modelInput = _detector.Preprocess(input, new VizBuilder());
 
@@ -37,7 +39,7 @@ public class DBNetBenchmark
         int numCompletedInferenceTasks = 0;
 
         var warmupPeriod = TimeSpan.FromSeconds(2);
-        var testPeriod = TimeSpan.FromSeconds(10);
+        var testPeriod = TimeSpan.FromSeconds(_testPeriodSeconds);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -68,6 +70,6 @@ public class DBNetBenchmark
 
         var observedTestPeriod = stopwatch.Elapsed - warmupPeriod;
 
-        Console.WriteLine($"Completed {numCompletedInferenceTasks} inference tasks in {observedTestPeriod.TotalSeconds:F2} sec");
+        return (numCompletedInferenceTasks, observedTestPeriod);
     }
 }
