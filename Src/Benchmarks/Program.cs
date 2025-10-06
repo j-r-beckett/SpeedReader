@@ -43,6 +43,10 @@ public class Program
         dbnetScenarioOption.AddAlias("-d");
         inferenceCommand.AddOption(dbnetScenarioOption);
 
+        var svtrScenarioOption = new Option<bool>("--svtr", description: "Run SVTRv2 benchmark");
+        svtrScenarioOption.AddAlias("-s");
+        inferenceCommand.AddOption(svtrScenarioOption);
+
         var threadsOption = new Option<string>("--threads", description: "Number of threads to use", getDefaultValue: () => "1");
         inferenceCommand.AddOption(threadsOption);
 
@@ -59,9 +63,9 @@ public class Program
         var totalThreadsOption = new Option<int?>("--total-threads", description: "Total threads (runs all combinations where threads * intra-op-threads = total-threads)", getDefaultValue: () => null);
         inferenceCommand.AddOption(totalThreadsOption);
 
-        inferenceCommand.SetHandler(async (dbnet, threads, intraOpThreads, quantizationStr, testPeriod, totalThreads) =>
+        inferenceCommand.SetHandler(async (dbnet, svtr, threads, intraOpThreads, quantizationStr, testPeriod, totalThreads) =>
         {
-            if (!dbnet) throw new ArgumentException("The only supported scenario is dbnet");
+            if (dbnet == svtr) throw new ArgumentException("Specify exactly one of --dbnet or --svtr");
 
             if (totalThreads.HasValue)
             {
@@ -130,10 +134,14 @@ public class Program
                 }
             }
 
-            var input = InputGenerator.GenerateInput(640, 640, Density.Low);  // Density doesn't affect performance
+            var model = dbnet ? Model.DbNet18 : Model.SVTRv2;
+            var modelName = dbnet ? "DBNet" : "SVTRv2";
+            var modelInputs = dbnet
+                ? DBNetBenchmarkHelper.GenerateInput(640, 640, Density.Low)
+                : SVTRv2BenchmarkHelper.GenerateInput();
 
             // Print benchmark configuration
-            Console.WriteLine("DBNet Inference Benchmark");
+            Console.WriteLine($"{modelName} Inference Benchmark");
             Console.WriteLine($"Quantization: {quantization}");
             Console.WriteLine($"Test period: {testPeriod}s");
             if (totalThreads.HasValue)
@@ -151,26 +159,27 @@ public class Program
 
             foreach (var (t, i) in GetThreads())
             {
-                var benchmark = new DBNetBenchmark(t, i, quantization, testPeriod);
+                var benchmark = new InferenceBenchmark(model, t, i, quantization, testPeriod);
                 var counter = new SimpleTimeCounter($"(threads={t}, intra op threads={i})");
                 counter.OnStartBuildStage([]);
-                var (completed, time, bandwidth) = await benchmark.RunBenchmark(input);
+                var (completed, time, bandwidth) = await benchmark.RunBenchmark(modelInputs);
                 counter.OnEndRunStage();
 
                 var throughput = completed / time.TotalSeconds;
                 results.Add((t, i, throughput, bandwidth));
+                benchmark.Cleanup();
             }
 
             // Print summary table
             Console.WriteLine();
             Console.WriteLine("Summary:");
-            Console.WriteLine($"{"Threads",-10} {"Intra-op",-10} {"Throughput (tiles/sec)",20} {"Memory BW (GB/s)",20}");
+            Console.WriteLine($"{"Threads",-10} {"Intra-op",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
             Console.WriteLine(new string('-', 62));
             foreach (var (t, i, throughput, bandwidth) in results)
             {
                 Console.WriteLine($"{t,-10} {i,-10} {throughput,20:N2} {bandwidth,20:N2}");
             }
-        }, dbnetScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption, totalThreadsOption);
+        }, dbnetScenarioOption, svtrScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption, totalThreadsOption);
 
         return inferenceCommand;
     }
