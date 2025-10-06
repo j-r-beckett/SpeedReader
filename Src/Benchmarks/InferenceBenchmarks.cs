@@ -1,39 +1,48 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading.Channels;
 using Core;
 using Experimental;
+using Experimental.Geometry;
 using Experimental.Inference;
 using Experimental.Visualization;
 using Microsoft.ML.OnnxRuntime;
 using Resources;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace Benchmarks;
 
-public class DBNetBenchmark
+internal class DummyModelRunner : ModelRunner
 {
-    private readonly TextDetector _detector;
+    public DummyModelRunner() : base(null!) { }
+    public override Task<Task<(float[], int[])>> Run(float[] input, int[] shape) => throw new NotImplementedException();
+    protected override ValueTask SubclassDisposeAsync() => ValueTask.CompletedTask;
+}
+
+public class InferenceBenchmark
+{
     private readonly ModelRunner _modelRunner;
     private readonly int _testPeriodSeconds;
+    private readonly InferenceSession _session;
 
-    public DBNetBenchmark(int numThreads, int intraOpNumThreads, ModelPrecision quantization, int testPeriodSeconds)
+    public InferenceBenchmark(Model model, int numThreads, int intraOpNumThreads, ModelPrecision quantization, int testPeriodSeconds)
     {
         var config = new SessionOptions { IntraOpNumThreads = intraOpNumThreads };
-        var dbnetSession = new ModelProvider().GetSession(Model.DbNet18, quantization, config);
-        var modelRunner = new CpuModelRunner(dbnetSession, numThreads);
-        _detector = new TextDetector(modelRunner);
-        _modelRunner = modelRunner;
+        var session = new ModelProvider().GetSession(model, quantization, config);
+        _session = session;
+        _modelRunner = new CpuModelRunner(session, numThreads);
         _testPeriodSeconds = testPeriodSeconds;
     }
 
-    public async Task<(int, TimeSpan, double)> RunBenchmark(Image<Rgb24> input)
+    public void Cleanup()
     {
-        var modelInput = _detector.Preprocess(input, new VizBuilder());
+        _session.Dispose();
+    }
 
+    public async Task<(int, TimeSpan, double)> RunBenchmark(List<(float[] Data, int[] Shape)> modelInputs)
+    {
         var inferenceTasks = Channel.CreateUnbounded<Task>();
         int numPendingInferenceTasks = 0;
         int numCompletedInferenceTasks = 0;
@@ -55,7 +64,8 @@ public class DBNetBenchmark
             }
 
             Interlocked.Increment(ref numPendingInferenceTasks);
-            var inferenceTask = await _modelRunner.Run(modelInput[i % modelInput.Count].Data, modelInput[i % modelInput.Count].Shape);
+            var input = modelInputs[i % modelInputs.Count];
+            var inferenceTask = await _modelRunner.Run(input.Data, input.Shape);
             var continueWith = inferenceTask.ContinueWith(t =>
             {
                 if (t.IsFaulted) throw t.Exception;
@@ -63,10 +73,7 @@ public class DBNetBenchmark
                 if (stopwatch.Elapsed > warmupPeriod)
                 {
                     Interlocked.Increment(ref numCompletedInferenceTasks);
-                    if (numPendingInferenceTasks == 0 && actualCompletionTime == null)
-                    {
-                        actualCompletionTime = stopwatch.Elapsed;
-                    }
+                    actualCompletionTime = Max(actualCompletionTime ?? stopwatch.Elapsed, stopwatch.Elapsed);
                 }
             });
             inferenceTasks.Writer.TryWrite(continueWith);
@@ -74,12 +81,39 @@ public class DBNetBenchmark
 
         inferenceTasks.Writer.Complete();
 
-        // Make sure we didn't throw any exceptions
         await foreach (var t in inferenceTasks.Reader.ReadAllAsync()) await t;
 
         var bandwidth = perfStarted ? perfBandwidth.Stop() : 0.0;
         var observedTestPeriod = (actualCompletionTime ?? stopwatch.Elapsed) - warmupPeriod;
 
         return (numCompletedInferenceTasks, observedTestPeriod, bandwidth);
+
+        TimeSpan Max(TimeSpan a, TimeSpan b) => a > b ? a : b;
+    }
+}
+
+public static class DBNetBenchmarkHelper
+{
+    public static List<(float[] Data, int[] Shape)> GenerateInput(int width, int height, Density density)
+    {
+        var image = InputGenerator.GenerateInput(width, height, density);
+        var detector = new TextDetector(new DummyModelRunner());
+        return detector.Preprocess(image, new VizBuilder());
+    }
+}
+
+public static class SVTRv2BenchmarkHelper
+{
+    public static List<(float[] Data, int[] Shape)> GenerateInput()
+    {
+        using var image = InputGenerator.GenerateInput(640, 640, Density.Low);
+
+        var bbox = BoundingBox.Create(new Polygon
+        {
+            Points = new List<Point> { (100, 100), (200, 100), (200, 150), (100, 150) }.ToImmutableList()
+        })!;
+
+        var recognizer = new TextRecognizer(new DummyModelRunner());
+        return recognizer.Preprocess([bbox, bbox, bbox, bbox], image);
     }
 }
