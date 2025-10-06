@@ -4,6 +4,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using BenchmarkDotNet.Analysers;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
@@ -45,19 +46,25 @@ public class Program
         dbnetScenarioOption.AddAlias("-d");
         inferenceCommand.AddOption(dbnetScenarioOption);
 
-        var threadsOption = new Option<int>("--threads", description: "Number of threads to use", getDefaultValue: () => 1);
+        var threadsOption = new Option<string>("--threads", description: "Number of threads to use", getDefaultValue: () => "1");
         inferenceCommand.AddOption(threadsOption);
 
-        var intraOpThreadsOption = new Option<int>("--intra-op-threads", description: "Number of intra-op threads to use", getDefaultValue: () => 1);
+        var intraOpThreadsOption = new Option<string>("--intra-op-threads", description: "Number of intra-op threads to use", getDefaultValue: () => "1");
         inferenceCommand.AddOption(intraOpThreadsOption);
 
         var quantizationOption = new Option<string>("--quantization", description: "Quantization mode (fp32 or int8)", getDefaultValue: () => "fp32");
         quantizationOption.AddAlias("-q");
         inferenceCommand.AddOption(quantizationOption);
 
-        inferenceCommand.SetHandler(async (dbnet, threads, intraOpThreads, quantizationStr) =>
+        var testPeriodOption = new Option<int>("--test-period", description: "Test period in seconds", getDefaultValue: () => 10);
+        inferenceCommand.AddOption(testPeriodOption);
+
+        inferenceCommand.SetHandler(async (dbnet, threads, intraOpThreads, quantizationStr, testPeriod) =>
         {
             if (!dbnet) throw new ArgumentException("The only supported scenario is dbnet");
+
+            if (threads != "1" && intraOpThreads != "1")
+                throw new ArgumentException("Cannot specify both --threads and --intra-op-threads");
 
             var quantization = quantizationStr.ToLower() switch
             {
@@ -66,12 +73,54 @@ public class Program
                 _ => throw new InvalidOperationException($"Invalid quantization value: {quantizationStr}. Must be 'fp32' or 'int8'.")
             };
 
+            IEnumerable<(int Threads, int IntraOpThreads)> GetThreads()
+            {
+                (int start, int end) ParseSpec(string spec)
+                {
+                    if (int.TryParse(spec, out var value))
+                    {
+                        ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
+                        return (value, value);
+                    }
+
+                    var match = Regex.Match(spec, @"^(\d+)\.\.(\d+)$");
+                    if (!match.Success)
+                        throw new ArgumentException($"Invalid value: '{spec}'. Expected a number or a range like '2..4'.");
+
+                    var start = int.Parse(match.Groups[1].Value);
+                    var end = int.Parse(match.Groups[2].Value);
+
+                    ArgumentOutOfRangeException.ThrowIfLessThan(start, 1);
+                    ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
+
+                    return (start, end);
+                }
+
+                var (threadStart, threadEnd) = ParseSpec(threads);
+                var (intraStart, intraEnd) = ParseSpec(intraOpThreads);
+
+                for (int t = threadStart; t <= threadEnd; t++)
+                {
+                    for (int i = intraStart; i <= intraEnd; i++)
+                    {
+                        yield return (t, i);
+                    }
+                }
+            }
+
             var input = InputGenerator.GenerateInput(640, 640, Density.Low);  // Density doesn't affect performance
 
-            var benchmark = new DBNetBenchmark(threads, intraOpThreads, quantization);
-
-            await benchmark.RunBenchmark(input);
-        }, dbnetScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption);
+            foreach (var (t, i) in GetThreads())
+            {
+                var benchmark = new DBNetBenchmark(t, i, quantization, testPeriod);
+                Console.WriteLine($"Num threads: {t}, IntraOp threads: {i}, Quantization: {quantization}");
+                var counter = new SimpleTimeCounter($"DBNet benchmark (threads={t}, intra op threads={i})");
+                counter.OnStartBuildStage([]);
+                var (completed, time) = await benchmark.RunBenchmark(input);
+                counter.OnEndRunStage();
+                Console.WriteLine($"Throughput: {completed / time.TotalSeconds:N2} tiles/sec");
+            }
+        }, dbnetScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption);
 
         return inferenceCommand;
     }
