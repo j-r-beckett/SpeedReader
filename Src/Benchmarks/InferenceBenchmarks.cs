@@ -36,10 +36,7 @@ public class InferenceBenchmark
         _testPeriodSeconds = testPeriodSeconds;
     }
 
-    public void Cleanup()
-    {
-        _session.Dispose();
-    }
+    public void Cleanup() => _session.Dispose();
 
     public async Task<(int, TimeSpan, double)> RunBenchmark(List<(float[] Data, int[] Shape)> modelInputs)
     {
@@ -68,7 +65,8 @@ public class InferenceBenchmark
             var inferenceTask = await _modelRunner.Run(input.Data, input.Shape);
             var continueWith = inferenceTask.ContinueWith(t =>
             {
-                if (t.IsFaulted) throw t.Exception;
+                if (t.IsFaulted)
+                    throw t.Exception;
                 Interlocked.Decrement(ref numPendingInferenceTasks);
                 if (stopwatch.Elapsed > warmupPeriod)
                 {
@@ -81,14 +79,15 @@ public class InferenceBenchmark
 
         inferenceTasks.Writer.Complete();
 
-        await foreach (var t in inferenceTasks.Reader.ReadAllAsync()) await t;
+        await foreach (var t in inferenceTasks.Reader.ReadAllAsync())
+            await t;
 
         var bandwidth = perfStarted ? perfBandwidth.Stop() : 0.0;
         var observedTestPeriod = (actualCompletionTime ?? stopwatch.Elapsed) - warmupPeriod;
 
         return (numCompletedInferenceTasks, observedTestPeriod, bandwidth);
 
-        TimeSpan Max(TimeSpan a, TimeSpan b) => a > b ? a : b;
+        static TimeSpan Max(TimeSpan a, TimeSpan b) => a > b ? a : b;
     }
 }
 

@@ -65,7 +65,8 @@ public class Program
 
         inferenceCommand.SetHandler(async (dbnet, svtr, threads, intraOpThreads, quantizationStr, testPeriod, totalThreads) =>
         {
-            if (dbnet == svtr) throw new ArgumentException("Specify exactly one of --dbnet or --svtr");
+            if (dbnet == svtr)
+                throw new ArgumentException("Specify exactly one of --dbnet or --svtr");
 
             if (totalThreads.HasValue)
             {
@@ -303,7 +304,8 @@ public class Program
 
         systemCommand.SetHandler((bw, cores, testPeriod) =>
         {
-            if (!bw) throw new ArgumentException("The only supported benchmark is --bw");
+            if (!bw)
+                throw new ArgumentException("The only supported benchmark is --bw");
 
             Console.WriteLine("System Memory Bandwidth Benchmark");
             Console.WriteLine($"Cores: {cores}");
