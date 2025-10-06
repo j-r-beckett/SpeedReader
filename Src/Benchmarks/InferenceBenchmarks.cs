@@ -32,49 +32,42 @@ public class DBNetBenchmark
     {
         var modelInput = _detector.Preprocess(input, new VizBuilder());
 
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var inferenceTasks = Channel.CreateUnbounded<Task>();
+        int numPendingInferenceTasks = 0;
+        int numCompletedInferenceTasks = 0;
 
-        var pendingJobs = Channel.CreateUnbounded<Task<(float[], int[])>>();
+        var warmupPeriod = TimeSpan.FromSeconds(2);
+        var testPeriod = TimeSpan.FromSeconds(10);
 
-        var jobStarter = Task.Run(async () =>
+        var stopwatch = Stopwatch.StartNew();
+
+        for (int i = 0; stopwatch.Elapsed < testPeriod + warmupPeriod; i++)
         {
-            for (int i = 0; !cts.Token.IsCancellationRequested; i++)
+            Interlocked.Increment(ref numPendingInferenceTasks);
+            var inferenceTask = await _modelRunner.Run(modelInput[i % modelInput.Count].Data, modelInput[i % modelInput.Count].Shape);
+            var continueWith = inferenceTask.ContinueWith(t =>
             {
-                var job = await _modelRunner.Run(modelInput[i % modelInput.Count].Data, modelInput[i % modelInput.Count].Shape);
-                await pendingJobs.Writer.WriteAsync(job);
-            }
-            pendingJobs.Writer.Complete();
-        });
-
-        var currentSecond = 0L;
-        var jobsInCurrentSecond = 0;
-
-        var jobConsumer = Task.Run(async () =>
-        {
-            await foreach (var job in pendingJobs.Reader.ReadAllAsync())
-            {
-                var inferenceResult = await job;
-
-                var now = Stopwatch.GetTimestamp();
-                var second = now / Stopwatch.Frequency;
-
-                if (second != currentSecond)
+                if (t.IsFaulted) throw t.Exception;
+                Interlocked.Decrement(ref numPendingInferenceTasks);
+                if (stopwatch.Elapsed > warmupPeriod)
                 {
-                    if (currentSecond != 0)
+                    Interlocked.Increment(ref numCompletedInferenceTasks);
+                    if (numPendingInferenceTasks == 0 && stopwatch.Elapsed < testPeriod + warmupPeriod)
                     {
-                        Console.WriteLine($"{jobsInCurrentSecond:F2} tiles/sec");
+                        stopwatch.Stop();
                     }
-                    currentSecond = second;
-                    jobsInCurrentSecond = 1;
                 }
-                else
-                {
-                    jobsInCurrentSecond++;
-                }
-            }
-        });
+            });
+            inferenceTasks.Writer.TryWrite(continueWith);
+        }
 
-        await jobStarter;
-        await jobConsumer;
+        inferenceTasks.Writer.Complete();
+
+        // Make sure we didn't throw any exceptions
+        await foreach (var t in inferenceTasks.Reader.ReadAllAsync()) await t;
+
+        var observedTestPeriod = stopwatch.Elapsed - warmupPeriod;
+
+        Console.WriteLine($"Completed {numCompletedInferenceTasks} inference tasks in {observedTestPeriod.TotalSeconds:F2} sec");
     }
 }
