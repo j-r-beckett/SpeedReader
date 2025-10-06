@@ -30,7 +30,7 @@ public class DBNetBenchmark
         _testPeriodSeconds = testPeriodSeconds;
     }
 
-    public async Task<(int, TimeSpan)> RunBenchmark(Image<Rgb24> input)
+    public async Task<(int, TimeSpan, double)> RunBenchmark(Image<Rgb24> input)
     {
         var modelInput = _detector.Preprocess(input, new VizBuilder());
 
@@ -42,9 +42,18 @@ public class DBNetBenchmark
         var testPeriod = TimeSpan.FromSeconds(_testPeriodSeconds);
 
         var stopwatch = Stopwatch.StartNew();
+        TimeSpan? actualCompletionTime = null;
+        using var perfBandwidth = new PerfMemoryBandwidth();
+        bool perfStarted = false;
 
         for (int i = 0; stopwatch.Elapsed < testPeriod + warmupPeriod; i++)
         {
+            if (!perfStarted && stopwatch.Elapsed > warmupPeriod)
+            {
+                perfBandwidth.Start();
+                perfStarted = true;
+            }
+
             Interlocked.Increment(ref numPendingInferenceTasks);
             var inferenceTask = await _modelRunner.Run(modelInput[i % modelInput.Count].Data, modelInput[i % modelInput.Count].Shape);
             var continueWith = inferenceTask.ContinueWith(t =>
@@ -54,9 +63,9 @@ public class DBNetBenchmark
                 if (stopwatch.Elapsed > warmupPeriod)
                 {
                     Interlocked.Increment(ref numCompletedInferenceTasks);
-                    if (numPendingInferenceTasks == 0 && stopwatch.Elapsed < testPeriod + warmupPeriod)
+                    if (numPendingInferenceTasks == 0 && actualCompletionTime == null)
                     {
-                        stopwatch.Stop();
+                        actualCompletionTime = stopwatch.Elapsed;
                     }
                 }
             });
@@ -68,8 +77,9 @@ public class DBNetBenchmark
         // Make sure we didn't throw any exceptions
         await foreach (var t in inferenceTasks.Reader.ReadAllAsync()) await t;
 
-        var observedTestPeriod = stopwatch.Elapsed - warmupPeriod;
+        var bandwidth = perfStarted ? perfBandwidth.Stop() : 0.0;
+        var observedTestPeriod = (actualCompletionTime ?? stopwatch.Elapsed) - warmupPeriod;
 
-        return (numCompletedInferenceTasks, observedTestPeriod);
+        return (numCompletedInferenceTasks, observedTestPeriod, bandwidth);
     }
 }
