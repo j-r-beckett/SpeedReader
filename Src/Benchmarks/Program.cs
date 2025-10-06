@@ -45,35 +45,19 @@ public class Program
         dbnetScenarioOption.AddAlias("-d");
         inferenceCommand.AddOption(dbnetScenarioOption);
 
-        var tileOption = new Option<bool>("--tile", description: "Use 640x640 input size");
-        inferenceCommand.AddOption(tileOption);
-
-        var fullOption = new Option<bool>("--full", description: "Use 1920x1080 input size");
-        inferenceCommand.AddOption(fullOption);
-
-        var densityOption = new Option<string>("--density", description: "Text density (low or high)", getDefaultValue: () => "high");
-        inferenceCommand.AddOption(densityOption);
-
         var threadsOption = new Option<int>("--threads", description: "Number of threads to use", getDefaultValue: () => 1);
         inferenceCommand.AddOption(threadsOption);
+
+        var intraOpThreadsOption = new Option<int>("--intra-op-threads", description: "Number of intra-op threads to use", getDefaultValue: () => 1);
+        inferenceCommand.AddOption(intraOpThreadsOption);
 
         var quantizationOption = new Option<string>("--quantization", description: "Quantization mode (fp32 or int8)", getDefaultValue: () => "fp32");
         quantizationOption.AddAlias("-q");
         inferenceCommand.AddOption(quantizationOption);
 
-        inferenceCommand.SetHandler(async (dbnet, tile, full, densityStr, threads, quantizationStr) =>
+        inferenceCommand.SetHandler(async (dbnet, threads, intraOpThreads, quantizationStr) =>
         {
             if (!dbnet) throw new ArgumentException("The only supported scenario is dbnet");
-
-            if (tile && full)
-                throw new InvalidOperationException("Cannot specify both --tile and --full");
-
-            var density = densityStr.ToLower() switch
-            {
-                "low" => Density.Low,
-                "high" => Density.High,
-                _ => throw new InvalidOperationException($"Invalid density value: {densityStr}. Must be 'low' or 'high'.")
-            };
 
             var quantization = quantizationStr.ToLower() switch
             {
@@ -82,12 +66,12 @@ public class Program
                 _ => throw new InvalidOperationException($"Invalid quantization value: {quantizationStr}. Must be 'fp32' or 'int8'.")
             };
 
-            var input = InputGenerator.GenerateInput(tile ? 1920 : 640, tile ? 1080 : 640, density);
+            var input = InputGenerator.GenerateInput(640, 640, Density.Low);  // Density doesn't affect performance
 
-            var benchmark = new DBNetBenchmark(threads, 1, quantization);
+            var benchmark = new DBNetBenchmark(threads, intraOpThreads, quantization);
 
             await benchmark.RunBenchmark(input);
-        }, dbnetScenarioOption, tileOption, fullOption, densityOption, threadsOption, quantizationOption);
+        }, dbnetScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption);
 
         return inferenceCommand;
     }
