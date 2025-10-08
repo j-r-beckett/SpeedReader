@@ -178,7 +178,7 @@ def _(alt, df, mo, pl):
     """)
 
     mo.vstack([logistic_chart, logistic_summary])
-    return L_fit, k_fit, np, threads_smooth, x0_fit
+    return L_fit, curve_fit, k_fit, np, threads_smooth, x0_fit
 
 
 @app.cell
@@ -285,6 +285,121 @@ def _(L_fit, alt, df, k_fit, mo, np, pl, threads_smooth, x0_fit):
     """)
 
     mo.vstack([derivative_viz, derivative_summary])
+    return
+
+
+@app.cell
+def _(mo):
+    # Create slider to select number of data points
+    n_points_slider = mo.ui.slider(3, 12, value=12, label="Number of data points to fit", step=1)
+    n_points_slider
+    return (n_points_slider,)
+
+
+@app.cell
+def _(L_fit, alt, curve_fit, df, k_fit, mo, n_points_slider, np, pl, x0_fit):
+    # Subset data and fit logistic model
+    subset_df = df.head(n_points_slider.value)
+
+    threads_subset = subset_df['Threads'].to_numpy()
+    bandwidth_subset = subset_df['Memory Bandwidth (GB/s)'].to_numpy()
+
+    # Define logistic function (needed in this cell)
+    def _log_func_local(x, L, k, x0):
+        return L / (1 + np.exp(-k * (x - x0)))
+
+    # Fit logistic model to subset
+    try:
+        popt_subset, _ = curve_fit(_log_func_local, threads_subset, bandwidth_subset, p0=[35, 1, 5], maxfev=10000)
+        L_sub, k_sub, x0_sub = popt_subset
+    
+        # Generate predictions
+        threads_full = np.linspace(1, 12, 100)
+        bandwidth_pred_subset = _log_func_local(threads_full, L_sub, k_sub, x0_sub)
+    
+        # Calculate R² on subset
+        residuals_sub = bandwidth_subset - _log_func_local(threads_subset, L_sub, k_sub, x0_sub)
+        ss_res_sub = np.sum(residuals_sub**2)
+        ss_tot_sub = np.sum((bandwidth_subset - np.mean(bandwidth_subset))**2)
+        r_squared_sub = 1 - (ss_res_sub / ss_tot_sub)
+    
+        # Create visualization with full data for context
+        full_data = alt.Chart(df).mark_circle(size=80, color='lightgray', opacity=0.5).encode(
+            x=alt.X('Threads:Q', title='Number of Threads'),
+            y=alt.Y('Memory Bandwidth (GB/s):Q', scale=alt.Scale(domain=[0, 35])),
+            tooltip=['Threads', 'Memory Bandwidth (GB/s)']
+        )
+    
+        subset_data = alt.Chart(subset_df).mark_circle(size=100, color='steelblue').encode(
+            x='Threads:Q',
+            y='Memory Bandwidth (GB/s):Q',
+            tooltip=['Threads', 'Memory Bandwidth (GB/s)']
+        )
+    
+        pred_df_subset = pl.DataFrame({
+            'Threads': threads_full.tolist(),
+            'Predicted Bandwidth': bandwidth_pred_subset.tolist()
+        })
+    
+        fitted_curve = alt.Chart(pred_df_subset).mark_line(color='orange', strokeWidth=3).encode(
+            x='Threads:Q',
+            y=alt.Y('Predicted Bandwidth:Q', title='Memory Bandwidth (GB/s)'),
+            tooltip=['Threads', 'Predicted Bandwidth']
+        )
+    
+        # Original full-data fit for comparison
+        bandwidth_pred_full = _log_func_local(threads_full, L_fit, k_fit, x0_fit)
+        original_fit = alt.Chart(pl.DataFrame({
+            'Threads': threads_full.tolist(),
+            'Original Fit': bandwidth_pred_full.tolist()
+        })).mark_line(color='green', strokeWidth=2, strokeDash=[5,5], opacity=0.7).encode(
+            x='Threads:Q',
+            y=alt.Y('Original Fit:Q', title='Memory Bandwidth (GB/s)'),
+            tooltip=['Threads', 'Original Fit']
+        )
+    
+        subset_chart = (full_data + subset_data + fitted_curve + original_fit).properties(
+            width=700,
+            height=400,
+            title=f'Logistic Fit Using First {n_points_slider.value} Data Points'
+        )
+    
+        summary = mo.md(f"""
+        ## Logistic Fit with {n_points_slider.value} Data Points
+    
+        **Model Parameters:**
+        - **L (Max capacity):** {L_sub:.3f} GB/s (original: {L_fit:.3f})
+        - **k (Growth rate):** {k_sub:.3f} (original: {k_fit:.3f})
+        - **x₀ (Midpoint):** {x0_sub:.3f} threads (original: {x0_fit:.3f})
+    
+        **Model Performance:**
+        - **R² score:** {r_squared_sub:.4f}
+    
+        **Visualization:**
+        - **Gray circles:** All 12 data points (for reference)
+        - **Blue circles:** Data points used for fitting
+        - **Orange line:** Fit from subset of data
+        - **Dashed green line:** Original fit from all 12 points
+    
+        **Observations:**
+        - As more data points are added, the fit becomes more stable
+        - Early points may underestimate the maximum capacity (L)
+        - The growth rate (k) and midpoint (x₀) converge as we add more data
+        """)
+    
+        result = mo.vstack([n_points_slider, subset_chart, summary])
+    
+    except Exception as e:
+        error_message = mo.md(f"""
+        ### Unable to fit model with {n_points_slider.value} points
+    
+        Error: {str(e)}
+    
+        **Note:** Logistic regression requires at least 3 data points and may fail with very few points due to insufficient information to estimate all three parameters (L, k, x₀).
+        """)
+        result = mo.vstack([n_points_slider, error_message])
+
+    result
     return
 
 
