@@ -17,12 +17,15 @@ namespace Experimental;
 public class TextDetector
 {
     private readonly ModelRunner _modelRunner;
+    private readonly int TileHeight;
+    private readonly int TileWidth;
 
-    public TextDetector(ModelRunner modelRunner) => _modelRunner = modelRunner;
-
-    // We pass tiles into the model, so (TileHeight, TileWidth) == (ModelHeight, ModelWidth)
-    private const int TileHeight = 640;
-    private const int TileWidth = 640;
+    public TextDetector(ModelRunner modelRunner, int tileWidth = 640, int tileHeight = 640)
+    {
+        _modelRunner = modelRunner;
+        TileWidth = tileWidth;
+        TileHeight = tileHeight;
+    }
 
     private const double OverlapMultiplier = 0.05;
 

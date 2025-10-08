@@ -17,17 +17,23 @@ namespace Experimental;
 public class TextRecognizer
 {
     private readonly ModelRunner _modelRunner;
+    private readonly int _inputWidth;
+    private readonly int _inputHeight;
 
-    public TextRecognizer(ModelRunner modelRunner) => _modelRunner = modelRunner;
+    public TextRecognizer(ModelRunner modelRunner, int inputWidth = 160, int inputHeight = 48)
+    {
+        _modelRunner = modelRunner;
+        _inputWidth = inputWidth;
+        _inputHeight = inputHeight;
+    }
 
     public List<(float[], int[])> Preprocess(List<BoundingBox> regions, Image<Rgb24> image)
     {
         var result = new List<(float[], int[])>();
         foreach (var region in regions)
         {
-            var (modelInputHeight, modelInputWidth) = (48, 160);
-            var modelInput = PreprocessRegion(region, image, modelInputHeight, modelInputWidth);
-            result.Add((modelInput, [3, modelInputHeight, modelInputWidth]));
+            var modelInput = PreprocessRegion(region, image, _inputHeight, _inputWidth);
+            result.Add((modelInput, [3, _inputHeight, _inputWidth]));
         }
 
         return result;

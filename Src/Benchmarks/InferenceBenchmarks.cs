@@ -93,17 +93,17 @@ public class InferenceBenchmark
 
 public static class DBNetBenchmarkHelper
 {
-    public static List<(float[] Data, int[] Shape)> GenerateInput(int width, int height, Density density)
+    public static List<(float[] Data, int[] Shape)> GenerateInput(int tileWidth, int tileHeight, Density density)
     {
-        var image = InputGenerator.GenerateInput(width, height, density);
-        var detector = new TextDetector(new DummyModelRunner());
+        var image = InputGenerator.GenerateInput(tileWidth, tileHeight, density);
+        var detector = new TextDetector(new DummyModelRunner(), tileWidth, tileHeight);
         return detector.Preprocess(image, new VizBuilder());
     }
 }
 
 public static class SVTRv2BenchmarkHelper
 {
-    public static List<(float[] Data, int[] Shape)> GenerateInput()
+    public static List<(float[] Data, int[] Shape)> GenerateInput(int inputWidth, int inputHeight)
     {
         using var image = InputGenerator.GenerateInput(640, 640, Density.Low);
 
@@ -112,7 +112,7 @@ public static class SVTRv2BenchmarkHelper
             Points = new List<Point> { (100, 100), (200, 100), (200, 150), (100, 150) }.ToImmutableList()
         })!;
 
-        var recognizer = new TextRecognizer(new DummyModelRunner());
+        var recognizer = new TextRecognizer(new DummyModelRunner(), inputWidth, inputHeight);
         return recognizer.Preprocess([bbox, bbox, bbox, bbox], image);
     }
 }
