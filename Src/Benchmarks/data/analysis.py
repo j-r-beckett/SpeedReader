@@ -312,41 +312,41 @@ def _(L_fit, alt, curve_fit, df, k_fit, mo, n_points_slider, np, pl, x0_fit):
     try:
         popt_subset, _ = curve_fit(_log_func_local, threads_subset, bandwidth_subset, p0=[35, 1, 5], maxfev=10000)
         L_sub, k_sub, x0_sub = popt_subset
-    
+
         # Generate predictions
         threads_full = np.linspace(1, 12, 100)
         bandwidth_pred_subset = _log_func_local(threads_full, L_sub, k_sub, x0_sub)
-    
+
         # Calculate R² on subset
         residuals_sub = bandwidth_subset - _log_func_local(threads_subset, L_sub, k_sub, x0_sub)
         ss_res_sub = np.sum(residuals_sub**2)
         ss_tot_sub = np.sum((bandwidth_subset - np.mean(bandwidth_subset))**2)
         r_squared_sub = 1 - (ss_res_sub / ss_tot_sub)
-    
+
         # Create visualization with full data for context
         full_data = alt.Chart(df).mark_circle(size=80, color='lightgray', opacity=0.5).encode(
             x=alt.X('Threads:Q', title='Number of Threads'),
             y=alt.Y('Memory Bandwidth (GB/s):Q', scale=alt.Scale(domain=[0, 35])),
             tooltip=['Threads', 'Memory Bandwidth (GB/s)']
         )
-    
+
         subset_data = alt.Chart(subset_df).mark_circle(size=100, color='steelblue').encode(
             x='Threads:Q',
             y='Memory Bandwidth (GB/s):Q',
             tooltip=['Threads', 'Memory Bandwidth (GB/s)']
         )
-    
+
         pred_df_subset = pl.DataFrame({
             'Threads': threads_full.tolist(),
             'Predicted Bandwidth': bandwidth_pred_subset.tolist()
         })
-    
+
         fitted_curve = alt.Chart(pred_df_subset).mark_line(color='orange', strokeWidth=3).encode(
             x='Threads:Q',
             y=alt.Y('Predicted Bandwidth:Q', title='Memory Bandwidth (GB/s)'),
             tooltip=['Threads', 'Predicted Bandwidth']
         )
-    
+
         # Original full-data fit for comparison
         bandwidth_pred_full = _log_func_local(threads_full, L_fit, k_fit, x0_fit)
         original_fit = alt.Chart(pl.DataFrame({
@@ -357,49 +357,187 @@ def _(L_fit, alt, curve_fit, df, k_fit, mo, n_points_slider, np, pl, x0_fit):
             y=alt.Y('Original Fit:Q', title='Memory Bandwidth (GB/s)'),
             tooltip=['Threads', 'Original Fit']
         )
-    
+
         subset_chart = (full_data + subset_data + fitted_curve + original_fit).properties(
             width=700,
             height=400,
             title=f'Logistic Fit Using First {n_points_slider.value} Data Points'
         )
-    
+
         summary = mo.md(f"""
         ## Logistic Fit with {n_points_slider.value} Data Points
-    
+
         **Model Parameters:**
         - **L (Max capacity):** {L_sub:.3f} GB/s (original: {L_fit:.3f})
         - **k (Growth rate):** {k_sub:.3f} (original: {k_fit:.3f})
         - **x₀ (Midpoint):** {x0_sub:.3f} threads (original: {x0_fit:.3f})
-    
+
         **Model Performance:**
         - **R² score:** {r_squared_sub:.4f}
-    
+
         **Visualization:**
         - **Gray circles:** All 12 data points (for reference)
         - **Blue circles:** Data points used for fitting
         - **Orange line:** Fit from subset of data
         - **Dashed green line:** Original fit from all 12 points
-    
+
         **Observations:**
         - As more data points are added, the fit becomes more stable
         - Early points may underestimate the maximum capacity (L)
         - The growth rate (k) and midpoint (x₀) converge as we add more data
         """)
-    
+
         result = mo.vstack([n_points_slider, subset_chart, summary])
-    
+
     except Exception as e:
         error_message = mo.md(f"""
         ### Unable to fit model with {n_points_slider.value} points
-    
+
         Error: {str(e)}
-    
+
         **Note:** Logistic regression requires at least 3 data points and may fail with very few points due to insufficient information to estimate all three parameters (L, k, x₀).
         """)
         result = mo.vstack([n_points_slider, error_message])
 
     result
+    return
+
+
+@app.cell
+def _(mo):
+    # Create slider to select number of points for RMSE analysis
+    n_points_rmse_slider = mo.ui.slider(3, 12, value=12, label="Number of data points for RMSE analysis", step=1)
+    n_points_rmse_slider
+    return (n_points_rmse_slider,)
+
+
+@app.cell
+def _(alt, curve_fit, df, mo, n_points_rmse_slider, np, pl):
+    def _():
+        # Calculate RMSE between analytical and approximate derivatives
+        subset_df_rmse = df.head(n_points_rmse_slider.value)
+        threads_rmse = subset_df_rmse['Threads'].to_numpy()
+        bandwidth_rmse = subset_df_rmse['Memory Bandwidth (GB/s)'].to_numpy()
+
+        # Define functions needed for this cell
+        def _log_func_rmse(x, L, k, x0):
+            return L / (1 + np.exp(-k * (x - x0)))
+
+        def _logistic_derivative_rmse(x, L, k, x0):
+            exp_term = np.exp(-k * (x - x0))
+            return L * k * exp_term / (1 + exp_term)**2
+
+        try:
+            # Fit logistic model to subset
+            popt_rmse, _ = curve_fit(_log_func_rmse, threads_rmse, bandwidth_rmse, p0=[35, 1, 5], maxfev=10000)
+            L_rmse, k_rmse, x0_rmse = popt_rmse
+        
+            # Calculate analytical derivative at observed points
+            analytical_deriv = _logistic_derivative_rmse(threads_rmse, L_rmse, k_rmse, x0_rmse)
+        
+            # Calculate approximate derivative using finite differences
+            approx_deriv_rmse = np.zeros(len(threads_rmse))
+            for i in range(len(threads_rmse)):
+                if i == 0:
+                    approx_deriv_rmse[i] = (bandwidth_rmse[i+1] - bandwidth_rmse[i]) / (threads_rmse[i+1] - threads_rmse[i])
+                elif i == len(threads_rmse) - 1:
+                    approx_deriv_rmse[i] = (bandwidth_rmse[i] - bandwidth_rmse[i-1]) / (threads_rmse[i] - threads_rmse[i-1])
+                else:
+                    approx_deriv_rmse[i] = (bandwidth_rmse[i+1] - bandwidth_rmse[i-1]) / (threads_rmse[i+1] - threads_rmse[i-1])
+        
+            # Calculate RMSE
+            rmse = np.sqrt(np.mean((analytical_deriv - approx_deriv_rmse)**2))
+        
+            # Create comparison dataframe
+            comparison_df = pl.DataFrame({
+                'Threads': threads_rmse.tolist(),
+                'Analytical': analytical_deriv.tolist(),
+                'Approximate': approx_deriv_rmse.tolist(),
+                'Error': (analytical_deriv - approx_deriv_rmse).tolist()
+            })
+        
+            # Visualize analytical vs approximate
+            analytical_chart = alt.Chart(comparison_df).mark_line(color='green', strokeWidth=2).encode(
+                x=alt.X('Threads:Q', title='Number of Threads'),
+                y=alt.Y('Analytical:Q', title='Derivative (GB/s per thread)', scale=alt.Scale(domain=[0, None])),
+                tooltip=['Threads', alt.Tooltip('Analytical:Q', format='.3f')]
+            )
+        
+            analytical_points = alt.Chart(comparison_df).mark_circle(color='green', size=100).encode(
+                x='Threads:Q',
+                y='Analytical:Q',
+                tooltip=['Threads', alt.Tooltip('Analytical:Q', format='.3f')]
+            )
+        
+            approximate_chart = alt.Chart(comparison_df).mark_line(color='purple', strokeWidth=2, strokeDash=[5,5]).encode(
+                x='Threads:Q',
+                y=alt.Y('Approximate:Q', title='Derivative (GB/s per thread)'),
+                tooltip=['Threads', alt.Tooltip('Approximate:Q', format='.3f')]
+            )
+        
+            approximate_points = alt.Chart(comparison_df).mark_circle(color='purple', size=100).encode(
+                x='Threads:Q',
+                y='Approximate:Q',
+                tooltip=['Threads', alt.Tooltip('Approximate:Q', format='.3f')]
+            )
+        
+            derivative_comparison = (analytical_chart + analytical_points + approximate_chart + approximate_points).properties(
+                width=700,
+                height=300,
+                title=f'Derivative Comparison ({n_points_rmse_slider.value} points)'
+            )
+        
+            # Visualize error
+            error_chart = alt.Chart(comparison_df).mark_bar(color='coral').encode(
+                x=alt.X('Threads:Q', title='Number of Threads'),
+                y=alt.Y('Error:Q', title='Error (Analytical - Approximate)'),
+                tooltip=['Threads', alt.Tooltip('Error:Q', format='.4f')]
+            ).properties(
+                width=700,
+                height=200,
+                title='Point-wise Error'
+            )
+        
+            # Add zero line
+            zero_line = alt.Chart(pl.DataFrame({'y': [0]})).mark_rule(color='black', strokeWidth=1).encode(y='y:Q')
+            error_with_zero = error_chart + zero_line
+        
+            # Summary
+            rmse_summary = mo.md(f"""
+            ## RMSE Analysis: Analytical vs Approximate Derivative
+        
+            **Using first {n_points_rmse_slider.value} data points**
+        
+            **RMSE:** {rmse:.4f} GB/s per thread
+        
+            **Model Parameters (from subset):**
+            - **L:** {L_rmse:.3f} GB/s
+            - **k:** {k_rmse:.3f}
+            - **x₀:** {x0_rmse:.3f} threads
+        
+            **Interpretation:**
+            - **Green:** Analytical derivative from fitted logistic model
+            - **Purple:** Approximate derivative from finite differences
+            - Lower RMSE indicates better agreement between analytical and numerical methods
+            - RMSE tends to decrease as more data points are used (better model fit)
+            - Errors are typically larger at endpoints due to forward/backward difference approximations
+            """)
+        
+            result_rmse = mo.vstack([derivative_comparison, error_with_zero, rmse_summary])
+        
+        except Exception as e:
+            error_msg = mo.md(f"""
+            ### Unable to compute RMSE with {n_points_rmse_slider.value} points
+        
+            Error: {str(e)}
+        
+            Requires at least 3 data points to fit logistic model.
+            """)
+            result_rmse = error_msg
+        return result_rmse
+
+
+    _()
     return
 
 

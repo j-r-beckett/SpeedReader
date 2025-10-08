@@ -63,7 +63,10 @@ public class Program
         var totalThreadsOption = new Option<int?>("--total-threads", description: "Total threads (runs all combinations where threads * intra-op-threads = total-threads)", getDefaultValue: () => null);
         inferenceCommand.AddOption(totalThreadsOption);
 
-        inferenceCommand.SetHandler(async (dbnet, svtr, threads, intraOpThreads, quantizationStr, testPeriod, totalThreads) =>
+        var inputSizeOption = new Option<string?>("--input-size", description: "Input size(s) as WIDTHxHEIGHT, comma-separated for multiple (e.g., 640x640,1280x720)", getDefaultValue: () => null);
+        inferenceCommand.AddOption(inputSizeOption);
+
+        inferenceCommand.SetHandler(async (dbnet, svtr, threads, intraOpThreads, quantizationStr, testPeriod, totalThreads, inputSize) =>
         {
             if (dbnet == svtr)
                 throw new ArgumentException("Specify exactly one of --dbnet or --svtr");
@@ -137,13 +140,32 @@ public class Program
 
             var model = dbnet ? Model.DbNet18 : Model.SVTRv2;
             var modelName = dbnet ? "DBNet" : "SVTRv2";
-            var modelInputs = dbnet
-                ? DBNetBenchmarkHelper.GenerateInput(640, 640, Density.Low)
-                : SVTRv2BenchmarkHelper.GenerateInput();
+
+            List<(int Width, int Height)> ParseInputSizes(string? sizeSpec)
+            {
+                if (sizeSpec == null)
+                    return [(dbnet ? 640 : 160, dbnet ? 640 : 48)];
+
+                var sizes = new List<(int, int)>();
+                foreach (var size in sizeSpec.Split(','))
+                {
+                    var match = Regex.Match(size.Trim(), @"^(\d+)x(\d+)$");
+                    if (!match.Success)
+                        throw new ArgumentException($"Invalid input size: '{size}'. Expected format: WIDTHxHEIGHT (e.g., 640x640).");
+
+                    var width = int.Parse(match.Groups[1].Value);
+                    var height = int.Parse(match.Groups[2].Value);
+                    sizes.Add((width, height));
+                }
+                return sizes;
+            }
+
+            var inputSizes = ParseInputSizes(inputSize);
 
             // Print benchmark configuration
             Console.WriteLine($"{modelName} Inference Benchmark");
             Console.WriteLine($"Quantization: {quantization}");
+            Console.WriteLine($"Input sizes: {string.Join(", ", inputSizes.Select(s => $"{s.Width}x{s.Height}"))}");
             Console.WriteLine($"Test period: {testPeriod}s");
             if (totalThreads.HasValue)
             {
@@ -156,31 +178,53 @@ public class Program
             }
             Console.WriteLine();
 
-            var results = new List<(int threads, int intraOpThreads, double throughput, double bandwidth)>();
+            var results = new List<(int width, int height, int threads, int intraOpThreads, double throughput, double bandwidth)>();
 
-            foreach (var (t, i) in GetThreads())
+            foreach (var (width, height) in inputSizes)
             {
-                var benchmark = new InferenceBenchmark(model, t, i, quantization, testPeriod);
-                var counter = new SimpleTimeCounter($"(threads={t}, intra op threads={i})");
-                counter.OnStartBuildStage([]);
-                var (completed, time, bandwidth) = await benchmark.RunBenchmark(modelInputs);
-                counter.OnEndRunStage();
+                var modelInputs = dbnet
+                    ? DBNetBenchmarkHelper.GenerateInput(width, height, Density.Low)
+                    : SVTRv2BenchmarkHelper.GenerateInput(width, height);
 
-                var throughput = completed / time.TotalSeconds;
-                results.Add((t, i, throughput, bandwidth));
-                benchmark.Cleanup();
+                foreach (var (t, i) in GetThreads())
+                {
+                    var benchmark = new InferenceBenchmark(model, t, i, quantization, testPeriod);
+                    var counter = new SimpleTimeCounter($"(size={width}x{height}, threads={t}, intra op threads={i})");
+                    counter.OnStartBuildStage([]);
+                    var (completed, time, bandwidth) = await benchmark.RunBenchmark(modelInputs);
+                    counter.OnEndRunStage();
+
+                    var throughput = completed / time.TotalSeconds;
+                    results.Add((width, height, t, i, throughput, bandwidth));
+                    benchmark.Cleanup();
+                }
             }
 
             // Print summary table
             Console.WriteLine();
             Console.WriteLine("Summary:");
-            Console.WriteLine($"{"Threads",-10} {"Intra-op",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
-            Console.WriteLine(new string('-', 62));
-            foreach (var (t, i, throughput, bandwidth) in results)
+
+            var showIntraOp = results.Any(r => r.intraOpThreads != 1);
+
+            if (showIntraOp)
             {
-                Console.WriteLine($"{t,-10} {i,-10} {throughput,20:N2} {bandwidth,20:N2}");
+                Console.WriteLine($"{"Size",-12} {"Threads",-10} {"Intra-op",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
+                Console.WriteLine(new string('-', 74));
+                foreach (var (width, height, t, i, throughput, bandwidth) in results)
+                {
+                    Console.WriteLine($"{$"{width}x{height}",-12} {t,-10} {i,-10} {throughput,20:N2} {bandwidth,20:N2}");
+                }
             }
-        }, dbnetScenarioOption, svtrScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption, totalThreadsOption);
+            else
+            {
+                Console.WriteLine($"{"Size",-12} {"Threads",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
+                Console.WriteLine(new string('-', 64));
+                foreach (var (width, height, t, i, throughput, bandwidth) in results)
+                {
+                    Console.WriteLine($"{$"{width}x{height}",-12} {t,-10} {throughput,20:N2} {bandwidth,20:N2}");
+                }
+            }
+        }, dbnetScenarioOption, svtrScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption, totalThreadsOption, inputSizeOption);
 
         return inferenceCommand;
     }
