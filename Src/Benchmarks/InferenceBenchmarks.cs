@@ -23,7 +23,7 @@ internal class DummyModelRunner : ModelRunner
 
 public class InferenceBenchmark
 {
-    private readonly ModelRunner _modelRunner;
+    internal readonly ModelRunner _modelRunner;
     private readonly int _testPeriodSeconds;
     private readonly InferenceSession _session;
 
@@ -114,5 +114,75 @@ public static class SVTRv2BenchmarkHelper
 
         var recognizer = new TextRecognizer(new DummyModelRunner(), inputWidth, inputHeight);
         return recognizer.Preprocess([bbox, bbox, bbox, bbox], image);
+    }
+}
+
+public class NoiseModelRunner : IDisposable
+{
+    private readonly InferenceBenchmark _benchmark;
+    private readonly List<(float[] Data, int[] Shape)> _modelInputs;
+    private readonly CancellationTokenSource _cts;
+    private readonly Task _noiseTask;
+
+    public NoiseModelRunner(Model noiseModel, int noiseThreads, ModelPrecision quantization)
+    {
+        // Use default input sizes for noise models
+        var (width, height) = noiseModel == Model.DbNet18 ? (640, 640) : (160, 48);
+
+        _modelInputs = noiseModel == Model.DbNet18
+            ? DBNetBenchmarkHelper.GenerateInput(width, height, Density.Low)
+            : SVTRv2BenchmarkHelper.GenerateInput(width, height);
+
+        // For noise: always use FP32 for SVTR, INT8 for DBNet
+        var noiseQuantization = noiseModel == Model.DbNet18 ? ModelPrecision.INT8 : ModelPrecision.FP32;
+        _benchmark = new InferenceBenchmark(noiseModel, noiseThreads, intraOpNumThreads: 1, noiseQuantization, testPeriodSeconds: int.MaxValue);
+
+        _cts = new CancellationTokenSource();
+        _noiseTask = Task.Run(async () => await RunNoise(_cts.Token));
+    }
+
+    private async Task RunNoise(CancellationToken cancellationToken)
+    {
+        var inferenceTasks = Channel.CreateUnbounded<Task>();
+
+        try
+        {
+            // Run inference continuously until cancelled, using same pattern as InferenceBenchmark
+            for (int i = 0; !cancellationToken.IsCancellationRequested; i++)
+            {
+                var input = _modelInputs[i % _modelInputs.Count];
+                var inferenceTask = await _benchmark._modelRunner.Run(input.Data, input.Shape);
+                var continueWith = inferenceTask.ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                        throw t.Exception;
+                });
+                inferenceTasks.Writer.TryWrite(continueWith);
+            }
+
+            inferenceTasks.Writer.Complete();
+
+            await foreach (var t in inferenceTasks.Reader.ReadAllAsync())
+                await t;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when stopping
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        try
+        {
+            _noiseTask.Wait(TimeSpan.FromSeconds(5));
+        }
+        catch (AggregateException)
+        {
+            // Ignore cancellation exceptions
+        }
+        _benchmark.Cleanup();
+        _cts.Dispose();
     }
 }
