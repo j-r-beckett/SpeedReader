@@ -69,6 +69,9 @@ public class Program
         var cooldownOption = new Option<int>("--cooldown", description: "Cooldown period in seconds between benchmarks", getDefaultValue: () => 0);
         inferenceCommand.AddOption(cooldownOption);
 
+        var noiseOption = new Option<string?>("--noise", description: "Number of noise threads (runs opposite model in background)", getDefaultValue: () => null);
+        inferenceCommand.AddOption(noiseOption);
+
         inferenceCommand.SetHandler(async (context) =>
         {
             var dbnet = context.ParseResult.GetValueForOption(dbnetScenarioOption);
@@ -80,6 +83,7 @@ public class Program
             var totalThreads = context.ParseResult.GetValueForOption(totalThreadsOption);
             var inputSize = context.ParseResult.GetValueForOption(inputSizeOption);
             var cooldown = context.ParseResult.GetValueForOption(cooldownOption);
+            var noise = context.ParseResult.GetValueForOption(noiseOption);
 
             if (dbnet == svtr)
                 throw new ArgumentException("Specify exactly one of --dbnet or --svtr");
@@ -151,6 +155,44 @@ public class Program
                 }
             }
 
+            IEnumerable<int> GetNoiseThreads()
+            {
+                if (noise == null)
+                {
+                    yield return 0;
+                }
+                else
+                {
+                    (int start, int end) ParseSpec(string spec)
+                    {
+                        if (int.TryParse(spec, out var value))
+                        {
+                            ArgumentOutOfRangeException.ThrowIfNegative(value);
+                            return (value, value);
+                        }
+
+                        var match = Regex.Match(spec, @"^(\d+)\.\.(\d+)$");
+                        if (!match.Success)
+                            throw new ArgumentException($"Invalid value: '{spec}'. Expected a number or a range like '2..4'.");
+
+                        var start = int.Parse(match.Groups[1].Value);
+                        var end = int.Parse(match.Groups[2].Value);
+
+                        ArgumentOutOfRangeException.ThrowIfNegative(start);
+                        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
+
+                        return (start, end);
+                    }
+
+                    var (noiseStart, noiseEnd) = ParseSpec(noise);
+
+                    for (int n = noiseStart; n <= noiseEnd; n++)
+                    {
+                        yield return n;
+                    }
+                }
+            }
+
             var model = dbnet ? Model.DbNet18 : Model.SVTRv2;
             var modelName = dbnet ? "DBNet" : "SVTRv2";
 
@@ -175,6 +217,9 @@ public class Program
 
             var inputSizes = ParseInputSizes(inputSize);
 
+            var noiseModel = dbnet ? Model.SVTRv2 : Model.DbNet18;
+            var noiseModelName = dbnet ? "SVTRv2" : "DBNet";
+
             // Print benchmark configuration
             Console.WriteLine($"{modelName} Inference Benchmark");
             Console.WriteLine($"Quantization: {quantization}");
@@ -189,36 +234,53 @@ public class Program
                 Console.WriteLine($"Threads: {threads}");
                 Console.WriteLine($"Intra-op threads: {intraOpThreads}");
             }
+            if (noise != null)
+            {
+                Console.WriteLine($"Noise ({noiseModelName}): {noise} threads");
+            }
             Console.WriteLine();
 
-            var results = new List<(int width, int height, int threads, int intraOpThreads, double throughput, double bandwidth)>();
+            var results = new List<(int noise, int width, int height, int threads, int intraOpThreads, double throughput, double bandwidth)>();
 
             var isFirstRun = true;
-            foreach (var (width, height) in inputSizes)
+            foreach (var noiseThreads in GetNoiseThreads())
             {
-                var modelInputs = dbnet
-                    ? DBNetBenchmarkHelper.GenerateInput(width, height, Density.Low)
-                    : SVTRv2BenchmarkHelper.GenerateInput(width, height);
-
-                foreach (var (t, i) in GetThreads())
+                NoiseModelRunner? noiseRunner = null;
+                if (noiseThreads > 0)
                 {
-                    if (!isFirstRun && cooldown > 0)
-                    {
-                        Console.WriteLine($"Cooling down for {cooldown}s...");
-                        await Task.Delay(TimeSpan.FromSeconds(cooldown));
-                    }
-                    isFirstRun = false;
-
-                    var benchmark = new InferenceBenchmark(model, t, i, quantization, testPeriod);
-                    var counter = new SimpleTimeCounter($"(size={width}x{height}, threads={t}, intra op threads={i})");
-                    counter.OnStartBuildStage([]);
-                    var (completed, time, bandwidth) = await benchmark.RunBenchmark(modelInputs);
-                    counter.OnEndRunStage();
-
-                    var throughput = completed / time.TotalSeconds;
-                    results.Add((width, height, t, i, throughput, bandwidth));
-                    benchmark.Cleanup();
+                    Console.WriteLine($"Starting {noiseModelName} noise with {noiseThreads} threads...");
+                    noiseRunner = new NoiseModelRunner(noiseModel, noiseThreads, quantization);
                 }
+
+                foreach (var (width, height) in inputSizes)
+                {
+                    var modelInputs = dbnet
+                        ? DBNetBenchmarkHelper.GenerateInput(width, height, Density.Low)
+                        : SVTRv2BenchmarkHelper.GenerateInput(width, height);
+
+                    foreach (var (t, i) in GetThreads())
+                    {
+                        if (!isFirstRun && cooldown > 0)
+                        {
+                            Console.WriteLine($"Cooling down for {cooldown}s...");
+                            await Task.Delay(TimeSpan.FromSeconds(cooldown));
+                        }
+                        isFirstRun = false;
+
+                        var benchmark = new InferenceBenchmark(model, t, i, quantization, testPeriod);
+                        var noiseInfo = noiseThreads > 0 ? $", noise={noiseThreads}" : "";
+                        var counter = new SimpleTimeCounter($"(size={width}x{height}, threads={t}, intra op threads={i}{noiseInfo})");
+                        counter.OnStartBuildStage([]);
+                        var (completed, time, bandwidth) = await benchmark.RunBenchmark(modelInputs);
+                        counter.OnEndRunStage();
+
+                        var throughput = completed / time.TotalSeconds;
+                        results.Add((noiseThreads, width, height, t, i, throughput, bandwidth));
+                        benchmark.Cleanup();
+                    }
+                }
+
+                noiseRunner?.Dispose();
             }
 
             // Print summary table
@@ -226,12 +288,31 @@ public class Program
             Console.WriteLine("Summary:");
 
             var showIntraOp = results.Any(r => r.intraOpThreads != 1);
+            var showNoise = results.Any(r => r.noise != 0);
 
-            if (showIntraOp)
+            if (showNoise && showIntraOp)
+            {
+                Console.WriteLine($"{"Noise",-8} {"Size",-12} {"Threads",-10} {"Intra-op",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
+                Console.WriteLine(new string('-', 82));
+                foreach (var (n, width, height, t, i, throughput, bandwidth) in results)
+                {
+                    Console.WriteLine($"{n,-8} {$"{width}x{height}",-12} {t,-10} {i,-10} {throughput,20:N2} {bandwidth,20:N2}");
+                }
+            }
+            else if (showNoise)
+            {
+                Console.WriteLine($"{"Noise",-8} {"Size",-12} {"Threads",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
+                Console.WriteLine(new string('-', 72));
+                foreach (var (n, width, height, t, i, throughput, bandwidth) in results)
+                {
+                    Console.WriteLine($"{n,-8} {$"{width}x{height}",-12} {t,-10} {throughput,20:N2} {bandwidth,20:N2}");
+                }
+            }
+            else if (showIntraOp)
             {
                 Console.WriteLine($"{"Size",-12} {"Threads",-10} {"Intra-op",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
                 Console.WriteLine(new string('-', 74));
-                foreach (var (width, height, t, i, throughput, bandwidth) in results)
+                foreach (var (n, width, height, t, i, throughput, bandwidth) in results)
                 {
                     Console.WriteLine($"{$"{width}x{height}",-12} {t,-10} {i,-10} {throughput,20:N2} {bandwidth,20:N2}");
                 }
@@ -240,7 +321,7 @@ public class Program
             {
                 Console.WriteLine($"{"Size",-12} {"Threads",-10} {"Throughput (inferences/sec)",20} {"Memory BW (GB/s)",20}");
                 Console.WriteLine(new string('-', 64));
-                foreach (var (width, height, t, i, throughput, bandwidth) in results)
+                foreach (var (n, width, height, t, i, throughput, bandwidth) in results)
                 {
                     Console.WriteLine($"{$"{width}x{height}",-12} {t,-10} {throughput,20:N2} {bandwidth,20:N2}");
                 }
