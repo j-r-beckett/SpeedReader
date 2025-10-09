@@ -89,7 +89,7 @@ def _(alt, data, mo, pl):
     
         # Summary
         logistic_summary = mo.md(f"""
-        ## Thread Count vs Bandwidth (Logistic)
+        ## Thread Count -> Bandwidth
     
         **Logistic Best Fit**
     
@@ -153,7 +153,7 @@ def _(alt, data, mo, pl):
     
         # Summary
         linear_summary = mo.md(f"""
-        ## Throughput vs Bandwidth (Linear)
+        ## Bandwidth -> Throughput
     
         **Linear Best Fit**
     
@@ -227,7 +227,7 @@ def _(alt, data, linear_model, logistic_model, mo, pl):
     
         # Summary
         composed_summary = mo.md(f"""
-        ## Throughput vs Thread Count (Two-Stage Model)
+        ## Thread Count -> Throughput
     
         **Model**
     
