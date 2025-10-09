@@ -66,8 +66,21 @@ public class Program
         var inputSizeOption = new Option<string?>("--input-size", description: "Input size(s) as WIDTHxHEIGHT, comma-separated for multiple (e.g., 640x640,1280x720)", getDefaultValue: () => null);
         inferenceCommand.AddOption(inputSizeOption);
 
-        inferenceCommand.SetHandler(async (dbnet, svtr, threads, intraOpThreads, quantizationStr, testPeriod, totalThreads, inputSize) =>
+        var cooldownOption = new Option<int>("--cooldown", description: "Cooldown period in seconds between benchmarks", getDefaultValue: () => 0);
+        inferenceCommand.AddOption(cooldownOption);
+
+        inferenceCommand.SetHandler(async (context) =>
         {
+            var dbnet = context.ParseResult.GetValueForOption(dbnetScenarioOption);
+            var svtr = context.ParseResult.GetValueForOption(svtrScenarioOption);
+            var threads = context.ParseResult.GetValueForOption(threadsOption)!;
+            var intraOpThreads = context.ParseResult.GetValueForOption(intraOpThreadsOption)!;
+            var quantizationStr = context.ParseResult.GetValueForOption(quantizationOption)!;
+            var testPeriod = context.ParseResult.GetValueForOption(testPeriodOption);
+            var totalThreads = context.ParseResult.GetValueForOption(totalThreadsOption);
+            var inputSize = context.ParseResult.GetValueForOption(inputSizeOption);
+            var cooldown = context.ParseResult.GetValueForOption(cooldownOption);
+
             if (dbnet == svtr)
                 throw new ArgumentException("Specify exactly one of --dbnet or --svtr");
 
@@ -180,6 +193,7 @@ public class Program
 
             var results = new List<(int width, int height, int threads, int intraOpThreads, double throughput, double bandwidth)>();
 
+            var isFirstRun = true;
             foreach (var (width, height) in inputSizes)
             {
                 var modelInputs = dbnet
@@ -188,6 +202,13 @@ public class Program
 
                 foreach (var (t, i) in GetThreads())
                 {
+                    if (!isFirstRun && cooldown > 0)
+                    {
+                        Console.WriteLine($"Cooling down for {cooldown}s...");
+                        await Task.Delay(TimeSpan.FromSeconds(cooldown));
+                    }
+                    isFirstRun = false;
+
                     var benchmark = new InferenceBenchmark(model, t, i, quantization, testPeriod);
                     var counter = new SimpleTimeCounter($"(size={width}x{height}, threads={t}, intra op threads={i})");
                     counter.OnStartBuildStage([]);
@@ -224,7 +245,7 @@ public class Program
                     Console.WriteLine($"{$"{width}x{height}",-12} {t,-10} {throughput,20:N2} {bandwidth,20:N2}");
                 }
             }
-        }, dbnetScenarioOption, svtrScenarioOption, threadsOption, intraOpThreadsOption, quantizationOption, testPeriodOption, totalThreadsOption, inputSizeOption);
+        });
 
         return inferenceCommand;
     }
