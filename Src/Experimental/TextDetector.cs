@@ -17,14 +17,14 @@ namespace Experimental;
 public class TextDetector
 {
     private readonly ModelRunner _modelRunner;
-    private readonly int TileHeight;
-    private readonly int TileWidth;
+    private readonly int _tileHeight;
+    private readonly int _tileWidth;
 
     public TextDetector(ModelRunner modelRunner, int tileWidth = 640, int tileHeight = 640)
     {
         _modelRunner = modelRunner;
-        TileWidth = tileWidth;
-        TileHeight = tileHeight;
+        _tileWidth = tileWidth;
+        _tileHeight = tileHeight;
     }
 
     private const double OverlapMultiplier = 0.05;
@@ -37,7 +37,7 @@ public class TextDetector
         var tiledWidth = tileRects[^1].Right;
         var tiledHeight = tileRects[^1].Bottom;
         using var resized = image.HardAspectResize(new Size(tiledWidth, tiledHeight));
-        int[] inferenceShape = [3, TileHeight, TileWidth];
+        int[] inferenceShape = [3, _tileHeight, _tileWidth];
         return tileRects.Select(t => (PreprocessTile(t), inferenceShape)).ToList();
 
         float[] PreprocessTile(Rectangle tile)
@@ -61,20 +61,20 @@ public class TextDetector
         foreach (var (tileRect, (modelOutput, shape)) in tileRects.Zip(inferenceOutputs))
         {
             Debug.Assert(shape.Length == 2);
-            Debug.Assert(shape[0] == TileHeight);
-            Debug.Assert(shape[1] == TileWidth);
+            Debug.Assert(shape[0] == _tileHeight);
+            Debug.Assert(shape[1] == _tileWidth);
 
-            for (int row = 0; row < TileHeight; row++)
+            for (int row = 0; row < _tileHeight; row++)
             {
                 var imageRow = tileRect.Top + row;
 
-                for (int col = 0; col < TileWidth; col++)
+                for (int col = 0; col < _tileWidth; col++)
                 {
                     var imageCol = tileRect.Left + col;
 
                     // Take the max value in overlapping regions
                     compositeModelOutput[imageRow * tiledWidth + imageCol] =
-                        Math.Max(compositeModelOutput[imageRow * tiledWidth + imageCol], modelOutput[row * TileWidth + col]);
+                        Math.Max(compositeModelOutput[imageRow * tiledWidth + imageCol], modelOutput[row * _tileWidth + col]);
                 }
             }
         }
@@ -135,11 +135,11 @@ public class TextDetector
 
     private List<Rectangle> Tile(Image<Rgb24> image)
     {
-        var horizontalOverlap = (int)Math.Round(OverlapMultiplier * TileWidth);
-        var verticalOverlap = (int)Math.Round(OverlapMultiplier * TileHeight);
+        var horizontalOverlap = (int)Math.Round(OverlapMultiplier * _tileWidth);
+        var verticalOverlap = (int)Math.Round(OverlapMultiplier * _tileHeight);
 
-        var numTilesHorizontal = (int)Math.Ceiling(((double)image.Width - horizontalOverlap) / (TileWidth - horizontalOverlap));
-        var numTilesVertical = (int)Math.Ceiling(((double)image.Height - verticalOverlap) / (TileHeight - verticalOverlap));
+        var numTilesHorizontal = (int)Math.Ceiling(((double)image.Width - horizontalOverlap) / (_tileWidth - horizontalOverlap));
+        var numTilesVertical = (int)Math.Ceiling(((double)image.Height - verticalOverlap) / (_tileHeight - verticalOverlap));
         var numTiles = numTilesHorizontal * numTilesVertical;
 
         var tiles = new List<Rectangle>(numTiles);
@@ -148,9 +148,9 @@ public class TextDetector
         {
             for (int tileCol = 0; tileCol < numTilesHorizontal; tileCol++)
             {
-                var tileX = tileCol * (TileWidth - horizontalOverlap);
-                var tileY = tileRow * (TileHeight - verticalOverlap);
-                var tileRect = new Rectangle(tileX, tileY, TileWidth, TileHeight);
+                var tileX = tileCol * (_tileWidth - horizontalOverlap);
+                var tileY = tileRow * (_tileHeight - verticalOverlap);
+                var tileRect = new Rectangle(tileX, tileY, _tileWidth, _tileHeight);
                 tiles.Add(tileRect);
             }
         }
