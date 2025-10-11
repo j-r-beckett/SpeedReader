@@ -2,7 +2,10 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics.Metrics;
+using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 using Experimental;
 using Experimental.Inference;
 using Microsoft.AspNetCore.Builder;
@@ -35,6 +38,8 @@ public static class Serve
         builder.Services.AddSingleton(speedReader);
 
         var app = builder.Build();
+
+        app.UseWebSockets();
 
         app.MapGet("/api/health", () => "Healthy");
 
@@ -82,11 +87,153 @@ public static class Serve
             await context.Response.WriteAsync(json);
         });
 
+        app.Map("/api/ws/ocr", async (HttpContext context, SpeedReader speedReader) =>
+        {
+            if (!context.WebSockets.IsWebSocketRequest)
+            {
+                context.Response.StatusCode = 400;
+                return;
+            }
+
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+            await HandleWebSocketOcr(webSocket, speedReader);
+        });
+
         // Add Prometheus metrics endpoint (automatic)
         app.UseMetricServer();
 
         Console.WriteLine("Starting SpeedReader server...");
         await app.RunAsync();
+    }
+
+    private static async Task HandleWebSocketOcr(WebSocket webSocket, SpeedReader speedReader)
+    {
+        var imageChannel = Channel.CreateBounded<Image<Rgb24>>(1);
+        var errorChannel = Channel.CreateUnbounded<string?>();
+        var config = Configuration.Default.Clone();
+        config.PreferContiguousImageBuffers = true;
+        var decoderOptions = new DecoderOptions { Configuration = config };
+
+        var receiveTask = Task.Run(async () =>
+        {
+            try
+            {
+                while (webSocket.State == WebSocketState.Open)
+                {
+                    var messageBytes = await ReceiveCompleteMessageAsync(webSocket);
+                    if (messageBytes == null)
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        using var memoryStream = new MemoryStream(messageBytes);
+                        var image = await Image.LoadAsync<Rgb24>(decoderOptions, memoryStream);
+                        await imageChannel.Writer.WriteAsync(image);
+                        await errorChannel.Writer.WriteAsync(null);
+                    }
+                    catch (UnknownImageFormatException ex)
+                    {
+                        var errorMessage = $"Invalid image format: {ex.Message}";
+                        await errorChannel.Writer.WriteAsync(errorMessage);
+                    }
+                }
+            }
+            finally
+            {
+                imageChannel.Writer.Complete();
+                errorChannel.Writer.Complete();
+            }
+        });
+
+        var sendTask = Task.Run(async () =>
+        {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = false,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            var results = speedReader.ReadMany(imageChannel.Reader.ReadAllAsync()).GetAsyncEnumerator();
+
+            await foreach (var errorMessage in errorChannel.Reader.ReadAllAsync())
+            {
+                if (errorMessage != null)
+                {
+                    var errorJson = JsonSerializer.Serialize(new { Error = errorMessage }, jsonOptions);
+                    var errorBytes = Encoding.UTF8.GetBytes(errorJson);
+                    await webSocket.SendAsync(
+                        new ArraySegment<byte>(errorBytes),
+                        WebSocketMessageType.Text,
+                        endOfMessage: true,
+                        CancellationToken.None);
+                }
+                else
+                {
+                    if (await results.MoveNextAsync())
+                    {
+                        var result = results.Current;
+                        try
+                        {
+                            var jsonResult = new
+                            {
+                                Results = result.Results.Select(r => new
+                                {
+                                    BoundingBox = r.BBox,
+                                    r.Text,
+                                    r.Confidence
+                                }).ToList()
+                            };
+
+                            var json = JsonSerializer.Serialize(jsonResult, jsonOptions);
+                            var jsonBytes = Encoding.UTF8.GetBytes(json);
+                            await webSocket.SendAsync(
+                                new ArraySegment<byte>(jsonBytes),
+                                WebSocketMessageType.Text,
+                                endOfMessage: true,
+                                CancellationToken.None);
+                        }
+                        finally
+                        {
+                            result.Image.Dispose();
+                        }
+                    }
+                }
+            }
+
+            await results.DisposeAsync();
+
+            await webSocket.CloseAsync(
+                WebSocketCloseStatus.NormalClosure,
+                "Processing complete",
+                CancellationToken.None);
+        });
+
+        await Task.WhenAll(receiveTask, sendTask);
+    }
+
+    private static async Task<byte[]?> ReceiveCompleteMessageAsync(WebSocket webSocket)
+    {
+        var buffer = new byte[4096];
+        using var ms = new MemoryStream();
+
+        while (true)
+        {
+            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+            if (result.MessageType == WebSocketMessageType.Close)
+            {
+                return null;
+            }
+
+            ms.Write(buffer, 0, result.Count);
+
+            if (result.EndOfMessage)
+            {
+                return ms.ToArray();
+            }
+        }
     }
 
     private static async IAsyncEnumerable<Image<Rgb24>> ParseImagesFromRequest(HttpRequest request)
