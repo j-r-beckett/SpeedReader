@@ -3,13 +3,13 @@
 
 namespace Experimental.Inference;
 
-public class ParallelismManager<T>
+public class ParallelismManager<TIn, TOut>
 {
-    private readonly Func<Task<T>> _func;
+    private readonly Func<TIn, TOut> _func;
     private readonly SemaphoreSlim _semaphore;
     private readonly AsyncLock _pauseExecutionLock = new();
 
-    public ParallelismManager(Func<Task<T>> func, int start)
+    public ParallelismManager(Func<TIn, TOut> func, int start)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(start);
 
@@ -17,7 +17,7 @@ public class ParallelismManager<T>
         _semaphore = new SemaphoreSlim(start);
     }
 
-    public async Task<T> Call()
+    public async Task<Task<TOut>> Call(TIn input)
     {
         await _semaphore.WaitAsync();
         while (_pauseExecutionLock.IsAcquired)
@@ -27,14 +27,12 @@ public class ParallelismManager<T>
             _pauseExecutionLock.Release();
             await _semaphore.WaitAsync();
         }
-        try
-        {
-            return await _func();
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+
+        var task = Task.Run(() => _func(input));
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        task.ContinueWith(_ => _semaphore.Release());
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        return task;
     }
 
     public void IncrementParallelism() => _semaphore.Release();
