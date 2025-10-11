@@ -12,24 +12,26 @@ public class ParallelismManagerTests
     {
         // Arrange
         const int maxParallelism = 2;
-        var tcs = new TaskCompletionSource();
+        bool proceed = false;
         var parallelism = 0;
 
-        var func = async () =>
+        Func<int, int> func = _ =>
         {
             Interlocked.Increment(ref parallelism);
-            await tcs.Task;
+            while (!proceed)
+                Thread.Sleep(10);
             Interlocked.Decrement(ref parallelism);
             return 0;
         };
 
-        var manager = new ParallelismManager<int>(func, maxParallelism);
+        var manager = new ParallelismManager<int, int>(func, maxParallelism);
 
         // Act
-        var tasks = Enumerable.Range(0, 4).Select(_ => manager.Call()).ToList();
+        var tasks = Enumerable.Range(0, 4).Select(_ => manager.Call(0)).ToList();
         await Task.Delay(50);
         var observedParallelism = parallelism;
-        tcs.SetResult();
+
+        proceed = true;
         await Task.WhenAll(tasks);
 
         // Assert
@@ -41,21 +43,22 @@ public class ParallelismManagerTests
     {
         // Arrange
         const int initialParallelism = 1;
-        var tcs = new TaskCompletionSource();
+        var proceed = false;
         var parallelism = 0;
 
-        var func = async () =>
+        Func<int, int> func = _ =>
         {
             Interlocked.Increment(ref parallelism);
-            await tcs.Task;
+            while (!proceed)
+                Thread.Sleep(10);
             Interlocked.Decrement(ref parallelism);
             return 0;
         };
 
-        var manager = new ParallelismManager<int>(func, initialParallelism);
+        var manager = new ParallelismManager<int, int>(func, initialParallelism);
 
         // Act
-        var tasks = Enumerable.Range(0, 3).Select(_ => manager.Call()).ToList();
+        var tasks = Enumerable.Range(0, 3).Select(_ => manager.Call(0)).ToList();
         await Task.Delay(50);
         Assert.Equal(1, parallelism);
 
@@ -63,7 +66,7 @@ public class ParallelismManagerTests
         await Task.Delay(50);
         var observedParallelism = parallelism;
 
-        tcs.SetResult();
+        proceed = true;
         await Task.WhenAll(tasks);
 
         // Assert
@@ -75,21 +78,22 @@ public class ParallelismManagerTests
     {
         // Arrange
         const int initialParallelism = 2;
-        var taskCompletionSources = Enumerable.Range(0, 4).Select(_ => new TaskCompletionSource()).ToList();
+        var proceedFlags = new bool[4];
         var parallelism = 0;
 
-        var func = async () =>
+        Func<int, int> func = _ =>
         {
             var currentIndex = Interlocked.Increment(ref parallelism) - 1;
-            await taskCompletionSources[currentIndex].Task;
+            while (!proceedFlags[currentIndex])
+                Thread.Sleep(10);
             Interlocked.Decrement(ref parallelism);
             return 0;
         };
 
-        var manager = new ParallelismManager<int>(func, initialParallelism);
+        var manager = new ParallelismManager<int, int>(func, initialParallelism);
 
         // Act
-        var tasks = Enumerable.Range(0, 4).Select(_ => manager.Call()).ToList();
+        var tasks = Enumerable.Range(0, 4).Select(_ => manager.Call(0)).ToList();
         await Task.Delay(50);
         Assert.Equal(2, parallelism);
 
@@ -98,15 +102,15 @@ public class ParallelismManagerTests
         await Task.Delay(50);
 
         // Release the first task while decrement is ongoing
-        taskCompletionSources[0].SetResult();
+        proceedFlags[0] = true;
         await decrementTask;
         await Task.Delay(50);
         var observedParallelism = parallelism;
 
         // Clean up remaining tasks
-        foreach (var tcs in taskCompletionSources.Skip(1))
+        for (int i = 1; i < proceedFlags.Length; i++)
         {
-            tcs.SetResult();
+            proceedFlags[i] = true;
         }
         await Task.WhenAll(tasks);
 
