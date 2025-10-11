@@ -8,13 +8,13 @@ namespace Experimental.Inference;
 
 public class CpuModelRunner : ModelRunner
 {
-    private readonly ParallelismManager<(float[], int[]), (float[], int[])> _parallelismManager;
+    public readonly ParallelismManager<(float[], int[]), (float[], int[])> ParallelismManager;
 
     public CpuModelRunner(InferenceSession inferenceSession, int maxParallelism) : base(inferenceSession)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
 
-        _parallelismManager = new ParallelismManager<(float[] Data, int[] Shape), (float[], int[])>(input =>
+        ParallelismManager = new ParallelismManager<(float[] Data, int[] Shape), (float[], int[])>(input =>
         {
             var (data, shape) = RunInferenceInternal(input.Data, input.Shape);
             Debug.Assert(shape[0] == 1); // Batch size is always 1 on CPU
@@ -27,7 +27,7 @@ public class CpuModelRunner : ModelRunner
     {
         Debug.Assert(shape.Length > 1);  // At least one dimension
         var batchedShape = new[] { 1 }.Concat(shape).ToArray();  // Add a batch size dimension. On CPU we don't batch, so this is just 1
-        return _parallelismManager.Call((batch, batchedShape));
+        return ParallelismManager.Call((batch, batchedShape));
     }
 
     protected override ValueTask SubclassDisposeAsync() => ValueTask.CompletedTask;
