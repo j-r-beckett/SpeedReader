@@ -5,7 +5,7 @@ using Experimental.Inference;
 
 namespace Experimental.Test.Inference;
 
-public class ParallelismManagerTests
+public class ThrottlerTests
 {
     [Fact(Timeout = 500)]
     public async Task DoesNotExceedMaxDegreeOfParallelism()
@@ -24,7 +24,7 @@ public class ParallelismManagerTests
             return 0;
         };
 
-        var manager = new ParallelismManager<int, int>(func, maxParallelism);
+        var manager = new Throttler<int, int>(func, maxParallelism);
 
         // Act
         var tasks = Enumerable.Range(0, 4).Select(_ => manager.Call(0)).ToList();
@@ -55,7 +55,7 @@ public class ParallelismManagerTests
             return 0;
         };
 
-        var manager = new ParallelismManager<int, int>(func, initialParallelism);
+        var manager = new Throttler<int, int>(func, initialParallelism);
 
         // Act
         var tasks = Enumerable.Range(0, 3).Select(_ => manager.Call(0)).ToList();
@@ -90,7 +90,7 @@ public class ParallelismManagerTests
             return 0;
         };
 
-        var manager = new ParallelismManager<int, int>(func, initialParallelism);
+        var manager = new Throttler<int, int>(func, initialParallelism);
 
         // Act
         var tasks = Enumerable.Range(0, 4).Select(_ => manager.Call(0)).ToList();
