@@ -13,14 +13,7 @@ public class Throttler<TIn, TOut>
     private readonly AsyncLock _pauseExecutionLock = new();
     private int _queueDepth = 0;
 
-    // Paired start and end times, good for calculating latency per item. Only written to once we have both (start, end)
     public readonly Channel<(TimeSpan Start, TimeSpan End)> Latencies = Channel.CreateUnbounded<(TimeSpan Start, TimeSpan End)>();
-
-    // Start times, written to immediately once we have start
-    public readonly Channel<TimeSpan> StartTimes = Channel.CreateUnbounded<TimeSpan>();
-
-    // End times, written to once we have end
-    public readonly Channel<TimeSpan> EndTimes = Channel.CreateUnbounded<TimeSpan>();
 
     public Throttler(Func<TIn, TOut> func, int start)
     {
@@ -45,11 +38,9 @@ public class Throttler<TIn, TOut>
 
         var task = Task.Run(() =>
         {
-            var start = SharedClock.Elapsed;
-            StartTimes.Writer.TryWrite(start);
+            var start = SharedClock.Now;
             var result = _func(input);
-            var end = SharedClock.Elapsed;
-            EndTimes.Writer.TryWrite(end);
+            var end = SharedClock.Now;
             Latencies.Writer.TryWrite((start, end));
             return result;
         });
