@@ -27,27 +27,21 @@ public class AutoTuner : IAsyncDisposable
         {
             _tuneCts.Token.ThrowIfCancellationRequested();
 
-            await Task.Delay(_tuneInterval);
+            // await Task.Delay(_tuneInterval);
+            var observedParallelism = await Task.WhenAll(GetAverageParallelism(_dbnetThrotter, _tuneInterval), GetAverageParallelism(_svtrThrotter, _tuneInterval));
+            var (dbnetParallelism, svtrParallelism) = (observedParallelism[0], observedParallelism[1]);
 
             var incrementedSvtrParallelism = false;
 
-            if (_svtrThrotter.QueueDepth > 10)
+            if (_svtrThrotter.QueueDepth >= Math.Ceiling(svtrParallelism * 0.5))
             {
                 _svtrThrotter.IncrementParallelism();
                 incrementedSvtrParallelism = true;
             }
-            else if (_svtrThrotter.QueueDepth < 5)
-            {
-                await _svtrThrotter.DecrementParallelism();
-            }
 
-            if (!incrementedSvtrParallelism && _dbnetThrotter.QueueDepth > 4)
+            if (!incrementedSvtrParallelism && _dbnetThrotter.QueueDepth >= Math.Ceiling(dbnetParallelism * 0.5))
             {
                 _dbnetThrotter.IncrementParallelism();
-            }
-            else if (_dbnetThrotter.QueueDepth < 2)
-            {
-                await _dbnetThrotter.DecrementParallelism();
             }
         }
     }
