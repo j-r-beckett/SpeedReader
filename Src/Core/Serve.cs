@@ -109,7 +109,6 @@ public static class Serve
     private static async Task HandleWebSocketOcr(WebSocket webSocket, SpeedReader speedReader)
     {
         var imageChannel = Channel.CreateBounded<Image<Rgb24>>(1);
-        var errorChannel = Channel.CreateUnbounded<string?>();
         var config = Configuration.Default.Clone();
         config.PreferContiguousImageBuffers = true;
         var decoderOptions = new DecoderOptions { Configuration = config };
@@ -122,28 +121,16 @@ public static class Serve
                 {
                     var messageBytes = await ReceiveCompleteMessageAsync(webSocket);
                     if (messageBytes == null)
-                    {
                         break;
-                    }
 
-                    try
-                    {
-                        using var memoryStream = new MemoryStream(messageBytes);
-                        var image = await Image.LoadAsync<Rgb24>(decoderOptions, memoryStream);
-                        await imageChannel.Writer.WriteAsync(image);
-                        await errorChannel.Writer.WriteAsync(null);
-                    }
-                    catch (UnknownImageFormatException ex)
-                    {
-                        var errorMessage = $"Invalid image format: {ex.Message}";
-                        await errorChannel.Writer.WriteAsync(errorMessage);
-                    }
+                    using var memoryStream = new MemoryStream(messageBytes);
+                    var image = await Image.LoadAsync<Rgb24>(decoderOptions, memoryStream);
+                    await imageChannel.Writer.WriteAsync(image);
                 }
             }
             finally
             {
                 imageChannel.Writer.Complete();
-                errorChannel.Writer.Complete();
             }
         });
 
@@ -155,13 +142,31 @@ public static class Serve
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
 
-            var results = speedReader.ReadMany(imageChannel.Reader.ReadAllAsync()).GetAsyncEnumerator();
-
-            await foreach (var errorMessage in errorChannel.Reader.ReadAllAsync())
+            await foreach (var result in speedReader.ReadMany(imageChannel.Reader.ReadAllAsync()))
             {
-                if (errorMessage != null)
+                try
                 {
-                    var errorJson = JsonSerializer.Serialize(new { Error = errorMessage }, jsonOptions);
+                    var jsonResult = new
+                    {
+                        Results = result.Results.Select(r => new
+                        {
+                            BoundingBox = r.BBox,
+                            r.Text,
+                            r.Confidence
+                        }).ToList()
+                    };
+
+                    var json = JsonSerializer.Serialize(jsonResult, jsonOptions);
+                    var jsonBytes = Encoding.UTF8.GetBytes(json);
+                    await webSocket.SendAsync(
+                        new ArraySegment<byte>(jsonBytes),
+                        WebSocketMessageType.Text,
+                        endOfMessage: true,
+                        CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    var errorJson = JsonSerializer.Serialize(new { Error = $"Processing error: {ex.Message}" }, jsonOptions);
                     var errorBytes = Encoding.UTF8.GetBytes(errorJson);
                     await webSocket.SendAsync(
                         new ArraySegment<byte>(errorBytes),
@@ -169,40 +174,11 @@ public static class Serve
                         endOfMessage: true,
                         CancellationToken.None);
                 }
-                else
+                finally
                 {
-                    if (await results.MoveNextAsync())
-                    {
-                        var result = results.Current;
-                        try
-                        {
-                            var jsonResult = new
-                            {
-                                Results = result.Results.Select(r => new
-                                {
-                                    BoundingBox = r.BBox,
-                                    r.Text,
-                                    r.Confidence
-                                }).ToList()
-                            };
-
-                            var json = JsonSerializer.Serialize(jsonResult, jsonOptions);
-                            var jsonBytes = Encoding.UTF8.GetBytes(json);
-                            await webSocket.SendAsync(
-                                new ArraySegment<byte>(jsonBytes),
-                                WebSocketMessageType.Text,
-                                endOfMessage: true,
-                                CancellationToken.None);
-                        }
-                        finally
-                        {
-                            result.Image.Dispose();
-                        }
-                    }
+                    result.Image.Dispose();
                 }
             }
-
-            await results.DisposeAsync();
 
             await webSocket.CloseAsync(
                 WebSocketCloseStatus.NormalClosure,
