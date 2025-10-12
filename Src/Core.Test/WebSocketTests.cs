@@ -201,7 +201,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
     }
 
     [Fact]
-    public async Task MixedValidAndInvalidImages_ReturnsResultsAndErrors()
+    public async Task InvalidImage_FailsConnection()
     {
         // Create test images
         using var validImage = CreateImageWithText("valid");
@@ -221,26 +221,16 @@ public class WebSocketTests : IClassFixture<ServerFixture>
         }.Uri;
         await webSocket.ConnectAsync(wsUri, CancellationToken.None);
 
-        // Send valid image, then invalid data, then another valid image
+        // Send valid image, then invalid data
         await SendImageAsync(webSocket, validBytes);
         await SendImageAsync(webSocket, invalidBytes);
-        await SendImageAsync(webSocket, validBytes);
 
         // Close our side to signal we're done sending
         await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Done", CancellationToken.None);
 
-        // Receive three messages (result, error, result)
-        var messages = new List<string>();
-        for (int i = 0; i < 3; i++)
-        {
-            var message = await ReceiveTextMessageAsync(webSocket);
-            messages.Add(message);
-        }
-
-        Assert.Equal(3, messages.Count);
-
-        // First message should be a successful result
-        var firstResult = JsonSerializer.Deserialize<JsonElement>(messages[0], new JsonSerializerOptions
+        // Receive first result (should succeed)
+        var firstMessage = await ReceiveTextMessageAsync(webSocket);
+        var firstResult = JsonSerializer.Deserialize<JsonElement>(firstMessage, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
@@ -248,26 +238,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
         var firstText = string.Join(" ", firstResults.EnumerateArray().Select(tr => tr.GetProperty("text").GetString() ?? ""));
         Assert.Contains("valid", firstText.ToLower());
 
-        // Second message should be an error
-        var secondResult = JsonSerializer.Deserialize<JsonElement>(messages[1], new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
-        Assert.True(secondResult.TryGetProperty("error", out var error));
-        Assert.Contains("Invalid image format", error.GetString());
-
-        // Third message should be a successful result
-        var thirdResult = JsonSerializer.Deserialize<JsonElement>(messages[2], new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
-        Assert.True(thirdResult.TryGetProperty("results", out var thirdResults));
-        var thirdText = string.Join(" ", thirdResults.EnumerateArray().Select(tr => tr.GetProperty("text").GetString() ?? ""));
-        Assert.Contains("valid", thirdText.ToLower());
-
-        // Wait for server to close
-        var buffer = new byte[1024];
-        var closeResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-        Assert.Equal(WebSocketMessageType.Close, closeResult.MessageType);
+        // Connection should fail when attempting to receive next message
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await ReceiveTextMessageAsync(webSocket));
     }
 }
