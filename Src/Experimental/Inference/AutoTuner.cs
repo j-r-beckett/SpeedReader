@@ -52,18 +52,34 @@ public class AutoTuner : IAsyncDisposable
         }
     }
 
-    // private async IAsyncEnumerable<TimeSpan> SortedTimes(Channel<TimeSpan> times)
-    // {
-    //     TimeSpan? currentTime = TimeSpan.Zero;
-    //     await foreach (var time in times.Reader.ReadAllAsync(_tuneCts.Token))
-    //     {
-    //         if (time > currentTime)
-    //         {
-    //             yield return time;
-    //             currentTime = time;
-    //         }
-    //     }
-    // }
+    private async Task<double> GetAverageParallelism(Throttler<(float[], int[]), (float[], int[])> throttler, TimeSpan period)
+    {
+        const int numSamples = 10;
+        double sum = throttler.QueueDepth;  // record first sample
+        var start = SharedClock.Now;
+        var samplePeriod = period / numSamples;
+        for (var i = 0; i < numSamples - 1; i++)
+        {
+            var samplePeriodStart = start + i * samplePeriod;
+            var samplePeriodEnd = start + (i + 1) * samplePeriod;
+            await Task.Delay(samplePeriodStart - samplePeriodEnd, _tuneCts.Token);
+            sum += throttler.QueueDepth;
+        }
+        return sum / numSamples;
+    }
+
+    private async IAsyncEnumerable<TimeSpan> SortedTimes(Channel<TimeSpan> times)
+    {
+        TimeSpan? currentTime = TimeSpan.Zero;
+        await foreach (var time in times.Reader.ReadAllAsync(_tuneCts.Token))
+        {
+            if (time > currentTime)
+            {
+                yield return time;
+                currentTime = time;
+            }
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {
