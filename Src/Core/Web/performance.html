@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedReader Performance Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            max-width: 90vw;
+            min-height: 100vh;
+            margin: 0 auto;
+            padding: 1vh 2vw;
+            background-color: #fafafa;
+            box-sizing: border-box;
+        }
+
+        .header-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .status {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .status.connected {
+            color: #22c55e;
+        }
+
+        .status.error {
+            color: #ef4444;
+        }
+
+        .controls-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-item label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .control-item input, .control-item select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #16a34a;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .metrics-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .metric-value.success {
+            color: #22c55e;
+        }
+
+        .metric-value.error {
+            color: #ef4444;
+        }
+
+        .graphs-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .graph-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .graph-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .graph-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 250px !important;
+        }
+
+        @media (max-width: 768px) {
+            .graph-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <h1 class="title">SpeedReader Performance Test</h1>
+        <div class="status" id="status">Disconnected</div>
+    </div>
+
+    <div class="controls-container">
+        <div class="control-group">
+            <div class="control-item">
+                <label for="image-width">Image Width</label>
+                <input type="number" id="image-width" value="800" min="100" max="4000">
+            </div>
+            <div class="control-item">
+                <label for="image-height">Image Height</label>
+                <input type="number" id="image-height" value="600" min="100" max="4000">
+            </div>
+            <div class="control-item">
+                <label for="word-count">Words Per Image</label>
+                <input type="number" id="word-count" value="20" min="1" max="200">
+            </div>
+            <div class="control-item">
+                <label for="total-images">Total Images</label>
+                <input type="number" id="total-images" value="100" min="1" max="10000">
+            </div>
+            <div class="control-item">
+                <button class="btn btn-primary" id="start-btn">Start Test</button>
+            </div>
+            <div class="control-item">
+                <button class="btn btn-danger" id="stop-btn" disabled>Stop Test</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="metrics-container">
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Images Sent</div>
+                <div class="metric-value" id="sent-count">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Results Received</div>
+                <div class="metric-value success" id="received-count">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Errors</div>
+                <div class="metric-value error" id="error-count">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Latency (ms)</div>
+                <div class="metric-value" id="avg-latency">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Send Rate (img/s)</div>
+                <div class="metric-value" id="send-rate">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Receive Rate (img/s)</div>
+                <div class="metric-value" id="receive-rate">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="graphs-container">
+        <div class="graph-grid">
+            <div class="graph-card">
+                <div class="graph-title">Send Rate (images/second)</div>
+                <canvas id="send-chart"></canvas>
+            </div>
+            <div class="graph-card">
+                <div class="graph-title">Receive Rate (images/second)</div>
+                <canvas id="receive-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        const sentCountEl = document.getElementById('sent-count');
+        const receivedCountEl = document.getElementById('received-count');
+        const errorCountEl = document.getElementById('error-count');
+        const avgLatencyEl = document.getElementById('avg-latency');
+        const sendRateEl = document.getElementById('send-rate');
+        const receiveRateEl = document.getElementById('receive-rate');
+
+        let webSocket = null;
+        let isRunning = false;
+        let sentCount = 0;
+        let receivedCount = 0;
+        let errorCount = 0;
+        let latencies = [];
+        let sendTimestamps = [];
+        let receiveTimestamps = [];
+
+        const WORD_LIST = [
+            'lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit',
+            'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore',
+            'magna', 'aliqua', 'enim', 'ad', 'minim', 'veniam', 'quis', 'nostrud',
+            'exercitation', 'ullamco', 'laboris', 'nisi', 'aliquip', 'ex', 'ea', 'commodo'
+        ];
+
+        // Chart setup
+        const chartConfig = {
+            type: 'line',
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Time (seconds)'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Images/Second'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        };
+
+        const sendChart = new Chart(document.getElementById('send-chart'), {
+            ...chartConfig,
+            data: {
+                datasets: [{
+                    label: 'Send Rate',
+                    data: [],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.3
+                }]
+            }
+        });
+
+        const receiveChart = new Chart(document.getElementById('receive-chart'), {
+            ...chartConfig,
+            data: {
+                datasets: [{
+                    label: 'Receive Rate',
+                    data: [],
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.3
+                }]
+            }
+        });
+
+        function updateStatus(message, type = '') {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+
+        function generateRandomText(wordCount) {
+            const words = [];
+            for (let i = 0; i < wordCount; i++) {
+                words.push(WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)]);
+            }
+            return words.join(' ');
+        }
+
+        async function generateImage(width, height, wordCount) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            // White background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, width, height);
+
+            // Black text
+            ctx.fillStyle = 'black';
+            ctx.font = '24px Arial';
+
+            const text = generateRandomText(wordCount);
+            const words = text.split(' ');
+            const maxWidth = width - 40;
+            let x = 20;
+            let y = 40;
+            const lineHeight = 35;
+
+            for (const word of words) {
+                const metrics = ctx.measureText(word + ' ');
+                if (x + metrics.width > maxWidth && x > 20) {
+                    x = 20;
+                    y += lineHeight;
+                }
+                ctx.fillText(word, x, y);
+                x += metrics.width;
+            }
+
+            return new Promise((resolve) => {
+                canvas.toBlob(resolve, 'image/png');
+            });
+        }
+
+        async function sendImage(blob) {
+            const arrayBuffer = await blob.arrayBuffer();
+            const sendTime = Date.now();
+            sendTimestamps.push(sendTime);
+            webSocket.send(arrayBuffer);
+            sentCount++;
+            sentCountEl.textContent = sentCount;
+        }
+
+        async function startTest() {
+            const width = parseInt(document.getElementById('image-width').value);
+            const height = parseInt(document.getElementById('image-height').value);
+            const wordCount = parseInt(document.getElementById('word-count').value);
+            const totalImages = parseInt(document.getElementById('total-images').value);
+
+            // Reset metrics
+            sentCount = 0;
+            receivedCount = 0;
+            errorCount = 0;
+            latencies = [];
+            sendTimestamps = [];
+            receiveTimestamps = [];
+            sentCountEl.textContent = '0';
+            receivedCountEl.textContent = '0';
+            errorCountEl.textContent = '0';
+            avgLatencyEl.textContent = '0';
+            sendRateEl.textContent = '0';
+            receiveRateEl.textContent = '0';
+            sendChart.data.datasets[0].data = [];
+            receiveChart.data.datasets[0].data = [];
+            sendChart.update();
+            receiveChart.update();
+
+            // Connect WebSocket
+            const wsUri = new URL('/api/ws/ocr', window.location.href);
+            wsUri.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+            webSocket = new WebSocket(wsUri.href);
+
+            webSocket.onopen = async () => {
+                updateStatus('Connected - Running test', 'connected');
+                isRunning = true;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                // Start metrics updater
+                const metricsInterval = setInterval(() => {
+                    if (!isRunning) {
+                        clearInterval(metricsInterval);
+                        return;
+                    }
+                    updateMetrics();
+                }, 200);
+
+                // Send images
+                for (let i = 0; i < totalImages && isRunning; i++) {
+                    const blob = await generateImage(width, height, wordCount);
+                    await sendImage(blob);
+
+                    // Small delay to prevent overwhelming the connection
+                    await new Promise(resolve => setTimeout(resolve, 1));
+                }
+
+                // Close output after sending all images
+                if (isRunning) {
+                    webSocket.close(1000, 'Done sending');
+                }
+            };
+
+            webSocket.onmessage = (event) => {
+                const receiveTime = Date.now();
+                receiveTimestamps.push(receiveTime);
+
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.error) {
+                        errorCount++;
+                        errorCountEl.textContent = errorCount;
+                    } else {
+                        receivedCount++;
+                        receivedCountEl.textContent = receivedCount;
+
+                        // Calculate latency
+                        if (sendTimestamps.length > 0) {
+                            const sendTime = sendTimestamps.shift();
+                            const latency = receiveTime - sendTime;
+                            latencies.push(latency);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error parsing message:', err);
+                    errorCount++;
+                    errorCountEl.textContent = errorCount;
+                }
+            };
+
+            webSocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('Connection error', 'error');
+            };
+
+            webSocket.onclose = () => {
+                isRunning = false;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                updateStatus('Test complete - Disconnected', '');
+                updateMetrics();
+            };
+        }
+
+        function stopTest() {
+            isRunning = false;
+            if (webSocket) {
+                webSocket.close();
+            }
+        }
+
+        function updateMetrics() {
+            // Calculate average latency
+            if (latencies.length > 0) {
+                const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+                avgLatencyEl.textContent = Math.round(avgLatency);
+            }
+
+            // Calculate rates
+            const now = Date.now();
+            const windowMs = 1000;
+
+            const recentSends = sendTimestamps.filter(t => now - t < windowMs).length;
+            const recentReceives = receiveTimestamps.filter(t => now - t < windowMs).length;
+
+            const sendRate = recentSends;
+            const receiveRate = recentReceives;
+
+            sendRateEl.textContent = sendRate;
+            receiveRateEl.textContent = receiveRate;
+
+            // Update charts
+            const currentTime = sentCount > 0 ? (now - sendTimestamps[0]) / 1000 : 0;
+
+            sendChart.data.datasets[0].data.push({ x: currentTime, y: sendRate });
+            receiveChart.data.datasets[0].data.push({ x: currentTime, y: receiveRate });
+
+            // Keep only last 100 points
+            if (sendChart.data.datasets[0].data.length > 100) {
+                sendChart.data.datasets[0].data.shift();
+            }
+            if (receiveChart.data.datasets[0].data.length > 100) {
+                receiveChart.data.datasets[0].data.shift();
+            }
+
+            sendChart.update('none');
+            receiveChart.update('none');
+        }
+
+        startBtn.addEventListener('click', startTest);
+        stopBtn.addEventListener('click', stopTest);
+    </script>
+</body>
+</html>

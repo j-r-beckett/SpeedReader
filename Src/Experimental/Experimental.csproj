@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" />
-    <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="System.Numerics.Tensors" />
   </ItemGroup>
 
