@@ -9,5 +9,5 @@ public static class SharedClock
 {
     private static readonly Stopwatch _clock = Stopwatch.StartNew();
 
-    public static TimeSpan Elapsed => _clock.Elapsed;
+    public static TimeSpan Now => _clock.Elapsed;
 }
