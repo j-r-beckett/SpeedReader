@@ -6,6 +6,7 @@ services:
       - ASPNETCORE_URLS=http://0.0.0.0:5001
     volumes:
       - ./demo.html:/srv/demo.html:ro
+      - ./performance.html:/srv/performance.html:ro
     deploy:
       resources:
         limits:
@@ -22,6 +23,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./demo.html:/srv/demo.html:ro
+      - ./performance.html:/srv/performance.html:ro
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
