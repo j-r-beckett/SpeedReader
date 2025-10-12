@@ -26,3 +26,6 @@ Src/Resources/binaries/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Playwright
+.playwright-mcp/
