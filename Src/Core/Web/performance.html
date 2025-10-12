@@ -472,10 +472,7 @@
                     await new Promise(resolve => setTimeout(resolve, 1));
                 }
 
-                // Close output after sending all images
-                if (isRunning) {
-                    webSocket.close(1000, 'Done sending');
-                }
+                // Don't close - let the server close when done processing
             };
 
             webSocket.onmessage = (event) => {
