@@ -22,8 +22,6 @@ public class Throttler<TIn, TOut>
     // End times, written to once we have end
     public readonly Channel<TimeSpan> EndTimes = Channel.CreateUnbounded<TimeSpan>();
 
-    private static readonly Stopwatch _clock = Stopwatch.StartNew();  // Synchronized monotonic clock
-
     public Throttler(Func<TIn, TOut> func, int start)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(start);
@@ -47,10 +45,10 @@ public class Throttler<TIn, TOut>
 
         var task = Task.Run(() =>
         {
-            var start = _clock.Elapsed;
+            var start = SharedClock.Elapsed;
             StartTimes.Writer.TryWrite(start);
             var result = _func(input);
-            var end = _clock.Elapsed;
+            var end = SharedClock.Elapsed;
             EndTimes.Writer.TryWrite(end);
             Latencies.Writer.TryWrite((start, end));
             return result;
