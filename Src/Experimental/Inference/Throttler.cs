@@ -44,9 +44,9 @@ public class Throttler<TIn, TOut>
             Latencies.Writer.TryWrite((start, end));
             return result;
         });
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#pragma warning disable CS4014
         task.ContinueWith(_ => _semaphore.Release());
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#pragma warning restore CS4014
         return task;
     }
 
