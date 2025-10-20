@@ -203,7 +203,7 @@
 <body>
     <div class="header-bar">
         <h1 class="title">SpeedReader Performance Test</h1>
-        <div class="status" id="status">Disconnected</div>
+        <div class="status" id="status">Ready</div>
     </div>
 
     <div class="controls-container">
@@ -287,7 +287,7 @@
         const sendRateEl = document.getElementById('send-rate');
         const receiveRateEl = document.getElementById('receive-rate');
 
-        let webSocket = null;
+        const MAX_CONCURRENT = 10;
         let isRunning = false;
         let sentCount = 0;
         let receivedCount = 0;
@@ -295,6 +295,7 @@
         let latencies = [];
         let sendTimestamps = [];
         let receiveTimestamps = [];
+        let startTime = 0;
 
         const WORD_LIST = [
             'lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit',
@@ -409,13 +410,66 @@
             });
         }
 
-        async function sendImage(blob) {
-            const arrayBuffer = await blob.arrayBuffer();
+        async function sendImageToApi(blob) {
             const sendTime = Date.now();
             sendTimestamps.push(sendTime);
-            webSocket.send(arrayBuffer);
             sentCount++;
             sentCountEl.textContent = sentCount;
+
+            try {
+                const response = await fetch('/api/ocr', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'image/png'
+                    },
+                    body: blob
+                });
+
+                const receiveTime = Date.now();
+                receiveTimestamps.push(receiveTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                receivedCount++;
+                receivedCountEl.textContent = receivedCount;
+
+                // Calculate latency
+                const latency = receiveTime - sendTime;
+                latencies.push(latency);
+
+            } catch (err) {
+                console.error('Error sending image:', err);
+                errorCount++;
+                errorCountEl.textContent = errorCount;
+                receiveTimestamps.push(Date.now());
+            }
+        }
+
+        async function processWithConcurrencyLimit(images, limit) {
+            const results = [];
+            const executing = [];
+
+            for (const image of images) {
+                if (!isRunning) break;
+
+                const promise = sendImageToApi(image);
+                results.push(promise);
+
+                if (limit <= images.length) {
+                    const e = promise.then(() => executing.splice(executing.indexOf(e), 1));
+                    executing.push(e);
+
+                    if (executing.length >= limit) {
+                        await Promise.race(executing);
+                    }
+                }
+            }
+
+            await Promise.all(results);
         }
 
         async function startTest() {
@@ -431,6 +485,7 @@
             latencies = [];
             sendTimestamps = [];
             receiveTimestamps = [];
+            startTime = Date.now();
             sentCountEl.textContent = '0';
             receivedCountEl.textContent = '0';
             errorCountEl.textContent = '0';
@@ -442,85 +497,45 @@
             sendChart.update();
             receiveChart.update();
 
-            // Connect WebSocket
-            const wsUri = new URL('/api/ws/ocr', window.location.href);
-            wsUri.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            updateStatus('Running test', 'connected');
+            isRunning = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
 
-            webSocket = new WebSocket(wsUri.href);
+            // Start metrics updater
+            const metricsInterval = setInterval(() => {
+                if (!isRunning) {
+                    clearInterval(metricsInterval);
+                    return;
+                }
+                updateMetrics();
+            }, 200);
 
-            webSocket.onopen = async () => {
-                updateStatus('Connected - Running test', 'connected');
-                isRunning = true;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-
-                // Start metrics updater
-                const metricsInterval = setInterval(() => {
-                    if (!isRunning) {
-                        clearInterval(metricsInterval);
-                        return;
-                    }
-                    updateMetrics();
-                }, 200);
-
-                // Send images
-                for (let i = 0; i < totalImages && isRunning; i++) {
+            try {
+                // Generate all images
+                const images = [];
+                for (let i = 0; i < totalImages; i++) {
                     const blob = await generateImage(width, height, wordCount);
-                    await sendImage(blob);
-
-                    // Small delay to prevent overwhelming the connection
-                    await new Promise(resolve => setTimeout(resolve, 1));
+                    images.push(blob);
                 }
 
-                // Don't close - let the server close when done processing
-            };
+                // Process images with concurrency limit
+                await processWithConcurrencyLimit(images, MAX_CONCURRENT);
 
-            webSocket.onmessage = (event) => {
-                const receiveTime = Date.now();
-                receiveTimestamps.push(receiveTime);
-
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.error) {
-                        errorCount++;
-                        errorCountEl.textContent = errorCount;
-                    } else {
-                        receivedCount++;
-                        receivedCountEl.textContent = receivedCount;
-
-                        // Calculate latency
-                        if (sendTimestamps.length > 0) {
-                            const sendTime = sendTimestamps.shift();
-                            const latency = receiveTime - sendTime;
-                            latencies.push(latency);
-                        }
-                    }
-                } catch (err) {
-                    console.error('Error parsing message:', err);
-                    errorCount++;
-                    errorCountEl.textContent = errorCount;
-                }
-            };
-
-            webSocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                updateStatus('Connection error', 'error');
-            };
-
-            webSocket.onclose = () => {
+            } catch (err) {
+                console.error('Test error:', err);
+                updateStatus('Test failed', 'error');
+            } finally {
                 isRunning = false;
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
-                updateStatus('Test complete - Disconnected', '');
+                updateStatus('Test complete', '');
                 updateMetrics();
-            };
+            }
         }
 
         function stopTest() {
             isRunning = false;
-            if (webSocket) {
-                webSocket.close();
-            }
         }
 
         function updateMetrics() {
@@ -544,7 +559,7 @@
             receiveRateEl.textContent = receiveRate;
 
             // Update charts
-            const currentTime = sentCount > 0 ? (now - sendTimestamps[0]) / 1000 : 0;
+            const currentTime = startTime > 0 ? (now - startTime) / 1000 : 0;
 
             sendChart.data.datasets[0].data.push({ x: currentTime, y: sendRate });
             receiveChart.data.datasets[0].data.push({ x: currentTime, y: receiveRate });
