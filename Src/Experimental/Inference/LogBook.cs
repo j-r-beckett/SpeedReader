@@ -6,8 +6,12 @@ using System.Diagnostics;
 
 namespace Experimental.Inference;
 
-// Thread-safe for concurrent LogStart/LogEnd calls.
-// GetAvg* and Prune methods must NOT be called concurrently with each other.
+// *Important*
+// - Thread-safe for concurrent LogStart/LogEnd calls.
+// - GetSummary and Prune methods must NOT be called concurrently with each other.
+// - After calling Prune(T), all future GetSummary calls must have start > T.
+// - Call LogEnd exactly once for each token minted by LogStart. try/finally pattern is strongly
+//   recommended.
 public class LogBook
 {
     private readonly Stopwatch _clock = Stopwatch.StartNew();  // Monotonic clock
@@ -16,6 +20,203 @@ public class LogBook
     private readonly ConcurrentDictionary<Token, TimeSpan> _endTimes = new();
 
     public interface IToken;
+
+    public interface ISummary
+    {
+        public double AvgDuration { get; }  // Seconds
+        public double AvgThroughput { get; }  // Jobs per second
+        public double AvgParallelism { get; }
+    }
+
+    public IToken LogStart()
+    {
+        var token = new Token();
+        _startTimes.TryAdd(token, _clock.Elapsed);
+        return token;
+    }
+
+    // Must be called exactly once for each token minted by LogStart
+    public void LogEnd(IToken token)
+    {
+        if (token is not Token t) throw new Exception($"Third-party implementations of {nameof(IToken)} are not allowed");
+        _endTimes.TryAdd(t, _clock.Elapsed);
+    }
+
+    public ISummary GetSummary(TimeSpan start, TimeSpan end)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
+
+        // Snapshot end times before start times to avoid end times without corresponding start times. Note that start
+        // times without end times are possible, but acceptable.
+        var snapshot = TakeSnapshot();
+
+        var pairs = Pairs(snapshot, start, end);
+        if (pairs.Count == 0) return Summary.Zero;  // No jobs completed in the specified interval, we can't estimate anything
+
+        var activeTime = ActiveTime();
+        if (activeTime == 0) return Summary.Zero;
+
+        // All pairs are in [start, end] bounds
+        var clampedStart = pairs.Select(p => p.Start).Min();
+        var clampedEnd = pairs.Select(p => p.End).Max();
+
+        return new Summary
+        {
+            AvgDuration = GetAvgDuration(),
+            AvgThroughput = GetAvgThroughput(),
+            AvgParallelism = GetAvgParallelism()
+        };
+
+        double GetAvgDuration()
+        {
+            var totalDuration = pairs.Aggregate(TimeSpan.Zero, (sum, pair) => sum + (pair.End - pair.Start));
+            return (totalDuration / pairs.Count).TotalSeconds;
+        }
+
+        double GetAvgThroughput()
+        {
+            return clampedEnd == clampedStart ? 0 : pairs.Count / activeTime;
+        }
+
+        double GetAvgParallelism()
+        {
+            var tokens = pairs.Select(p => p.Token).ToHashSet();
+            return LogBook.GetAvgParallelism(snapshot, tokens, clampedStart, clampedEnd);
+        }
+
+        // Returns the total amount of time during which at least one job was active
+        double ActiveTime()
+        {
+            if (pairs.Count == 0) return 0;
+
+            // Create events for sweep line algorithm
+            const int JOB_START = 0;
+            const int JOB_END = 1;
+
+            List<(TimeSpan Time, int EventType)> events = [];
+            foreach (var (s, e, _) in pairs)
+            {
+                events.Add((s, JOB_START));
+                events.Add((e, JOB_END));
+            }
+
+            events.Sort();
+
+            var activeTime = 0.0;
+            var currentActiveJobs = 0;
+            for (int i = 0; i < events.Count - 1; i++)
+            {
+                var (time, eventType) = events[i];
+                var (nextTime, _) = events[i + 1];
+
+                // Add 1 if start event, subtract 1 if end event
+                if (eventType == JOB_START) currentActiveJobs++;
+                else if (eventType == JOB_END) currentActiveJobs--;
+
+                // If there is at least one active job, add to active time
+                if (currentActiveJobs > 0)
+                {
+                    activeTime += (nextTime - time).TotalSeconds;
+                }
+            }
+
+            return activeTime;
+        }
+    }
+
+    public void Prune(TimeSpan before)
+    {
+        // Removes completed jobs before a given timestamp to prevent unbounded memory growth.
+        // Prune safety relies on a caller invariant: after Prune(before), GetSummary(start, end) will
+        // never be called with start <= before. Under this invariant, Prune cannot affect GetSummary
+        // results. Duration and throughput only examine pairs where both start and end are >= start,
+        // so pruned pairs are already excluded. Parallelism Phase 2 (weighted sum accumulation when
+        // time >= start) is safe for the same reason. Parallelism Phase 1 (bootstrapping the count
+        // before entering the interval) is safe because Prune only removes complete (start, end) pairs,
+        // and each complete pair contributes net zero to parallelism: the start event increments the
+        // count and the end event decrements it by the same amount.
+
+        var snapshot = TakeSnapshot();
+
+        foreach (var pair in Pairs(snapshot, TimeSpan.Zero, before))
+        {
+            _startTimes.Remove(pair.Token, out _);
+            _endTimes.Remove(pair.Token, out _);
+        }
+    }
+
+    private static double GetAvgParallelism(
+        Snapshot snapshot,
+        HashSet<Token> completedJobs,
+        TimeSpan start,
+        TimeSpan end)
+    {
+        if (start == end) return 0;
+
+        const int START_EVENT = 0;
+        const int END_EVENT = 1;
+        const int INTERVAL_EVENT = 2;
+
+        // We count starting from zero to so that when we enter [start, end] we know the current parallelism
+        List<(TimeSpan Time, int EventType)> events = [
+            (TimeSpan.Zero, INTERVAL_EVENT),
+            (start, INTERVAL_EVENT),
+            (end, INTERVAL_EVENT)
+        ];
+
+        foreach (var (_, e) in snapshot.EndTimes)
+        {
+            if (e <= end) events.Add((e, END_EVENT));
+        }
+
+        foreach (var (_, s) in snapshot.StartTimes)
+        {
+            if (s <= end) events.Add((s, START_EVENT));
+        }
+
+        events.Sort();
+
+        // Sweep line algorithm to compute weighted average parallelism
+        var currentParallelism = 0;
+        var weightedParallelismSum = 0.0;
+
+        // Count up occurs in two phases:
+        // Phase 1: increment and decrement currentParallelism, do not add to weighted sum
+        // Phase 2: keep updating currentParallelism, add to weighted sum
+        for (int i = 0; i < events.Count - 1; i++)
+        {
+            var (time, eventType) = events[i];
+            var (nextTime, _) = events[i + 1];
+
+            // Add 1 if start event, subtract 1 if end event, do nothing if interval event
+            if (eventType == START_EVENT) currentParallelism++;
+            else if (eventType == END_EVENT) currentParallelism--;
+
+            // Only add to weighted sum if [time, nextTime] is fully within [start, end]
+            if (time >= start)  // No need to check nextTime <= end because we filtered when creating events
+            {
+                var weight = (nextTime - time).TotalSeconds;
+                weightedParallelismSum += currentParallelism * weight;
+            }
+        }
+
+        return weightedParallelismSum;
+    }
+
+    private static List<(TimeSpan Start, TimeSpan End, Token Token)> Pairs(Snapshot snapshot, TimeSpan start, TimeSpan end)
+    {
+        var pairs = new List<(TimeSpan, TimeSpan, Token)>();
+
+        foreach (var (token, s) in snapshot.StartTimes)
+        {
+            // Add to pairs if start time is in [start, end] and there is a corresponding end time also in [start, end]
+            if (s >= start && s <= end && snapshot.EndTimes.TryGetValue(token, out var e) && e <= end) pairs.Add((s, e, token));
+        }
+
+        return pairs;
+    }
+
+    private Snapshot TakeSnapshot() => new (_startTimes, _endTimes);
 
     private class Token : IEquatable<Token>, IToken
     {
@@ -34,122 +235,26 @@ public class LogBook
         public static bool operator !=(Token? left, Token? right) => !(left == right);
     }
 
-    public IToken LogStart()
+    private class Summary : ISummary
     {
-        var token = new Token();
-        _startTimes.TryAdd(token, _clock.Elapsed);
-        return token;
+        public double AvgDuration { get; init; }
+        public double AvgThroughput { get; init; }
+        public double AvgParallelism { get; init; }
+
+        public static Summary Zero = new();
     }
 
-    // Must be called exactly once for each token minted by LogStart
-    public void LogEnd(IToken token)
+    private record Snapshot
     {
-        if (token is not Token t) throw new Exception($"Third-party implementations of {nameof(IToken)} are not allowed");
-        _endTimes.TryAdd(t, _clock.Elapsed);
-    }
+        public readonly Dictionary<Token, TimeSpan> StartTimes;
+        public readonly Dictionary<Token, TimeSpan> EndTimes;
 
-    // Average duration of jobs
-    public TimeSpan GetAvgDuration(TimeSpan start, TimeSpan end)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
-        var pairs = Pairs(start, end);
-        return pairs.Count == 0
-            ? TimeSpan.Zero
-            : pairs.Aggregate(TimeSpan.Zero, (sum, pair) => sum + (pair.End - pair.Start)) / pairs.Count;
-    }
-
-    // Average number of concurrent jobs
-    public double GetAvgParallelism(TimeSpan start, TimeSpan end)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
-        if (start == end) return 0;
-
-        const int START_EVENT = 0;
-        const int END_EVENT = 1;
-        const int INTERVAL_EVENT = 2;
-
-        var events = new List<(TimeSpan Time, int EventType)>();
-        events.Add((TimeSpan.Zero, INTERVAL_EVENT));  // We need to count up from zero so we can accurately track currentParallelism
-        events.Add((end, INTERVAL_EVENT));
-
-        foreach (var (_, e) in _endTimes)
+        public Snapshot(ConcurrentDictionary<Token, TimeSpan> startTimes, ConcurrentDictionary<Token, TimeSpan> endTimes)
         {
-            if (e <= end) events.Add((e, END_EVENT));
-        }
-
-        foreach (var (_, s) in _startTimes)
-        {
-            if (s <= end) events.Add((s, START_EVENT));
-        }
-
-        events.Sort();
-
-        // Sweep line algorithm to compute weighted average parallelism
-        var currentParallelism = 0;
-        var weightedParallelismSum = 0.0;
-
-        // Count up occurs in two phases:
-        // Phase 1: incremement and decrement currentParallelism, but do not add to weighted sum (overlapWeight <= 0)
-        // Phase 2: increment/decrement currentParallelism and add to weighted sum (overlapWeight > 0)
-        for (int i = 0; i < events.Count - 1; i++)
-        {
-            var (time, eventType) = events[i];
-            var (nextTime, _) = events[i + 1];
-
-            // Add 1 if start event, subtract 1 if end event, do nothing if interval event
-            if (eventType == START_EVENT) currentParallelism++;
-            else if (eventType == END_EVENT) currentParallelism--;
-
-            // Use Max(time, start) to properly handle when a job starts before [start, end] and is still executing during [start, end]
-            var overlapWeight = (nextTime - Max(time, start)).TotalSeconds;
-            if (overlapWeight > 0)
-            {
-                weightedParallelismSum += currentParallelism * overlapWeight;
-            }
-        }
-
-        return weightedParallelismSum / (end - start).TotalSeconds;
-    }
-
-    // Jobs per second
-    public double GetAvgThroughput(TimeSpan start, TimeSpan end)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
-        var pairs = Pairs(start, end);
-        if (pairs.Count == 0) return 0;
-        var clampedStart = Max(start, pairs.Min(p => p.Start));
-        var clampedEnd = Min(end, pairs.Max(p => p.End));
-        var avgDuration = GetAvgDuration(clampedStart, clampedEnd);
-        if (avgDuration == TimeSpan.Zero) return 0;
-        return GetAvgParallelism(clampedStart, clampedEnd) / avgDuration.TotalSeconds;
-    }
-
-    // Caller must ensure no further LogStart/LogEnd calls start before 'before'
-    public void Prune(TimeSpan before)
-    {
-        // A (start, end) pair has net zero effect on the parallelism tracker in GetAvgParallelism.
-        // That ensures that Prune does not affect Phase 1, and the constraints on the caller for before ensures that
-        // Phase 2 is also unaffected.
-        foreach (var pair in Pairs(TimeSpan.Zero, before))
-        {
-            _startTimes.Remove(pair.Token, out _);
-            _endTimes.Remove(pair.Token, out _);
+            // Snapshot end times before start times to avoid end times without corresponding start times. Note that start
+            // times without end times are possible, but acceptable.
+            EndTimes = new Dictionary<Token, TimeSpan>(endTimes);
+            StartTimes = new Dictionary<Token, TimeSpan>(startTimes);
         }
     }
-
-    private List<(TimeSpan Start, TimeSpan End, Token Token)> Pairs(TimeSpan start, TimeSpan end)
-    {
-        var pairs = new List<(TimeSpan, TimeSpan, Token)>();
-
-        foreach (var (token, s) in _startTimes)
-        {
-            if (s >= start && s <= end && _endTimes.TryGetValue(token, out var e) && e <= end) pairs.Add((s, e, token));
-        }
-
-        return pairs;
-    }
-
-    private static TimeSpan Max(TimeSpan a, TimeSpan b) => a > b ? a : b;
-
-    private static TimeSpan Min(TimeSpan a, TimeSpan b) => a < b ? a : b;
 }
