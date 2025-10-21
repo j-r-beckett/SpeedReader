@@ -157,21 +157,19 @@ public class LogBook
         const int END_EVENT = 1;
         const int INTERVAL_EVENT = 2;
 
-        // We count starting from zero to so that when we enter [start, end] we know the current parallelism
-        List<(TimeSpan Time, int EventType)> events = [
-            (TimeSpan.Zero, INTERVAL_EVENT),
-            (start, INTERVAL_EVENT),
-            (end, INTERVAL_EVENT)
+        List<(TimeSpan Time, int EventType, Token? Token)> events = [
+            (start, INTERVAL_EVENT, null),
+            (end, INTERVAL_EVENT, null)
         ];
 
-        foreach (var (_, e) in snapshot.EndTimes)
+        foreach (var (token, time) in snapshot.EndTimes)
         {
-            if (e <= end) events.Add((e, END_EVENT));
+            if (time <= end) events.Add((time, END_EVENT, token));
         }
 
-        foreach (var (_, s) in snapshot.StartTimes)
+        foreach (var (token, time) in snapshot.StartTimes)
         {
-            if (s <= end) events.Add((s, START_EVENT));
+            if (time <= end) events.Add((time, START_EVENT, token));
         }
 
         events.Sort();
@@ -179,28 +177,43 @@ public class LogBook
         // Sweep line algorithm to compute weighted average parallelism
         var currentParallelism = 0;
         var weightedParallelismSum = 0.0;
+        var currentActiveCompletedJobs = 0;
+        var activeTime = 0.0;
+        var timeWeightsSum = 0.0;
 
         // Count up occurs in two phases:
         // Phase 1: increment and decrement currentParallelism, do not add to weighted sum
         // Phase 2: keep updating currentParallelism, add to weighted sum
         for (int i = 0; i < events.Count - 1; i++)
         {
-            var (time, eventType) = events[i];
-            var (nextTime, _) = events[i + 1];
+            var (time, eventType, token) = events[i];
+            var (nextTime, _, _) = events[i + 1];
+
+            // Update active completed jobs count
+            if (token is not null && completedJobs.Contains(token))
+            {
+                // Add 1 if start event, subtract 1 if end event. Will not be an interval event (interval events have null tokens)
+                if (eventType == START_EVENT) currentActiveCompletedJobs++;
+                else if (eventType == END_EVENT) currentActiveCompletedJobs--;
+            }
+
+            // Now update parallelism count
 
             // Add 1 if start event, subtract 1 if end event, do nothing if interval event
             if (eventType == START_EVENT) currentParallelism++;
             else if (eventType == END_EVENT) currentParallelism--;
 
-            // Only add to weighted sum if [time, nextTime] is fully within [start, end]
-            if (time >= start)  // No need to check nextTime <= end because we filtered when creating events
+            // Only add to weighted sum if [time, nextTime] is takes place while a job that is known to be eventually
+            // completed is running
+            if (currentActiveCompletedJobs > 0)
             {
-                var weight = (nextTime - time).TotalSeconds;
-                weightedParallelismSum += currentParallelism * weight;
+                var timeWeight = (nextTime - time).TotalSeconds;
+                timeWeightsSum += timeWeight;
+                weightedParallelismSum += currentParallelism * timeWeight;
             }
         }
 
-        return weightedParallelismSum;
+        return weightedParallelismSum / timeWeightsSum;
     }
 
     private static List<(TimeSpan Start, TimeSpan End, Token Token)> Pairs(Snapshot snapshot, TimeSpan start, TimeSpan end)
@@ -218,7 +231,7 @@ public class LogBook
 
     private Snapshot TakeSnapshot() => new (_startTimes, _endTimes);
 
-    private class Token : IEquatable<Token>, IToken
+    private class Token :  IToken, IEquatable<Token>, IComparable<Token>
     {
         private static long _globalIdCounter = -1;
         private long Id { get; } = Interlocked.Increment(ref _globalIdCounter);
@@ -233,6 +246,8 @@ public class LogBook
             left is null && right is null || left is not null && right is not null && left.Equals(right);
 
         public static bool operator !=(Token? left, Token? right) => !(left == right);
+
+        public int CompareTo(Token? other) => other is null ? 1 : Id.CompareTo(other.Id);
     }
 
     private class Summary : ISummary
