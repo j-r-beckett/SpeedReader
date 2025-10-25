@@ -1,10 +1,16 @@
+{
+	log {
+		level ERROR
+	}
+}
+
 http://{$CADDY_HOST}:{$CADDY_PORT} {
-    handle /api/* {
-        reverse_proxy app:5001
-    }
-    
-    rewrite / /demo.html
-    
-    root * /srv
-    file_server
+	handle /api/* {
+		reverse_proxy app:5001
+	}
+
+	rewrite / /demo.html
+
+	root * /srv
+	file_server
 }
