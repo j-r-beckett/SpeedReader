@@ -12,6 +12,8 @@ services:
         limits:
           cpus: "6.0"
           memory: 8G
+    networks:
+      - monitoring
 
   caddy:
     image: caddy:2
@@ -24,9 +26,13 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./demo.html:/srv/demo.html:ro
       - ./performance.html:/srv/performance.html:ro
+    networks:
+      - monitoring
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
+    command:
+      - '--v=0'
     ports:
       - "8081:8080"
     volumes:
@@ -37,3 +43,33 @@ services:
       - /dev/disk/:/dev/disk:ro
     privileged: true
     restart: unless-stopped
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--log.level=error'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./Monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./Monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_LOG_LEVEL=error
+    networks:
+      - monitoring
+
+networks:
+  monitoring:

@@ -129,7 +129,11 @@ public class TextDetector
 
     public async Task<(float[], int[])[]> RunInference(List<(float[], int[])> tiles)
     {
-        var inferenceTasks = await Task.WhenAll(tiles.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
+        List<Task<(float[], int[])>> inferenceTasks = [];
+        foreach (var (data, shape) in tiles)
+        {
+            inferenceTasks.Add(await _modelRunner.Run(data, shape));
+        }
         return await Task.WhenAll(inferenceTasks);
     }
 
