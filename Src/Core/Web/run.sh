@@ -8,7 +8,6 @@ docker build -t speedreader:local .
 
 cd Web
 export CADDY_HOST=localhost
-export CADDY_PORT=8080
 export SPEEDREADER_IMAGE=speedreader:local
 
 # Generate random Grafana admin password if not set

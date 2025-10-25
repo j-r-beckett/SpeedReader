@@ -4,9 +4,9 @@
 	}
 }
 
-http://{$CADDY_HOST}:{$CADDY_PORT} {
+http://{$CADDY_HOST}:8000 {
 	handle /api/* {
-		reverse_proxy app:5001
+		reverse_proxy app:5000
 	}
 
 	rewrite / /demo.html
