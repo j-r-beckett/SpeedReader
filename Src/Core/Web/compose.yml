@@ -3,7 +3,7 @@ services:
   app:
     image: ${SPEEDREADER_IMAGE}
     environment:
-      - ASPNETCORE_URLS=http://0.0.0.0:5001
+      - ASPNETCORE_URLS=http://0.0.0.0:5000
     volumes:
       - ./demo.html:/srv/demo.html:ro
       - ./performance.html:/srv/performance.html:ro
@@ -18,10 +18,9 @@ services:
   caddy:
     image: caddy:2
     ports:
-      - "${CADDY_PORT}:${CADDY_PORT}"
+      - "8000:8000"
     environment:
       - CADDY_HOST
-      - CADDY_PORT
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./demo.html:/srv/demo.html:ro
@@ -34,7 +33,7 @@ services:
     command:
       - '--v=0'
     ports:
-      - "8081:8080"
+      - "8080:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
