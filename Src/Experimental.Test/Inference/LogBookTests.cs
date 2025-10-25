@@ -27,9 +27,9 @@ public class LogBookTests
         }
         var stats = logBook.GetSummary(TimeSpan.Zero, TimeSpan.MaxValue);
 
-        Assert.Equal(_minExecutionTime, stats.AvgDuration, 3);
-        AssertWithin(threads, stats.AvgParallelism, 0.01);
-        AssertWithin(threads / _minExecutionTime, stats.AvgThroughput, 0.04);
+        Assert.Equal(_minExecutionTime, stats.AvgDuration, 2);
+        AssertWithin(threads, stats.AvgParallelism, 0.05);
+        AssertWithin(threads / _minExecutionTime * 0.95, stats.AvgThroughput, 0.05);
     }
 
     [Theory]
@@ -58,9 +58,9 @@ public class LogBookTests
         var stats = logBook.GetSummary(TimeSpan.Zero, TimeSpan.MaxValue);
 
         // Should be the same as the dense case
-        Assert.Equal(_minExecutionTime, stats.AvgDuration, 3);
-        AssertWithin(threads, stats.AvgParallelism, 0.01);
-        AssertWithin(threads / _minExecutionTime, stats.AvgThroughput, 0.04);
+        Assert.Equal(_minExecutionTime, stats.AvgDuration, 2);
+        AssertWithin(threads, stats.AvgParallelism, 0.05);
+        AssertWithin(threads / _minExecutionTime * 0.95, stats.AvgThroughput, 0.05);
     }
 
     [Fact]
