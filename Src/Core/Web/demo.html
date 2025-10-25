@@ -314,7 +314,7 @@
                 </div>
             </div>
             <div class="word-list" id="word-list">
-                <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 16px;">Detected Lines</h3>
+                <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 16px;">Detected Words</h3>
                 <div id="word-list-content"></div>
             </div>
         </div>
@@ -457,7 +457,7 @@
             expandAllBtn.textContent = 'Expand All';
 
             // Visualize the first result
-            if (currentImageData && firstResult && firstResult.lines) {
+            if (currentImageData && firstResult && firstResult.results) {
                 visualizeOCRResults(firstResult);
             }
 
@@ -559,26 +559,37 @@
             wordListContent.style.overflowY = 'auto';
             wordListContent.style.minHeight = '0';
 
-            // Clear line list
+            // Clear word list
             wordListContent.innerHTML = '';
 
-            // Get lines directly from data.lines array
-            const lines = data.lines || [];
+            // Get words directly from data.results array
+            const words = data.results || [];
 
-            // Draw polygons and collect line data
-            lines.forEach((line, index) => {
-                if (line.boundingBox && line.boundingBox.polygon && line.boundingBox.polygon.length > 0) {
-                    // Convert normalized coordinates to pixel coordinates (original image size)
-                    const pixelPolygon = line.boundingBox.polygon.map(point => ({
-                        x: point.x * currentImageData.width,
-                        y: point.y * currentImageData.height
-                    }));
+            // Draw oriented rectangles and collect word data
+            words.forEach((word, index) => {
+                if (word.boundingBox && word.boundingBox.rotatedRectangle) {
+                    const rect = word.boundingBox.rotatedRectangle;
 
-                    // Draw polygon
-                    drawPolygon(pixelPolygon, index);
+                    // Calculate the 4 corners of the rotated rectangle
+                    const cos = Math.cos(rect.angle);
+                    const sin = Math.sin(rect.angle);
 
-                    // Add to line list
-                    addLineToList(index, line.text || '');
+                    const corners = [
+                        // Top left
+                        { x: rect.x, y: rect.y },
+                        // Top right
+                        { x: rect.x + rect.width * cos, y: rect.y + rect.width * sin },
+                        // Bottom right
+                        { x: rect.x + rect.width * cos - rect.height * sin, y: rect.y + rect.width * sin + rect.height * cos },
+                        // Bottom left
+                        { x: rect.x - rect.height * sin, y: rect.y + rect.height * cos }
+                    ];
+
+                    // Draw rectangle
+                    drawPolygon(corners, index);
+
+                    // Add to word list
+                    addWordToList(index, word.text || '');
                 }
             });
             
@@ -643,9 +654,9 @@
             ctx.restore();
         }
 
-        function addLineToList(index, text) {
-            const lineItem = document.createElement('div');
-            lineItem.className = 'word-item';
+        function addWordToList(index, text) {
+            const wordItem = document.createElement('div');
+            wordItem.className = 'word-item';
 
             const indexSpan = document.createElement('span');
             indexSpan.className = 'word-index';
@@ -655,9 +666,9 @@
             textSpan.className = 'word-text';
             textSpan.textContent = text || '(empty)';
 
-            lineItem.appendChild(indexSpan);
-            lineItem.appendChild(textSpan);
-            wordListContent.appendChild(lineItem);
+            wordItem.appendChild(indexSpan);
+            wordItem.appendChild(textSpan);
+            wordListContent.appendChild(wordItem);
         }
 
         // Expand/Collapse All functionality
