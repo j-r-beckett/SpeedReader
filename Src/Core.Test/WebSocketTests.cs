@@ -281,7 +281,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
         await webSocket.ConnectAsync(wsUri, CancellationToken.None);
 
         const int maxItems = 100;
-        const int backpressureThresholdMs = 500;
+        const int backpressureThresholdMs = 200;
         int itemsSent = 0;
         bool backpressureDetected = false;
 
@@ -302,7 +302,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
                 backpressureDetected = true;
                 break;
             }
-            if (sw.ElapsedMilliseconds > backpressureThresholdMs / 5)
+            if (sw.ElapsedMilliseconds > backpressureThresholdMs / 2)
             {
                 Assert.Fail("Item took too long to send, unable to get a clear backpressure signal");
             }

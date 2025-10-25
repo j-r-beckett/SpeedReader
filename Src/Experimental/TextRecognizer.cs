@@ -78,7 +78,11 @@ public class TextRecognizer
 
     public virtual async Task<(float[], int[])[]> RunInference(List<(float[], int[])> inputs)
     {
-        var inferenceTasks = await Task.WhenAll(inputs.Select(t => _modelRunner.Run(t.Item1, t.Item2)));
+        List<Task<(float[], int[])>> inferenceTasks = [];
+        foreach (var (data, shape) in inputs)
+        {
+            inferenceTasks.Add(await _modelRunner.Run(data, shape));
+        }
         return await Task.WhenAll(inferenceTasks);
     }
 }

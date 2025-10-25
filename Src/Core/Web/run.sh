@@ -10,5 +10,14 @@ cd Web
 export CADDY_HOST=localhost
 export CADDY_PORT=8080
 export SPEEDREADER_IMAGE=speedreader:local
+
+# Generate random Grafana admin password if not set
+if [ -z "$GRAFANA_ADMIN_PASSWORD" ]; then
+  export GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 16)
+  echo "=========================================="
+  echo "Grafana Admin Password: $GRAFANA_ADMIN_PASSWORD"
+  echo "=========================================="
+fi
+
 docker compose down
 docker compose up
