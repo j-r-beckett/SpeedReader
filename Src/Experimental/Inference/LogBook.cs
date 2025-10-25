@@ -38,7 +38,8 @@ public class LogBook
     // Must be called exactly once for each token minted by LogStart
     public void LogEnd(IToken token)
     {
-        if (token is not Token t) throw new Exception($"Third-party implementations of {nameof(IToken)} are not allowed");
+        if (token is not Token t)
+            throw new Exception($"Third-party implementations of {nameof(IToken)} are not allowed");
         _endTimes.TryAdd(t, _clock.Elapsed);
     }
 
@@ -51,10 +52,12 @@ public class LogBook
         var snapshot = TakeSnapshot();
 
         var pairs = Pairs(snapshot, start, end);
-        if (pairs.Count == 0) return Summary.Zero;  // No jobs completed in the specified interval, we can't estimate anything
+        if (pairs.Count == 0)
+            return Summary.Zero;  // No jobs completed in the specified interval, we can't estimate anything
 
         var activeTime = ActiveTime();
-        if (activeTime == 0) return Summary.Zero;
+        if (activeTime == 0)
+            return Summary.Zero;
 
         // All pairs are in [start, end] bounds
         var clampedStart = pairs.Select(p => p.Start).Min();
@@ -73,10 +76,7 @@ public class LogBook
             return (totalDuration / pairs.Count).TotalSeconds;
         }
 
-        double GetAvgThroughput()
-        {
-            return clampedEnd == clampedStart ? 0 : pairs.Count / activeTime;
-        }
+        double GetAvgThroughput() => clampedEnd == clampedStart ? 0 : pairs.Count / activeTime;
 
         double GetAvgParallelism()
         {
@@ -87,7 +87,8 @@ public class LogBook
         // Returns the total amount of time during which at least one job was active
         double ActiveTime()
         {
-            if (pairs.Count == 0) return 0;
+            if (pairs.Count == 0)
+                return 0;
 
             // Create events for sweep line algorithm
             const int JOB_START = 0;
@@ -110,8 +111,10 @@ public class LogBook
                 var (nextTime, _) = events[i + 1];
 
                 // Add 1 if start event, subtract 1 if end event
-                if (eventType == JOB_START) currentActiveJobs++;
-                else if (eventType == JOB_END) currentActiveJobs--;
+                if (eventType == JOB_START)
+                    currentActiveJobs++;
+                else if (eventType == JOB_END)
+                    currentActiveJobs--;
 
                 // If there is at least one active job, add to active time
                 if (currentActiveJobs > 0)
@@ -141,7 +144,8 @@ public class LogBook
 
         foreach (var pair in Pairs(snapshot, TimeSpan.Zero, before))
         {
-            if (pair.End == before) continue;  // Exclusive bound on before, Pairs is <= so we need this check
+            if (pair.End == before)
+                continue;  // Exclusive bound on before, Pairs is <= so we need this check
             _startTimes.Remove(pair.Token, out _);
             _endTimes.Remove(pair.Token, out _);
         }
@@ -153,7 +157,8 @@ public class LogBook
         TimeSpan start,
         TimeSpan end)
     {
-        if (start == end) return 0;
+        if (start == end)
+            return 0;
 
         const int START_EVENT = 0;
         const int END_EVENT = 1;
@@ -166,12 +171,14 @@ public class LogBook
 
         foreach (var (token, time) in snapshot.EndTimes)
         {
-            if (time <= end) events.Add((time, END_EVENT, token));
+            if (time <= end)
+                events.Add((time, END_EVENT, token));
         }
 
         foreach (var (token, time) in snapshot.StartTimes)
         {
-            if (time <= end) events.Add((time, START_EVENT, token));
+            if (time <= end)
+                events.Add((time, START_EVENT, token));
         }
 
         events.Sort();
@@ -195,15 +202,19 @@ public class LogBook
             if (token is not null && completedJobs.Contains(token))
             {
                 // Add 1 if start event, subtract 1 if end event. Will not be an interval event (interval events have null tokens)
-                if (eventType == START_EVENT) currentActiveCompletedJobs++;
-                else if (eventType == END_EVENT) currentActiveCompletedJobs--;
+                if (eventType == START_EVENT)
+                    currentActiveCompletedJobs++;
+                else if (eventType == END_EVENT)
+                    currentActiveCompletedJobs--;
             }
 
             // Now update parallelism count
 
             // Add 1 if start event, subtract 1 if end event, do nothing if interval event
-            if (eventType == START_EVENT) currentParallelism++;
-            else if (eventType == END_EVENT) currentParallelism--;
+            if (eventType == START_EVENT)
+                currentParallelism++;
+            else if (eventType == END_EVENT)
+                currentParallelism--;
 
             // Only add to weighted sum if [time, nextTime] is takes place while a job that is known to be eventually
             // completed is running
@@ -225,15 +236,16 @@ public class LogBook
         foreach (var (token, s) in snapshot.StartTimes)
         {
             // Add to pairs if start time is in [start, end] and there is a corresponding end time also in [start, end]
-            if (s >= start && s <= end && snapshot.EndTimes.TryGetValue(token, out var e) && e <= end) pairs.Add((s, e, token));
+            if (s >= start && s <= end && snapshot.EndTimes.TryGetValue(token, out var e) && e <= end)
+                pairs.Add((s, e, token));
         }
 
         return pairs;
     }
 
-    private Snapshot TakeSnapshot() => new (_startTimes, _endTimes);
+    private Snapshot TakeSnapshot() => new(_startTimes, _endTimes);
 
-    private class Token :  IToken, IEquatable<Token>, IComparable<Token>
+    private class Token : IToken, IEquatable<Token>, IComparable<Token>
     {
         private static long _globalIdCounter = -1;
         private long Id { get; } = Interlocked.Increment(ref _globalIdCounter);
