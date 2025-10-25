@@ -124,6 +124,7 @@ public class LogBook
         }
     }
 
+    // Remove completed jobs in [0, before)
     public void Prune(TimeSpan before)
     {
         // Removes completed jobs before a given timestamp to prevent unbounded memory growth.
@@ -140,6 +141,7 @@ public class LogBook
 
         foreach (var pair in Pairs(snapshot, TimeSpan.Zero, before))
         {
+            if (pair.End == before) continue;  // Exclusive bound on before, Pairs is <= so we need this check
             _startTimes.Remove(pair.Token, out _);
             _endTimes.Remove(pair.Token, out _);
         }
