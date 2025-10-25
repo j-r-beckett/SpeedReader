@@ -1,12 +1,15 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using TestUtils;
@@ -19,17 +22,35 @@ public class WebSocketTests : IClassFixture<ServerFixture>
     private readonly ServerFixture _server;
     private readonly Font _font;
     private readonly FileSystemUrlPublisher<WebSocketTests> _imageSaver;
+    private readonly TestLogger _logger;
 
     public WebSocketTests(ServerFixture server, ITestOutputHelper outputHelper)
     {
         _server = server;
         _font = Resources.Fonts.GetFont(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<WebSocketTests>("/tmp", new TestLogger<WebSocketTests>(outputHelper));
+        _logger = new TestLogger(outputHelper);
     }
 
-    private Image<Rgb24> CreateImageWithText(string text, int width = 400, int height = 200)
+    private Image<Rgb24> CreateImageWithText(string text, int width = 400, int height = 200, bool addNoise = false)
     {
         var image = new Image<Rgb24>(width, height, Color.White);
+
+        if (addNoise)
+        {
+            var random = new Random(42);
+            image.ProcessPixelRows(accessor =>
+            {
+                for (int y = 0; y < accessor.Height; y++)
+                {
+                    var row = accessor.GetRowSpan(y);
+                    for (int x = 0; x < row.Length; x++)
+                    {
+                        row[x] = new Rgb24((byte)random.Next(256), (byte)random.Next(256), (byte)random.Next(256));
+                    }
+                }
+            });
+        }
 
         image.Mutate(ctx =>
         {
@@ -44,7 +65,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
         return image;
     }
 
-    private async Task<byte[]> SaveImageToBytes(Image image)
+    private async Task<byte[]> SaveImageToBytes(Image image, bool minimalCompression = false)
     {
         using var memoryStream = new MemoryStream();
         await image.SaveAsPngAsync(memoryStream);
@@ -240,5 +261,55 @@ public class WebSocketTests : IClassFixture<ServerFixture>
 
         // Connection should fail when attempting to receive next message
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await ReceiveTextMessageAsync(webSocket));
+    }
+
+    [Fact]
+    public async Task WebSocketAppliesBackpressure()
+    {
+        // Create test image
+        using var testImage = CreateImageWithText("test", width: 1080, height: 920, addNoise: true);
+        var imageBytes = await SaveImageToBytes(testImage);
+
+        // Connect to WebSocket endpoint
+        using var webSocket = new ClientWebSocket();
+        var httpUri = _server.HttpClient.BaseAddress!;
+        var wsUri = new UriBuilder(httpUri)
+        {
+            Scheme = "ws",
+            Path = "/api/ws/ocr"
+        }.Uri;
+        await webSocket.ConnectAsync(wsUri, CancellationToken.None);
+
+        const int maxItems = 100;
+        const int backpressureThresholdMs = 500;
+        int itemsSent = 0;
+        bool backpressureDetected = false;
+
+        // Try to upload items and measure how long each takes to be accepted
+        for (int i = 0; i < maxItems; i++)
+        {
+            var sw = Stopwatch.StartNew();
+            await SendImageAsync(webSocket, imageBytes);
+            sw.Stop();
+
+            itemsSent++;
+
+            _logger.LogInformation($"Item {i} took {sw.ElapsedMilliseconds}ms to send");
+
+            // If sending took longer than threshold, backpressure is working
+            if (sw.ElapsedMilliseconds > backpressureThresholdMs)
+            {
+                backpressureDetected = true;
+                break;
+            }
+            if (sw.ElapsedMilliseconds > backpressureThresholdMs / 5)
+            {
+                Assert.Fail("Item took too long to send, unable to get a clear backpressure signal");
+            }
+        }
+
+        // Assert that we detected backpressure before sending all items
+        Assert.True(backpressureDetected,
+            $"Expected backpressure to be detected, but sent all {itemsSent} items without delay");
     }
 }

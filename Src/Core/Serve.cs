@@ -108,7 +108,7 @@ public static class Serve
 
     private static async Task HandleWebSocketOcr(WebSocket webSocket, SpeedReader speedReader)
     {
-        var imageChannel = Channel.CreateBounded<Image<Rgb24>>(1);
+        var inputBuffer = Channel.CreateBounded<Image<Rgb24>>(1);
         var config = Configuration.Default.Clone();
         config.PreferContiguousImageBuffers = true;
         var decoderOptions = new DecoderOptions { Configuration = config };
@@ -125,12 +125,12 @@ public static class Serve
 
                     using var memoryStream = new MemoryStream(messageBytes);
                     var image = await Image.LoadAsync<Rgb24>(decoderOptions, memoryStream);
-                    await imageChannel.Writer.WriteAsync(image);
+                    await inputBuffer.Writer.WriteAsync(image);
                 }
             }
             finally
             {
-                imageChannel.Writer.Complete();
+                inputBuffer.Writer.Complete();
             }
         });
 
@@ -142,7 +142,7 @@ public static class Serve
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
 
-            await foreach (var result in speedReader.ReadMany(imageChannel.Reader.ReadAllAsync()))
+            await foreach (var result in speedReader.ReadMany(inputBuffer.Reader.ReadAllAsync()))
             {
                 try
                 {
