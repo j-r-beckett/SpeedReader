@@ -9,34 +9,52 @@ public static class Telemetry
 {
     private const string MetricNamespace = "SpeedReader";
 
-    // Detection
-    private static readonly Meter _detectionMeter = new($"{MetricNamespace}.Dbnet");
+    #region Inference
+    // All instruments should have model, quantization dimensions
+    private static readonly Meter _inferenceMeter = new($"{MetricNamespace}.Inference");
 
-    public static readonly Gauge<double> DbnetInferenceDurationGauge =
-        _detectionMeter.CreateGauge<double>("InferenceDuration", unit: "ms", "Duration of DBNet inference");
+    public static readonly Gauge<double> InferenceDurationGauge =
+        _inferenceMeter.CreateGauge<double>("InferenceDuration", "ms", "Inference duration for a single item");
 
-    public static readonly Gauge<double> DbnetInferenceThroughputGauge =
-        _detectionMeter.CreateGauge<double>("InferenceThroughput", unit: "tiles/sec", description: "DBNet inference throughput");
+    public static readonly Gauge<double> InferenceThroughputGauge =
+        _inferenceMeter.CreateGauge<double>("InferenceThroughput", "items/sec", description: "Inference throughput");
+
+    public static readonly Gauge<double> InferenceInstantaneousThroughputGauge =
+        _inferenceMeter.CreateGauge<double>("InferenceInstantaneousThroughput", "items/sec", description: "Instantaneous inference throughput");
+
+    public static readonly Gauge<double> InferenceParallelismGauge =
+        _inferenceMeter.CreateGauge<double>("InferenceParallelism", "threads",
+            description: "Observed number of concurrent inference threads");
+
+    public static readonly Gauge<int> InferenceMaxParallelismGauge =
+        _inferenceMeter.CreateGauge<int>("InferenceMaxParallelism", "threads",
+            description: "Maximum number of concurrent inference threads");
+    #endregion
+
+    #region Application
+    private static readonly Meter _applicationMeter = new($"{MetricNamespace}.Application");
 
     public static readonly Histogram<int> TileCountHistogram =
-        _detectionMeter.CreateHistogram<int>("TileCount", description: "Number of tiles the image was split into");
+        _applicationMeter.CreateHistogram<int>("TileCount", description: "Number of tiles the image was split into");
 
     // Dimensions: num tiles
     public static readonly Gauge<double> DetectionDurationGauge =
-        _detectionMeter.CreateGauge<double>("DetectionDuration", unit: "ms",
-            description: "Duration of detection in milliseconds");
+        _applicationMeter.CreateGauge<double>("DetectionDuration", "ms",
+            description: "Duration of detection for a full image");
 
     // Dimensions: num tiles
     public static readonly Gauge<double> DetectionThroughputGauge =
-        _detectionMeter.CreateGauge<double>("DetectionThroughput", unit: "images/sec",
-            description: "Detection throughput");
+        _applicationMeter.CreateGauge<double>("DetectionThroughput", "images/sec",
+            description: "Detection throughput for full images");
 
-    // Recognition
-    private static readonly Meter _recognitionMeter = new($"{MetricNamespace}.Svtr");
+    // Dimensions: num words (bucketed by 100)
+    public static readonly Gauge<double> RecognitionDurationGauge =
+        _applicationMeter.CreateGauge<double>("DetectionDuration", "ms",
+            description: "Duration of recognition for a full image");
 
-    public static readonly Gauge<double> SvtrInferenceDurationGauge =
-        _recognitionMeter.CreateGauge<double>("InferenceDuration", unit: "ms", description: "Duration of SVTR inference in milliseconds");
-
-    // Application
-    private static readonly Meter _applicationMeter = new($"{MetricNamespace}.Application");
+    // Dimensions: num words (bucketed by 100)
+    public static readonly Gauge<double> RecognitionThroughputGauge =
+        _applicationMeter.CreateGauge<double>("DetectionThroughput", "images/sec",
+            description: "Recognition throughput for full images");
+    #endregion
 }
