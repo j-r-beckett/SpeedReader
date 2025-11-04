@@ -4,6 +4,7 @@ services:
     image: ${SPEEDREADER_IMAGE}
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:5000
+      - TIMESCALEDB_CONNECTION_STRING=Host=timescaledb;Port=5432;Database=metrics;Username=speedreader;Password=speedreader
     volumes:
       - ./demo.html:/srv/demo.html:ro
       - ./performance.html:/srv/performance.html:ro
@@ -42,18 +43,6 @@ services:
       - /dev/disk/:/dev/disk:ro
     privileged: true
     restart: unless-stopped
-    networks:
-      - monitoring
-
-  prometheus:
-    image: prom/prometheus:latest
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--log.level=error'
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./Monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - monitoring
 
