@@ -57,6 +57,20 @@ services:
     networks:
       - monitoring
 
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=speedreader
+      - POSTGRES_PASSWORD=speedreader
+      - POSTGRES_DB=metrics
+    volumes:
+      - ./Monitoring/timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - timescaledb-data:/var/lib/postgresql/data
+    networks:
+      - monitoring
+
   grafana:
     image: grafana/grafana-oss:latest
     ports:
@@ -72,3 +86,6 @@ services:
 
 networks:
   monitoring:
+
+volumes:
+  timescaledb-data:

@@ -7,7 +7,7 @@ using Resources;
 
 namespace Experimental;
 
-public static class Telemetry
+public static class TelemetryRecorder
 {
     private const string MetricNamespace = "SpeedReader";
 
@@ -62,20 +62,17 @@ public class InferenceTelemetryRecorder
 {
     private readonly TagList _tags;
 
-    public InferenceTelemetryRecorder(Model model, ModelPrecision precision)
-    {
-        _tags =
+    public InferenceTelemetryRecorder(Model model, ModelPrecision precision) => _tags =
         [
             new KeyValuePair<string, object?>("model", model.ToString()),
             new KeyValuePair<string, object?>("precision", precision.ToString())
         ];
-    }
 
-    public void RecordDuration(TimeSpan duration) => Telemetry.InferenceDurationHistogram.Record(duration.TotalMilliseconds, _tags);
+    public void RecordDuration(TimeSpan duration) => TelemetryRecorder.InferenceDurationHistogram.Record(duration.TotalMilliseconds, _tags);
 
-    public void RecordThroughput(double throughput) => Telemetry.InferenceThroughputHistogram.Record(throughput, _tags);
+    public void RecordThroughput(double throughput) => TelemetryRecorder.InferenceThroughputHistogram.Record(throughput, _tags);
 
-    public void RecordParallelism(double parallelism) => Telemetry.InferenceParallelismHistogram.Record(parallelism, _tags);
+    public void RecordParallelism(double parallelism) => TelemetryRecorder.InferenceParallelismHistogram.Record(parallelism, _tags);
 
-    public void RecordMaxParallelism(int maxParallelism) => Telemetry.InferenceMaxParallelismHistogram.Record(maxParallelism, _tags);
+    public void RecordMaxParallelism(int maxParallelism) => TelemetryRecorder.InferenceMaxParallelismHistogram.Record(maxParallelism, _tags);
 }
