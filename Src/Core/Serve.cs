@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Experimental;
 using Experimental.Inference;
+using Experimental.Telemetry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
@@ -15,7 +16,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Ocr;
 using Ocr.Blocks;
 using Ocr.Visualization;
-using OpenTelemetry.Metrics;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -27,6 +27,14 @@ public static class Serve
 {
     public static async Task RunServer()
     {
+        // Create performance metrics collection
+        var metricsChannel = Channel.CreateUnbounded<MetricPoint>();
+        var processMetricsCollector = new ProcessMetricsCollector(metricsChannel.Writer);
+        var containerMetricsCollector = ContainerMetricsCollector.IsRunningInContainer()
+            ? new ContainerMetricsCollector(metricsChannel.Writer)
+            : null;
+        var metricsWriter = new TimescaleDbWriter(metricsChannel.Reader);
+
         // Create shared inference sessions
         using var modelProvider = new ModelProvider();
         var dbnetRunner = new CpuModelRunner(Model.DbNet18, ModelPrecision.INT8, modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8));
@@ -38,16 +46,16 @@ public static class Serve
         var builder = WebApplication.CreateSlimBuilder();
         builder.Services.AddSingleton(speedReader);
 
-        // Configure OpenTelemetry with Prometheus exporter
-        builder.Services.AddOpenTelemetry()
-            .WithMetrics(metrics => metrics
-                .AddMeter("SpeedReader.Inference")
-                .AddMeter("SpeedReader.Application")
-                .AddView("InferenceDuration", new ExplicitBucketHistogramConfiguration
-                {
-                    Boundaries = Enumerable.Range(0, 40).Select(i => i * 25.0).ToArray()
-                })
-                .AddPrometheusExporter());
+        // // Configure OpenTelemetry with Prometheus exporter
+        // builder.Services.AddOpenTelemetry()
+        //     .WithMetrics(metrics => metrics
+        //         .AddMeter("SpeedReader.Inference")
+        //         .AddMeter("SpeedReader.Application")
+        //         .AddView("InferenceDuration", new ExplicitBucketHistogramConfiguration
+        //         {
+        //             Boundaries = Enumerable.Range(0, 40).Select(i => i * 25.0).ToArray()
+        //         })
+        //         .AddPrometheusExporter());
 
         var app = builder.Build();
 
@@ -111,8 +119,8 @@ public static class Serve
             await HandleWebSocketOcr(webSocket, speedReader);
         });
 
-        // Map OpenTelemetry Prometheus metrics endpoint
-        app.MapPrometheusScrapingEndpoint();
+        // // Map OpenTelemetry Prometheus metrics endpoint
+        // app.MapPrometheusScrapingEndpoint();
 
         Console.WriteLine("Starting SpeedReader server...");
         await app.RunAsync();

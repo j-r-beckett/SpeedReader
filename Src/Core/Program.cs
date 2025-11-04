@@ -106,7 +106,7 @@ public class Program
         var modelProvider = new ModelProvider();
         var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
         var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
-        var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
+        var speedReader = new Experimental.SpeedReader(dbnetRunner, svtrRunner, 4, 1);
         var paths = inputs.Select(f => f.FullName).ToList();
         await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }

@@ -109,9 +109,9 @@ public class Controller
                 }
             }
 
-            CLEANUP:
+        CLEANUP:
             var maxParallelism = _executor.CurrentMaxParallelism + (lastAction == ActionType.Increase ? -1 : 1);
-            Console.WriteLine("Statistics:"  +
+            Console.WriteLine("Statistics:" +
                               $"Max parallelism: {maxParallelism}, " +
                               $"Observed parallelism: {statistics.AvgParallelism}, " +
                               $"Throughput: {statistics.Throughput}, " +
