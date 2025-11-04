@@ -23,6 +23,354 @@
     "panels": [
         {
             "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "cores"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            },
+            "id": 10,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-postgresql-datasource",
+                        "uid": "P40AE60E18F02DE32"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Process CPU Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'process.cpu.usage_cores'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Process CPU Usage",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                },
+                {
+                    "datasource": {
+                        "type": "grafana-postgresql-datasource",
+                        "uid": "P40AE60E18F02DE32"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "hide": false,
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Container CPU Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.cpu.usage_cores'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container CPU Usage",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                },
+                {
+                    "datasource": {
+                        "type": "grafana-postgresql-datasource",
+                        "uid": "P40AE60E18F02DE32"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "hide": false,
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Container CPU Limit\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.cpu.limit_cores'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container CPU Limit",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "CPU Usage",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "decgbytes"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            },
+            "id": 11,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-postgresql-datasource",
+                        "uid": "P40AE60E18F02DE32"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Process Memory Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'process.memory.working_set_bytes'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Process Memory Usage",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                },
+                {
+                    "datasource": {
+                        "type": "grafana-postgresql-datasource",
+                        "uid": "P40AE60E18F02DE32"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "hide": false,
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Container Memory Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.memory.usage_bytes'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container Memory Usage",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                },
+                {
+                    "datasource": {
+                        "type": "grafana-postgresql-datasource",
+                        "uid": "P40AE60E18F02DE32"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "hide": false,
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Container Memory Limit\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.memory.limit_bytes'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container Memory Limit",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "Memory Usage",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
                 "type": "prometheus",
                 "uid": "PBFA97CFB590B2093"
             },
@@ -45,7 +393,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 0
+                "y": 8
             },
             "id": 8,
             "options": {
@@ -174,7 +522,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 0
+                "y": 8
             },
             "id": 9,
             "options": {
@@ -286,7 +634,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 8
+                "y": 16
             },
             "id": 1,
             "options": {
@@ -422,7 +770,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 8
+                "y": 16
             },
             "id": 2,
             "options": {
