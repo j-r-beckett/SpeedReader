@@ -68,7 +68,7 @@ public class MockCpuModelRunner : CpuModelRunner
 
     public MockCpuModelRunner(int maxParallelism = 1) : this(() => SimpleResult) { }
 
-    public MockCpuModelRunner(Func<(float[], int[])> infer, int maxParallelism = 1) : base(null!, maxParallelism) => _infer = infer;
+    public MockCpuModelRunner(Func<(float[], int[])> infer, int initialParallelism = 1) : base(null!, initialParallelism) => _infer = infer;
 
     protected override (float[] Data, int[] Shape) RunInferenceInternal(float[] batch, int[] shape) => _infer();
 }

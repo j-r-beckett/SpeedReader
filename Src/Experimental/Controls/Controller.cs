@@ -9,11 +9,13 @@ public class Controller
 {
     private readonly IExecutor _executor;
     private readonly int _oscillations;
+    private readonly InferenceTelemetryRecorder _telemetryRecorder;
 
-    public Controller(IExecutor executor, int oscillations)
+    public Controller(IExecutor executor, int oscillations, InferenceTelemetryRecorder telemetryRecorder)
     {
         _executor = executor;
         _oscillations = oscillations;
+        _telemetryRecorder = telemetryRecorder;
     }
 
     public bool IsOscillating { get; private set; } = false;
@@ -25,13 +27,14 @@ public class Controller
         // State
         var lastAction = ActionType.None;
         var lastThroughput = 0.0;
-
         long oscillationCounter = 0;
+
+        Console.WriteLine("Starting controller");
 
         // Main loop
         while (!stoppingToken.IsCancellationRequested)
         {
-            // Keep an eye on avg processing duration, wait for at least 2 * avg duration to ensure we get stable
+            // Keep an eye on avg processing duration, wait for at least 8 * avg duration to ensure we get stable
             // throughput and parallelism measurements
             var start = SharedClock.Now;
             var statistics = _executor.Sensor.GetSummaryStatistics(start, SharedClock.Now);
@@ -43,7 +46,7 @@ public class Controller
                 }
                 else
                 {
-                    var waitFor = start.TotalSeconds + 2 * statistics.AvgDuration - SharedClock.Now.TotalSeconds;
+                    var waitFor = start.TotalSeconds + 8 * statistics.AvgDuration - SharedClock.Now.TotalSeconds;
                     if (waitFor <= 0)
                         break;
                     await Task.Delay(TimeSpan.FromSeconds(waitFor), stoppingToken);
@@ -51,9 +54,12 @@ public class Controller
                 statistics = _executor.Sensor.GetSummaryStatistics(start, SharedClock.Now);
             }
 
+            Console.WriteLine("Average duration requirements meant");
+
             // If we have plenty of headroom, bring down max
-            if (statistics.AvgParallelism < _executor.CurrentMaxParallelism - 1)
+            if (statistics.AvgParallelism < _executor.CurrentMaxParallelism - 2)
             {
+                Console.WriteLine("Slack detected, reducing parallelism");
                 await DecrementParallelism();
                 oscillationCounter = 0;  // Slack in the system detected, we are no longer oscillating
                 goto CLEANUP;
@@ -76,7 +82,7 @@ public class Controller
             // We increment oscillationCounter each time we decrease after increasing, or increase after decreasing.
             if (lastAction == ActionType.Increase)
             {
-                if (dt > .05)
+                if (dt > 0.05)
                 {
                     // Increasing parallelism significantly increased throughput, so increase again
                     IncrementParallelism();
@@ -90,7 +96,7 @@ public class Controller
             }
             else  // lastAction must be ActionType.Decrease
             {
-                if (dt > -.05)
+                if (dt > 0.05)
                 {
                     // Decreasing parallelism didn't hurt throughput too badly, so decrease again
                     await DecrementParallelism();
@@ -103,9 +109,25 @@ public class Controller
                 }
             }
 
-        CLEANUP:
+            CLEANUP:
+            var maxParallelism = _executor.CurrentMaxParallelism + (lastAction == ActionType.Increase ? -1 : 1);
+            Console.WriteLine("Statistics:"  +
+                              $"Max parallelism: {maxParallelism}, " +
+                              $"Observed parallelism: {statistics.AvgParallelism}, " +
+                              $"Throughput: {statistics.Throughput}, " +
+                              $"Boxed throughput: {statistics.BoxedThroughput}, " +
+                              $"Duration: {statistics.AvgDuration}");
             IsOscillating = oscillationCounter > _oscillations;
             lastThroughput = statistics.BoxedThroughput;
+            // _telemetryRecorder.RecordDuration(TimeSpan.FromSeconds(statistics.AvgDuration));
+            Console.Write($"Recording durations: {string.Join(", ", statistics.Enclosed.Select(p => (p.End - p.Start).TotalMilliseconds))}");
+            foreach (var (s, e) in statistics.Enclosed)
+            {
+                _telemetryRecorder.RecordDuration(e - s);
+            }
+            _telemetryRecorder.RecordThroughput(statistics.Throughput);
+            _telemetryRecorder.RecordParallelism(statistics.AvgParallelism);
+            _telemetryRecorder.RecordMaxParallelism(_executor.CurrentMaxParallelism);
             _executor.Sensor.Prune(SharedClock.Now);
         }
 
@@ -113,14 +135,24 @@ public class Controller
 
         void IncrementParallelism()
         {
+            Console.WriteLine($"Incrementing parallelism to {_executor.CurrentMaxParallelism + 1}");
             _executor.IncrementParallelism();
             lastAction = ActionType.Increase;
         }
 
         async Task DecrementParallelism()
         {
-            await _executor.DecrementParallelism();
-            lastAction = ActionType.Decrease;
+            if (_executor.CurrentMaxParallelism > 1)
+            {
+                Console.WriteLine($"Decrementing parallelism to {_executor.CurrentMaxParallelism - 1}");
+                await _executor.DecrementParallelism();
+                lastAction = ActionType.Decrease;
+            }
+            else
+            {
+                Console.WriteLine("Can't decrement parallelism, already at 1");
+                lastAction = ActionType.None;
+            }
         }
     }
 }

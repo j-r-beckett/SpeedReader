@@ -1,6 +1,8 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
+
 namespace Experimental.Controls;
 
 public interface IExecutor
@@ -48,7 +50,10 @@ public class Executor<TIn, TOut> : IDisposable, IExecutor
         {
             using (Sensor.RecordJob())
             {
-                return _func(input);
+                var start = Stopwatch.StartNew();
+                var result = _func(input);
+                Console.WriteLine($"Execution took {(int)start.ElapsedMilliseconds} ms");
+                return result;
             }
         });
 
