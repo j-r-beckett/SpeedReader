@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Ocr;
 using Ocr.Blocks;
 using Ocr.Visualization;
-using Prometheus;
+using OpenTelemetry.Metrics;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -29,13 +29,25 @@ public static class Serve
     {
         // Create shared inference sessions
         using var modelProvider = new ModelProvider();
-        var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
+        var dbnetRunner = new CpuModelRunner(Model.DbNet18, ModelPrecision.INT8, modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8));
+        // var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
         var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
         var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
         builder.Services.AddSingleton(speedReader);
+
+        // Configure OpenTelemetry with Prometheus exporter
+        builder.Services.AddOpenTelemetry()
+            .WithMetrics(metrics => metrics
+                .AddMeter("SpeedReader.Inference")
+                .AddMeter("SpeedReader.Application")
+                .AddView("InferenceDuration", new ExplicitBucketHistogramConfiguration
+                {
+                    Boundaries = Enumerable.Range(0, 40).Select(i => i * 25.0).ToArray()
+                })
+                .AddPrometheusExporter());
 
         var app = builder.Build();
 
@@ -99,8 +111,8 @@ public static class Serve
             await HandleWebSocketOcr(webSocket, speedReader);
         });
 
-        // Add Prometheus metrics endpoint (automatic)
-        app.UseMetricServer();
+        // Map OpenTelemetry Prometheus metrics endpoint
+        app.MapPrometheusScrapingEndpoint();
 
         Console.WriteLine("Starting SpeedReader server...");
         await app.RunAsync();

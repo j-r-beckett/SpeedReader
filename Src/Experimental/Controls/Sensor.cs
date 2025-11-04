@@ -21,6 +21,7 @@ public class Sensor
         public double Throughput { get; init; }  // Jobs per second; (number of jobs ended in the time interval) / (time interval)
         public double BoxedThroughput { get; init; }  // Jobs per second; jobs that started and ended in the time interval only
         public double AvgParallelism { get; init; }  // Avg number of jobs concurrently executing in the time interval
+        public List<(TimeSpan Start, TimeSpan End)> Enclosed { get; init; } = [];
     }
 
     public interface IJob : IDisposable;
@@ -60,6 +61,9 @@ public class Sensor
         var enclosedJobs = GetEnclosedJobs(snapshot, start, end);
 
         // Avg job duration
+        var durations = enclosedJobs.Select(p => p.End - p.Start).ToList();
+        if (durations.Count > 0)
+            Console.WriteLine($"Durations: {string.Join(", ", durations.Select(d => (int)d.TotalMilliseconds))}");
         var totalDuration = enclosedJobs.Aggregate(TimeSpan.Zero, (sum, pair) => sum + (pair.End - pair.Start));
         var avgDuration = enclosedJobs.Count == 0 ? 0 : totalDuration.TotalSeconds / enclosedJobs.Count;
 
@@ -75,7 +79,8 @@ public class Sensor
             AvgDuration = avgDuration,
             Throughput = throughput,
             BoxedThroughput = boxedThroughput,
-            AvgParallelism = GetAvgParallelism()
+            AvgParallelism = GetAvgParallelism(),
+            Enclosed = enclosedJobs.Select(p => (p.Start, p.End)).ToList()
         };
 
         double GetAvgParallelism()

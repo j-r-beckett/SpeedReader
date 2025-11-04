@@ -559,7 +559,7 @@
                     return;
                 }
                 updateMetrics();
-            }, 200);
+            }, 250);
 
             // Monitor word count changes
             const wordCountInput = document.getElementById('word-count');
@@ -617,13 +617,13 @@
 
             // Calculate rates
             const now = Date.now();
-            const windowMs = 1000;
+            const windowMs = 2000;
 
             const recentSends = sendTimestamps.filter(t => now - t < windowMs).length;
             const recentReceives = receiveTimestamps.filter(t => now - t < windowMs).length;
 
-            const sendRate = recentSends;
-            const receiveRate = recentReceives;
+            const sendRate = recentSends / 2;
+            const receiveRate = recentReceives / 2;
 
             sendRateEl.textContent = sendRate;
             receiveRateEl.textContent = receiveRate;

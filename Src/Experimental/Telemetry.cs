@@ -1,7 +1,9 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using Resources;
 
 namespace Experimental;
 
@@ -13,21 +15,18 @@ public static class Telemetry
     // All instruments should have model, quantization dimensions
     private static readonly Meter _inferenceMeter = new($"{MetricNamespace}.Inference");
 
-    public static readonly Gauge<double> InferenceDurationGauge =
-        _inferenceMeter.CreateGauge<double>("InferenceDuration", "ms", "Inference duration for a single item");
+    public static readonly Histogram<double> InferenceDurationHistogram =
+        _inferenceMeter.CreateHistogram<double>("InferenceDuration", "ms", "Inference duration for a single item");
 
-    public static readonly Gauge<double> InferenceThroughputGauge =
-        _inferenceMeter.CreateGauge<double>("InferenceThroughput", "items/sec", description: "Inference throughput");
+    public static readonly Histogram<double> InferenceThroughputHistogram =
+        _inferenceMeter.CreateHistogram<double>("InferenceThroughput", "items/sec", description: "Inference throughput");
 
-    public static readonly Gauge<double> InferenceInstantaneousThroughputGauge =
-        _inferenceMeter.CreateGauge<double>("InferenceInstantaneousThroughput", "items/sec", description: "Instantaneous inference throughput");
-
-    public static readonly Gauge<double> InferenceParallelismGauge =
-        _inferenceMeter.CreateGauge<double>("InferenceParallelism", "threads",
+    public static readonly Histogram<double> InferenceParallelismHistogram =
+        _inferenceMeter.CreateHistogram<double>("InferenceParallelism", "threads",
             description: "Observed number of concurrent inference threads");
 
-    public static readonly Gauge<int> InferenceMaxParallelismGauge =
-        _inferenceMeter.CreateGauge<int>("InferenceMaxParallelism", "threads",
+    public static readonly Histogram<int> InferenceMaxParallelismHistogram =
+        _inferenceMeter.CreateHistogram<int>("InferenceMaxParallelism", "threads",
             description: "Maximum number of concurrent inference threads");
     #endregion
 
@@ -57,4 +56,26 @@ public static class Telemetry
         _applicationMeter.CreateGauge<double>("DetectionThroughput", "images/sec",
             description: "Recognition throughput for full images");
     #endregion
+}
+
+public class InferenceTelemetryRecorder
+{
+    private readonly TagList _tags;
+
+    public InferenceTelemetryRecorder(Model model, ModelPrecision precision)
+    {
+        _tags =
+        [
+            new KeyValuePair<string, object?>("model", model.ToString()),
+            new KeyValuePair<string, object?>("precision", precision.ToString())
+        ];
+    }
+
+    public void RecordDuration(TimeSpan duration) => Telemetry.InferenceDurationHistogram.Record(duration.TotalMilliseconds, _tags);
+
+    public void RecordThroughput(double throughput) => Telemetry.InferenceThroughputHistogram.Record(throughput, _tags);
+
+    public void RecordParallelism(double parallelism) => Telemetry.InferenceParallelismHistogram.Record(parallelism, _tags);
+
+    public void RecordMaxParallelism(int maxParallelism) => Telemetry.InferenceMaxParallelismHistogram.Record(maxParallelism, _tags);
 }
