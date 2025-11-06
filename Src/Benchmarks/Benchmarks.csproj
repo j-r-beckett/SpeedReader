@@ -24,8 +24,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj" />
-    <ProjectReference Include="..\Experimental\Experimental.csproj" />
     <ProjectReference Include="..\Resources\Resources.csproj" />
+    <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
 </Project>

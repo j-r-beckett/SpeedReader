@@ -3,10 +3,10 @@
 
 using BenchmarkDotNet.Attributes;
 using Core;
-using Experimental;
-using Experimental.Geometry;
-using Experimental.Inference;
-using Experimental.Visualization;
+using Ocr;
+using Ocr.Geometry;
+using Ocr.Inference;
+using Ocr.Visualization;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

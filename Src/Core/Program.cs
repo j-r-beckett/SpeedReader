@@ -6,10 +6,8 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
-using Experimental;
-using Experimental.Inference;
 using Ocr;
-using Ocr.Visualization;
+using Ocr.Inference;
 using Resources;
 
 namespace Core;
@@ -106,7 +104,7 @@ public class Program
         var modelProvider = new ModelProvider();
         var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
         var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
-        var speedReader = new Experimental.SpeedReader(dbnetRunner, svtrRunner, 4, 1);
+        var speedReader = new Ocr.SpeedReader(dbnetRunner, svtrRunner, 4, 1);
         var paths = inputs.Select(f => f.FullName).ToList();
         await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }

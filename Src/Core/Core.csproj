@@ -30,10 +30,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Experimental\Experimental.csproj" />
     <ProjectReference Include="..\Resources\Resources.csproj" />
-    <ProjectReference Include="..\Ocr\Ocr.csproj" />
     <ProjectReference Include="..\Video\Video.csproj" />
+    <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
 

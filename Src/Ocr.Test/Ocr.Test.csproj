@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -9,12 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Clipper2" />
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="SixLabors.Fonts" />
     <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     <PackageReference Include="xunit" />
+    <PackageReference Include="Xunit.Combinatorial" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
@@ -23,12 +25,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Ocr/Ocr.csproj" />
     <ProjectReference Include="../Video/Video.csproj" />
     <ProjectReference Include="../Video.Test/Video.Test.csproj" />
     <ProjectReference Include="../TestUtils/TestUtils.csproj" />
     <ProjectReference Include="../Resources/Resources.csproj" />
     <ProjectReference Include="../Core/Core.csproj" />
+    <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
 </Project>
