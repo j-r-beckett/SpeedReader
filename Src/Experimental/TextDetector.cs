@@ -7,6 +7,7 @@ using CommunityToolkit.HighPerformance;
 using Experimental.Algorithms;
 using Experimental.Geometry;
 using Experimental.Inference;
+using Experimental.Telemetry;
 using Experimental.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -29,11 +30,11 @@ public class TextDetector
 
     private const double OverlapMultiplier = 0.05;
 
-    public List<(float[] Data, int[] Shape)> Preprocess(Image<Rgb24> image, VizBuilder vizBuilder)
+    public List<(float[] Data, int[] Shape)> Preprocess(Image<Rgb24> image, Tiling tiling, VizBuilder vizBuilder)
     {
         vizBuilder.AddBaseImage(image);
 
-        var tileRects = Tile(image);
+        var tileRects = tiling.Tiles;
         var tiledWidth = tileRects[^1].Right;
         var tiledHeight = tileRects[^1].Bottom;
         using var resized = image.HardAspectResize(new Size(tiledWidth, tiledHeight));
@@ -50,9 +51,9 @@ public class TextDetector
         }
     }
 
-    public List<BoundingBox> Postprocess((float[] Data, int[] Shape)[] inferenceOutputs, Image<Rgb24> originalImage, VizBuilder vizBuilder)
+    public List<BoundingBox> Postprocess((float[] Data, int[] Shape)[] inferenceOutputs, Tiling tiling, Image<Rgb24> originalImage, VizBuilder vizBuilder)
     {
-        var tileRects = Tile(originalImage);
+        var tileRects = tiling.Tiles;
         var tiledWidth = tileRects[^1].Right;
         var tiledHeight = tileRects[^1].Bottom;
         var compositeModelOutput = new float[tiledWidth * tiledHeight];
@@ -121,9 +122,19 @@ public class TextDetector
     // Override for testing only
     public virtual async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder)
     {
-        var modelInput = Preprocess(image, vizBuilder);
+        var tiling = Tile(image);
+        MetricRecorder.RecordMetric("speedreader.detection.num_tiles", tiling.NumTilesHorizontal * tiling.NumTilesVertical);
+
+        var start = SharedClock.Now;
+        var modelInput = Preprocess(image, tiling, vizBuilder);
+        var preprocessEnd = SharedClock.Now;
+        MetricRecorder.RecordMetric("speedreader.detection.preprocess_duration", (preprocessEnd - start).TotalMilliseconds);
         var modelOutput = await RunInference(modelInput);
-        var result = Postprocess(modelOutput, image, vizBuilder);
+        var inferenceEnd = SharedClock.Now;
+        MetricRecorder.RecordMetric("speedreader.detection.inference_duration", (inferenceEnd - preprocessEnd).TotalMilliseconds);
+        var result = Postprocess(modelOutput, tiling, image, vizBuilder);
+        var postprocessEnd = SharedClock.Now;
+        MetricRecorder.RecordMetric("speedreader.detection.postprocess_duration", (postprocessEnd - inferenceEnd).TotalMilliseconds);
         return result;
     }
 
@@ -137,7 +148,7 @@ public class TextDetector
         return await Task.WhenAll(inferenceTasks);
     }
 
-    private List<Rectangle> Tile(Image<Rgb24> image)
+    public Tiling Tile(Image<Rgb24> image)
     {
         var horizontalOverlap = (int)Math.Round(OverlapMultiplier * _tileWidth);
         var verticalOverlap = (int)Math.Round(OverlapMultiplier * _tileHeight);
@@ -159,6 +170,8 @@ public class TextDetector
             }
         }
 
-        return tiles;
+        return new Tiling(tiles, numTilesHorizontal, numTilesVertical);
     }
+
+    public record Tiling(List<Rectangle> Tiles, int NumTilesHorizontal, int NumTilesVertical);
 }

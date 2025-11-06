@@ -9,18 +9,19 @@ using NpgsqlTypes;
 
 namespace Experimental.Telemetry;
 
-public sealed class TimescaleDbWriter : IDisposable
-{
-    private readonly ChannelReader<MetricPoint> _reader;
-    private readonly Task _writerTask;
-    private readonly CancellationTokenSource _cts = new();
-    private readonly TimeSpan _flushInterval;
-    private readonly NpgsqlDataSource? _dataSource;
 
-    public TimescaleDbWriter(ChannelReader<MetricPoint> reader, TimeSpan? flushInterval = null)
+public static class MetricRecorder
+{
+    private static readonly Channel<MetricPoint> _channel;
+    private static readonly Task _writerTask;
+    private static readonly CancellationTokenSource _cts = new();
+    private static readonly TimeSpan _flushInterval;
+    private static readonly NpgsqlDataSource? _dataSource;
+
+    static MetricRecorder()
     {
-        _reader = reader;
-        _flushInterval = flushInterval ?? TimeSpan.FromSeconds(5);
+        _channel = Channel.CreateUnbounded<MetricPoint>();
+        _flushInterval = TimeSpan.FromSeconds(5);
 
         var connectionString = Environment.GetEnvironmentVariable("TIMESCALEDB_CONNECTION_STRING");
         if (connectionString == null)
@@ -34,10 +35,14 @@ public sealed class TimescaleDbWriter : IDisposable
         _writerTask = Task.Run(WriterLoop);
     }
 
-    private async Task WriterLoop()
-    {
-        var startTime = DateTime.UtcNow;
+    public static void RecordMetric(TimeSpan timestamp, string name, double value, Dictionary<string, string>? tags = null) =>
+        _channel.Writer.TryWrite(new MetricPoint(timestamp, name, value, tags));
 
+    public static void RecordMetric(string name, double value, Dictionary<string, string>? tags = null) =>
+        RecordMetric(SharedClock.Now, name, value, tags);
+
+    private static async Task WriterLoop()
+    {
         while (!_cts.Token.IsCancellationRequested)
         {
             try
@@ -46,7 +51,7 @@ public sealed class TimescaleDbWriter : IDisposable
                 var batch = new List<MetricPoint>();
 
                 // Read all available metrics from channel
-                while (_reader.TryRead(out var metric))
+                while (_channel.Reader.TryRead(out var metric))
                 {
                     batch.Add(metric);
                 }
@@ -98,20 +103,5 @@ public sealed class TimescaleDbWriter : IDisposable
                 Console.WriteLine($"Error in TimescaleDbWriter: {ex}");
             }
         }
-    }
-
-    public void Dispose()
-    {
-        _cts.Cancel();
-        try
-        {
-            _writerTask.Wait(TimeSpan.FromSeconds(5));
-        }
-        catch (AggregateException)
-        {
-        }
-
-        _cts.Dispose();
-        _dataSource?.Dispose();
     }
 }

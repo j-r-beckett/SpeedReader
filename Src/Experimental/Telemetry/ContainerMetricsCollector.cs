@@ -8,15 +8,10 @@ namespace Experimental.Telemetry;
 
 public sealed class ContainerMetricsCollector : IDisposable
 {
-    private readonly ChannelWriter<MetricPoint> _writer;
     private readonly Task _collectionTask;
     private readonly CancellationTokenSource _cts = new();
 
-    public ContainerMetricsCollector(ChannelWriter<MetricPoint> writer)
-    {
-        _writer = writer;
-        _collectionTask = Task.Run(CollectionLoop);
-    }
+    public ContainerMetricsCollector() => _collectionTask = Task.Run(CollectionLoop);
 
     public static bool IsRunningInContainer() => File.Exists("/sys/fs/cgroup/memory.max");
 
@@ -55,21 +50,24 @@ public sealed class ContainerMetricsCollector : IDisposable
             var memoryLimit = ReadMemoryLimit();
             if (memoryLimit > 0)
             {
-                _writer.TryWrite(new MetricPoint(timestamp, "container.memory.limit_bytes", memoryLimit));
+                MetricRecorder.RecordMetric("container.memory.limit_bytes", memoryLimit);
+                // _writer.TryWrite(new MetricPoint(timestamp, "container.memory.limit_bytes", memoryLimit));
             }
 
             // Memory usage (bytes)
             var memoryUsage = ReadMemoryUsage();
             if (memoryUsage > 0)
             {
-                _writer.TryWrite(new MetricPoint(timestamp, "container.memory.usage_bytes", memoryUsage));
+                MetricRecorder.RecordMetric("container.memory.usage_bytes", memoryUsage);
+                // _writer.TryWrite(new MetricPoint(timestamp, "container.memory.usage_bytes", memoryUsage));
             }
 
             // CPU limit (cores)
             var cpuLimit = ReadCpuLimit();
             if (cpuLimit > 0)
             {
-                _writer.TryWrite(new MetricPoint(timestamp, "container.cpu.limit_cores", cpuLimit));
+                MetricRecorder.RecordMetric("container.cpu.limit_cores", cpuLimit);
+                // _writer.TryWrite(new MetricPoint(timestamp, "container.cpu.limit_cores", cpuLimit));
             }
 
             // CPU usage (cores)
@@ -84,7 +82,8 @@ public sealed class ContainerMetricsCollector : IDisposable
                 {
                     var microsPerSecond = 1_000_000.0;
                     var cpuUsageCores = usageDeltaMicros / (timeDeltaSeconds * microsPerSecond);
-                    _writer.TryWrite(new MetricPoint(timestamp, "container.cpu.usage_cores", cpuUsageCores));
+                    MetricRecorder.RecordMetric("container.cpu.usage_cores", cpuUsageCores);
+                    // _writer.TryWrite(new MetricPoint(timestamp, "container.cpu.usage_cores", cpuUsageCores));
                 }
             }
 

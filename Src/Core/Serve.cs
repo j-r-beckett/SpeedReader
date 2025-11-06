@@ -29,17 +29,18 @@ public static class Serve
     {
         // Create performance metrics collection
         var metricsChannel = Channel.CreateUnbounded<MetricPoint>();
-        var processMetricsCollector = new ProcessMetricsCollector(metricsChannel.Writer);
+        var processMetricsCollector = new ProcessMetricsCollector();
         var containerMetricsCollector = ContainerMetricsCollector.IsRunningInContainer()
-            ? new ContainerMetricsCollector(metricsChannel.Writer)
+            ? new ContainerMetricsCollector()
             : null;
-        var metricsWriter = new TimescaleDbWriter(metricsChannel.Reader);
+        // var metricsWriter = new MetricRecorder(metricsChannel.Reader);
 
         // Create shared inference sessions
         using var modelProvider = new ModelProvider();
-        var dbnetRunner = new CpuModelRunner(Model.DbNet18, ModelPrecision.INT8, modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8));
+        var dbnetRunner = new CpuModelRunner(Model.DbNet18, ModelPrecision.INT8, 1);
         // var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
-        var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
+        // var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
+        var svtrRunner = new CpuModelRunner(Model.SVTRv2, ModelPrecision.FP32, 1);
         var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
 
         // Create minimal web app

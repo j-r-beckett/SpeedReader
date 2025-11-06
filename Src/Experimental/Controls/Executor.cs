@@ -2,6 +2,8 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
+using Experimental.Inference;
+using Experimental.Telemetry;
 
 namespace Experimental.Controls;
 
@@ -21,21 +23,26 @@ public class Executor<TIn, TOut> : IDisposable, IExecutor
     private readonly AsyncLock _pauseExecutionLock = new();
     private int _currentMaxParallelism;
     private int _queueDepth;
+    private readonly Dictionary<string, string>? _telemetryTags;
 
-    public Executor(Func<TIn, TOut> func, int initialParallelism)
+    public Executor(Func<TIn, TOut> func, int initialParallelism, Dictionary<string, string>? telemetryTags = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(initialParallelism);
 
         _func = func;
         _currentMaxParallelism = initialParallelism;
         _semaphore = new SemaphoreSlim(initialParallelism);
+        _telemetryTags = telemetryTags;
+        Sensor = new Sensor(telemetryTags);
     }
 
-    public Sensor Sensor { get; } = new();
+    public Sensor Sensor { get; init; }
 
     public async Task<Task<TOut>> ExecuteSingle(TIn input)
     {
         Interlocked.Increment(ref _queueDepth);
+        var enteredQueueTime = SharedClock.Now;
+        MetricRecorder.RecordMetric("speedreader.inference.queue_depth", _queueDepth, _telemetryTags);
         await _semaphore.WaitAsync();
         while (_pauseExecutionLock.IsAcquired)
         {
@@ -45,15 +52,15 @@ public class Executor<TIn, TOut> : IDisposable, IExecutor
             await _semaphore.WaitAsync();
         }
         Interlocked.Decrement(ref _queueDepth);
+        var exitedQueueTime = SharedClock.Now;
+        MetricRecorder.RecordMetric("speedreader.inference.queue_wait_duration", (exitedQueueTime - enteredQueueTime).TotalMilliseconds, _telemetryTags);
+        MetricRecorder.RecordMetric("speedreader.inference.queue_depth", _queueDepth, _telemetryTags);
 
         var task = Task.Run(() =>
         {
             using (Sensor.RecordJob())
             {
-                var start = Stopwatch.StartNew();
-                var result = _func(input);
-                Console.WriteLine($"Execution took {(int)start.ElapsedMilliseconds} ms");
-                return result;
+                return _func(input);
             }
         });
 

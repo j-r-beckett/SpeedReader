@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 1,
+    "id": 2,
     "links": [],
     "panels": [
         {
@@ -89,7 +89,7 @@
                 "x": 0,
                 "y": 0
             },
-            "id": 10,
+            "id": 2,
             "options": {
                 "legend": {
                     "calcs": [],
@@ -113,8 +113,8 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Process CPU Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'process.cpu.usage_cores'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
-                    "refId": "Process CPU Usage",
+                    "rawSql": "SELECT\n      time_bucket('10s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Process Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'process.cpu.usage_cores'\n  GROUP BY time_bucket('10s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Process Usage",
                     "sql": {
                         "columns": [
                             {
@@ -142,8 +142,8 @@
                     "format": "table",
                     "hide": false,
                     "rawQuery": true,
-                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Container CPU Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.cpu.usage_cores'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
-                    "refId": "Container CPU Usage",
+                    "rawSql": "SELECT\n      time_bucket('10s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Container Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.cpu.usage_cores'\n  GROUP BY time_bucket('10s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container Usage",
                     "sql": {
                         "columns": [
                             {
@@ -171,8 +171,8 @@
                     "format": "table",
                     "hide": false,
                     "rawQuery": true,
-                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Container CPU Limit\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.cpu.limit_cores'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
-                    "refId": "Container CPU Limit",
+                    "rawSql": "SELECT\n      time_bucket('10s', time) AS time,\n      metric_name AS metric,\n      AVG(value) as \"Container Limit\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.cpu.limit_cores'\n  GROUP BY time_bucket('10s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container Limit",
                     "sql": {
                         "columns": [
                             {
@@ -192,7 +192,7 @@
                     }
                 }
             ],
-            "title": "CPU Usage",
+            "title": "CPU",
             "type": "timeseries"
         },
         {
@@ -263,7 +263,7 @@
                 "x": 12,
                 "y": 0
             },
-            "id": 11,
+            "id": 3,
             "options": {
                 "legend": {
                     "calcs": [],
@@ -287,8 +287,8 @@
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Process Memory Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'process.memory.working_set_bytes'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
-                    "refId": "Process Memory Usage",
+                    "rawSql": "SELECT\n      time_bucket('10s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Process Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'process.memory.working_set_bytes'\n  GROUP BY time_bucket('10s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Process Usage",
                     "sql": {
                         "columns": [
                             {
@@ -316,8 +316,8 @@
                     "format": "table",
                     "hide": false,
                     "rawQuery": true,
-                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Container Memory Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.memory.usage_bytes'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
-                    "refId": "Container Memory Usage",
+                    "rawSql": "SELECT\n      time_bucket('10s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Container Usage\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.memory.usage_bytes'\n  GROUP BY time_bucket('10s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container Usage",
                     "sql": {
                         "columns": [
                             {
@@ -345,8 +345,8 @@
                     "format": "table",
                     "hide": false,
                     "rawQuery": true,
-                    "rawSql": "SELECT\n      time_bucket('1s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Container Memory Limit\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.memory.limit_bytes'\n  GROUP BY time_bucket('1s', time), metric_name\n  ORDER BY time;",
-                    "refId": "Container Memory Limit",
+                    "rawSql": "SELECT\n      time_bucket('10s', time) AS time,\n      metric_name AS metric,\n      AVG(value) / 2^30 as \"Container Limit\"\n  FROM metrics\n  WHERE $__timeFilter(time) AND metric_name = 'container.memory.limit_bytes'\n  GROUP BY time_bucket('10s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Container Limit",
                     "sql": {
                         "columns": [
                             {
@@ -364,453 +364,6 @@
                         ],
                         "limit": 50
                     }
-                }
-            ],
-            "title": "Memory Usage",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "custom": {
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "scaleDistribution": {
-                            "type": "linear"
-                        }
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 8
-            },
-            "id": 8,
-            "options": {
-                "calculate": false,
-                "cellGap": 1,
-                "cellValues": {
-                    "unit": "inferences"
-                },
-                "color": {
-                    "exponent": 0.5,
-                    "fill": "dark-orange",
-                    "mode": "scheme",
-                    "reverse": false,
-                    "scale": "exponential",
-                    "scheme": "Plasma",
-                    "steps": 64
-                },
-                "exemplars": {
-                    "color": "rgba(255,0,255,0.7)"
-                },
-                "filterValues": {
-                    "le": 1e-9
-                },
-                "legend": {
-                    "show": false
-                },
-                "rowsFrame": {
-                    "layout": "unknown",
-                    "value": "Count"
-                },
-                "tooltip": {
-                    "mode": "single",
-                    "showColorScale": false,
-                    "yHistogram": true
-                },
-                "yAxis": {
-                    "axisPlacement": "left",
-                    "reverse": false,
-                    "unit": "ms"
-                }
-            },
-            "pluginVersion": "12.1.1",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "code",
-                    "expr": "increase(InferenceDuration_milliseconds_bucket[1m])",
-                    "format": "heatmap",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "instant": true,
-                    "legendFormat": "__auto",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Inference Duration (HeatMap)",
-            "type": "heatmap"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "fixedColor": "light-yellow",
-                        "mode": "fixed"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "axisSoftMax": 1000,
-                        "axisSoftMin": 0,
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": 0
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    },
-                    "unit": "ms"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 8
-            },
-            "id": 9,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": false
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "12.1.1",
-            "targets": [
-                {
-                    "editorMode": "code",
-                    "expr": "histogram_quantile(0.5, rate(InferenceDuration_milliseconds_bucket[1m]))",
-                    "legendFormat": "__auto",
-                    "range": true,
-                    "refId": "A"
-                }
-            ],
-            "title": "Inference Duration (Avg)",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "description": "Total cores used",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "axisSoftMin": 0,
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": 0
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    },
-                    "unit": "cores"
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Max Cores"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "#aa333c",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 16
-            },
-            "id": 1,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": false
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "12.1.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "code",
-                    "expr": "sum(rate(container_cpu_usage_seconds_total{name=\"speedreader-dev-app-1\"}[15s]))",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "Cores",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "container_spec_cpu_quota{name=\"speedreader-dev-app-1\"}/100000",
-                    "fullMetaSearch": false,
-                    "hide": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "Max Cores",
-                    "range": true,
-                    "refId": "B",
-                    "useBackend": false
-                }
-            ],
-            "title": "CPU",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "axisSoftMin": 0,
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": 0
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    },
-                    "unit": "decgbytes"
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Max Memory"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "red",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 16
-            },
-            "id": 2,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": false
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "12.1.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "editorMode": "code",
-                    "expr": "container_memory_working_set_bytes{name=\"speedreader-dev-app-1\"}/2^30",
-                    "hide": false,
-                    "instant": false,
-                    "legendFormat": "Memory",
-                    "range": true,
-                    "refId": "A"
-                },
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "code",
-                    "expr": "container_spec_memory_limit_bytes{name=\"speedreader-dev-app-1\"}/2^30",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "Max Memory",
-                    "range": true,
-                    "refId": "B",
-                    "useBackend": false
                 }
             ],
             "title": "Memory",
@@ -818,7 +371,6 @@
         }
     ],
     "preload": false,
-    "refresh": "auto",
     "schemaVersion": 41,
     "tags": [],
     "templating": {
@@ -831,6 +383,6 @@
     "timepicker": {},
     "timezone": "browser",
     "title": "System",
-    "uid": "10c78340-d1da-4b2d-b82b-1d587e643d0b",
-    "version": 5
+    "uid": "de4e601c-9c30-4ea6-9049-53f9ff424cf6",
+    "version": 4
 }

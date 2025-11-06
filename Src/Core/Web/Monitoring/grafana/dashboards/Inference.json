@@ -1,0 +1,766 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 1,
+    "links": [],
+    "liveNow": true,
+    "panels": [
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMax": 1000,
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 11,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            },
+            "id": 12,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('5s', time) AS time,\n      metric_name AS metric,\n      percentile_cont(0.5) WITHIN GROUP (ORDER BY value) AS \"P50\",\n      percentile_cont(0.9) WITHIN GROUP (ORDER BY value) AS \"P90\",\n      percentile_cont(0.9999) WITHIN GROUP (ORDER BY value) AS \"P99.99\"\n  FROM metrics\n  WHERE $__timeFilter(time) \n    AND metric_name = 'speedreader.inference.duration'\n    AND tags->>'model' = '$model'\n  GROUP BY time_bucket('5s', time), metric_name\n  ORDER BY time;",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "Inference Duration (Percentiles)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 11,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            },
+            "id": 14,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('5s', time) AS time,\n      metric_name AS metric,\n      SUM(value)/5 AS \"Throughput\"\n  FROM metrics\n  WHERE $__timeFilter(time)\n      AND metric_name = 'speedreader.inference.counter'\n      AND tags->>'model' = '$model'\n      AND time_bucket('5s', time) < time_bucket('5s', NOW())\n      AND time_bucket('5s', time) > time_bucket('5s', $__timeFrom()::timestamptz)\n  GROUP BY time_bucket('5s', time), metric_name\n  ORDER BY time;",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "Throughput (inferences / sec)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMax": 8,
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 11,
+                "w": 12,
+                "x": 0,
+                "y": 11
+            },
+            "id": 13,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('5s', time) AS time,\n      metric_name AS metric,\n      AVG(value) AS \"Parallelism\"\n  FROM metrics\n  WHERE $__timeFilter(time) \n    AND metric_name = 'speedreader.inference.parallelism'\n    AND tags->>'model' = '$model'\n  GROUP BY time_bucket('5s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Parallelism",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                },
+                {
+                    "datasource": {
+                        "type": "grafana-postgresql-datasource",
+                        "uid": "P40AE60E18F02DE32"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "hide": false,
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('5s', time) AS time,\n      metric_name AS metric,\n      AVG(value) AS \"Max Parallelism\"\n  FROM metrics\n  WHERE $__timeFilter(time) \n    AND metric_name = 'speedreader.inference.max_parallelism'\n    AND tags->>'model' = '$model'\n  GROUP BY time_bucket('5s', time), metric_name\n  ORDER BY time;",
+                    "refId": "Max Parallelism",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "Parallelism",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "custom": {
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "scaleDistribution": {
+                            "type": "linear"
+                        }
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 11,
+                "w": 12,
+                "x": 12,
+                "y": 11
+            },
+            "id": 8,
+            "options": {
+                "calculate": false,
+                "calculation": {
+                    "xBuckets": {
+                        "mode": "size",
+                        "value": ""
+                    }
+                },
+                "cellGap": 1,
+                "cellValues": {
+                    "unit": "inferences"
+                },
+                "color": {
+                    "exponent": 0.5,
+                    "fill": "dark-orange",
+                    "mode": "scheme",
+                    "reverse": false,
+                    "scale": "exponential",
+                    "scheme": "Plasma",
+                    "steps": 64
+                },
+                "exemplars": {
+                    "color": "rgba(255,0,255,0.7)"
+                },
+                "filterValues": {
+                    "le": 1e-9
+                },
+                "legend": {
+                    "show": false
+                },
+                "rowsFrame": {
+                    "layout": "unknown",
+                    "value": "Count"
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "showColorScale": false,
+                    "yHistogram": true
+                },
+                "yAxis": {
+                    "axisPlacement": "left",
+                    "reverse": false,
+                    "unit": "ms"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "code",
+                    "expr": "increase(InferenceDuration_milliseconds_bucket[1m])",
+                    "format": "table",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": true,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "rawQuery": true,
+                    "rawSql": "SELECT \n    time_bucket('5s', time) AS time,\n    SUM(CASE WHEN value >= 0 AND value < 25 THEN 1 ELSE 0 END) AS \"0\",\n    SUM(CASE WHEN value >= 25 AND value < 50 THEN 1 ELSE 0 END) AS \"25\",\n    SUM(CASE WHEN value >= 50 AND value < 75 THEN 1 ELSE 0 END) AS \"50\",\n    SUM(CASE WHEN value >= 75 AND value < 100 THEN 1 ELSE 0 END) AS \"75\",\n    SUM(CASE WHEN value >= 100 AND value < 125 THEN 1 ELSE 0 END) AS \"100\",\n    SUM(CASE WHEN value >= 125 AND value < 150 THEN 1 ELSE 0 END) AS \"125\",\n    SUM(CASE WHEN value >= 150 AND value < 175 THEN 1 ELSE 0 END) AS \"150\",\n    SUM(CASE WHEN value >= 175 AND value < 200 THEN 1 ELSE 0 END) AS \"175\",\n    SUM(CASE WHEN value >= 200 AND value < 225 THEN 1 ELSE 0 END) AS \"200\",\n    SUM(CASE WHEN value >= 225 AND value < 250 THEN 1 ELSE 0 END) AS \"225\",\n    SUM(CASE WHEN value >= 250 AND value < 275 THEN 1 ELSE 0 END) AS \"250\",\n    SUM(CASE WHEN value >= 275 AND value < 300 THEN 1 ELSE 0 END) AS \"275\",\n    SUM(CASE WHEN value >= 300 AND value < 325 THEN 1 ELSE 0 END) AS \"300\",\n    SUM(CASE WHEN value >= 325 AND value < 350 THEN 1 ELSE 0 END) AS \"325\",\n    SUM(CASE WHEN value >= 350 AND value < 375 THEN 1 ELSE 0 END) AS \"350\",\n    SUM(CASE WHEN value >= 375 AND value < 400 THEN 1 ELSE 0 END) AS \"375\",\n    SUM(CASE WHEN value >= 400 AND value < 425 THEN 1 ELSE 0 END) AS \"400\",\n    SUM(CASE WHEN value >= 425 AND value < 450 THEN 1 ELSE 0 END) AS \"425\",\n    SUM(CASE WHEN value >= 450 AND value < 475 THEN 1 ELSE 0 END) AS \"450\",\n    SUM(CASE WHEN value >= 475 AND value < 500 THEN 1 ELSE 0 END) AS \"475\",\n    SUM(CASE WHEN value >= 500 AND value < 525 THEN 1 ELSE 0 END) AS \"500\",\n    SUM(CASE WHEN value >= 525 AND value < 550 THEN 1 ELSE 0 END) AS \"525\",\n    SUM(CASE WHEN value >= 550 AND value < 575 THEN 1 ELSE 0 END) AS \"550\",\n    SUM(CASE WHEN value >= 575 AND value < 600 THEN 1 ELSE 0 END) AS \"575\",\n    SUM(CASE WHEN value >= 600 AND value < 625 THEN 1 ELSE 0 END) AS \"600\",\n    SUM(CASE WHEN value >= 625 AND value < 650 THEN 1 ELSE 0 END) AS \"625\",\n    SUM(CASE WHEN value >= 650 AND value < 675 THEN 1 ELSE 0 END) AS \"650\",\n    SUM(CASE WHEN value >= 675 AND value < 700 THEN 1 ELSE 0 END) AS \"675\",\n    SUM(CASE WHEN value >= 700 AND value < 725 THEN 1 ELSE 0 END) AS \"700\",\n    SUM(CASE WHEN value >= 725 AND value < 750 THEN 1 ELSE 0 END) AS \"725\",\n    SUM(CASE WHEN value >= 750 AND value < 775 THEN 1 ELSE 0 END) AS \"750\",\n    SUM(CASE WHEN value >= 775 AND value < 800 THEN 1 ELSE 0 END) AS \"775\",\n    SUM(CASE WHEN value >= 800 AND value < 825 THEN 1 ELSE 0 END) AS \"800\",\n    SUM(CASE WHEN value >= 825 AND value < 850 THEN 1 ELSE 0 END) AS \"825\",\n    SUM(CASE WHEN value >= 850 AND value < 875 THEN 1 ELSE 0 END) AS \"850\",\n    SUM(CASE WHEN value >= 875 AND value < 900 THEN 1 ELSE 0 END) AS \"875\",\n    SUM(CASE WHEN value >= 900 AND value < 925 THEN 1 ELSE 0 END) AS \"900\",\n    SUM(CASE WHEN value >= 925 AND value < 950 THEN 1 ELSE 0 END) AS \"925\",\n    SUM(CASE WHEN value >= 950 AND value < 975 THEN 1 ELSE 0 END) AS \"950\",\n    SUM(CASE WHEN value >= 975 AND value < 1000 THEN 1 ELSE 0 END) AS \"975\"\nFROM metrics\nWHERE $__timeFilter(time) \n    AND metric_name = 'speedreader.inference.duration'\n    AND tags->>'model' = '$model'\nGROUP BY time_bucket('5s', time)\nORDER BY time;",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    },
+                    "useBackend": false
+                }
+            ],
+            "title": "Inference Duration (HeatMap)",
+            "type": "heatmap"
+        },
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 0,
+                "y": 22
+            },
+            "id": 15,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('5s', time) AS time,\n      metric_name AS metric,\n      AVG(value) AS \"Depth\"\n  FROM metrics\n  WHERE $__timeFilter(time)\n      AND metric_name = 'speedreader.inference.queue_depth'\n      AND tags->>'model' = '$model'\n      AND time_bucket('5s', time) < time_bucket('5s', NOW())\n      AND time_bucket('5s', time) > time_bucket('5s', $__timeFrom()::timestamptz)\n  GROUP BY time_bucket('5s', time), metric_name\n  ORDER BY time;",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "Queue Depth",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P40AE60E18F02DE32"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "axisSoftMin": 0,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 22
+            },
+            "id": 16,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "12.1.1",
+            "targets": [
+                {
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT\n      time_bucket('5s', time) AS time,\n      metric_name AS metric,\n      AVG(value) AS \"Duration\"\n  FROM metrics\n  WHERE $__timeFilter(time)\n      AND metric_name = 'speedreader.inference.queue_wait_duration'\n      AND tags->>'model' = '$model'\n      AND time_bucket('5s', time) < time_bucket('5s', NOW())\n      AND time_bucket('5s', time) > time_bucket('5s', $__timeFrom()::timestamptz)\n  GROUP BY time_bucket('5s', time), metric_name\n  ORDER BY time;",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "Queue Wait Time",
+            "type": "timeseries"
+        }
+    ],
+    "preload": false,
+    "refresh": "auto",
+    "schemaVersion": 41,
+    "tags": [],
+    "templating": {
+        "list": [
+            {
+                "allowCustomValue": false,
+                "current": {
+                    "text": "SVTRv2",
+                    "value": "SVTRv2"
+                },
+                "label": "Model",
+                "name": "model",
+                "options": [
+                    {
+                        "selected": false,
+                        "text": "DbNet18",
+                        "value": "DbNet18"
+                    },
+                    {
+                        "selected": true,
+                        "text": "SVTRv2",
+                        "value": "SVTRv2"
+                    }
+                ],
+                "query": "DbNet18,SVTRv2",
+                "type": "custom"
+            }
+        ]
+    },
+    "time": {
+        "from": "now-5m",
+        "to": "now"
+    },
+    "timepicker": {
+        "nowDelay": ""
+    },
+    "timezone": "browser",
+    "title": "Inference",
+    "uid": "10c78340-d1da-4b2d-b82b-1d587e643d0b",
+    "version": 7
+}

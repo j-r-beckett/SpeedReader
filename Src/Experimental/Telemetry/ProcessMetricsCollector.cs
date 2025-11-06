@@ -9,15 +9,10 @@ namespace Experimental.Telemetry;
 
 public sealed class ProcessMetricsCollector : IDisposable
 {
-    private readonly ChannelWriter<MetricPoint> _writer;
     private readonly Task _collectionTask;
     private readonly CancellationTokenSource _cts = new();
 
-    public ProcessMetricsCollector(ChannelWriter<MetricPoint> writer)
-    {
-        _writer = writer;
-        _collectionTask = Task.Run(CollectionLoop);
-    }
+    public ProcessMetricsCollector() => _collectionTask = Task.Run(CollectionLoop);
 
     private async Task CollectionLoop()
     {
@@ -56,7 +51,8 @@ public sealed class ProcessMetricsCollector : IDisposable
             process.Refresh();
 
             var workingSet = process.WorkingSet64;
-            _writer.TryWrite(new MetricPoint(timestamp, "process.memory.working_set_bytes", workingSet));
+            MetricRecorder.RecordMetric("process.memory.working_set_bytes", workingSet);
+            // _writer.TryWrite(new MetricPoint(timestamp, "process.memory.working_set_bytes", workingSet));
 
             var now = SharedClock.Now;
             var currentCpuTime = process.TotalProcessorTime;
@@ -66,7 +62,8 @@ public sealed class ProcessMetricsCollector : IDisposable
             if (timeDelta > 0)
             {
                 var cpuUsageCores = cpuDelta / timeDelta;
-                _writer.TryWrite(new MetricPoint(timestamp, "process.cpu.usage_cores", cpuUsageCores));
+                MetricRecorder.RecordMetric("process.cpu.usage_cores", cpuUsageCores);
+                // _writer.TryWrite(new MetricPoint(timestamp, "process.cpu.usage_cores", cpuUsageCores));
             }
 
             lastCpuCheck = now;
