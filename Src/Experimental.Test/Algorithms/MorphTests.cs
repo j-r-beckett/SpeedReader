@@ -112,7 +112,7 @@ public class MorphTests
     }
 
     [Fact]
-    public void ErodeGt_MatchesActualErode()
+    public void Erode_MatchesSimpleErode()
     {
         var random = new Random(0);
 
@@ -132,7 +132,7 @@ public class MorphTests
             var mapExpected = new ReliefMap([.. data], width, height);
 
             mapActual.Erode();
-            ErodeGt(mapExpected);
+            SimpleErode(mapExpected);
 
             for (int y = 0; y < height; y++)
             {
@@ -145,7 +145,7 @@ public class MorphTests
     }
 
     [Fact]
-    public void DilateGt_MatchesActualDilate()
+    public void Dilate_MatchesSimpleDilate()
     {
         var random = new Random(0);
 
@@ -165,7 +165,7 @@ public class MorphTests
             var mapExpected = new ReliefMap([.. data], width, height);
 
             mapActual.Dilate();
-            DilateGt(mapExpected);
+            SimpleDilate(mapExpected);
 
             for (int y = 0; y < height; y++)
             {
@@ -177,7 +177,7 @@ public class MorphTests
         }
     }
 
-    private static void ErodeGt(ReliefMap map)
+    private static void SimpleErode(ReliefMap map)
     {
         var width = map.Width;
         var height = map.Height;
@@ -226,7 +226,7 @@ public class MorphTests
         Array.Copy(result, map.Data, result.Length);
     }
 
-    private static void DilateGt(ReliefMap map)
+    private static void SimpleDilate(ReliefMap map)
     {
         var width = map.Width;
         var height = map.Height;
