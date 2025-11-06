@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using CommunityToolkit.HighPerformance;
-using Ocr.Geometry;
 using Fluid;
+using Ocr.Geometry;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

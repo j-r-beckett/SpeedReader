@@ -1,8 +1,8 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Ocr.Geometry;
 using Microsoft.Extensions.Logging;
+using Ocr.Geometry;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using TestUtils;

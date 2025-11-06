@@ -4,10 +4,10 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using Core;
+using Microsoft.Extensions.Logging;
 using Ocr.Geometry;
 using Ocr.Inference;
 using Ocr.Visualization;
-using Microsoft.Extensions.Logging;
 using Resources;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;

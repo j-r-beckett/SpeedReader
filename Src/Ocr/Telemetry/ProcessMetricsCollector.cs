@@ -17,16 +17,16 @@ public sealed class ProcessMetricsCollector : IDisposable
     private async Task CollectionLoop()
     {
         var process = Process.GetCurrentProcess();
-        var lastCpuCheck = SharedClock.Now;
+        var lastCpuCheckTimestamp = Stopwatch.GetTimestamp();
         var lastCpuTime = process.TotalProcessorTime;
 
         while (!_cts.Token.IsCancellationRequested)
         {
             try
             {
-                var start = SharedClock.Now;
-                CollectMetrics(start);
-                var elapsed = SharedClock.Now - start;
+                var loopStartTimestamp = Stopwatch.GetTimestamp();
+                CollectMetrics();
+                var elapsed = Stopwatch.GetElapsedTime(loopStartTimestamp);
                 var remaining = TimeSpan.FromSeconds(1) - elapsed;
 
                 if (remaining > TimeSpan.Zero)
@@ -46,27 +46,25 @@ public sealed class ProcessMetricsCollector : IDisposable
 
         return;
 
-        void CollectMetrics(TimeSpan timestamp)
+        void CollectMetrics()
         {
             process.Refresh();
 
             var workingSet = process.WorkingSet64;
             MetricRecorder.RecordMetric("process.memory.working_set_bytes", workingSet);
-            // _writer.TryWrite(new MetricPoint(timestamp, "process.memory.working_set_bytes", workingSet));
 
-            var now = SharedClock.Now;
+            var nowTimestamp = Stopwatch.GetTimestamp();
             var currentCpuTime = process.TotalProcessorTime;
             var cpuDelta = (currentCpuTime - lastCpuTime).TotalMilliseconds;
-            var timeDelta = (now - lastCpuCheck).TotalMilliseconds;
+            var timeDelta = Stopwatch.GetElapsedTime(lastCpuCheckTimestamp, nowTimestamp).TotalMilliseconds;
 
             if (timeDelta > 0)
             {
                 var cpuUsageCores = cpuDelta / timeDelta;
                 MetricRecorder.RecordMetric("process.cpu.usage_cores", cpuUsageCores);
-                // _writer.TryWrite(new MetricPoint(timestamp, "process.cpu.usage_cores", cpuUsageCores));
             }
 
-            lastCpuCheck = now;
+            lastCpuCheckTimestamp = nowTimestamp;
             lastCpuTime = currentCpuTime;
         }
     }

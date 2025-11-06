@@ -10,12 +10,10 @@ namespace Ocr.Controls;
 
 public class Sensor
 {
-    internal readonly ConcurrentDictionary<Token, TimeSpan> StartTimes = new();
-    internal readonly ConcurrentDictionary<Token, TimeSpan> EndTimes = new();
+    internal readonly ConcurrentDictionary<Token, long> StartTimes = new();
+    internal readonly ConcurrentDictionary<Token, long> EndTimes = new();
     internal readonly Dictionary<string, string>? Tags;
     internal int Parallelism;
-
-    public static TimeSpan Now => SharedClock.Now;
 
     public Sensor(Dictionary<string, string>? tags = null) => Tags = tags;
 
@@ -26,7 +24,7 @@ public class Sensor
         public double Throughput { get; init; }  // Jobs per second; (number of jobs ended in the time interval) / (time interval)
         public double BoxedThroughput { get; init; }  // Jobs per second; jobs that started and ended in the time interval only
         public double AvgParallelism { get; init; }  // Avg number of jobs concurrently executing in the time interval
-        public List<(TimeSpan Start, TimeSpan End)> Enclosed { get; init; } = [];
+        public List<(long Start, long End)> Enclosed { get; init; } = [];
     }
 
     public interface IJob : IDisposable;
@@ -35,14 +33,14 @@ public class Sensor
     {
         private readonly Sensor _parent;
         private readonly Token _token;
-        private readonly TimeSpan _startTime;
+        private readonly long _startTimestamp;
         private bool _disposed;
 
         public Job(Sensor parent)
         {
             _token = new Token();
-            _startTime = Now;
-            parent.StartTimes.TryAdd(_token, _startTime);
+            _startTimestamp = Stopwatch.GetTimestamp();
+            parent.StartTimes.TryAdd(_token, _startTimestamp);
             _parent = parent;
             MetricRecorder.RecordMetric("speedreader.inference.parallelism", Interlocked.Increment(ref _parent.Parallelism), _parent.Tags);
         }
@@ -52,39 +50,40 @@ public class Sensor
         {
             if (Interlocked.CompareExchange(ref _disposed, true, false))
                 return;
-            var endTime = Now;
-            _parent.EndTimes.TryAdd(_token, endTime);
+            var endTimestamp = Stopwatch.GetTimestamp();
+            _parent.EndTimes.TryAdd(_token, endTimestamp);
             MetricRecorder.RecordMetric("speedreader.inference.counter", 1, _parent.Tags);
             MetricRecorder.RecordMetric("speedreader.inference.parallelism", Interlocked.Decrement(ref _parent.Parallelism), _parent.Tags);
-            MetricRecorder.RecordMetric("speedreader.inference.duration", (endTime - _startTime).TotalMilliseconds, _parent.Tags);
+            MetricRecorder.RecordMetric("speedreader.inference.duration", Stopwatch.GetElapsedTime(_startTimestamp, endTimestamp).TotalMilliseconds, _parent.Tags);
         }
     }
 
     public IJob RecordJob() => new Job(this);
 
-    public SummaryStatistics GetSummaryStatistics(TimeSpan start, TimeSpan end)
+    public SummaryStatistics GetSummaryStatistics(long startTimestamp, long endTimestamp)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
+        ArgumentOutOfRangeException.ThrowIfLessThan(endTimestamp, startTimestamp);
 
-        if (start == end)
+        if (startTimestamp == endTimestamp)
             return new SummaryStatistics { AvgDuration = 0, Throughput = 0, BoxedThroughput = 0, AvgParallelism = 0 };
 
         var snapshot = TakeSnapshot();
-        var enclosedJobs = GetEnclosedJobs(snapshot, start, end);
+        var enclosedJobs = GetEnclosedJobs(snapshot, startTimestamp, endTimestamp);
 
         // Avg job duration
-        var durations = enclosedJobs.Select(p => p.End - p.Start).ToList();
+        var durations = enclosedJobs.Select(p => Stopwatch.GetElapsedTime(p.Start, p.End)).ToList();
         if (durations.Count > 0)
             Console.WriteLine($"Durations: {string.Join(", ", durations.Select(d => (int)d.TotalMilliseconds))}");
-        var totalDuration = enclosedJobs.Aggregate(TimeSpan.Zero, (sum, pair) => sum + (pair.End - pair.Start));
-        var avgDuration = enclosedJobs.Count == 0 ? 0 : totalDuration.TotalSeconds / enclosedJobs.Count;
+        var totalDuration = enclosedJobs.Aggregate(0.0, (sum, pair) => sum + Stopwatch.GetElapsedTime(pair.Start, pair.End).TotalSeconds);
+        var avgDuration = enclosedJobs.Count == 0 ? 0 : totalDuration / enclosedJobs.Count;
 
         // Throughput
-        var numJobEnds = snapshot.EndTimes.Values.Count(t => t >= start && t <= end);
-        var throughput = numJobEnds / (end - start).TotalSeconds;
+        var intervalDuration = Stopwatch.GetElapsedTime(startTimestamp, endTimestamp).TotalSeconds;
+        var numJobEnds = snapshot.EndTimes.Values.Count(t => t >= startTimestamp && t <= endTimestamp);
+        var throughput = numJobEnds / intervalDuration;
 
         // Boxed throughput
-        var boxedThroughput = enclosedJobs.Count / (end - start).TotalSeconds;
+        var boxedThroughput = enclosedJobs.Count / intervalDuration;
 
         return new SummaryStatistics
         {
@@ -101,23 +100,23 @@ public class Sensor
             const int END_EVENT = 1;
             const int INTERVAL_EVENT = 2;
 
-            List<(TimeSpan Time, int EventType)> events =
+            List<(long Timestamp, int EventType)> events =
             [
-                (TimeSpan.Zero, INTERVAL_EVENT),  // Need to start at time 0 so that when we reach start we have the correct parallelism count
-                (start, INTERVAL_EVENT),
-                (end, INTERVAL_EVENT)
+                (0, INTERVAL_EVENT),  // Need to start at time 0 so that when we reach start we have the correct parallelism count
+                (startTimestamp, INTERVAL_EVENT),
+                (endTimestamp, INTERVAL_EVENT)
             ];
 
-            foreach (var (_, time) in snapshot.EndTimes)
+            foreach (var (_, timestamp) in snapshot.EndTimes)
             {
-                if (time <= end)
-                    events.Add((time, END_EVENT));
+                if (timestamp <= endTimestamp)
+                    events.Add((timestamp, END_EVENT));
             }
 
-            foreach (var (_, time) in snapshot.StartTimes)
+            foreach (var (_, timestamp) in snapshot.StartTimes)
             {
-                if (time <= end)
-                    events.Add((time, START_EVENT));
+                if (timestamp <= endTimestamp)
+                    events.Add((timestamp, START_EVENT));
             }
 
             events.Sort();
@@ -133,8 +132,8 @@ public class Sensor
             // Phase 2 lasts from start to end
             for (var i = 0; i < events.Count - 1; i++)
             {
-                var (time, eventType) = events[i];
-                var (nextTime, _) = events[i + 1];
+                var (timestamp, eventType) = events[i];
+                var (nextTimestamp, _) = events[i + 1];
 
                 // Increment if start event, decrement if end event, do nothing if interval event
                 currentParallelism += eventType switch
@@ -144,18 +143,18 @@ public class Sensor
                     _ => 0
                 };
 
-                if (time >= start)
+                if (timestamp >= startTimestamp)
                 {
-                    weightedParallelismSum += currentParallelism * (nextTime - time).TotalSeconds;
+                    weightedParallelismSum += currentParallelism * Stopwatch.GetElapsedTime(timestamp, nextTimestamp).TotalSeconds;
                 }
             }
 
-            return weightedParallelismSum / (end - start).TotalSeconds;
+            return weightedParallelismSum / intervalDuration;
         }
     }
 
     // Remove completed jobs in [0, before)
-    public void Prune(TimeSpan before)
+    public void Prune(long beforeTimestamp)
     {
         // Removes completed jobs before a given timestamp to prevent unbounded memory growth.
         // Prune safety relies on a caller invariant: after Prune(before), GetSummary(start, end) will
@@ -169,7 +168,7 @@ public class Sensor
 
         var snapshot = TakeSnapshot();
 
-        foreach (var pair in GetEnclosedJobs(snapshot, TimeSpan.Zero, before, inclusiveUpperBound: false))
+        foreach (var pair in GetEnclosedJobs(snapshot, 0, beforeTimestamp, inclusiveUpperBound: false))
         {
             // Remove ends first to avoid end times without corresponding start times
             EndTimes.Remove(pair.Token, out _);
@@ -180,14 +179,14 @@ public class Sensor
     private Snapshot TakeSnapshot() => new(StartTimes, EndTimes);
 
     // Get all jobs that started and ended in [start, end]
-    private static List<(TimeSpan Start, TimeSpan End, Token Token)> GetEnclosedJobs(Snapshot snapshot, TimeSpan start, TimeSpan end, bool inclusiveUpperBound = true)
+    private static List<(long Start, long End, Token Token)> GetEnclosedJobs(Snapshot snapshot, long startTimestamp, long endTimestamp, bool inclusiveUpperBound = true)
     {
-        var pairs = new List<(TimeSpan, TimeSpan, Token)>();
+        var pairs = new List<(long, long, Token)>();
 
         foreach (var (token, s) in snapshot.StartTimes)
         {
             // Add to pairs if start time is in [start, end] and there is a corresponding end time also in [start, end] or [start, end) if inclusiveUpperBound is false
-            if (s >= start && s <= end && snapshot.EndTimes.TryGetValue(token, out var e) && (e < end || e == end && inclusiveUpperBound))
+            if (s >= startTimestamp && s <= endTimestamp && snapshot.EndTimes.TryGetValue(token, out var e) && (e < endTimestamp || e == endTimestamp && inclusiveUpperBound))
                 pairs.Add((s, e, token));
         }
 
@@ -196,15 +195,15 @@ public class Sensor
 
     private record Snapshot
     {
-        public readonly Dictionary<Token, TimeSpan> StartTimes;
-        public readonly Dictionary<Token, TimeSpan> EndTimes;
+        public readonly Dictionary<Token, long> StartTimes;
+        public readonly Dictionary<Token, long> EndTimes;
 
-        public Snapshot(ConcurrentDictionary<Token, TimeSpan> startTimes, ConcurrentDictionary<Token, TimeSpan> endTimes)
+        public Snapshot(ConcurrentDictionary<Token, long> startTimes, ConcurrentDictionary<Token, long> endTimes)
         {
             // Snapshot end times before start times to avoid end times without corresponding start times. Note that start
             // times without end times are possible but acceptable.
-            EndTimes = new Dictionary<Token, TimeSpan>(endTimes);
-            StartTimes = new Dictionary<Token, TimeSpan>(startTimes);
+            EndTimes = new Dictionary<Token, long>(endTimes);
+            StartTimes = new Dictionary<Token, long>(startTimes);
         }
     }
 

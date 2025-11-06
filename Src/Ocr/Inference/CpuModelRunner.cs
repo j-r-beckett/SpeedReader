@@ -2,8 +2,8 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
-using Ocr.Controls;
 using Microsoft.ML.OnnxRuntime;
+using Ocr.Controls;
 using Resources;
 
 namespace Ocr.Inference;
