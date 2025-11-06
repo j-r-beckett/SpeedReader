@@ -1,11 +1,12 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using System.Text.Json;
 using System.Threading.Channels;
-using Ocr.Inference;
 using Npgsql;
 using NpgsqlTypes;
+using Ocr.Inference;
 
 namespace Ocr.Telemetry;
 
@@ -35,11 +36,11 @@ public static class MetricRecorder
         _writerTask = Task.Run(WriterLoop);
     }
 
-    public static void RecordMetric(TimeSpan timestamp, string name, double value, Dictionary<string, string>? tags = null) =>
+    public static void RecordMetric(DateTime timestamp, string name, double value, Dictionary<string, string>? tags = null) =>
         _channel.Writer.TryWrite(new MetricPoint(timestamp, name, value, tags));
 
     public static void RecordMetric(string name, double value, Dictionary<string, string>? tags = null) =>
-        RecordMetric(SharedClock.Now, name, value, tags);
+        RecordMetric(DateTime.UtcNow, name, value, tags);
 
     private static async Task WriterLoop()
     {
@@ -47,7 +48,7 @@ public static class MetricRecorder
         {
             try
             {
-                var loopStart = SharedClock.Now;
+                var loopStartTimestamp = Stopwatch.GetTimestamp();
                 var batch = new List<MetricPoint>();
 
                 // Read all available metrics from channel
@@ -67,7 +68,7 @@ public static class MetricRecorder
                     foreach (var metric in batch)
                     {
                         await importer.StartRowAsync(_cts.Token);
-                        await importer.WriteAsync(metric.Timestamp.ToUtc(), NpgsqlDbType.TimestampTz, _cts.Token);
+                        await importer.WriteAsync(metric.Timestamp, NpgsqlDbType.TimestampTz, _cts.Token);
                         await importer.WriteAsync(metric.Name, NpgsqlDbType.Text, _cts.Token);
                         await importer.WriteAsync(metric.Value, NpgsqlDbType.Double, _cts.Token);
 
@@ -86,7 +87,7 @@ public static class MetricRecorder
                 }
 
                 // Calculate remaining wait time
-                var elapsed = SharedClock.Now - loopStart;
+                var elapsed = Stopwatch.GetElapsedTime(loopStartTimestamp);
                 var remaining = _flushInterval - elapsed;
 
                 if (remaining > TimeSpan.Zero)

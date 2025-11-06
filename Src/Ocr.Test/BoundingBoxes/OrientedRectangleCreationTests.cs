@@ -3,8 +3,8 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics;
-using Ocr.Geometry;
 using Microsoft.Extensions.Logging;
+using Ocr.Geometry;
 using TestUtils;
 using Xunit.Abstractions;
 

@@ -125,16 +125,16 @@ public class TextDetector
         var tiling = Tile(image);
         MetricRecorder.RecordMetric("speedreader.detection.num_tiles", tiling.NumTilesHorizontal * tiling.NumTilesVertical);
 
-        var start = SharedClock.Now;
+        var startTimestamp = Stopwatch.GetTimestamp();
         var modelInput = Preprocess(image, tiling, vizBuilder);
-        var preprocessEnd = SharedClock.Now;
-        MetricRecorder.RecordMetric("speedreader.detection.preprocess_duration", (preprocessEnd - start).TotalMilliseconds);
+        var preprocessEndTimestamp = Stopwatch.GetTimestamp();
+        MetricRecorder.RecordMetric("speedreader.detection.preprocess_duration", Stopwatch.GetElapsedTime(startTimestamp, preprocessEndTimestamp).TotalMilliseconds);
         var modelOutput = await RunInference(modelInput);
-        var inferenceEnd = SharedClock.Now;
-        MetricRecorder.RecordMetric("speedreader.detection.inference_duration", (inferenceEnd - preprocessEnd).TotalMilliseconds);
+        var inferenceEndTimestamp = Stopwatch.GetTimestamp();
+        MetricRecorder.RecordMetric("speedreader.detection.inference_duration", Stopwatch.GetElapsedTime(preprocessEndTimestamp, inferenceEndTimestamp).TotalMilliseconds);
         var result = Postprocess(modelOutput, tiling, image, vizBuilder);
-        var postprocessEnd = SharedClock.Now;
-        MetricRecorder.RecordMetric("speedreader.detection.postprocess_duration", (postprocessEnd - inferenceEnd).TotalMilliseconds);
+        var postprocessEndTimestamp = Stopwatch.GetTimestamp();
+        MetricRecorder.RecordMetric("speedreader.detection.postprocess_duration", Stopwatch.GetElapsedTime(inferenceEndTimestamp, postprocessEndTimestamp).TotalMilliseconds);
         return result;
     }
 

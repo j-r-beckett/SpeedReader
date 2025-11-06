@@ -3,4 +3,4 @@
 
 namespace Ocr.Telemetry;
 
-public readonly record struct MetricPoint(TimeSpan Timestamp, string Name, double Value, Dictionary<string, string>? Tags = null);
+public readonly record struct MetricPoint(DateTime Timestamp, string Name, double Value, Dictionary<string, string>? Tags = null);

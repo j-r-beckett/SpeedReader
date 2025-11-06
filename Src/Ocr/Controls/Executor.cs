@@ -18,18 +18,31 @@ public interface IExecutor
 
 public class Executor<TIn, TOut> : IDisposable, IExecutor
 {
-    private readonly Func<TIn, TOut> _func;
+    private readonly Func<TIn, Task<TOut>> _asyncFunc;
     private readonly SemaphoreSlim _semaphore;
     private readonly AsyncLock _pauseExecutionLock = new();
     private int _currentMaxParallelism;
     private int _queueDepth;
     private readonly Dictionary<string, string>? _telemetryTags;
 
+    public Executor(Func<TIn, Task<TOut>> asyncAsyncFunc, int initialParallelism, Dictionary<string, string>? telemetryTags = null)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(initialParallelism);
+
+        _asyncFunc = asyncAsyncFunc;
+
+        _currentMaxParallelism = initialParallelism;
+        _semaphore = new SemaphoreSlim(initialParallelism);
+        _telemetryTags = telemetryTags;
+        Sensor = new Sensor(telemetryTags);
+    }
+
     public Executor(Func<TIn, TOut> func, int initialParallelism, Dictionary<string, string>? telemetryTags = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(initialParallelism);
 
-        _func = func;
+        _asyncFunc = input => Task.FromResult(func(input));
+
         _currentMaxParallelism = initialParallelism;
         _semaphore = new SemaphoreSlim(initialParallelism);
         _telemetryTags = telemetryTags;
@@ -41,7 +54,7 @@ public class Executor<TIn, TOut> : IDisposable, IExecutor
     public async Task<Task<TOut>> ExecuteSingle(TIn input)
     {
         Interlocked.Increment(ref _queueDepth);
-        var enteredQueueTime = SharedClock.Now;
+        var enteredQueueTimestamp = Stopwatch.GetTimestamp();
         MetricRecorder.RecordMetric("speedreader.inference.queue_depth", _queueDepth, _telemetryTags);
         await _semaphore.WaitAsync();
         while (_pauseExecutionLock.IsAcquired)
@@ -52,15 +65,15 @@ public class Executor<TIn, TOut> : IDisposable, IExecutor
             await _semaphore.WaitAsync();
         }
         Interlocked.Decrement(ref _queueDepth);
-        var exitedQueueTime = SharedClock.Now;
-        MetricRecorder.RecordMetric("speedreader.inference.queue_wait_duration", (exitedQueueTime - enteredQueueTime).TotalMilliseconds, _telemetryTags);
+        var queueWaitDuration = Stopwatch.GetElapsedTime(enteredQueueTimestamp);
+        MetricRecorder.RecordMetric("speedreader.inference.queue_wait_duration", queueWaitDuration.TotalMilliseconds, _telemetryTags);
         MetricRecorder.RecordMetric("speedreader.inference.queue_depth", _queueDepth, _telemetryTags);
 
-        var task = Task.Run(() =>
+        var task = Task.Run(async () =>
         {
             using (Sensor.RecordJob())
             {
-                return _func(input);
+                return await _asyncFunc(input);
             }
         });
 

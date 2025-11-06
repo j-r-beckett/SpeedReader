@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using System.Threading.Channels;
 using Ocr.Inference;
 
@@ -17,16 +18,16 @@ public sealed class ContainerMetricsCollector : IDisposable
 
     private async Task CollectionLoop()
     {
-        var lastCpuCheck = SharedClock.Now;
+        var lastCpuCheckTimestamp = Stopwatch.GetTimestamp();
         var lastCpuUsage = ReadCpuUsageMicroseconds();
 
         while (!_cts.Token.IsCancellationRequested)
         {
             try
             {
-                var start = SharedClock.Now;
-                CollectMetrics(start);
-                var elapsed = SharedClock.Now - start;
+                var loopStartTimestamp = Stopwatch.GetTimestamp();
+                CollectMetrics();
+                var elapsed = Stopwatch.GetElapsedTime(loopStartTimestamp);
                 var remaining = TimeSpan.FromSeconds(1) - elapsed;
 
                 if (remaining > TimeSpan.Zero)
@@ -44,14 +45,13 @@ public sealed class ContainerMetricsCollector : IDisposable
             }
         }
 
-        void CollectMetrics(TimeSpan timestamp)
+        void CollectMetrics()
         {
             // Memory limit (bytes)
             var memoryLimit = ReadMemoryLimit();
             if (memoryLimit > 0)
             {
                 MetricRecorder.RecordMetric("container.memory.limit_bytes", memoryLimit);
-                // _writer.TryWrite(new MetricPoint(timestamp, "container.memory.limit_bytes", memoryLimit));
             }
 
             // Memory usage (bytes)
@@ -59,7 +59,6 @@ public sealed class ContainerMetricsCollector : IDisposable
             if (memoryUsage > 0)
             {
                 MetricRecorder.RecordMetric("container.memory.usage_bytes", memoryUsage);
-                // _writer.TryWrite(new MetricPoint(timestamp, "container.memory.usage_bytes", memoryUsage));
             }
 
             // CPU limit (cores)
@@ -67,27 +66,25 @@ public sealed class ContainerMetricsCollector : IDisposable
             if (cpuLimit > 0)
             {
                 MetricRecorder.RecordMetric("container.cpu.limit_cores", cpuLimit);
-                // _writer.TryWrite(new MetricPoint(timestamp, "container.cpu.limit_cores", cpuLimit));
             }
 
             // CPU usage (cores)
-            var now = SharedClock.Now;
+            var nowTimestamp = Stopwatch.GetTimestamp();
             var currentCpuUsage = ReadCpuUsageMicroseconds();
             if (currentCpuUsage > 0 && lastCpuUsage > 0)
             {
                 var usageDeltaMicros = currentCpuUsage - lastCpuUsage;
-                var timeDeltaSeconds = (now - lastCpuCheck).TotalSeconds;
+                var timeDeltaSeconds = Stopwatch.GetElapsedTime(lastCpuCheckTimestamp, nowTimestamp).TotalSeconds;
 
                 if (timeDeltaSeconds > 0)
                 {
                     var microsPerSecond = 1_000_000.0;
                     var cpuUsageCores = usageDeltaMicros / (timeDeltaSeconds * microsPerSecond);
                     MetricRecorder.RecordMetric("container.cpu.usage_cores", cpuUsageCores);
-                    // _writer.TryWrite(new MetricPoint(timestamp, "container.cpu.usage_cores", cpuUsageCores));
                 }
             }
 
-            lastCpuCheck = now;
+            lastCpuCheckTimestamp = nowTimestamp;
             lastCpuUsage = currentCpuUsage;
         }
     }

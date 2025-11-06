@@ -2,11 +2,11 @@
 // Licensed under the Apache License, Version 2.0
 
 using Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.ML.OnnxRuntime;
 using Ocr.Geometry;
 using Ocr.Inference;
 using Ocr.Visualization;
-using Microsoft.Extensions.Logging;
-using Microsoft.ML.OnnxRuntime;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

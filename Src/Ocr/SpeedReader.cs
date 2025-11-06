@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Threading.Channels;
+using Ocr.Controls;
 using Ocr.Inference;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
@@ -12,9 +13,8 @@ namespace Ocr;
 
 public class SpeedReader
 {
-    private readonly SemaphoreSlim _semaphore;
-
     private readonly Func<(TextDetector, TextRecognizer)> _factory;
+    private readonly Executor<Task<Image<Rgb24>>, SpeedReaderResult> _executor;
 
     internal SpeedReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
     {
@@ -23,13 +23,7 @@ public class SpeedReader
 
         _factory = factory;
         var capacity = maxParallelism * maxBatchSize * 2;
-        _semaphore = new SemaphoreSlim(capacity, capacity);
-    }
-
-    public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int capacity)
-    {
-        _factory = () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner));
-        _semaphore = new SemaphoreSlim(capacity, capacity);
+        _executor = new Executor<Task<Image<Rgb24>>, SpeedReaderResult>(Execute, capacity);
     }
 
     public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this(
@@ -76,26 +70,18 @@ public class SpeedReader
         await processingTaskStarter;
     }
 
-    private async Task<Task<SpeedReaderResult>> ReadOne(Task<Image<Rgb24>> imageTask)
-    {
-        await _semaphore.WaitAsync();
-        return Task.Run(async () =>
-        {
-            try
-            {
-                var (detector, recognizer) = _factory();
-                var vizBuilder = new VizBuilder();
+    private Task<Task<SpeedReaderResult>> ReadOne(Task<Image<Rgb24>> imageTask) => _executor.ExecuteSingle(imageTask);
 
-                var image = await imageTask;
-                var detections = await detector.Detect(image, vizBuilder);
-                var recognitions = await recognizer.Recognize(detections, image, vizBuilder);
-                Debug.Assert(detections.Count == recognitions.Count);
-                return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        });
+
+    private async Task<SpeedReaderResult> Execute(Task<Image<Rgb24>> imageTask)
+    {
+        var (detector, recognizer) = _factory();
+        var vizBuilder = new VizBuilder();
+
+        var image = await imageTask;
+        var detections = await detector.Detect(image, vizBuilder);
+        var recognitions = await recognizer.Recognize(detections, image, vizBuilder);
+        Debug.Assert(detections.Count == recognitions.Count);
+        return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
     }
 }

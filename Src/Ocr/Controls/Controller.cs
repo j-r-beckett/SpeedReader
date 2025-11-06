@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using Ocr.Inference;
 using Ocr.Telemetry;
 
@@ -37,8 +38,8 @@ public class Controller
         {
             // Keep an eye on avg processing duration, wait for at least 8 * avg duration to ensure we get stable
             // throughput and parallelism measurements
-            var start = SharedClock.Now;
-            var statistics = _executor.Sensor.GetSummaryStatistics(start, SharedClock.Now);
+            var startTimestamp = Stopwatch.GetTimestamp();
+            var statistics = _executor.Sensor.GetSummaryStatistics(startTimestamp, Stopwatch.GetTimestamp());
             while (true)
             {
                 if (statistics.AvgDuration == 0)
@@ -47,12 +48,13 @@ public class Controller
                 }
                 else
                 {
-                    var waitFor = start.TotalSeconds + 8 * statistics.AvgDuration - SharedClock.Now.TotalSeconds;
+                    var elapsed = Stopwatch.GetElapsedTime(startTimestamp);
+                    var waitFor = 8 * statistics.AvgDuration - elapsed.TotalSeconds;
                     if (waitFor <= 0)
                         break;
                     await Task.Delay(TimeSpan.FromSeconds(waitFor), stoppingToken);
                 }
-                statistics = _executor.Sensor.GetSummaryStatistics(start, SharedClock.Now);
+                statistics = _executor.Sensor.GetSummaryStatistics(startTimestamp, Stopwatch.GetTimestamp());
             }
 
             // If we have plenty of headroom, bring down max
@@ -112,7 +114,7 @@ public class Controller
             MetricRecorder.RecordMetric("speedreader.inference.max_parallelism", maxParallelism, _telemetryTags);
             IsOscillating = oscillationCounter > _oscillations;
             lastThroughput = statistics.BoxedThroughput;
-            _executor.Sensor.Prune(SharedClock.Now);
+            _executor.Sensor.Prune(Stopwatch.GetTimestamp());
         }
 
         return;

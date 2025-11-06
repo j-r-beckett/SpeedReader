@@ -5,11 +5,11 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading.Channels;
 using Core;
+using Microsoft.ML.OnnxRuntime;
 using Ocr;
 using Ocr.Geometry;
 using Ocr.Inference;
 using Ocr.Visualization;
-using Microsoft.ML.OnnxRuntime;
 using Resources;
 
 namespace Benchmarks;
