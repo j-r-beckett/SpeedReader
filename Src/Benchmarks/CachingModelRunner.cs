@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 
-using Experimental.Inference;
+using Ocr.Inference;
 using Microsoft.ML.OnnxRuntime;
 
 namespace Benchmarks;

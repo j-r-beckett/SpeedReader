@@ -15,17 +15,14 @@
     <PackageReference Include="Clipper2" />
     <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="Fluid.Core" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" />
-    <PackageReference Include="SixLabors.Fonts" />
+    <PackageReference Include="Npgsql" />
     <PackageReference Include="SixLabors.ImageSharp" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     <PackageReference Include="System.Numerics.Tensors" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Resources\Resources.csproj" />
-    <ProjectReference Include="..\Video\Video.csproj" />
   </ItemGroup>
+
 
 </Project>
