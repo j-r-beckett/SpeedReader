@@ -13,11 +13,30 @@ public class CpuModelRunner : ModelRunner
     public readonly Executor<(float[] Data, int[] Shape), (float[], int[])> Executor;
     public readonly Controller? Controller;
 
-    public CpuModelRunner(Model model, ModelPrecision precision, InferenceSession session)
-        : this(session, 1)  // TODO: horrible hack
+    public CpuModelRunner(Model model, ModelPrecision modelPrecision, int initialParallelism)
+        : base(InferenceSessionProvider.GetCpuInferenceSession(model, modelPrecision, 1))
     {
-        Controller = new Controller(Executor, 3, new InferenceTelemetryRecorder(model, precision));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(initialParallelism);
+
+        var telemetryTags = new Dictionary<string, string>
+        {
+            ["model"] = model.ToString(),
+            ["precision"] = modelPrecision.ToString()
+        };
+
+        Executor = new Executor<(float[] Data, int[] Shape), (float[], int[])>(input =>
+        {
+            var (data, shape) = RunInferenceInternal(input.Data, input.Shape);
+            Debug.Assert(shape[0] == 1); // Batch size is always 1 on CPU
+            var unbatchedShape = shape[1..]; // Strip batch size dimension that we added earlier
+            return (data, unbatchedShape);
+        }, initialParallelism, telemetryTags);
+
+        Controller = new Controller(Executor, 3, telemetryTags);
+        // TODO: fix this later
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         Controller.Tune(CancellationToken.None);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
     }
 
     public CpuModelRunner(InferenceSession inferenceSession, int initialParallelism) : base(inferenceSession)

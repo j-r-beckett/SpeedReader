@@ -97,7 +97,7 @@ public static class DBNetBenchmarkHelper
     {
         var image = InputGenerator.GenerateInput(tileWidth, tileHeight, density);
         var detector = new TextDetector(new DummyModelRunner(), tileWidth, tileHeight);
-        return detector.Preprocess(image, new VizBuilder());
+        return detector.Preprocess(image, detector.Tile(image), new VizBuilder());
     }
 }
 

@@ -4,15 +4,20 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Experimental.Inference;
+using Experimental.Telemetry;
 
 namespace Experimental.Controls;
 
 public class Sensor
 {
-    private readonly ConcurrentDictionary<Token, TimeSpan> _startTimes = new();
-    private readonly ConcurrentDictionary<Token, TimeSpan> _endTimes = new();
+    internal readonly ConcurrentDictionary<Token, TimeSpan> StartTimes = new();
+    internal readonly ConcurrentDictionary<Token, TimeSpan> EndTimes = new();
+    internal readonly Dictionary<string, string>? Tags;
+    internal int Parallelism;
 
     public static TimeSpan Now => SharedClock.Now;
+
+    public Sensor(Dictionary<string, string>? tags = null) => Tags = tags;
 
     public class SummaryStatistics
     {
@@ -28,15 +33,18 @@ public class Sensor
 
     private class Job : IJob
     {
-        private readonly ConcurrentDictionary<Token, TimeSpan> _endTimes;
+        private readonly Sensor _parent;
         private readonly Token _token;
+        private readonly TimeSpan _startTime;
         private bool _disposed;
 
-        public Job(ConcurrentDictionary<Token, TimeSpan> startTimes, ConcurrentDictionary<Token, TimeSpan> endTimes)
+        public Job(Sensor parent)
         {
             _token = new Token();
-            startTimes.TryAdd(_token, Now);
-            _endTimes = endTimes;
+            _startTime = Now;
+            parent.StartTimes.TryAdd(_token, _startTime);
+            _parent = parent;
+            MetricRecorder.RecordMetric("speedreader.inference.parallelism", Interlocked.Increment(ref _parent.Parallelism), _parent.Tags);
         }
 
         // Records a job end only the first time it's called, subsequent calls are ignored
@@ -44,11 +52,15 @@ public class Sensor
         {
             if (Interlocked.CompareExchange(ref _disposed, true, false))
                 return;
-            _endTimes.TryAdd(_token, Now);
+            var endTime = Now;
+            _parent.EndTimes.TryAdd(_token, endTime);
+            MetricRecorder.RecordMetric("speedreader.inference.counter", 1, _parent.Tags);
+            MetricRecorder.RecordMetric("speedreader.inference.parallelism", Interlocked.Decrement(ref _parent.Parallelism), _parent.Tags);
+            MetricRecorder.RecordMetric("speedreader.inference.duration", (endTime - _startTime).TotalMilliseconds, _parent.Tags);
         }
     }
 
-    public IJob RecordJob() => new Job(_startTimes, _endTimes);
+    public IJob RecordJob() => new Job(this);
 
     public SummaryStatistics GetSummaryStatistics(TimeSpan start, TimeSpan end)
     {
@@ -160,12 +172,12 @@ public class Sensor
         foreach (var pair in GetEnclosedJobs(snapshot, TimeSpan.Zero, before, inclusiveUpperBound: false))
         {
             // Remove ends first to avoid end times without corresponding start times
-            _endTimes.Remove(pair.Token, out _);
-            _startTimes.Remove(pair.Token, out _);
+            EndTimes.Remove(pair.Token, out _);
+            StartTimes.Remove(pair.Token, out _);
         }
     }
 
-    private Snapshot TakeSnapshot() => new(_startTimes, _endTimes);
+    private Snapshot TakeSnapshot() => new(StartTimes, EndTimes);
 
     // Get all jobs that started and ended in [start, end]
     private static List<(TimeSpan Start, TimeSpan End, Token Token)> GetEnclosedJobs(Snapshot snapshot, TimeSpan start, TimeSpan end, bool inclusiveUpperBound = true)
@@ -196,7 +208,7 @@ public class Sensor
         }
     }
 
-    private class Token : IEquatable<Token>, IComparable<Token>
+    internal class Token : IEquatable<Token>, IComparable<Token>
     {
         private static long _globalIdCounter = -1;
         private long Id { get; } = Interlocked.Increment(ref _globalIdCounter);

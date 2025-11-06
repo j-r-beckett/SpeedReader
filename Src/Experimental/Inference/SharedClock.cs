@@ -10,7 +10,8 @@ public static class SharedClock
     private static readonly Stopwatch _clock;
     private static readonly DateTime _start;
 
-    static SharedClock() {
+    static SharedClock()
+    {
         _clock = Stopwatch.StartNew();
         _start = DateTime.UtcNow;
     }
@@ -18,4 +19,6 @@ public static class SharedClock
     public static TimeSpan Now => _clock.Elapsed;
 
     public static DateTime ToUtc(this TimeSpan timeSpan) => _start.Add(timeSpan);
+
+    public static DateTime UtcNow => DateTime.UtcNow;
 }

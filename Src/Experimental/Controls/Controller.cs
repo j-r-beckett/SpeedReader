@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Experimental.Inference;
+using Experimental.Telemetry;
 
 namespace Experimental.Controls;
 
@@ -9,13 +10,13 @@ public class Controller
 {
     private readonly IExecutor _executor;
     private readonly int _oscillations;
-    private readonly InferenceTelemetryRecorder _telemetryRecorder;
+    private readonly Dictionary<string, string>? _telemetryTags;
 
-    public Controller(IExecutor executor, int oscillations, InferenceTelemetryRecorder telemetryRecorder)
+    public Controller(IExecutor executor, int oscillations, Dictionary<string, string>? telemetryTags)
     {
         _executor = executor;
         _oscillations = oscillations;
-        _telemetryRecorder = telemetryRecorder;
+        _telemetryTags = telemetryTags;
     }
 
     public bool IsOscillating { get; private set; } = false;
@@ -54,12 +55,9 @@ public class Controller
                 statistics = _executor.Sensor.GetSummaryStatistics(start, SharedClock.Now);
             }
 
-            Console.WriteLine("Average duration requirements meant");
-
             // If we have plenty of headroom, bring down max
             if (statistics.AvgParallelism < _executor.CurrentMaxParallelism - 2)
             {
-                Console.WriteLine("Slack detected, reducing parallelism");
                 await DecrementParallelism();
                 oscillationCounter = 0;  // Slack in the system detected, we are no longer oscillating
                 goto CLEANUP;
@@ -111,23 +109,9 @@ public class Controller
 
         CLEANUP:
             var maxParallelism = _executor.CurrentMaxParallelism + (lastAction == ActionType.Increase ? -1 : 1);
-            Console.WriteLine("Statistics:" +
-                              $"Max parallelism: {maxParallelism}, " +
-                              $"Observed parallelism: {statistics.AvgParallelism}, " +
-                              $"Throughput: {statistics.Throughput}, " +
-                              $"Boxed throughput: {statistics.BoxedThroughput}, " +
-                              $"Duration: {statistics.AvgDuration}");
+            MetricRecorder.RecordMetric("speedreader.inference.max_parallelism", maxParallelism, _telemetryTags);
             IsOscillating = oscillationCounter > _oscillations;
             lastThroughput = statistics.BoxedThroughput;
-            // _telemetryRecorder.RecordDuration(TimeSpan.FromSeconds(statistics.AvgDuration));
-            Console.Write($"Recording durations: {string.Join(", ", statistics.Enclosed.Select(p => (p.End - p.Start).TotalMilliseconds))}");
-            foreach (var (s, e) in statistics.Enclosed)
-            {
-                _telemetryRecorder.RecordDuration(e - s);
-            }
-            _telemetryRecorder.RecordThroughput(statistics.Throughput);
-            _telemetryRecorder.RecordParallelism(statistics.AvgParallelism);
-            _telemetryRecorder.RecordMaxParallelism(_executor.CurrentMaxParallelism);
             _executor.Sensor.Prune(SharedClock.Now);
         }
 

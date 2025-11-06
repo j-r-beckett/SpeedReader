@@ -39,7 +39,7 @@ public class DetectionPrePostBenchmark
         var dbnetSession = new ModelProvider().GetSession(Model.DbNet18, ModelPrecision.INT8);
         var dbnetRunner = new CachingModelRunner(dbnetSession);
         _detector = new TextDetector(dbnetRunner);
-        var modelInput = _detector.Preprocess(_input, new VizBuilder());
+        var modelInput = _detector.Preprocess(_input, _detector.Tile(_input), new VizBuilder());
         _cachedInference = await _detector.RunInference(modelInput);
     }
 
@@ -48,8 +48,9 @@ public class DetectionPrePostBenchmark
 
     internal void RunInternal()
     {
-        _detector.Preprocess(_input, new VizBuilder());
-        _detector.Postprocess(_cachedInference, _input, new VizBuilder());
+        var tiling = _detector.Tile(_input);
+        _detector.Preprocess(_input, tiling, new VizBuilder());
+        _detector.Postprocess(_cachedInference, tiling, _input, new VizBuilder());
     }
 }
 
@@ -80,9 +81,10 @@ public class RecognitionPrePostBenchmark
         var dbnetSession = new ModelProvider().GetSession(Model.DbNet18, ModelPrecision.INT8);
         var dbnetRunner = new CpuModelRunner(dbnetSession, 1);
         var detector = new TextDetector(dbnetRunner);
-        var modelInput = detector.Preprocess(_input, new VizBuilder());
+        var tiling = detector.Tile(_input);
+        var modelInput = detector.Preprocess(_input, tiling, new VizBuilder());
         var detectionInference = await detector.RunInference(modelInput);
-        _detections = detector.Postprocess(detectionInference, _input, new VizBuilder());
+        _detections = detector.Postprocess(detectionInference, tiling, _input, new VizBuilder());
         var svtrSession = new ModelProvider().GetSession(Model.SVTRv2);
         var svtrRunner = new CpuModelRunner(svtrSession, 1);
         _recognizer = new TextRecognizer(svtrRunner);
