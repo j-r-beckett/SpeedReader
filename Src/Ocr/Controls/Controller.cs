@@ -20,8 +20,6 @@ public class Controller
         _telemetryTags = telemetryTags;
     }
 
-    public bool IsOscillating { get; private set; } = false;
-
     private enum ActionType { Increase, Decrease, None }
 
     public async Task Tune(CancellationToken stoppingToken)
@@ -29,9 +27,6 @@ public class Controller
         // State
         var lastAction = ActionType.None;
         var lastThroughput = 0.0;
-        long oscillationCounter = 0;
-
-        Console.WriteLine("Starting controller");
 
         // Main loop
         while (!stoppingToken.IsCancellationRequested)
@@ -61,7 +56,6 @@ public class Controller
             if (statistics.AvgParallelism < _executor.CurrentMaxParallelism - 2)
             {
                 await DecrementParallelism();
-                oscillationCounter = 0;  // Slack in the system detected, we are no longer oscillating
                 goto CLEANUP;
             }
 
@@ -91,7 +85,6 @@ public class Controller
                 {
                     // Increasing parallelism didn't significantly increase throughput, so decrease
                     await DecrementParallelism();
-                    oscillationCounter++;
                 }
             }
             else  // lastAction must be ActionType.Decrease
@@ -105,14 +98,12 @@ public class Controller
                 {
                     // Decreasing parallelism hurt throughput too much, so increase
                     IncrementParallelism();
-                    oscillationCounter++;
                 }
             }
 
-        CLEANUP:
+            CLEANUP:
             var maxParallelism = _executor.CurrentMaxParallelism + (lastAction == ActionType.Increase ? -1 : 1);
             MetricRecorder.RecordMetric("speedreader.inference.max_parallelism", maxParallelism, _telemetryTags);
-            IsOscillating = oscillationCounter > _oscillations;
             lastThroughput = statistics.BoxedThroughput;
             _executor.Sensor.Prune(Stopwatch.GetTimestamp());
         }
@@ -121,7 +112,6 @@ public class Controller
 
         void IncrementParallelism()
         {
-            Console.WriteLine($"Incrementing parallelism to {_executor.CurrentMaxParallelism + 1}");
             _executor.IncrementParallelism();
             lastAction = ActionType.Increase;
         }
@@ -130,13 +120,11 @@ public class Controller
         {
             if (_executor.CurrentMaxParallelism > 1)
             {
-                Console.WriteLine($"Decrementing parallelism to {_executor.CurrentMaxParallelism - 1}");
                 await _executor.DecrementParallelism();
                 lastAction = ActionType.Decrease;
             }
             else
             {
-                Console.WriteLine("Can't decrement parallelism, already at 1");
                 lastAction = ActionType.None;
             }
         }
