@@ -101,7 +101,7 @@ public class Controller
                 }
             }
 
-            CLEANUP:
+        CLEANUP:
             var maxParallelism = _executor.CurrentMaxParallelism + (lastAction == ActionType.Increase ? -1 : 1);
             MetricRecorder.RecordMetric("speedreader.inference.max_parallelism", maxParallelism, _telemetryTags);
             lastThroughput = statistics.BoxedThroughput;

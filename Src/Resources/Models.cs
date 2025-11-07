@@ -17,8 +17,8 @@ public static class Models
     {
         string modelName = model switch
         {
-            Model.DbNet18 => "dbnet_resnet18_fpnc_1200e_icdar2015",
-            Model.SVTRv2 => "svtrv2_base_ctc",
+            Model.DbNet => "dbnet_resnet18_fpnc_1200e_icdar2015",
+            Model.Svtr => "svtrv2_base_ctc",
             _ => throw new ArgumentException($"Unknown model {model}")
         };
 
@@ -31,12 +31,6 @@ public static class Models
 
         return $"models.{modelName}.{fileName}";
     }
-}
-
-public enum Model
-{
-    DbNet18,
-    SVTRv2
 }
 
 public enum ModelPrecision

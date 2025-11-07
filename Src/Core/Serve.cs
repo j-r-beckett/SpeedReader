@@ -34,10 +34,10 @@ public static class Serve
 
         // Create shared inference sessions
         using var modelProvider = new ModelProvider();
-        var dbnetRunner = new CpuModelRunner(Model.DbNet18, ModelPrecision.INT8, 1);
+        var dbnetRunner = new CpuModelRunner(Model.DbNet, ModelPrecision.INT8, 1);
         // var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
         // var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
-        var svtrRunner = new CpuModelRunner(Model.SVTRv2, ModelPrecision.FP32, 1);
+        var svtrRunner = new CpuModelRunner(Model.Svtr, ModelPrecision.FP32, 1);
         var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
 
         // Create minimal web app
