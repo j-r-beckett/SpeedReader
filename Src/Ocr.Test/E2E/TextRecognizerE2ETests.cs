@@ -95,7 +95,7 @@ public class TextRecognizerE2ETests
 
     private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, RotatedRectangle rect)
     {
-        var session = _modelProvider.GetSession(Model.SVTRv2);
+        var session = _modelProvider.GetSession(Model.Svtr);
         var svtrRunner = new CpuModelRunner(session, 1);
         var vizBuilder = new VizBuilder();
         vizBuilder.AddBaseImage(image);

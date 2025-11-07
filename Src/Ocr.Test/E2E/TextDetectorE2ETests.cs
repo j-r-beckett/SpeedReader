@@ -78,7 +78,7 @@ public class TextDetectorE2ETests : IDisposable
     private async Task<List<BoundingBox>> RunDetection(Image<Rgb24> image, List<BoundingBox> expectedBBoxes)
     {
         // Set IntraOpNumThreads to maximize throughput for non-parallelized CPU execution
-        var session = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, new SessionOptions
+        var session = _modelProvider.GetSession(Model.DbNet, ModelPrecision.INT8, new SessionOptions
         {
             IntraOpNumThreads = 4
         });

@@ -72,7 +72,6 @@ public class SpeedReader
 
     private Task<Task<SpeedReaderResult>> ReadOne(Task<Image<Rgb24>> imageTask) => _executor.ExecuteSingle(imageTask);
 
-
     private async Task<SpeedReaderResult> Execute(Task<Image<Rgb24>> imageTask)
     {
         var (detector, recognizer) = _factory();

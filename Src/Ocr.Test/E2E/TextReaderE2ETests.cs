@@ -180,10 +180,10 @@ public class TextReaderE2ETests
     {
         // var options =  SessionOptions.MakeSessionOptionWithCudaProvider();
         var options = new SessionOptions { IntraOpNumThreads = 4 };
-        var dbnetSession = _modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8, options);
+        var dbnetSession = _modelProvider.GetSession(Model.DbNet, ModelPrecision.INT8, options);
         var dbnetRunner = new CpuModelRunner(dbnetSession, 1);
 
-        var svtrSession = _modelProvider.GetSession(Model.SVTRv2);
+        var svtrSession = _modelProvider.GetSession(Model.Svtr);
         var svtrRunner = new CpuModelRunner(svtrSession, 1);
 
         return new SpeedReader(dbnetRunner, svtrRunner, 1, 1);
