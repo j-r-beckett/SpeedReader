@@ -15,7 +15,7 @@ public static class CharacterDictionary
     {
         _indexToChar = new Dictionary<int, char>();
 
-        var data = Resource.GetBytes("CharacterDictionary.Data.txt");
+        var data = ResourceProvider.GetBytes("CharacterDictionary.Data.txt");
         var content = Encoding.UTF8.GetString(data);
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 

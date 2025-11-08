@@ -179,7 +179,7 @@ internal static class BinaryResolver
     private static void ExtractEmbeddedBinary(string binaryName, string targetPath)
     {
         var resourceName = $"binaries.{binaryName}";
-        var data = Resource.GetBytes(resourceName);
+        var data = ResourceProvider.GetBytes(resourceName);
 
         // Ensure target directory exists
         var targetDir = Path.GetDirectoryName(targetPath);
