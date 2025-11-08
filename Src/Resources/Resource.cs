@@ -1,31 +1,44 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Concurrent;
 using System.Reflection;
 
 namespace Resources;
 
-public static class Resource
+public class Resource
 {
-    private static readonly ConcurrentDictionary<string, byte[]> _cache = new();
+    private readonly Lazy<byte[]> _bytes;
 
-    public static byte[] GetBytes(string resourceName) => _cache.GetOrAdd(resourceName, LoadResource);
-
-    public static string GetString(string resourceName)
+    // Throws ResourceNotFoundException if the resource does not exist
+    public Resource(string resourceName)
     {
-        var bytes = GetBytes(resourceName);
-        return System.Text.Encoding.UTF8.GetString(bytes);
+        using var stream = GetResourceStream(resourceName);  // Side effect, throw if not exists
+        _bytes = new Lazy<byte[]>(() => LoadResource(resourceName));
     }
+
+    public byte[] Bytes => _bytes.Value;
 
     private static byte[] LoadResource(string resourceName)
     {
-        var assembly = Assembly.GetExecutingAssembly();
-
-        using var stream = assembly.GetManifestResourceStream($"Resources.{resourceName}") ?? throw new FileNotFoundException($"Embedded resource 'Resources.{resourceName}' not found");
+        using var stream = GetResourceStream(resourceName);
         var bytes = new byte[stream.Length];
         stream.ReadExactly(bytes);
-
         return bytes;
     }
+
+    private static Stream GetResourceStream(string resourceName)
+    {
+        var fullName = $"Resources.{resourceName}";
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // The Stream returned by GetManifestResourceStream is implemented as a pointer to the embedded resource
+        // bytes in the text segment of process memory.
+        // See https://github.com/dotnet/runtime/blob/767be2a5fc0ca26a4059883ae22a5d4522086cc6/src/mono/mono/metadata/icall.c#L4824
+        return assembly.GetManifestResourceStream(fullName) ?? throw new ResourceNotFoundException(resourceName);
+    }
+}
+
+public class ResourceNotFoundException : Exception
+{
+    public ResourceNotFoundException(string resourceName) : base($"Embedded resource '{resourceName}' not found") { }
 }

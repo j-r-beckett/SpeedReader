@@ -26,7 +26,7 @@ public class ResourceAccessor
     }
 }
 
-public class ResourceNotFoundException : Exception
-{
-    public ResourceNotFoundException(string fullName) : base($"Embedded resource '{fullName}' not found") { }
-}
+// public class ResourceNotFoundException : Exception
+// {
+//     public ResourceNotFoundException(string fullName) : base($"Embedded resource '{fullName}' not found") { }
+// }

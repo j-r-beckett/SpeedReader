@@ -1,17 +1,19 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Concurrent;
-
-namespace Ocr.Kernels;
+namespace Ocr.InferenceEngine;
 
 public class TaskPool<T>
 {
-    private readonly ConcurrentQueue<(TaskCompletionSource<Task<T>>, Func<Task<T>>)> _pendingWorkQueue = new();
+    private readonly Queue<(TaskCompletionSource<Task<T>>, Func<Task<T>>)> _pendingWorkQueue = new();
 
     private readonly Lock _lock = new();
 
-    public TaskPool(int initialPoolSize = 1) => PoolSize = initialPoolSize;
+    public TaskPool(int initialPoolSize = 1)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(initialPoolSize, 1, nameof(initialPoolSize));
+        PoolSize = initialPoolSize;
+    }
 
     public int PoolSize { get; private set; }  // Current max number of concurrently executing tasks
 
@@ -23,10 +25,9 @@ public class TaskPool<T>
     {
         var tcs = new TaskCompletionSource<Task<T>>();
 
-        _pendingWorkQueue.Enqueue((tcs, userTaskCreator));
-
         lock (_lock)
         {
+            _pendingWorkQueue.Enqueue((tcs, userTaskCreator));
             StartNewTasks();
         }
 
@@ -48,17 +49,22 @@ public class TaskPool<T>
         return userTask;
     }
 
-    public void ChangePoolSize(int delta)
+    public void IncreasePoolSize(int amount)
     {
         lock (_lock)
         {
-            if (PoolSize + delta <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(delta), $"Pool size + {nameof(delta)} must be > 0, got {PoolSize} + {delta} = {PoolSize + delta}");
-            }
-            PoolSize += delta;
-            if (delta > 0)
-                StartNewTasks();
+            PoolSize = Math.Max(1, PoolSize + amount);
+            StartNewTasks();  // If pool size decreased this does nothing
+        }
+    }
+
+    public void SetPoolSize(int newSize)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(newSize, 1, nameof(newSize));
+        lock (_lock)
+        {
+            PoolSize = newSize;
+            StartNewTasks();  // If pool size decreased this does nothing
         }
     }
 

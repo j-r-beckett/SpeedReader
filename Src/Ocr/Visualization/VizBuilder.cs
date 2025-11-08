@@ -387,7 +387,7 @@ public class VizBuilder
 
     private static IFluidTemplate LoadTemplate()
     {
-        var templateContent = Resource.GetString("templates.svg-visualization-2.liquid");
+        var templateContent = ResourceProvider.GetString("templates.svg-visualization-2.liquid");
         return !_parser.TryParse(templateContent, out var template, out var error)
             ? throw new InvalidOperationException($"Failed to parse SVG template: {error}")
             : template;

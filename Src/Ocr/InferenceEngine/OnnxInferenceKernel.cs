@@ -4,13 +4,28 @@
 using System.Diagnostics;
 using Microsoft.ML.OnnxRuntime;
 
-namespace Ocr.Kernels;
+namespace Ocr.InferenceEngine;
 
 public class OnnxInferenceKernel : IInferenceKernel
 {
     private readonly InferenceSession _inferenceSession;
 
-    public OnnxInferenceKernel(InferenceSession inferenceSession) => _inferenceSession = inferenceSession;
+    public OnnxInferenceKernel(InferenceOptions inferenceOptions, ModelLoader modelLoader)
+    {
+        // By default:
+        // - execution mode is ORT_SEQUENTIAL
+        // - memory arena is enabled
+        // - all graph optimizations are enabled
+        var options = new SessionOptions
+        {
+            IntraOpNumThreads = inferenceOptions.NumIntraOpThreads,
+            InterOpNumThreads = inferenceOptions.NumInterOpThreads,
+            EnableProfiling = inferenceOptions.EnableProfiling
+        };
+
+        var weights = modelLoader.LoadModel(inferenceOptions.Model, inferenceOptions.Quantization);
+        _inferenceSession = new InferenceSession(weights, options);
+    }
 
     public (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape)
     {
@@ -20,7 +35,7 @@ public class OnnxInferenceKernel : IInferenceKernel
         }
         catch (Exception ex)
         {
-            throw new InferenceException("An exception was thrown during inference", ex);
+            throw new OnnxInferenceException("An exception was thrown during ONNX inference", ex);
         }
 
         (float[], int[]) ExecuteInternal()
@@ -68,7 +83,7 @@ public class OnnxInferenceKernel : IInferenceKernel
     }
 }
 
-public class InferenceException : Exception
+public class OnnxInferenceException : Exception
 {
-    public InferenceException(string message, Exception innerException) : base(message, innerException) { }
+    public OnnxInferenceException(string message, Exception innerException) : base(message, innerException) { }
 }

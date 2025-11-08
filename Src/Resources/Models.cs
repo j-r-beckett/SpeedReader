@@ -10,7 +10,7 @@ public static class Models
     public static byte[] GetModelBytes(Model model, ModelPrecision precision)
     {
         string resourceName = GetResourceName(model, precision);
-        return Resource.GetBytes(resourceName);
+        return ResourceProvider.GetBytes(resourceName);
     }
 
     private static string GetResourceName(Model model, ModelPrecision precision)
