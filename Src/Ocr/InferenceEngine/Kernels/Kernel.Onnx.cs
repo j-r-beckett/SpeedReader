@@ -2,15 +2,44 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.ML.OnnxRuntime;
 
-namespace Ocr.InferenceEngine;
+namespace Ocr.InferenceEngine.Kernels;
+
+public record OnnxInferenceKernelOptions : InferenceKernelOptions
+{
+    public OnnxInferenceKernelOptions(Model model, Quantization quantization, int initialParallelism, int numIntraOpThreads,
+        int numInterOpThreads = 1, bool enableProfiling = false)
+        : base(model, quantization)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(initialParallelism, 1, nameof(initialParallelism));
+        ArgumentOutOfRangeException.ThrowIfLessThan(numIntraOpThreads, 1, nameof(numIntraOpThreads));
+        ArgumentOutOfRangeException.ThrowIfLessThan(numInterOpThreads, 1, nameof(numInterOpThreads));
+
+        NumIntraOpThreads = numIntraOpThreads;
+        NumInterOpThreads = numInterOpThreads;
+        EnableProfiling = enableProfiling;
+    }
+
+    public int NumIntraOpThreads { get; }
+    public int NumInterOpThreads { get; }
+    public bool EnableProfiling { get; }
+}
 
 public class OnnxInferenceKernel : IInferenceKernel
 {
     private readonly InferenceSession _inferenceSession;
 
-    public OnnxInferenceKernel(InferenceOptions inferenceOptions, ModelLoader modelLoader)
+    public OnnxInferenceKernel([FromKeyedServices(Model.DbNet)] OnnxInferenceKernelOptions inferenceOptions,
+        ModelLoader modelLoader, DbNetMarker _)
+        : this(inferenceOptions, modelLoader) { }
+
+    public OnnxInferenceKernel([FromKeyedServices(Model.Svtr)] OnnxInferenceKernelOptions inferenceOptions,
+        ModelLoader modelLoader, SvtrMarker _)
+        : this(inferenceOptions, modelLoader) { }
+
+    private OnnxInferenceKernel(OnnxInferenceKernelOptions inferenceOptions, ModelLoader modelLoader)
     {
         // By default:
         // - execution mode is ORT_SEQUENTIAL
@@ -27,7 +56,7 @@ public class OnnxInferenceKernel : IInferenceKernel
         _inferenceSession = new InferenceSession(weights, options);
     }
 
-    public (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape)
+    public virtual (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape)
     {
         try
         {
@@ -83,7 +112,7 @@ public class OnnxInferenceKernel : IInferenceKernel
     }
 }
 
-public class OnnxInferenceException : Exception
+public class OnnxInferenceException : InferenceKernelException
 {
     public OnnxInferenceException(string message, Exception innerException) : base(message, innerException) { }
 }
