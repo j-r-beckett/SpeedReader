@@ -1,7 +1,9 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using Ocr.InferenceEngine.Kernels;
 using Resources;
+using Model = Ocr.InferenceEngine.Kernels.Model;
 
 namespace Ocr.InferenceEngine;
 

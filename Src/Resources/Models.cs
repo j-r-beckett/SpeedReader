@@ -3,6 +3,12 @@
 
 namespace Resources;
 
+public enum Model
+{
+    DbNet,
+    Svtr
+}
+
 public static class Models
 {
     public static byte[] GetModelBytes(Model model) => GetModelBytes(model, ModelPrecision.FP32);
