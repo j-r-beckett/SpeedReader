@@ -8,7 +8,7 @@ using Ocr.InferenceEngine.Kernels;
 
 namespace Ocr.InferenceEngine;
 
-public static class ServiceCollectionExtensions
+public static class Factories
 {
     public static IServiceCollection AddInferenceEngine(
         this IServiceCollection services,
@@ -64,12 +64,15 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IInferenceEngine Create(EngineOptions engineOptions, InferenceKernelOptions inferenceOptions)
+    public static IInferenceEngine CreateInferenceEngine(
+        EngineOptions engineOptions,
+        InferenceKernelOptions inferenceOptions)
     {
         var services = new ServiceCollection();
         services.AddInferenceEngine(engineOptions, inferenceOptions);
         var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<IInferenceEngine>();
+        var key = inferenceOptions.Model;
+        return provider.GetRequiredKeyedService<IInferenceEngine>(key);
     }
 }
 
