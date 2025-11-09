@@ -13,23 +13,30 @@ namespace Ocr;
 
 public class SpeedReader
 {
-    private readonly Func<(TextDetector, TextRecognizer)> _factory;
+    private readonly TextDetector _detector;
+    private readonly TextRecognizer _recognizer;
     private readonly Executor<Task<Image<Rgb24>>, SpeedReaderResult> _executor;
 
-    internal SpeedReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
+    public SpeedReader(TextDetector detector, TextRecognizer recognizer, int maxParallelism, int maxBatchSize)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBatchSize);
 
-        _factory = factory;
+        _detector = detector;
+        _recognizer = recognizer;
         var capacity = maxParallelism * maxBatchSize * 2;
         _executor = new Executor<Task<Image<Rgb24>>, SpeedReaderResult>(Execute, capacity);
     }
 
-    public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize) : this(
-        () => (new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner)),
-        maxParallelism,
-        maxBatchSize)
+    // Legacy constructor for backward compatibility with ModelRunner
+    public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize)
+        : this(new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner), maxParallelism, maxBatchSize)
+    {
+    }
+
+    // Legacy constructor for backward compatibility with factory pattern
+    internal SpeedReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
+        : this(factory().Item1, factory().Item2, maxParallelism, maxBatchSize)
     {
     }
 
@@ -74,12 +81,11 @@ public class SpeedReader
 
     private async Task<SpeedReaderResult> Execute(Task<Image<Rgb24>> imageTask)
     {
-        var (detector, recognizer) = _factory();
         var vizBuilder = new VizBuilder();
 
         var image = await imageTask;
-        var detections = await detector.Detect(image, vizBuilder);
-        var recognitions = await recognizer.Recognize(detections, image, vizBuilder);
+        var detections = await _detector.Detect(image, vizBuilder);
+        var recognitions = await _recognizer.Recognize(detections, image, vizBuilder);
         Debug.Assert(detections.Count == recognitions.Count);
         return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
     }

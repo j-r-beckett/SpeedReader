@@ -5,9 +5,10 @@ using Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Geometry;
-using Ocr.Inference;
+using Ocr.InferenceEngine;
+using Ocr.InferenceEngine.Engines;
+using Ocr.InferenceEngine.Kernels;
 using Ocr.Visualization;
-using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using TestUtils;
@@ -77,15 +78,17 @@ public class TextDetectorE2ETests : IDisposable
 
     private async Task<List<BoundingBox>> RunDetection(Image<Rgb24> image, List<BoundingBox> expectedBBoxes)
     {
-        // Set IntraOpNumThreads to maximize throughput for non-parallelized CPU execution
-        var session = _modelProvider.GetSession(Model.DbNet, ModelPrecision.INT8, new SessionOptions
-        {
-            IntraOpNumThreads = 4
-        });
-        var dbnetRunner = new CpuModelRunner(session, 1);
+        var engineOptions = new SteadyCpuEngineOptions(parallelism: 1);
+        var inferenceOptions = new OnnxInferenceKernelOptions(
+            model: InferenceEngine.Kernels.Model.DbNet,
+            quantization: Quantization.Int8,
+            initialParallelism: 1,
+            numIntraOpThreads: 4
+        );
+        var inferenceEngine = Factories.CreateInferenceEngine(engineOptions, inferenceOptions);
 
         var vizBuilder = new VizBuilder();
-        var detector = new TextDetector(dbnetRunner);
+        var detector = new TextDetector(inferenceEngine);
 
         var results = await detector.Detect(image, vizBuilder);
 

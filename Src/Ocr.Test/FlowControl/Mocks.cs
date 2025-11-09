@@ -30,7 +30,7 @@ public class MockTextDetector : TextDetector
 
     public MockTextDetector(Func<List<BoundingBox>> detect) : this(() => Task.FromResult(detect())) { }
 
-    public MockTextDetector(Func<Task<List<BoundingBox>>> detect) : base(null!) => _detect = detect;
+    public MockTextDetector(Func<Task<List<BoundingBox>>> detect) : base((ModelRunner)null!) => _detect = detect;
 
     public override async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder) => await _detect();
 }
