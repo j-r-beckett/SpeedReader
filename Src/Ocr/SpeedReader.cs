@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Threading.Channels;
 using Ocr.Controls;
-using Ocr.Inference;
+using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -28,9 +28,9 @@ public class SpeedReader
         _executor = new Executor<Task<Image<Rgb24>>, SpeedReaderResult>(Execute, capacity);
     }
 
-    // Legacy constructor for backward compatibility with ModelRunner
-    public SpeedReader(ModelRunner dbnetRunner, ModelRunner svtrRunner, int maxParallelism, int maxBatchSize)
-        : this(new TextDetector(dbnetRunner), new TextRecognizer(svtrRunner), maxParallelism, maxBatchSize)
+    // Legacy constructor for backward compatibility with IInferenceEngine
+    public SpeedReader(IInferenceEngine dbnetEngine, IInferenceEngine svtrEngine, int maxParallelism, int maxBatchSize)
+        : this(new TextDetector(dbnetEngine), new TextRecognizer(svtrEngine), maxParallelism, maxBatchSize)
     {
     }
 

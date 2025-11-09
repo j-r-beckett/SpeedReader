@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Numerics.Tensors;
 using Ocr.Algorithms;
 using Ocr.Geometry;
-using Ocr.Inference;
+using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
 using Resources;
 using SixLabors.ImageSharp;
@@ -16,13 +16,13 @@ namespace Ocr;
 
 public class TextRecognizer
 {
-    private readonly ModelRunner _modelRunner;
+    private readonly IInferenceEngine _inferenceEngine;
     private readonly int _inputWidth;
     private readonly int _inputHeight;
 
-    public TextRecognizer(ModelRunner modelRunner, int inputWidth = 160, int inputHeight = 48)
+    public TextRecognizer(IInferenceEngine inferenceEngine, int inputWidth = 160, int inputHeight = 48)
     {
-        _modelRunner = modelRunner;
+        _inferenceEngine = inferenceEngine;
         _inputWidth = inputWidth;
         _inputHeight = inputHeight;
     }
@@ -81,7 +81,7 @@ public class TextRecognizer
         List<Task<(float[], int[])>> inferenceTasks = [];
         foreach (var (data, shape) in inputs)
         {
-            inferenceTasks.Add(await _modelRunner.Run(data, shape));
+            inferenceTasks.Add(await _inferenceEngine.Run(data, shape));
         }
         return await Task.WhenAll(inferenceTasks);
     }

@@ -4,8 +4,11 @@
 using Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
+using Ocr;
 using Ocr.Geometry;
-using Ocr.Inference;
+using Ocr.InferenceEngine;
+using Ocr.InferenceEngine.Engines;
+using Ocr.InferenceEngine.Kernels;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -16,14 +19,9 @@ namespace Ocr.Test.E2E;
 
 public class TextReaderE2ETests
 {
-    private readonly ModelProvider _modelProvider;
     private readonly TestLogger _logger;
 
-    public TextReaderE2ETests(ITestOutputHelper outputHelper)
-    {
-        _modelProvider = new ModelProvider();
-        _logger = new TestLogger(outputHelper);
-    }
+    public TextReaderE2ETests(ITestOutputHelper outputHelper) => _logger = new TestLogger(outputHelper);
 
     [Fact]
     public async Task ReadOne_ReturnsCorrectResult_WideImage()
@@ -178,14 +176,24 @@ public class TextReaderE2ETests
 
     private SpeedReader CreateTextReader()
     {
-        // var options =  SessionOptions.MakeSessionOptionWithCudaProvider();
-        var options = new SessionOptions { IntraOpNumThreads = 4 };
-        var dbnetSession = _modelProvider.GetSession(Model.DbNet, ModelPrecision.INT8, options);
-        var dbnetRunner = new CpuModelRunner(dbnetSession, 1);
+        var dbnetEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
+        var dbnetKernelOptions = new OnnxInferenceKernelOptions(
+            model: InferenceEngine.Kernels.Model.DbNet,
+            quantization: Quantization.Int8,
+            initialParallelism: 1,
+            numIntraOpThreads: 4);
+        var dbnetEngine = Factories.CreateInferenceEngine(dbnetEngineOptions, dbnetKernelOptions);
 
-        var svtrSession = _modelProvider.GetSession(Model.Svtr);
-        var svtrRunner = new CpuModelRunner(svtrSession, 1);
+        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
+        var svtrKernelOptions = new OnnxInferenceKernelOptions(
+            model: InferenceEngine.Kernels.Model.Svtr,
+            quantization: Quantization.Fp32,
+            initialParallelism: 1,
+            numIntraOpThreads: 4);
+        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
 
-        return new SpeedReader(dbnetRunner, svtrRunner, 1, 1);
+        var detector = new TextDetector(dbnetEngine);
+        var recognizer = new TextRecognizer(svtrEngine);
+        return new SpeedReader(detector, recognizer, 1, 1);
     }
 }

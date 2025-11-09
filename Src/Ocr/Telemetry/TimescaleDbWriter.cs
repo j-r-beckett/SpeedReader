@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Npgsql;
 using NpgsqlTypes;
-using Ocr.Inference;
 
 namespace Ocr.Telemetry;
 

@@ -5,8 +5,11 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using Core;
 using Microsoft.Extensions.Logging;
+using Ocr;
 using Ocr.Geometry;
-using Ocr.Inference;
+using Ocr.InferenceEngine;
+using Ocr.InferenceEngine.Engines;
+using Ocr.InferenceEngine.Kernels;
 using Ocr.Visualization;
 using Resources;
 using SixLabors.Fonts;
@@ -19,13 +22,11 @@ namespace Ocr.Test.E2E;
 
 public class TextRecognizerE2ETests
 {
-    private readonly ModelProvider _modelProvider;
     private readonly Font _font;
     private readonly TestLogger _logger;
 
     public TextRecognizerE2ETests(ITestOutputHelper outputHelper)
     {
-        _modelProvider = new ModelProvider();
         _font = Fonts.GetFont(fontSize: 24f);
         _logger = new TestLogger(outputHelper);
     }
@@ -95,12 +96,19 @@ public class TextRecognizerE2ETests
 
     private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, RotatedRectangle rect)
     {
-        var session = _modelProvider.GetSession(Model.Svtr);
-        var svtrRunner = new CpuModelRunner(session, 1);
+        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
+        var svtrKernelOptions = new OnnxInferenceKernelOptions(
+            model: InferenceEngine.Kernels.Model.Svtr,
+            quantization: Quantization.Fp32,
+            initialParallelism: 1,
+            numIntraOpThreads: 4);
+        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
+        var recognizer = new TextRecognizer(svtrEngine);
+
         var vizBuilder = new VizBuilder();
         vizBuilder.AddBaseImage(image);
         vizBuilder.AddOrientedBBoxes([rect], true);
-        var recognizer = new TextRecognizer(svtrRunner);
+
         var polygon = new Polygon
         {
             Points = rect.Corners().Select(p => (Geometry.Point)p).ToImmutableList()
