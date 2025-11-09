@@ -13,9 +13,6 @@ public record AdaptiveGpuEngineOptions : EngineOptions
 
 public class AdaptiveGpuEngine : IInferenceEngine
 {
-    private readonly TaskPool<(float[], int[])> _taskPool;
-    private readonly IInferenceKernel _inferenceKernel;
-
     public AdaptiveGpuEngine([FromKeyedServices(Model.DbNet)] AdaptiveGpuEngineOptions options,
         [FromKeyedServices(Model.DbNet)] IInferenceKernel inferenceKernel, DbNetMarker _)
         : this(options, inferenceKernel) { }
@@ -27,7 +24,7 @@ public class AdaptiveGpuEngine : IInferenceEngine
     public AdaptiveGpuEngine(AdaptiveGpuEngineOptions options, IInferenceKernel inferenceKernel) =>
         throw new NotImplementedException();
 
-    public async Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape) =>
+    public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape) =>
         throw new NotImplementedException();
 }
 

@@ -32,9 +32,9 @@ public class SteadyCpuEngine : IInferenceEngine
         _inferenceKernel = inferenceKernel;
     }
 
-    public async Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape)
+    public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape)
     {
         var inferenceTask = Task.Run(() => _inferenceKernel.Execute(inputData, inputShape));
-        return await await _taskPool.Execute(() => inferenceTask);
+        return await _taskPool.Execute(() => inferenceTask);
     }
 }
