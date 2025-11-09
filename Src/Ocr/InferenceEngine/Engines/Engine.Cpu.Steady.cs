@@ -30,8 +30,11 @@ public class SteadyCpuEngine : IInferenceEngine
     }
 
     private SteadyCpuEngine(SteadyCpuEngineOptions options, IInferenceKernel inferenceKernel)
+        : this(new TaskPool<(float[], int[])>(options.Parallelism), inferenceKernel) { }
+
+    private SteadyCpuEngine(TaskPool<(float[], int[])> taskPool, IInferenceKernel inferenceKernel)
     {
-        _taskPool = new TaskPool<(float[], int[])>(options.Parallelism);
+        _taskPool = taskPool;
         _inferenceKernel = inferenceKernel;
     }
 
@@ -48,5 +51,11 @@ public class SteadyCpuEngine : IInferenceEngine
         });
 
         return await _taskPool.Execute(() => inferenceTask);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
     }
 }

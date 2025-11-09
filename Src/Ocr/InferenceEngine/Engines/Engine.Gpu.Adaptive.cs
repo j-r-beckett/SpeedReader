@@ -25,5 +25,11 @@ public class AdaptiveGpuEngine : IInferenceEngine
 
     public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape) =>
         throw new NotImplementedException();
+
+    public ValueTask DisposeAsync()
+    {
+        GC.SuppressFinalize(this);
+        return ValueTask.CompletedTask;
+    }
 }
 

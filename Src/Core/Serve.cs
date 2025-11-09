@@ -47,7 +47,7 @@ public static class Serve
             RecognitionParallelism = 1,
             DbNetQuantization = Quantization.Int8,
             SvtrQuantization = Quantization.Fp32,
-            NumIntraOpThreads = 4
+            NumIntraOpThreads = 1
         };
         builder.Services.AddOcrPipeline(ocrPipelineOptions);
 
