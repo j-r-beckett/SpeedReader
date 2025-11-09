@@ -19,15 +19,17 @@ public class SteadyCpuEngine : IInferenceEngine
     private readonly TaskPool<(float[], int[])> _taskPool;
     private readonly IInferenceKernel _inferenceKernel;
 
-    public SteadyCpuEngine([FromKeyedServices(Model.DbNet)] SteadyCpuEngineOptions options,
-        [FromKeyedServices(Model.DbNet)] IInferenceKernel inferenceKernel, DbNetMarker _)
-        : this(options, inferenceKernel) { }
+    /// <summary>
+    /// Factory method for creating SteadyCpuEngine from DI container with keyed services.
+    /// </summary>
+    public static SteadyCpuEngine Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredKeyedService<SteadyCpuEngineOptions>(key);
+        var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
+        return new SteadyCpuEngine(options, kernel);
+    }
 
-    public SteadyCpuEngine([FromKeyedServices(Model.Svtr)] SteadyCpuEngineOptions options,
-        [FromKeyedServices(Model.Svtr)] IInferenceKernel inferenceKernel, SvtrMarker _)
-        : this(options, inferenceKernel) { }
-
-    public SteadyCpuEngine(SteadyCpuEngineOptions options, IInferenceKernel inferenceKernel)
+    private SteadyCpuEngine(SteadyCpuEngineOptions options, IInferenceKernel inferenceKernel)
     {
         _taskPool = new TaskPool<(float[], int[])>(options.Parallelism);
         _inferenceKernel = inferenceKernel;

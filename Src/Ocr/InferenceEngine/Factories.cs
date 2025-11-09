@@ -18,22 +18,20 @@ public static class Factories
         var key = inferenceOptions.Model;
 
         services.TryAddSingleton<ModelLoader>();
-        services.TryAddSingleton<DbNetMarker>();
-        services.TryAddSingleton<SvtrMarker>();
 
         switch (inferenceOptions)
         {
             case OnnxInferenceKernelOptions x:
                 services.AddKeyedSingleton(key, x);
-                services.AddKeyedSingleton<IInferenceKernel, OnnxInferenceKernel>(key);
+                services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
                 break;
             case NullInferenceKernelOptions x:
                 services.AddKeyedSingleton(key, x);
-                services.AddKeyedSingleton<IInferenceKernel, NullInferenceKernel>(key);
+                services.AddKeyedSingleton<IInferenceKernel>(key, NullInferenceKernel.Factory);
                 break;
             case CachedInferenceKernelOptions x:
                 services.AddKeyedSingleton(key, x);
-                services.AddKeyedSingleton<IInferenceKernel, CachedOnnxInferenceKernel>(key);
+                services.AddKeyedSingleton<IInferenceKernel>(key, CachedOnnxInferenceKernel.Factory);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(inferenceOptions));
@@ -43,19 +41,19 @@ public static class Factories
         {
             case AdaptiveCpuEngineOptions x:
                 services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine, AdaptiveCpuEngine>(key);
+                services.TryAddKeyedSingleton<IInferenceEngine>(key, AdaptiveCpuEngine.Factory);
                 break;
             case SteadyCpuEngineOptions x:
                 services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine, SteadyCpuEngine>(key);
+                services.TryAddKeyedSingleton<IInferenceEngine>(key, SteadyCpuEngine.Factory);
                 break;
             case AdaptiveGpuEngineOptions x:
                 services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine, AdaptiveGpuEngine>(key);
+                services.TryAddKeyedSingleton<IInferenceEngine>(key, AdaptiveGpuEngine.Factory);
                 break;
             case SteadyGpuEngineOptions x:
                 services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine, SteadyGpuEngine>(key);
+                services.TryAddKeyedSingleton<IInferenceEngine>(key, SteadyGpuEngine.Factory);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(engineOptions));
@@ -75,8 +73,3 @@ public static class Factories
         return provider.GetRequiredKeyedService<IInferenceEngine>(key);
     }
 }
-
-// Markers for keyed services, used to disambiguate constructors have differ only in keys
-public class DbNetMarker;
-
-public class SvtrMarker;

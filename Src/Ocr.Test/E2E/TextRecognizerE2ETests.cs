@@ -4,6 +4,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ocr;
 using Ocr.Geometry;
@@ -96,14 +97,17 @@ public class TextRecognizerE2ETests
 
     private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, RotatedRectangle rect)
     {
-        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
-        var svtrKernelOptions = new OnnxInferenceKernelOptions(
-            model: InferenceEngine.Kernels.Model.Svtr,
-            quantization: Quantization.Fp32,
-            initialParallelism: 1,
-            numIntraOpThreads: 4);
-        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
-        var recognizer = new TextRecognizer(svtrEngine);
+        var options = new SpeedReaderOptions
+        {
+            RecognitionParallelism = 1,
+            SvtrQuantization = Quantization.Fp32,
+            NumIntraOpThreads = 4
+        };
+
+        var services = new ServiceCollection();
+        services.AddSpeedReader(options);
+        var provider = services.BuildServiceProvider();
+        var recognizer = provider.GetRequiredService<TextRecognizer>();
 
         var vizBuilder = new VizBuilder();
         vizBuilder.AddBaseImage(image);

@@ -104,25 +104,18 @@ public class Program
         if (inputs.Length == 0)
             return;
 
-        var dbnetEngineOptions = new SteadyCpuEngineOptions(parallelism: 4);
-        var dbnetKernelOptions = new OnnxInferenceKernelOptions(
-            model: Model.DbNet,
-            quantization: Quantization.Int8,
-            initialParallelism: 4,
-            numIntraOpThreads: 4);
-        var dbnetEngine = Factories.CreateInferenceEngine(dbnetEngineOptions, dbnetKernelOptions);
+        var options = new SpeedReaderOptions
+        {
+            MaxParallelism = 4,
+            MaxBatchSize = 1,
+            DetectionParallelism = 4,
+            RecognitionParallelism = 4,
+            DbNetQuantization = Quantization.Int8,
+            SvtrQuantization = Quantization.Fp32,
+            NumIntraOpThreads = 4
+        };
 
-        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 4);
-        var svtrKernelOptions = new OnnxInferenceKernelOptions(
-            model: Model.Svtr,
-            quantization: Quantization.Fp32,
-            initialParallelism: 4,
-            numIntraOpThreads: 4);
-        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
-
-        var detector = new TextDetector(dbnetEngine);
-        var recognizer = new TextRecognizer(svtrEngine);
-        var speedReader = new Ocr.SpeedReader(detector, recognizer, 4, 1);
+        var speedReader = ServiceCollectionExtensions.CreateSpeedReader(options);
         var paths = inputs.Select(f => f.FullName).ToList();
         await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }

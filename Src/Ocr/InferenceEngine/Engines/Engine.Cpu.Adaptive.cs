@@ -18,15 +18,14 @@ public class AdaptiveCpuEngine : IInferenceEngine
     private readonly TaskPool<(float[], int[])> _taskPool;
     private readonly IInferenceKernel _inferenceKernel;
 
-    public AdaptiveCpuEngine([FromKeyedServices(Model.DbNet)] AdaptiveCpuEngineOptions options,
-        [FromKeyedServices(Model.DbNet)] IInferenceKernel inferenceKernel, DbNetMarker _)
-        : this(options, inferenceKernel) { }
+    public static AdaptiveCpuEngine Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredKeyedService<AdaptiveCpuEngineOptions>(key);
+        var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
+        return new AdaptiveCpuEngine(options, kernel);
+    }
 
-    public AdaptiveCpuEngine([FromKeyedServices(Model.Svtr)] AdaptiveCpuEngineOptions options,
-        [FromKeyedServices(Model.Svtr)] IInferenceKernel inferenceKernel, SvtrMarker _)
-        : this(options, inferenceKernel) { }
-
-    public AdaptiveCpuEngine(AdaptiveCpuEngineOptions options, IInferenceKernel inferenceKernel)
+    private AdaptiveCpuEngine(AdaptiveCpuEngineOptions options, IInferenceKernel inferenceKernel)
     {
         _taskPool = new TaskPool<(float[], int[])>(options.InitialParallelism);
         _inferenceKernel = inferenceKernel;

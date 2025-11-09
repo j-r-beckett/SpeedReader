@@ -23,11 +23,11 @@ public class NullInferenceKernel : IInferenceKernel
     private readonly int[]? _expectedInputShape;
     private readonly int[] _outputShape;
 
-    public NullInferenceKernel([FromKeyedServices(Model.DbNet)] NullInferenceKernelOptions inferenceOptions,
-        DbNetMarker _) : this(inferenceOptions) { }
-
-    public NullInferenceKernel([FromKeyedServices(Model.Svtr)] NullInferenceKernelOptions inferenceOptions,
-        SvtrMarker _) : this(inferenceOptions) { }
+    public static NullInferenceKernel Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredKeyedService<NullInferenceKernelOptions>(key);
+        return new NullInferenceKernel(options);
+    }
 
     private NullInferenceKernel(NullInferenceKernelOptions inferenceOptions)
     {

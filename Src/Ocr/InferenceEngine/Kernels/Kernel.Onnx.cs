@@ -31,15 +31,17 @@ public class OnnxInferenceKernel : IInferenceKernel
 {
     private readonly InferenceSession _inferenceSession;
 
-    public OnnxInferenceKernel([FromKeyedServices(Model.DbNet)] OnnxInferenceKernelOptions inferenceOptions,
-        ModelLoader modelLoader, DbNetMarker _)
-        : this(inferenceOptions, modelLoader) { }
+    /// <summary>
+    /// Factory method for creating OnnxInferenceKernel from DI container with keyed services.
+    /// </summary>
+    public static OnnxInferenceKernel Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredKeyedService<OnnxInferenceKernelOptions>(key);
+        var modelLoader = serviceProvider.GetRequiredService<ModelLoader>();
+        return new OnnxInferenceKernel(options, modelLoader);
+    }
 
-    public OnnxInferenceKernel([FromKeyedServices(Model.Svtr)] OnnxInferenceKernelOptions inferenceOptions,
-        ModelLoader modelLoader, SvtrMarker _)
-        : this(inferenceOptions, modelLoader) { }
-
-    private OnnxInferenceKernel(OnnxInferenceKernelOptions inferenceOptions, ModelLoader modelLoader)
+    protected OnnxInferenceKernel(OnnxInferenceKernelOptions inferenceOptions, ModelLoader modelLoader)
     {
         // By default:
         // - execution mode is ORT_SEQUENTIAL

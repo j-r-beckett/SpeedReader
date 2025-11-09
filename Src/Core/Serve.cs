@@ -35,30 +35,21 @@ public static class Serve
             : null;
         // var metricsWriter = new MetricRecorder(metricsChannel.Reader);
 
-        // Create shared inference engines
-        var dbnetEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
-        var dbnetKernelOptions = new OnnxInferenceKernelOptions(
-            model: Model.DbNet,
-            quantization: Quantization.Int8,
-            initialParallelism: 1,
-            numIntraOpThreads: 4);
-        var dbnetEngine = Factories.CreateInferenceEngine(dbnetEngineOptions, dbnetKernelOptions);
-
-        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
-        var svtrKernelOptions = new OnnxInferenceKernelOptions(
-            model: Model.Svtr,
-            quantization: Quantization.Fp32,
-            initialParallelism: 1,
-            numIntraOpThreads: 4);
-        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
-
-        var detector = new TextDetector(dbnetEngine);
-        var recognizer = new TextRecognizer(svtrEngine);
-        var speedReader = new SpeedReader(detector, recognizer, 4, 1);
-
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
-        builder.Services.AddSingleton(speedReader);
+
+        // Register SpeedReader and dependencies using DI
+        var speedReaderOptions = new SpeedReaderOptions
+        {
+            MaxParallelism = 4,
+            MaxBatchSize = 1,
+            DetectionParallelism = 1,
+            RecognitionParallelism = 1,
+            DbNetQuantization = Quantization.Int8,
+            SvtrQuantization = Quantization.Fp32,
+            NumIntraOpThreads = 4
+        };
+        builder.Services.AddSpeedReader(speedReaderOptions);
 
         // // Configure OpenTelemetry with Prometheus exporter
         // builder.Services.AddOpenTelemetry()
