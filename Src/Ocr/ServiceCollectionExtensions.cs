@@ -20,7 +20,7 @@ public static class ServiceCollectionExtensions
     {
         // Register inference engines
         services.AddInferenceEngine(
-            new SteadyCpuEngineOptions(parallelism: options.DetectionParallelism),
+            new AdaptiveCpuEngineOptions(initialParallelism: options.DetectionParallelism),
             new OnnxInferenceKernelOptions(
                 model: Model.DbNet,
                 quantization: options.DbNetQuantization,
@@ -28,7 +28,7 @@ public static class ServiceCollectionExtensions
                 numIntraOpThreads: options.NumIntraOpThreads));
 
         services.AddInferenceEngine(
-            new SteadyCpuEngineOptions(parallelism: options.RecognitionParallelism),
+            new AdaptiveCpuEngineOptions(initialParallelism: options.RecognitionParallelism),
             new OnnxInferenceKernelOptions(
                 model: Model.Svtr,
                 quantization: options.SvtrQuantization,
