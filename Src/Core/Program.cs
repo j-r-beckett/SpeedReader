@@ -104,7 +104,7 @@ public class Program
         if (inputs.Length == 0)
             return;
 
-        var options = new SpeedReaderOptions
+        var options = new OcrPipelineOptions
         {
             MaxParallelism = 4,
             MaxBatchSize = 1,
@@ -115,12 +115,12 @@ public class Program
             NumIntraOpThreads = 4
         };
 
-        var speedReader = ServiceCollectionExtensions.CreateSpeedReader(options);
+        var speedReader = ServiceCollectionExtensions.CreateOcrPipeline(options);
         var paths = inputs.Select(f => f.FullName).ToList();
         await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }
 
-    private static async Task EmitOutput(IAsyncEnumerable<SpeedReaderResult> results, List<string> filenames, bool viz)
+    private static async Task EmitOutput(IAsyncEnumerable<OcrPipelineResult> results, List<string> filenames, bool viz)
     {
         var jsonOptions = new JsonSerializerOptions
         {

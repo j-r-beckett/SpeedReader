@@ -133,7 +133,7 @@ public class TextReaderE2ETests
             ("alpaca", 400, 500, 0)
         ]);
 
-        List<SpeedReaderResult> expectedResults = [expectedResult1, expectedResult2, expectedResult3];
+        List<OcrPipelineResult> expectedResults = [expectedResult1, expectedResult2, expectedResult3];
 
         // Act
         var images = expectedResults.Select(r => r.Image).ToList();
@@ -148,7 +148,7 @@ public class TextReaderE2ETests
         }
     }
 
-    private async Task<SpeedReaderResult> ReadOne(Image<Rgb24> image)
+    private async Task<OcrPipelineResult> ReadOne(Image<Rgb24> image)
     {
         var reader = CreateTextReader();
 
@@ -160,7 +160,7 @@ public class TextReaderE2ETests
         return result;
     }
 
-    private async Task<List<SpeedReaderResult>> ReadMany(List<Image<Rgb24>> images)
+    private async Task<List<OcrPipelineResult>> ReadMany(List<Image<Rgb24>> images)
     {
         var reader = CreateTextReader();
 
@@ -175,9 +175,9 @@ public class TextReaderE2ETests
         return results;
     }
 
-    private SpeedReader CreateTextReader()
+    private OcrPipeline CreateTextReader()
     {
-        var options = new SpeedReaderOptions
+        var options = new OcrPipelineOptions
         {
             MaxParallelism = 1,
             MaxBatchSize = 1,
@@ -188,6 +188,6 @@ public class TextReaderE2ETests
             NumIntraOpThreads = 4
         };
 
-        return ServiceCollectionExtensions.CreateSpeedReader(options);
+        return ServiceCollectionExtensions.CreateOcrPipeline(options);
     }
 }

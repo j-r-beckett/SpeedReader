@@ -15,7 +15,7 @@ namespace Ocr.Test.E2E;
 
 public static class Utils
 {
-    public static SpeedReaderResult CreateTestImage(int width, int height, List<(string Text, int X, int Y, int Angle)> texts)
+    public static OcrPipelineResult CreateTestImage(int width, int height, List<(string Text, int X, int Y, int Angle)> texts)
     {
         var image = new Image<Rgb24>(width, height, Color.White);
 
@@ -30,7 +30,7 @@ public static class Utils
             detections.Add(bbox);
             recognitions.Add((text.Text, 1.0));
         }
-        return new SpeedReaderResult(image, detections, recognitions, null!);
+        return new OcrPipelineResult(image, detections, recognitions, null!);
     }
 
     public static BoundingBox DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
@@ -60,7 +60,7 @@ public static class Utils
         return new BoundingBox(new Polygon { Points = [] }, rotatedRect);
     }
 
-    public static void ValidateDetectionsAndRecognitions(SpeedReaderResult expected, SpeedReaderResult actual)
+    public static void ValidateDetectionsAndRecognitions(OcrPipelineResult expected, OcrPipelineResult actual)
     {
         var expectedBBoxes = expected.Results.Select(r => r.BBox).ToList();
         var actualBBoxes = actual.Results.Select(r => r.BBox).ToList();

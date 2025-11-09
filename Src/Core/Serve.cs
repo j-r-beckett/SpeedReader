@@ -38,8 +38,8 @@ public static class Serve
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
 
-        // Register SpeedReader and dependencies using DI
-        var speedReaderOptions = new SpeedReaderOptions
+        // Register OcrPipeline and dependencies using DI
+        var ocrPipelineOptions = new OcrPipelineOptions
         {
             MaxParallelism = 4,
             MaxBatchSize = 1,
@@ -49,7 +49,7 @@ public static class Serve
             SvtrQuantization = Quantization.Fp32,
             NumIntraOpThreads = 4
         };
-        builder.Services.AddSpeedReader(speedReaderOptions);
+        builder.Services.AddOcrPipeline(ocrPipelineOptions);
 
         // // Configure OpenTelemetry with Prometheus exporter
         // builder.Services.AddOpenTelemetry()
@@ -68,7 +68,7 @@ public static class Serve
 
         app.MapGet("/api/health", () => "Healthy");
 
-        app.MapPost("/api/ocr", async (HttpContext context, SpeedReader speedReader) =>
+        app.MapPost("/api/ocr", async (HttpContext context, OcrPipeline speedReader) =>
         {
             var images = ParseImagesFromRequest(context.Request);
             var results = speedReader.ReadMany(images);
@@ -112,7 +112,7 @@ public static class Serve
             await context.Response.WriteAsync(json);
         });
 
-        app.Map("/api/ws/ocr", async (HttpContext context, SpeedReader speedReader) =>
+        app.Map("/api/ws/ocr", async (HttpContext context, OcrPipeline speedReader) =>
         {
             if (!context.WebSockets.IsWebSocketRequest)
             {
@@ -131,7 +131,7 @@ public static class Serve
         await app.RunAsync();
     }
 
-    private static async Task HandleWebSocketOcr(WebSocket webSocket, SpeedReader speedReader)
+    private static async Task HandleWebSocketOcr(WebSocket webSocket, OcrPipeline speedReader)
     {
         var inputBuffer = Channel.CreateBounded<Image<Rgb24>>(1);
         var config = Configuration.Default.Clone();
