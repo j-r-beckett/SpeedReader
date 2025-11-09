@@ -20,9 +20,9 @@ public class TextReaderBackpressureTests
         Func<(TextDetector, TextRecognizer)> factory =
             () => (new MockTextDetector(tcs.Task), new MockTextRecognizer(Task.CompletedTask));
 
-        List<Task<Task<SpeedReaderResult>>> results = [];
+        List<Task<Task<OcrPipelineResult>>> results = [];
 
-        var reader = new SpeedReader(factory, maxParallelism, maxBatchSize);
+        var reader = new OcrPipeline(factory, maxParallelism, maxBatchSize);
 
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
@@ -79,7 +79,7 @@ public class TextReaderBackpressureTests
         Func<(TextDetector, TextRecognizer)> factory =
             () => (new MockTextDetector(incrementAndBlock), new MockTextRecognizer(Task.CompletedTask));
 
-        var reader = new SpeedReader(factory, maxParallelism, maxBatchSize);
+        var reader = new OcrPipeline(factory, maxParallelism, maxBatchSize);
 
         var image = new Image<Rgb24>(720, 640, Color.White);
 

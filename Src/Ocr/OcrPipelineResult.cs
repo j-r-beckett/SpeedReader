@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr;
 
-public record SpeedReaderResult
+public record OcrPipelineResult
 {
     public readonly Image<Rgb24> Image;
     public readonly List<(BoundingBox BBox, string Text, double Confidence)> Results;
@@ -17,7 +17,7 @@ public record SpeedReaderResult
     public List<BoundingBox> Detections;
     public List<(string Text, double Confidence)> Recognitions;
 
-    public SpeedReaderResult(Image<Rgb24> image, List<BoundingBox> detections, List<(string Text, double Confidence)> recognitions, VizBuilder vizBuilder)
+    public OcrPipelineResult(Image<Rgb24> image, List<BoundingBox> detections, List<(string Text, double Confidence)> recognitions, VizBuilder vizBuilder)
     {
         Image = image;
         Detections = detections;

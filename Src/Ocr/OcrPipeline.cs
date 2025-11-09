@@ -11,13 +11,13 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Ocr;
 
-public class SpeedReader
+public class OcrPipeline
 {
     private readonly TextDetector _detector;
     private readonly TextRecognizer _recognizer;
-    private readonly Executor<Task<Image<Rgb24>>, SpeedReaderResult> _executor;
+    private readonly Executor<Task<Image<Rgb24>>, OcrPipelineResult> _executor;
 
-    public SpeedReader(TextDetector detector, TextRecognizer recognizer, int maxParallelism, int maxBatchSize)
+    public OcrPipeline(TextDetector detector, TextRecognizer recognizer, int maxParallelism, int maxBatchSize)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBatchSize);
@@ -25,34 +25,34 @@ public class SpeedReader
         _detector = detector;
         _recognizer = recognizer;
         var capacity = maxParallelism * maxBatchSize * 2;
-        _executor = new Executor<Task<Image<Rgb24>>, SpeedReaderResult>(Execute, capacity);
+        _executor = new Executor<Task<Image<Rgb24>>, OcrPipelineResult>(Execute, capacity);
     }
 
     // Legacy constructor for backward compatibility with IInferenceEngine
-    public SpeedReader(IInferenceEngine dbnetEngine, IInferenceEngine svtrEngine, int maxParallelism, int maxBatchSize)
+    public OcrPipeline(IInferenceEngine dbnetEngine, IInferenceEngine svtrEngine, int maxParallelism, int maxBatchSize)
         : this(new TextDetector(dbnetEngine), new TextRecognizer(svtrEngine), maxParallelism, maxBatchSize)
     {
     }
 
     // Legacy constructor for backward compatibility with factory pattern
-    internal SpeedReader(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
+    internal OcrPipeline(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
         : this(factory().Item1, factory().Item2, maxParallelism, maxBatchSize)
     {
     }
 
-    public IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<string> paths) =>
+    public IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<string> paths) =>
         ReadMany(paths.Select(path => Image.LoadAsync<Rgb24>(path)));
 
-    public Task<Task<SpeedReaderResult>> ReadOne(string path) => ReadOne(Image.LoadAsync<Rgb24>(path));
+    public Task<Task<OcrPipelineResult>> ReadOne(string path) => ReadOne(Image.LoadAsync<Rgb24>(path));
 
-    public IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images) =>
+    public IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images) =>
         ReadMany(images.Select(Task.FromResult));
 
-    public Task<Task<SpeedReaderResult>> ReadOne(Image<Rgb24> image) => ReadOne(Task.FromResult(image));
+    public Task<Task<OcrPipelineResult>> ReadOne(Image<Rgb24> image) => ReadOne(Task.FromResult(image));
 
-    private async IAsyncEnumerable<SpeedReaderResult> ReadMany(IAsyncEnumerable<Task<Image<Rgb24>>> images)
+    private async IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<Task<Image<Rgb24>>> images)
     {
-        var processingTasks = Channel.CreateUnbounded<Task<SpeedReaderResult>>();
+        var processingTasks = Channel.CreateUnbounded<Task<OcrPipelineResult>>();
 
         var processingTaskStarter = Task.Run(async () =>
         {
@@ -77,9 +77,9 @@ public class SpeedReader
         await processingTaskStarter;
     }
 
-    private Task<Task<SpeedReaderResult>> ReadOne(Task<Image<Rgb24>> imageTask) => _executor.ExecuteSingle(imageTask);
+    private Task<Task<OcrPipelineResult>> ReadOne(Task<Image<Rgb24>> imageTask) => _executor.ExecuteSingle(imageTask);
 
-    private async Task<SpeedReaderResult> Execute(Task<Image<Rgb24>> imageTask)
+    private async Task<OcrPipelineResult> Execute(Task<Image<Rgb24>> imageTask)
     {
         var vizBuilder = new VizBuilder();
 
@@ -87,6 +87,6 @@ public class SpeedReader
         var detections = await _detector.Detect(image, vizBuilder);
         var recognitions = await _recognizer.Recognize(detections, image, vizBuilder);
         Debug.Assert(detections.Count == recognitions.Count);
-        return new SpeedReaderResult(image, detections, recognitions.ToList(), vizBuilder);
+        return new OcrPipelineResult(image, detections, recognitions.ToList(), vizBuilder);
     }
 }

@@ -11,12 +11,12 @@ namespace Ocr;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers SpeedReader and its dependencies with the DI container.
+    /// Registers OcrPipeline and its dependencies with the DI container.
     /// Only supports SteadyCpuEngine for both detection and recognition.
     /// </summary>
-    public static IServiceCollection AddSpeedReader(
+    public static IServiceCollection AddOcrPipeline(
         this IServiceCollection services,
-        SpeedReaderOptions options)
+        OcrPipelineOptions options)
     {
         // Register inference engines
         services.AddInferenceEngine(
@@ -48,35 +48,35 @@ public static class ServiceCollectionExtensions
             return new TextRecognizer(svtrEngine, options.RecognitionInputWidth, options.RecognitionInputHeight);
         });
 
-        // Register SpeedReader
+        // Register OcrPipeline
         services.AddSingleton(sp =>
         {
             var detector = sp.GetRequiredService<TextDetector>();
             var recognizer = sp.GetRequiredService<TextRecognizer>();
-            return new SpeedReader(detector, recognizer, options.MaxParallelism, options.MaxBatchSize);
+            return new OcrPipeline(detector, recognizer, options.MaxParallelism, options.MaxBatchSize);
         });
 
         return services;
     }
 
     /// <summary>
-    /// Creates a SpeedReader instance using a new DI container.
+    /// Creates an OcrPipeline instance using a new DI container.
     /// </summary>
-    public static SpeedReader CreateSpeedReader(SpeedReaderOptions options)
+    public static OcrPipeline CreateOcrPipeline(OcrPipelineOptions options)
     {
         var services = new ServiceCollection();
-        services.AddSpeedReader(options);
+        services.AddOcrPipeline(options);
         var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<SpeedReader>();
+        return provider.GetRequiredService<OcrPipeline>();
     }
 }
 
 /// <summary>
-/// Configuration options for SpeedReader and its dependencies.
+/// Configuration options for OcrPipeline and its dependencies.
 /// </summary>
-public record SpeedReaderOptions
+public record OcrPipelineOptions
 {
-    // SpeedReader options
+    // OcrPipeline options
     public int MaxParallelism { get; init; } = 4;
     public int MaxBatchSize { get; init; } = 1;
 

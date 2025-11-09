@@ -74,7 +74,7 @@ public class TextDetectorE2ETests
 
     private async Task<List<BoundingBox>> RunDetection(Image<Rgb24> image, List<BoundingBox> expectedBBoxes)
     {
-        var options = new SpeedReaderOptions
+        var options = new OcrPipelineOptions
         {
             DetectionParallelism = 1,
             DbNetQuantization = Quantization.Int8,
@@ -82,7 +82,7 @@ public class TextDetectorE2ETests
         };
 
         var services = new ServiceCollection();
-        services.AddSpeedReader(options);
+        services.AddOcrPipeline(options);
         var provider = services.BuildServiceProvider();
         var detector = provider.GetRequiredService<TextDetector>();
 

@@ -97,7 +97,7 @@ public class TextRecognizerE2ETests
 
     private async Task<(string Text, double Confidence)> RunRecognition(Image<Rgb24> image, RotatedRectangle rect)
     {
-        var options = new SpeedReaderOptions
+        var options = new OcrPipelineOptions
         {
             RecognitionParallelism = 1,
             SvtrQuantization = Quantization.Fp32,
@@ -105,7 +105,7 @@ public class TextRecognizerE2ETests
         };
 
         var services = new ServiceCollection();
-        services.AddSpeedReader(options);
+        services.AddOcrPipeline(options);
         var provider = services.BuildServiceProvider();
         var recognizer = provider.GetRequiredService<TextRecognizer>();
 
