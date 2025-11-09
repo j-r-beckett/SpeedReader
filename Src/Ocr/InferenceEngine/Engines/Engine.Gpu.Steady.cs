@@ -13,15 +13,14 @@ public record SteadyGpuEngineOptions : EngineOptions
 
 public class SteadyGpuEngine : IInferenceEngine
 {
-    public SteadyGpuEngine([FromKeyedServices(Model.DbNet)] SteadyGpuEngineOptions options,
-        [FromKeyedServices(Model.DbNet)] IInferenceKernel inferenceKernel, DbNetMarker _)
-        : this(options, inferenceKernel) { }
+    public static SteadyGpuEngine Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredKeyedService<SteadyGpuEngineOptions>(key);
+        var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
+        return new SteadyGpuEngine(options, kernel);
+    }
 
-    public SteadyGpuEngine([FromKeyedServices(Model.Svtr)] SteadyGpuEngineOptions options,
-        [FromKeyedServices(Model.Svtr)] IInferenceKernel inferenceKernel, SvtrMarker _)
-        : this(options, inferenceKernel) { }
-
-    public SteadyGpuEngine(SteadyGpuEngineOptions options, IInferenceKernel inferenceKernel) =>
+    private SteadyGpuEngine(SteadyGpuEngineOptions options, IInferenceKernel inferenceKernel) =>
         throw new NotImplementedException();
 
     public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape) =>

@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Ocr.Geometry;
@@ -73,18 +74,19 @@ public class TextDetectorE2ETests
 
     private async Task<List<BoundingBox>> RunDetection(Image<Rgb24> image, List<BoundingBox> expectedBBoxes)
     {
-        var engineOptions = new SteadyCpuEngineOptions(parallelism: 1);
-        var inferenceOptions = new OnnxInferenceKernelOptions(
-            model: InferenceEngine.Kernels.Model.DbNet,
-            quantization: Quantization.Int8,
-            initialParallelism: 1,
-            numIntraOpThreads: 4
-        );
-        var inferenceEngine = Factories.CreateInferenceEngine(engineOptions, inferenceOptions);
+        var options = new SpeedReaderOptions
+        {
+            DetectionParallelism = 1,
+            DbNetQuantization = Quantization.Int8,
+            NumIntraOpThreads = 4
+        };
+
+        var services = new ServiceCollection();
+        services.AddSpeedReader(options);
+        var provider = services.BuildServiceProvider();
+        var detector = provider.GetRequiredService<TextDetector>();
 
         var vizBuilder = new VizBuilder();
-        var detector = new TextDetector(inferenceEngine);
-
         var results = await detector.Detect(image, vizBuilder);
 
         var svg = vizBuilder

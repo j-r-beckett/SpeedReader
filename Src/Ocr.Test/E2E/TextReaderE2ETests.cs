@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Ocr;
@@ -176,24 +177,17 @@ public class TextReaderE2ETests
 
     private SpeedReader CreateTextReader()
     {
-        var dbnetEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
-        var dbnetKernelOptions = new OnnxInferenceKernelOptions(
-            model: InferenceEngine.Kernels.Model.DbNet,
-            quantization: Quantization.Int8,
-            initialParallelism: 1,
-            numIntraOpThreads: 4);
-        var dbnetEngine = Factories.CreateInferenceEngine(dbnetEngineOptions, dbnetKernelOptions);
+        var options = new SpeedReaderOptions
+        {
+            MaxParallelism = 1,
+            MaxBatchSize = 1,
+            DetectionParallelism = 1,
+            RecognitionParallelism = 1,
+            DbNetQuantization = Quantization.Int8,
+            SvtrQuantization = Quantization.Fp32,
+            NumIntraOpThreads = 4
+        };
 
-        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
-        var svtrKernelOptions = new OnnxInferenceKernelOptions(
-            model: InferenceEngine.Kernels.Model.Svtr,
-            quantization: Quantization.Fp32,
-            initialParallelism: 1,
-            numIntraOpThreads: 4);
-        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
-
-        var detector = new TextDetector(dbnetEngine);
-        var recognizer = new TextRecognizer(svtrEngine);
-        return new SpeedReader(detector, recognizer, 1, 1);
+        return ServiceCollectionExtensions.CreateSpeedReader(options);
     }
 }

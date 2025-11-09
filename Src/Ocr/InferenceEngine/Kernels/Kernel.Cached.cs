@@ -19,12 +19,15 @@ public record CachedInferenceKernelOptions : InferenceKernelOptions
 
 public class CachedOnnxInferenceKernel : OnnxInferenceKernel
 {
-    public CachedOnnxInferenceKernel([FromKeyedServices(Model.DbNet)] CachedInferenceKernelOptions inferenceOptions,
-        ModelLoader modelLoader, DbNetMarker marker) : base(GetOnnxOptions(inferenceOptions), modelLoader, marker) { }
+    public static new CachedOnnxInferenceKernel Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredKeyedService<CachedInferenceKernelOptions>(key);
+        var modelLoader = serviceProvider.GetRequiredService<ModelLoader>();
+        return new CachedOnnxInferenceKernel(options, modelLoader);
+    }
 
-    public CachedOnnxInferenceKernel([FromKeyedServices(Model.Svtr)] CachedInferenceKernelOptions inferenceOptions,
-        [FromKeyedServices(Model.Svtr)] OnnxInferenceKernel onnxInferenceKernel,
-        ModelLoader modelLoader, SvtrMarker marker) : base(GetOnnxOptions(inferenceOptions), modelLoader, marker) { }
+    private CachedOnnxInferenceKernel(CachedInferenceKernelOptions inferenceOptions, ModelLoader modelLoader)
+        : base(GetOnnxOptions(inferenceOptions), modelLoader) { }
 
     private static OnnxInferenceKernelOptions GetOnnxOptions(CachedInferenceKernelOptions cachedOptions) =>
         new(

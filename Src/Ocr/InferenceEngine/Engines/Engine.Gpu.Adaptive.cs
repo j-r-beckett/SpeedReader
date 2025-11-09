@@ -13,15 +13,14 @@ public record AdaptiveGpuEngineOptions : EngineOptions
 
 public class AdaptiveGpuEngine : IInferenceEngine
 {
-    public AdaptiveGpuEngine([FromKeyedServices(Model.DbNet)] AdaptiveGpuEngineOptions options,
-        [FromKeyedServices(Model.DbNet)] IInferenceKernel inferenceKernel, DbNetMarker _)
-        : this(options, inferenceKernel) { }
+    public static AdaptiveGpuEngine Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredKeyedService<AdaptiveGpuEngineOptions>(key);
+        var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
+        return new AdaptiveGpuEngine(options, kernel);
+    }
 
-    public AdaptiveGpuEngine([FromKeyedServices(Model.Svtr)] AdaptiveGpuEngineOptions options,
-        [FromKeyedServices(Model.Svtr)] IInferenceKernel inferenceKernel, SvtrMarker _)
-        : this(options, inferenceKernel) { }
-
-    public AdaptiveGpuEngine(AdaptiveGpuEngineOptions options, IInferenceKernel inferenceKernel) =>
+    private AdaptiveGpuEngine(AdaptiveGpuEngineOptions options, IInferenceKernel inferenceKernel) =>
         throw new NotImplementedException();
 
     public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape) =>
