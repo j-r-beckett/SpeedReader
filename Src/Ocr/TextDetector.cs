@@ -7,6 +7,7 @@ using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 using Ocr.Inference;
+using Ocr.InferenceEngine.Engines;
 using Ocr.Telemetry;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
@@ -17,13 +18,21 @@ namespace Ocr;
 
 public class TextDetector
 {
-    private readonly ModelRunner _modelRunner;
+    private readonly ModelRunner? _modelRunner;
+    private readonly IInferenceEngine? _inferenceEngine;
     private readonly int _tileHeight;
     private readonly int _tileWidth;
 
     public TextDetector(ModelRunner modelRunner, int tileWidth = 640, int tileHeight = 640)
     {
         _modelRunner = modelRunner;
+        _tileWidth = tileWidth;
+        _tileHeight = tileHeight;
+    }
+
+    public TextDetector(IInferenceEngine inferenceEngine, int tileWidth = 640, int tileHeight = 640)
+    {
+        _inferenceEngine = inferenceEngine;
         _tileWidth = tileWidth;
         _tileHeight = tileHeight;
     }
@@ -143,7 +152,18 @@ public class TextDetector
         List<Task<(float[], int[])>> inferenceTasks = [];
         foreach (var (data, shape) in tiles)
         {
-            inferenceTasks.Add(await _modelRunner.Run(data, shape));
+            if (_inferenceEngine != null)
+            {
+                inferenceTasks.Add(await _inferenceEngine.Run(data, shape));
+            }
+            else if (_modelRunner != null)
+            {
+                inferenceTasks.Add(await _modelRunner.Run(data, shape));
+            }
+            else
+            {
+                throw new InvalidOperationException("Neither IInferenceEngine nor ModelRunner is set");
+            }
         }
         return await Task.WhenAll(inferenceTasks);
     }
