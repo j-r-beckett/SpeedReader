@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using System.Threading.Channels;
-using Ocr.Inference;
 
 namespace Ocr.Telemetry;
 

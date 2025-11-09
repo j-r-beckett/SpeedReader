@@ -3,7 +3,7 @@
 
 using System.Collections.Immutable;
 using Ocr.Geometry;
-using Ocr.Inference;
+using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -30,7 +30,7 @@ public class MockTextDetector : TextDetector
 
     public MockTextDetector(Func<List<BoundingBox>> detect) : this(() => Task.FromResult(detect())) { }
 
-    public MockTextDetector(Func<Task<List<BoundingBox>>> detect) : base((ModelRunner)null!) => _detect = detect;
+    public MockTextDetector(Func<Task<List<BoundingBox>>> detect) : base((IInferenceEngine)null!) => _detect = detect;
 
     public override async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder) => await _detect();
 }
@@ -54,11 +54,13 @@ public class MockTextRecognizer : TextRecognizer
 
     public MockTextRecognizer(Func<List<(string, double)>> recognize) : this(() => Task.FromResult(recognize())) { }
 
-    public MockTextRecognizer(Func<Task<List<(string, double)>>> recognize) : base(null!) => _recognize = recognize;
+    public MockTextRecognizer(Func<Task<List<(string, double)>>> recognize) : base((IInferenceEngine)null!) => _recognize = recognize;
 
     public override async Task<List<(string Text, double Confidence)>> Recognize(List<BoundingBox> regions, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
 }
 
+// MockCpuModelRunner commented out - CpuModelRunner has been replaced by IInferenceEngine
+/*
 public class MockCpuModelRunner : CpuModelRunner
 {
     public static readonly (float[] Data, int[] Shape) SimpleResult = ([0], [1, 1]);
@@ -71,3 +73,4 @@ public class MockCpuModelRunner : CpuModelRunner
 
     protected override (float[] Data, int[] Shape) RunInferenceInternal(float[] batch, int[] shape) => _infer();
 }
+*/

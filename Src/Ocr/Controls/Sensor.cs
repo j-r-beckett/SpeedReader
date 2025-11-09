@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Ocr.Inference;
 using Ocr.Telemetry;
 
 namespace Ocr.Controls;

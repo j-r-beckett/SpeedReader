@@ -11,12 +11,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Ocr;
-using Ocr.Inference;
+using Ocr.InferenceEngine;
+using Ocr.InferenceEngine.Engines;
+using Ocr.InferenceEngine.Kernels;
 using Ocr.Telemetry;
 using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
+using Model = Ocr.InferenceEngine.Kernels.Model;
 
 namespace Core;
 
@@ -32,13 +35,26 @@ public static class Serve
             : null;
         // var metricsWriter = new MetricRecorder(metricsChannel.Reader);
 
-        // Create shared inference sessions
-        using var modelProvider = new ModelProvider();
-        var dbnetRunner = new CpuModelRunner(Model.DbNet, ModelPrecision.INT8, 1);
-        // var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet18, ModelPrecision.INT8), 4);
-        // var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.SVTRv2), 4);
-        var svtrRunner = new CpuModelRunner(Model.Svtr, ModelPrecision.FP32, 1);
-        var speedReader = new SpeedReader(dbnetRunner, svtrRunner, 4, 1);
+        // Create shared inference engines
+        var dbnetEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
+        var dbnetKernelOptions = new OnnxInferenceKernelOptions(
+            model: Model.DbNet,
+            quantization: Quantization.Int8,
+            initialParallelism: 1,
+            numIntraOpThreads: 4);
+        var dbnetEngine = Factories.CreateInferenceEngine(dbnetEngineOptions, dbnetKernelOptions);
+
+        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 1);
+        var svtrKernelOptions = new OnnxInferenceKernelOptions(
+            model: Model.Svtr,
+            quantization: Quantization.Fp32,
+            initialParallelism: 1,
+            numIntraOpThreads: 4);
+        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
+
+        var detector = new TextDetector(dbnetEngine);
+        var recognizer = new TextRecognizer(svtrEngine);
+        var speedReader = new SpeedReader(detector, recognizer, 4, 1);
 
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();

@@ -7,8 +7,11 @@ using System.Diagnostics.Metrics;
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 using Ocr;
-using Ocr.Inference;
+using Ocr.InferenceEngine;
+using Ocr.InferenceEngine.Engines;
+using Ocr.InferenceEngine.Kernels;
 using Resources;
+using Model = Ocr.InferenceEngine.Kernels.Model;
 
 namespace Core;
 
@@ -101,10 +104,25 @@ public class Program
         if (inputs.Length == 0)
             return;
 
-        var modelProvider = new ModelProvider();
-        var dbnetRunner = new CpuModelRunner(modelProvider.GetSession(Model.DbNet, ModelPrecision.INT8), 4);
-        var svtrRunner = new CpuModelRunner(modelProvider.GetSession(Model.Svtr), 4);
-        var speedReader = new Ocr.SpeedReader(dbnetRunner, svtrRunner, 4, 1);
+        var dbnetEngineOptions = new SteadyCpuEngineOptions(parallelism: 4);
+        var dbnetKernelOptions = new OnnxInferenceKernelOptions(
+            model: Model.DbNet,
+            quantization: Quantization.Int8,
+            initialParallelism: 4,
+            numIntraOpThreads: 4);
+        var dbnetEngine = Factories.CreateInferenceEngine(dbnetEngineOptions, dbnetKernelOptions);
+
+        var svtrEngineOptions = new SteadyCpuEngineOptions(parallelism: 4);
+        var svtrKernelOptions = new OnnxInferenceKernelOptions(
+            model: Model.Svtr,
+            quantization: Quantization.Fp32,
+            initialParallelism: 4,
+            numIntraOpThreads: 4);
+        var svtrEngine = Factories.CreateInferenceEngine(svtrEngineOptions, svtrKernelOptions);
+
+        var detector = new TextDetector(dbnetEngine);
+        var recognizer = new TextRecognizer(svtrEngine);
+        var speedReader = new Ocr.SpeedReader(detector, recognizer, 4, 1);
         var paths = inputs.Select(f => f.FullName).ToList();
         await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }

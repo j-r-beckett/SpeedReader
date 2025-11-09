@@ -16,16 +16,11 @@ using Xunit.Abstractions;
 
 namespace Ocr.Test.E2E;
 
-public class TextDetectorE2ETests : IDisposable
+public class TextDetectorE2ETests
 {
-    private readonly ModelProvider _modelProvider;
     private readonly TestLogger _logger;
 
-    public TextDetectorE2ETests(ITestOutputHelper outputHelper)
-    {
-        _modelProvider = new ModelProvider();
-        _logger = new TestLogger(outputHelper);
-    }
+    public TextDetectorE2ETests(ITestOutputHelper outputHelper) => _logger = new TestLogger(outputHelper);
 
     [Fact]
     public async Task Detection_ReturnsCorrectResults_StraightText()
@@ -102,9 +97,4 @@ public class TextDetectorE2ETests : IDisposable
         return results;
     }
 
-    public void Dispose()
-    {
-        _modelProvider.Dispose();
-        GC.SuppressFinalize(this);
-    }
 }

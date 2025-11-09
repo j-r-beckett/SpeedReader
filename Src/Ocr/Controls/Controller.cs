@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
-using Ocr.Inference;
 using Ocr.Telemetry;
 
 namespace Ocr.Controls;
