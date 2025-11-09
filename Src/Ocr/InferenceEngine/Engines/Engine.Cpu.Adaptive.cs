@@ -32,6 +32,6 @@ public class AdaptiveCpuEngine : IInferenceEngine
         _inferenceKernel = inferenceKernel;
     }
 
-    public async Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape) =>
+    public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape) =>
         throw new NotImplementedException();
 }

@@ -5,7 +5,7 @@ namespace Ocr.InferenceEngine.Engines;
 
 public interface IInferenceEngine
 {
-    Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape);
+    Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape);
 }
 
 public abstract record EngineOptions;

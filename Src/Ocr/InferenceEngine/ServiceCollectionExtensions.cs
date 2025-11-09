@@ -63,6 +63,14 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    public static IInferenceEngine Create(EngineOptions engineOptions, InferenceKernelOptions inferenceOptions)
+    {
+        var services = new ServiceCollection();
+        services.AddInferenceEngine(engineOptions, inferenceOptions);
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<IInferenceEngine>();
+    }
 }
 
 // Markers for keyed services, used to disambiguate constructors have differ only in keys
