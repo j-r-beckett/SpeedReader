@@ -9,17 +9,13 @@ using System.Threading.Channels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.DependencyInjection;
 using Ocr;
 using Ocr.InferenceEngine;
-using Ocr.InferenceEngine.Engines;
-using Ocr.InferenceEngine.Kernels;
 using Ocr.Telemetry;
-using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
-using Model = Ocr.InferenceEngine.Kernels.Model;
+using Model = Ocr.InferenceEngine.Model;
 
 namespace Core;
 
@@ -42,12 +38,26 @@ public static class Serve
         var ocrPipelineOptions = new OcrPipelineOptions
         {
             MaxParallelism = 4,
-            MaxBatchSize = 1,
-            DetectionParallelism = 1,
-            RecognitionParallelism = 1,
-            DbNetQuantization = Quantization.Int8,
-            SvtrQuantization = Quantization.Fp32,
-            NumIntraOpThreads = 1
+            DetectionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig
+                {
+                    Model = Model.DbNet,
+                    Quantization = Quantization.Int8,
+                    NumIntraOpThreads = 1
+                },
+                Parallelism = 1
+            },
+            RecognitionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig
+                {
+                    Model = Model.Svtr,
+                    Quantization = Quantization.Fp32,
+                    NumIntraOpThreads = 1
+                },
+                Parallelism = 1
+            }
         };
         builder.Services.AddOcrPipeline(ocrPipelineOptions);
 

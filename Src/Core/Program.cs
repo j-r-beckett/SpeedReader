@@ -3,15 +3,10 @@
 
 using System.CommandLine;
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using System.Text.Json;
-using System.Threading.Tasks.Dataflow;
 using Ocr;
 using Ocr.InferenceEngine;
-using Ocr.InferenceEngine.Engines;
-using Ocr.InferenceEngine.Kernels;
-using Resources;
-using Model = Ocr.InferenceEngine.Kernels.Model;
+using Model = Ocr.InferenceEngine.Model;
 
 namespace Core;
 
@@ -107,12 +102,28 @@ public class Program
         var options = new OcrPipelineOptions
         {
             MaxParallelism = 4,
-            MaxBatchSize = 1,
-            DetectionParallelism = 4,
-            RecognitionParallelism = 4,
-            DbNetQuantization = Quantization.Int8,
-            SvtrQuantization = Quantization.Fp32,
-            NumIntraOpThreads = 4
+            DetectionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig
+                {
+                    Model = Model.DbNet,
+                    Quantization = Quantization.Int8,
+                    NumIntraOpThreads = 4
+                },
+                Parallelism = 4,
+                AdaptiveTuning = new CpuTuningParameters()
+            },
+            RecognitionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig
+                {
+                    Model = Model.Svtr,
+                    Quantization = Quantization.Fp32,
+                    NumIntraOpThreads = 4
+                },
+                Parallelism = 4,
+                AdaptiveTuning = new CpuTuningParameters()
+            }
         };
 
         var speedReader = ServiceCollectionExtensions.CreateOcrPipeline(options);

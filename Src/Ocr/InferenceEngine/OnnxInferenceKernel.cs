@@ -5,15 +5,12 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.ML.OnnxRuntime;
 
-namespace Ocr.InferenceEngine.Kernels;
+namespace Ocr.InferenceEngine;
 
 public class OnnxInferenceKernel : IInferenceKernel
 {
     private readonly InferenceSession _inferenceSession;
 
-    /// <summary>
-    /// Factory method for creating OnnxInferenceKernel from DI container with keyed services.
-    /// </summary>
     public static OnnxInferenceKernel Factory(IServiceProvider serviceProvider, object? key)
     {
         var options = serviceProvider.GetRequiredKeyedService<OnnxInferenceKernelOptions>(key);
@@ -94,7 +91,7 @@ public class OnnxInferenceKernel : IInferenceKernel
     }
 }
 
-public class OnnxInferenceException : InferenceKernelException
+public class OnnxInferenceException : Exception
 {
     public OnnxInferenceException(string message, Exception innerException) : base(message, innerException) { }
 }

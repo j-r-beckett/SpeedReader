@@ -8,7 +8,6 @@ using Microsoft.ML.OnnxRuntime;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
-using Ocr.InferenceEngine.Kernels;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -76,9 +75,16 @@ public class TextDetectorE2ETests
     {
         var options = new OcrPipelineOptions
         {
-            DetectionParallelism = 1,
-            DbNetQuantization = Quantization.Int8,
-            NumIntraOpThreads = 4
+            DetectionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig { Model = Model.DbNet, Quantization = Quantization.Int8, NumIntraOpThreads = 4 },
+                Parallelism = 1
+            },
+            RecognitionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig { Model = Model.Svtr, Quantization = Quantization.Fp32 },
+                Parallelism = 1
+            }
         };
 
         var services = new ServiceCollection();

@@ -3,11 +3,79 @@
 
 namespace Ocr.InferenceEngine;
 
-using Kernels;
+#region Inference Kernel Configuration
 
-#region Base Configuration Types
+public enum Model
+{
+    DbNet,
+    Svtr
+}
 
-public abstract record EngineOptions;
+public enum Quantization
+{
+    Int8,
+    Bf16,
+    Fp32
+}
+
+public record KernelConfig
+{
+    public required Model Model { get; init; }
+    public required Quantization Quantization { get; init; }
+    public int NumIntraOpThreads { get; init; } = 1;
+    public int NumInterOpThreads { get; init; } = 1;
+    public bool EnableProfiling { get; init; } = false;
+}
+
+#endregion
+
+#region CPU Engine Configuration
+
+public record CpuTuningParameters
+{
+    public double ThroughputThreshold { get; init; } = 0.05;
+    public int MeasurementWindowMultiplier { get; init; } = 8;
+    public int MinParallelism { get; init; } = 1;
+}
+
+public record CpuEngineConfig
+{
+    public required KernelConfig Kernel { get; init; }
+    public int Parallelism { get; init; } = 4;
+    public CpuTuningParameters? AdaptiveTuning { get; init; }
+}
+
+#endregion
+
+#region GPU Engine Configuration
+
+public record GpuEngineConfig
+{
+    public required KernelConfig Kernel { get; init; }
+    public int MaxBatchSize { get; init; } = 8;
+}
+
+#endregion
+
+#region OcrPipeline Configuration
+
+public record OcrPipelineOptions
+{
+    public int MaxParallelism { get; init; } = 4;
+
+    public int TileWidth { get; init; } = 640;
+    public int TileHeight { get; init; } = 640;
+
+    public int RecognitionInputWidth { get; init; } = 160;
+    public int RecognitionInputHeight { get; init; } = 48;
+
+    public required CpuEngineConfig DetectionEngine { get; init; }
+    public required CpuEngineConfig RecognitionEngine { get; init; }
+}
+
+#endregion
+
+#region Kernel Options (Internal)
 
 public abstract record InferenceKernelOptions
 {
@@ -20,38 +88,6 @@ public abstract record InferenceKernelOptions
     public Model Model { get; }
     public Quantization Quantization { get; }
 }
-
-#endregion
-
-#region Engine Configuration Types
-
-public record AdaptiveCpuEngineOptions : EngineOptions
-{
-    public AdaptiveCpuEngineOptions(int initialParallelism) => InitialParallelism = initialParallelism;
-
-    public int InitialParallelism { get; }
-}
-
-public record SteadyCpuEngineOptions : EngineOptions
-{
-    public SteadyCpuEngineOptions(int parallelism) => Parallelism = parallelism;
-
-    public int Parallelism { get; }
-}
-
-public record AdaptiveGpuEngineOptions : EngineOptions
-{
-    public AdaptiveGpuEngineOptions() => throw new NotImplementedException();
-}
-
-public record SteadyGpuEngineOptions : EngineOptions
-{
-    public SteadyGpuEngineOptions() => throw new NotImplementedException();
-}
-
-#endregion
-
-#region Kernel Configuration Types
 
 public record OnnxInferenceKernelOptions : InferenceKernelOptions
 {
@@ -71,64 +107,6 @@ public record OnnxInferenceKernelOptions : InferenceKernelOptions
     public int NumIntraOpThreads { get; }
     public int NumInterOpThreads { get; }
     public bool EnableProfiling { get; }
-}
-
-public record NullInferenceKernelOptions : InferenceKernelOptions
-{
-    public NullInferenceKernelOptions(Model model, Quantization quantization, int[]? expectedInputShape, int[] outputShape)
-        : base(model, quantization)
-    {
-        ExpectedInputShape = expectedInputShape;
-        OutputShape = outputShape;
-    }
-
-    public int[]? ExpectedInputShape { get; init; }
-    public int[] OutputShape { get; init; }
-}
-
-public record CachedInferenceKernelOptions : InferenceKernelOptions
-{
-    public CachedInferenceKernelOptions(Model model, Quantization quantization, int intraOpThreads)
-        : base(model, quantization)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(intraOpThreads, 1, nameof(intraOpThreads));
-        IntraOpThreads = intraOpThreads;
-    }
-
-    public int IntraOpThreads { get; }
-}
-
-#endregion
-
-#region OcrPipeline Configuration
-
-/// <summary>
-/// Configuration options for OcrPipeline and its dependencies.
-/// </summary>
-public record OcrPipelineOptions
-{
-    // OcrPipeline options
-    public int MaxParallelism { get; init; } = 4;
-    public int MaxBatchSize { get; init; } = 1;
-
-    // TextDetector options
-    public int TileWidth { get; init; } = 640;
-    public int TileHeight { get; init; } = 640;
-
-    // TextRecognizer options
-    public int RecognitionInputWidth { get; init; } = 160;
-    public int RecognitionInputHeight { get; init; } = 48;
-
-    // Engine parallelism
-    public int DetectionParallelism { get; init; } = 4;
-    public int RecognitionParallelism { get; init; } = 4;
-
-    // Model quantization
-    public Quantization DbNetQuantization { get; init; } = Quantization.Int8;
-    public Quantization SvtrQuantization { get; init; } = Quantization.Fp32;
-
-    // ONNX runtime options
-    public int NumIntraOpThreads { get; init; } = 1;
 }
 
 #endregion
