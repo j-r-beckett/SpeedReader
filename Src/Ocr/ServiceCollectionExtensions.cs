@@ -70,32 +70,3 @@ public static class ServiceCollectionExtensions
         return provider.GetRequiredService<OcrPipeline>();
     }
 }
-
-/// <summary>
-/// Configuration options for OcrPipeline and its dependencies.
-/// </summary>
-public record OcrPipelineOptions
-{
-    // OcrPipeline options
-    public int MaxParallelism { get; init; } = 4;
-    public int MaxBatchSize { get; init; } = 1;
-
-    // TextDetector options
-    public int TileWidth { get; init; } = 640;
-    public int TileHeight { get; init; } = 640;
-
-    // TextRecognizer options
-    public int RecognitionInputWidth { get; init; } = 160;
-    public int RecognitionInputHeight { get; init; } = 48;
-
-    // Engine parallelism
-    public int DetectionParallelism { get; init; } = 4;
-    public int RecognitionParallelism { get; init; } = 4;
-
-    // Model quantization
-    public Quantization DbNetQuantization { get; init; } = Quantization.Int8;
-    public Quantization SvtrQuantization { get; init; } = Quantization.Fp32;
-
-    // ONNX runtime options
-    public int NumIntraOpThreads { get; init; } = 1;
-}

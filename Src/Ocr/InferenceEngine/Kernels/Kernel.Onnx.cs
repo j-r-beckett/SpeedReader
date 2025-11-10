@@ -7,26 +7,6 @@ using Microsoft.ML.OnnxRuntime;
 
 namespace Ocr.InferenceEngine.Kernels;
 
-public record OnnxInferenceKernelOptions : InferenceKernelOptions
-{
-    public OnnxInferenceKernelOptions(Model model, Quantization quantization, int initialParallelism, int numIntraOpThreads,
-        int numInterOpThreads = 1, bool enableProfiling = false)
-        : base(model, quantization)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(initialParallelism, 1, nameof(initialParallelism));
-        ArgumentOutOfRangeException.ThrowIfLessThan(numIntraOpThreads, 1, nameof(numIntraOpThreads));
-        ArgumentOutOfRangeException.ThrowIfLessThan(numInterOpThreads, 1, nameof(numInterOpThreads));
-
-        NumIntraOpThreads = numIntraOpThreads;
-        NumInterOpThreads = numInterOpThreads;
-        EnableProfiling = enableProfiling;
-    }
-
-    public int NumIntraOpThreads { get; }
-    public int NumInterOpThreads { get; }
-    public bool EnableProfiling { get; }
-}
-
 public class OnnxInferenceKernel : IInferenceKernel
 {
     private readonly InferenceSession _inferenceSession;

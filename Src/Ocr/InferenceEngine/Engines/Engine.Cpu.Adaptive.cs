@@ -7,13 +7,6 @@ using Ocr.InferenceEngine.Kernels;
 
 namespace Ocr.InferenceEngine.Engines;
 
-public record AdaptiveCpuEngineOptions : EngineOptions
-{
-    public AdaptiveCpuEngineOptions(int initialParallelism) => InitialParallelism = initialParallelism;
-
-    public int InitialParallelism { get; }
-}
-
 public interface IMetricRecorder<T>
 {
     public void RecordMetric(string name, double value, List<(string, string)>? tags = null);
