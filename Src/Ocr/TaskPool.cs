@@ -1,7 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-namespace Ocr.InferenceEngine;
+namespace Ocr;
 
 public class TaskPool<T>
 {
@@ -47,15 +47,6 @@ public class TaskPool<T>
 
         // Return the user's task so they can await it
         return userTask;
-    }
-
-    public void IncreasePoolSize(int amount)
-    {
-        lock (_lock)
-        {
-            PoolSize = Math.Max(1, PoolSize + amount);
-            StartNewTasks();  // If pool size decreased this does nothing
-        }
     }
 
     public void SetPoolSize(int newSize)
