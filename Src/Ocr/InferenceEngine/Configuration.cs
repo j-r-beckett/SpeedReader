@@ -3,7 +3,7 @@
 
 namespace Ocr.InferenceEngine;
 
-#region Inference Kernel
+#region InferenceKernel
 
 public enum Model
 {
@@ -61,30 +61,12 @@ public record CpuEngineConfig
 
 #endregion
 
-#region GPU Engine Configuration
+#region GPU Engine
 
 public record GpuEngineConfig
 {
     public required OnnxInferenceKernelOptions Kernel { get; init; }
     public int MaxBatchSize { get; init; } = 8;
-}
-
-#endregion
-
-#region OcrPipeline Configuration
-
-public record OcrPipelineOptions
-{
-    public int MaxParallelism { get; init; } = 4;
-
-    public int TileWidth { get; init; } = 640;
-    public int TileHeight { get; init; } = 640;
-
-    public int RecognitionInputWidth { get; init; } = 160;
-    public int RecognitionInputHeight { get; init; } = 48;
-
-    public required CpuEngineConfig DetectionEngine { get; init; }
-    public required CpuEngineConfig RecognitionEngine { get; init; }
 }
 
 #endregion

@@ -32,7 +32,7 @@ public static class ServiceCollectionExtensions
         {
             var detector = sp.GetRequiredService<TextDetector>();
             var recognizer = sp.GetRequiredService<TextRecognizer>();
-            return new OcrPipeline(detector, recognizer, options.MaxParallelism, 1);
+            return new OcrPipeline(detector, recognizer);
         });
 
         return services;

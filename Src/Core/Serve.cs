@@ -37,7 +37,6 @@ public static class Serve
         // Register OcrPipeline and dependencies using DI
         var ocrPipelineOptions = new OcrPipelineOptions
         {
-            MaxParallelism = 4,
             DetectionEngine = new CpuEngineConfig
             {
                 Kernel = new OnnxInferenceKernelOptions(

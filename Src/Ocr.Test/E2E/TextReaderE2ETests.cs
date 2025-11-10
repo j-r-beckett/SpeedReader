@@ -177,7 +177,6 @@ public class TextReaderE2ETests
     {
         var options = new OcrPipelineOptions
         {
-            MaxParallelism = 1,
             DetectionEngine = new CpuEngineConfig
             {
                 Kernel = new OnnxInferenceKernelOptions(

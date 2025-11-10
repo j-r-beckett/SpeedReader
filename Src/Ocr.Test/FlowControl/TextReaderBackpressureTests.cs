@@ -10,16 +10,15 @@ public class TextReaderBackpressureTests
 {
     [Theory, CombinatorialData]
     public async Task TextReader_ReadOne_EmitsBackpressure(
-        [CombinatorialRange(from: 1, count: 3)] int maxParallelism,
-        [CombinatorialRange(from: 1, count: 3)] int maxBatchSize)
+        [CombinatorialRange(from: 1, count: 3)] int inferenceCapacity)
     {
-        var capacity = maxParallelism * maxBatchSize * 2;
+        var capacity = (int)Math.Ceiling((inferenceCapacity + inferenceCapacity) * 1.5);
 
         var tcs = new TaskCompletionSource();
 
         List<Task<Task<OcrPipelineResult>>> results = [];
 
-        var reader = new OcrPipeline(new MockTextDetector(tcs.Task), new MockTextRecognizer(Task.CompletedTask), maxParallelism, maxBatchSize);
+        var reader = new OcrPipeline(new MockTextDetector(tcs.Task, inferenceCapacity), new MockTextRecognizer(Task.CompletedTask, inferenceCapacity));
 
         using var image = new Image<Rgb24>(720, 640, Color.White);
 
@@ -57,10 +56,9 @@ public class TextReaderBackpressureTests
 
     [Theory, CombinatorialData]
     public async Task TextReader_ReadMany_EmitsBackpressure(
-        [CombinatorialRange(from: 1, count: 3)] int maxParallelism,
-        [CombinatorialRange(from: 1, count: 3)] int maxBatchSize)
+        [CombinatorialRange(from: 1, count: 3)] int inferenceCapacity)
     {
-        var capacity = maxParallelism * maxBatchSize * 2;
+        var capacity = (int)Math.Ceiling((inferenceCapacity + inferenceCapacity) * 1.5);
 
         var tcs = new TaskCompletionSource();
 
@@ -73,7 +71,7 @@ public class TextReaderBackpressureTests
             return MockTextDetector.SimpleResult;
         };
 
-        var reader = new OcrPipeline(new MockTextDetector(incrementAndBlock), new MockTextRecognizer(Task.CompletedTask), maxParallelism, maxBatchSize);
+        var reader = new OcrPipeline(new MockTextDetector(incrementAndBlock, inferenceCapacity), new MockTextRecognizer(Task.CompletedTask, inferenceCapacity));
 
         var image = new Image<Rgb24>(720, 640, Color.White);
 

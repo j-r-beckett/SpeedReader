@@ -25,21 +25,4 @@ public static class Factories
 
         return services;
     }
-
-    public static IServiceCollection AddInferenceEngine(
-        this IServiceCollection services,
-        GpuEngineConfig config)
-    {
-        var key = config.Kernel.Model;
-
-        services.TryAddSingleton<ModelLoader>();
-
-        services.AddKeyedSingleton(key, config.Kernel);
-        services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
-
-        services.AddKeyedSingleton(key, config);
-        services.AddKeyedSingleton<IInferenceEngine>(key, GpuEngine.Factory);
-
-        return services;
-    }
 }
