@@ -180,12 +180,18 @@ public class TextReaderE2ETests
             MaxParallelism = 1,
             DetectionEngine = new CpuEngineConfig
             {
-                Kernel = new KernelConfig { Model = Model.DbNet, Quantization = Quantization.Int8, NumIntraOpThreads = 4 },
+                Kernel = new OnnxInferenceKernelOptions(
+                    model: Model.DbNet,
+                    quantization: Quantization.Int8,
+                    numIntraOpThreads: 4),
                 Parallelism = 1
             },
             RecognitionEngine = new CpuEngineConfig
             {
-                Kernel = new KernelConfig { Model = Model.Svtr, Quantization = Quantization.Fp32, NumIntraOpThreads = 4 },
+                Kernel = new OnnxInferenceKernelOptions(
+                    model: Model.Svtr,
+                    quantization: Quantization.Fp32,
+                    numIntraOpThreads: 4),
                 Parallelism = 1
             }
         };
