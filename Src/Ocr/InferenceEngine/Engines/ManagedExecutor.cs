@@ -44,7 +44,6 @@ public class ManagedExecutor : IDisposable
 #pragma warning restore CS4014
 
         return task;
-
     }
 
     public int CurrentMaxParallelism => _currentMaxParallelism;

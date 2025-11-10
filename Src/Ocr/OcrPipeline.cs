@@ -3,8 +3,6 @@
 
 using System.Diagnostics;
 using System.Threading.Channels;
-using Ocr.Controls;
-using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -15,7 +13,7 @@ public class OcrPipeline
 {
     private readonly TextDetector _detector;
     private readonly TextRecognizer _recognizer;
-    private readonly Executor<Task<Image<Rgb24>>, OcrPipelineResult> _executor;
+    private readonly TaskPool<OcrPipelineResult> _taskPool;
 
     public OcrPipeline(TextDetector detector, TextRecognizer recognizer, int maxParallelism, int maxBatchSize)
     {
@@ -25,19 +23,7 @@ public class OcrPipeline
         _detector = detector;
         _recognizer = recognizer;
         var capacity = maxParallelism * maxBatchSize * 2;
-        _executor = new Executor<Task<Image<Rgb24>>, OcrPipelineResult>(Execute, capacity);
-    }
-
-    // Legacy constructor for backward compatibility with IInferenceEngine
-    public OcrPipeline(IInferenceEngine dbnetEngine, IInferenceEngine svtrEngine, int maxParallelism, int maxBatchSize)
-        : this(new TextDetector(dbnetEngine), new TextRecognizer(svtrEngine), maxParallelism, maxBatchSize)
-    {
-    }
-
-    // Legacy constructor for backward compatibility with factory pattern
-    internal OcrPipeline(Func<(TextDetector, TextRecognizer)> factory, int maxParallelism, int maxBatchSize)
-        : this(factory().Item1, factory().Item2, maxParallelism, maxBatchSize)
-    {
+        _taskPool = new TaskPool<OcrPipelineResult>(capacity);
     }
 
     public IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<string> paths) =>
@@ -77,16 +63,18 @@ public class OcrPipeline
         await processingTaskStarter;
     }
 
-    private Task<Task<OcrPipelineResult>> ReadOne(Task<Image<Rgb24>> imageTask) => _executor.ExecuteSingle(imageTask);
-
-    private async Task<OcrPipelineResult> Execute(Task<Image<Rgb24>> imageTask)
+    private Task<Task<OcrPipelineResult>> ReadOne(Task<Image<Rgb24>> imageTask)
     {
-        var vizBuilder = new VizBuilder();
+        return _taskPool.Execute(Execute);
 
-        var image = await imageTask;
-        var detections = await _detector.Detect(image, vizBuilder);
-        var recognitions = await _recognizer.Recognize(detections, image, vizBuilder);
-        Debug.Assert(detections.Count == recognitions.Count);
-        return new OcrPipelineResult(image, detections, recognitions.ToList(), vizBuilder);
+        async Task<OcrPipelineResult> Execute()
+        {
+            var vizBuilder = new VizBuilder();
+            var image = await imageTask;
+            var detections = await _detector.Detect(image, vizBuilder);
+            var recognitions = await _recognizer.Recognize(detections, image, vizBuilder);
+            Debug.Assert(detections.Count == recognitions.Count);
+            return new OcrPipelineResult(image, detections, recognitions.ToList(), vizBuilder);
+        }
     }
 }
