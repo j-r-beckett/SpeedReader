@@ -101,7 +101,6 @@ public class Program
 
         var options = new OcrPipelineOptions
         {
-            MaxParallelism = 4,
             DetectionEngine = new CpuEngineConfig
             {
                 Kernel = new OnnxInferenceKernelOptions(

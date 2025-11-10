@@ -21,6 +21,8 @@ public class TextRecognizer
     private readonly int _inputWidth;
     private readonly int _inputHeight;
 
+    public int InferenceEngineCapacity() => _inferenceEngine.CurrentMaxCapacity();
+
     public TextRecognizer(IInferenceEngine inferenceEngine, int inputWidth = 160, int inputHeight = 48)
     {
         _inferenceEngine = inferenceEngine;

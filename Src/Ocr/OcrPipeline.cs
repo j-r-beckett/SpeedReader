@@ -15,15 +15,18 @@ public class OcrPipeline
     private readonly TextRecognizer _recognizer;
     private readonly TaskPool<OcrPipelineResult> _taskPool;
 
-    public OcrPipeline(TextDetector detector, TextRecognizer recognizer, int maxParallelism, int maxBatchSize)
+    public OcrPipeline(TextDetector detector, TextRecognizer recognizer)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxParallelism);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBatchSize);
-
         _detector = detector;
         _recognizer = recognizer;
-        var capacity = maxParallelism * maxBatchSize * 2;
-        _taskPool = new TaskPool<OcrPipelineResult>(capacity);
+        _taskPool = new TaskPool<OcrPipelineResult>();
+        RightsizePool();
+    }
+
+    private void RightsizePool()
+    {
+        var targetSize = (_detector.InferenceEngineCapacity() + _recognizer.InferenceEngineCapacity()) * 1.5;
+        _taskPool.SetPoolSize((int)Math.Ceiling(targetSize));
     }
 
     public IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<string> paths) =>

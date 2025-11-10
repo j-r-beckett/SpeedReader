@@ -49,13 +49,7 @@ public class CpuEngine : IInferenceEngine
             : Task.CompletedTask;
     }
 
-    public int QueueDepth => _queueDepth;
-
-    public int CurrentMaxParallelism => _managedExecutor.CurrentMaxParallelism;
-
-    public int CurrentParallelism => _currentParallelism;
-
-    public int CurrentBatchSize => 1;
+    public int CurrentMaxCapacity() => _managedExecutor.CurrentMaxParallelism;
 
     public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape)
     {

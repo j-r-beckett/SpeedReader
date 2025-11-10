@@ -12,6 +12,23 @@ using Point = Ocr.Geometry.Point;
 
 namespace Ocr.Test.FlowControl;
 
+public class MockInferenceEngine : IInferenceEngine
+{
+    private readonly int _capacity;
+
+    public MockInferenceEngine(int capacity = 1) => _capacity = capacity;
+
+    public Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape)
+    {
+        var size = inputShape.Aggregate(1, (a, b) => a * b);
+        return Task.FromResult(Task.FromResult((new float[size], inputShape)));
+    }
+
+    public int CurrentMaxCapacity() => _capacity;
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
 public class MockTextDetector : TextDetector
 {
     public static readonly List<BoundingBox> SimpleResult
@@ -21,17 +38,17 @@ public class MockTextDetector : TextDetector
 
     public MockTextDetector() : this(() => Task.FromResult(SimpleResult)) { }
 
-    public MockTextDetector(Task block) : this(async () =>
+    public MockTextDetector(Task block, int capacity = 1) : this(async () =>
     {
         await block;
         return SimpleResult;
-    })
+    }, capacity)
     {
     }
 
-    public MockTextDetector(Func<List<BoundingBox>> detect) : this(() => Task.FromResult(detect())) { }
+    public MockTextDetector(Func<List<BoundingBox>> detect, int capacity = 1) : this(() => Task.FromResult(detect()), capacity) { }
 
-    public MockTextDetector(Func<Task<List<BoundingBox>>> detect) : base((IInferenceEngine)null!) => _detect = detect;
+    public MockTextDetector(Func<Task<List<BoundingBox>>> detect, int capacity = 1) : base(new MockInferenceEngine(capacity)) => _detect = detect;
 
     public override async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder) => await _detect();
 }
@@ -45,17 +62,17 @@ public class MockTextRecognizer : TextRecognizer
 
     public MockTextRecognizer() : this(() => Task.FromResult(SimpleResult)) { }
 
-    public MockTextRecognizer(Task block) : this(async () =>
+    public MockTextRecognizer(Task block, int capacity = 1) : this(async () =>
     {
         await block;
         return SimpleResult;
-    })
+    }, capacity)
     {
     }
 
-    public MockTextRecognizer(Func<List<(string, double)>> recognize) : this(() => Task.FromResult(recognize())) { }
+    public MockTextRecognizer(Func<List<(string, double)>> recognize, int capacity = 1) : this(() => Task.FromResult(recognize()), capacity) { }
 
-    public MockTextRecognizer(Func<Task<List<(string, double)>>> recognize) : base((IInferenceEngine)null!) => _recognize = recognize;
+    public MockTextRecognizer(Func<Task<List<(string, double)>>> recognize, int capacity = 1) : base(new MockInferenceEngine(capacity)) => _recognize = recognize;
 
     public override async Task<List<(string Text, double Confidence)>> Recognize(List<BoundingBox> regions, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
 }

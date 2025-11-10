@@ -2,17 +2,14 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
-using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
-using Ocr.InferenceEngine.Engines;
 using Ocr.Telemetry;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace Ocr;
 
@@ -22,9 +19,12 @@ public class TextDetector
     private readonly int _tileHeight;
     private readonly int _tileWidth;
 
+    public int InferenceEngineCapacity() => _inferenceEngine.CurrentMaxCapacity();
+
     public TextDetector(IInferenceEngine inferenceEngine, int tileWidth = 640, int tileHeight = 640)
     {
         _inferenceEngine = inferenceEngine;
+        Console.WriteLine($"Inference engine capacity: {_inferenceEngine.CurrentMaxCapacity()}");
         _tileWidth = tileWidth;
         _tileHeight = tileHeight;
     }

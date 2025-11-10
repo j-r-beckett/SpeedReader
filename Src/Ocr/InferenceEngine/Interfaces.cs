@@ -6,6 +6,7 @@ namespace Ocr.InferenceEngine;
 public interface IInferenceEngine : IAsyncDisposable
 {
     Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape);
+    int CurrentMaxCapacity();
 }
 
 public interface IInferenceKernel
