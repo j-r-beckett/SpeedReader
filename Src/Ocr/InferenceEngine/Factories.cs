@@ -42,22 +42,4 @@ public static class Factories
 
         return services;
     }
-
-    public static IInferenceEngine CreateInferenceEngine(CpuEngineConfig config)
-    {
-        var services = new ServiceCollection();
-        services.AddInferenceEngine(config);
-        var provider = services.BuildServiceProvider();
-        var key = config.Kernel.Model;
-        return provider.GetRequiredKeyedService<IInferenceEngine>(key);
-    }
-
-    public static IInferenceEngine CreateInferenceEngine(GpuEngineConfig config)
-    {
-        var services = new ServiceCollection();
-        services.AddInferenceEngine(config);
-        var provider = services.BuildServiceProvider();
-        var key = config.Kernel.Model;
-        return provider.GetRequiredKeyedService<IInferenceEngine>(key);
-    }
 }

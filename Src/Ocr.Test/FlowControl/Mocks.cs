@@ -3,6 +3,7 @@
 
 using System.Collections.Immutable;
 using Ocr.Geometry;
+using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;

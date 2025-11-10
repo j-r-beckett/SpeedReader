@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Numerics.Tensors;
 using Ocr.Algorithms;
 using Ocr.Geometry;
+using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
 using Resources;
