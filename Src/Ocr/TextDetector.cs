@@ -6,6 +6,7 @@ using System.Numerics.Tensors;
 using CommunityToolkit.HighPerformance;
 using Ocr.Algorithms;
 using Ocr.Geometry;
+using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
 using Ocr.Telemetry;
 using Ocr.Visualization;

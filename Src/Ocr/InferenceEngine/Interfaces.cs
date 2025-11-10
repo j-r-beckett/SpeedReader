@@ -3,6 +3,11 @@
 
 namespace Ocr.InferenceEngine;
 
+public interface IInferenceEngine : IAsyncDisposable
+{
+    Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape);
+}
+
 public interface IInferenceKernel
 {
     (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape);
