@@ -9,8 +9,6 @@ using Ocr;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
-using Ocr.InferenceEngine.Kernels;
-using Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using TestUtils;
@@ -180,12 +178,16 @@ public class TextReaderE2ETests
         var options = new OcrPipelineOptions
         {
             MaxParallelism = 1,
-            MaxBatchSize = 1,
-            DetectionParallelism = 1,
-            RecognitionParallelism = 1,
-            DbNetQuantization = Quantization.Int8,
-            SvtrQuantization = Quantization.Fp32,
-            NumIntraOpThreads = 4
+            DetectionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig { Model = Model.DbNet, Quantization = Quantization.Int8, NumIntraOpThreads = 4 },
+                Parallelism = 1
+            },
+            RecognitionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig { Model = Model.Svtr, Quantization = Quantization.Fp32, NumIntraOpThreads = 4 },
+                Parallelism = 1
+            }
         };
 
         return ServiceCollectionExtensions.CreateOcrPipeline(options);

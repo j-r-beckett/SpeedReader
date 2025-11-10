@@ -4,7 +4,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ocr.InferenceEngine.Engines;
-using Ocr.InferenceEngine.Kernels;
 
 namespace Ocr.InferenceEngine;
 
@@ -12,64 +11,69 @@ public static class Factories
 {
     public static IServiceCollection AddInferenceEngine(
         this IServiceCollection services,
-        EngineOptions engineOptions,
-        InferenceKernelOptions inferenceOptions)
+        CpuEngineConfig config)
     {
-        var key = inferenceOptions.Model;
+        var key = config.Kernel.Model;
 
         services.TryAddSingleton<ModelLoader>();
 
-        switch (inferenceOptions)
-        {
-            case OnnxInferenceKernelOptions x:
-                services.AddKeyedSingleton(key, x);
-                services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
-                break;
-            case NullInferenceKernelOptions x:
-                services.AddKeyedSingleton(key, x);
-                services.AddKeyedSingleton<IInferenceKernel>(key, NullInferenceKernel.Factory);
-                break;
-            case CachedInferenceKernelOptions x:
-                services.AddKeyedSingleton(key, x);
-                services.AddKeyedSingleton<IInferenceKernel>(key, CachedOnnxInferenceKernel.Factory);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(inferenceOptions));
-        }
+        var kernelOptions = new OnnxInferenceKernelOptions(
+            model: config.Kernel.Model,
+            quantization: config.Kernel.Quantization,
+            initialParallelism: config.Parallelism,
+            numIntraOpThreads: config.Kernel.NumIntraOpThreads,
+            numInterOpThreads: config.Kernel.NumInterOpThreads,
+            enableProfiling: config.Kernel.EnableProfiling);
 
-        switch (engineOptions)
-        {
-            case AdaptiveCpuEngineOptions x:
-                services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine>(key, AdaptiveCpuEngine.Factory);
-                break;
-            case SteadyCpuEngineOptions x:
-                services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine>(key, SteadyCpuEngine.Factory);
-                break;
-            case AdaptiveGpuEngineOptions x:
-                services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine>(key, AdaptiveGpuEngine.Factory);
-                break;
-            case SteadyGpuEngineOptions x:
-                services.TryAddKeyedSingleton(key, x);
-                services.TryAddKeyedSingleton<IInferenceEngine>(key, SteadyGpuEngine.Factory);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(engineOptions));
-        }
+        services.AddKeyedSingleton(key, kernelOptions);
+        services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
+
+        services.AddKeyedSingleton(key, config);
+        services.AddKeyedSingleton<IInferenceEngine>(key, CpuEngine.Factory);
 
         return services;
     }
 
-    public static IInferenceEngine CreateInferenceEngine(
-        EngineOptions engineOptions,
-        InferenceKernelOptions inferenceOptions)
+    public static IServiceCollection AddInferenceEngine(
+        this IServiceCollection services,
+        GpuEngineConfig config)
+    {
+        var key = config.Kernel.Model;
+
+        services.TryAddSingleton<ModelLoader>();
+
+        var kernelOptions = new OnnxInferenceKernelOptions(
+            model: config.Kernel.Model,
+            quantization: config.Kernel.Quantization,
+            initialParallelism: 1,
+            numIntraOpThreads: config.Kernel.NumIntraOpThreads,
+            numInterOpThreads: config.Kernel.NumInterOpThreads,
+            enableProfiling: config.Kernel.EnableProfiling);
+
+        services.AddKeyedSingleton(key, kernelOptions);
+        services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
+
+        services.AddKeyedSingleton(key, config);
+        services.AddKeyedSingleton<IInferenceEngine>(key, GpuEngine.Factory);
+
+        return services;
+    }
+
+    public static IInferenceEngine CreateInferenceEngine(CpuEngineConfig config)
     {
         var services = new ServiceCollection();
-        services.AddInferenceEngine(engineOptions, inferenceOptions);
+        services.AddInferenceEngine(config);
         var provider = services.BuildServiceProvider();
-        var key = inferenceOptions.Model;
+        var key = config.Kernel.Model;
+        return provider.GetRequiredKeyedService<IInferenceEngine>(key);
+    }
+
+    public static IInferenceEngine CreateInferenceEngine(GpuEngineConfig config)
+    {
+        var services = new ServiceCollection();
+        services.AddInferenceEngine(config);
+        var provider = services.BuildServiceProvider();
+        var key = config.Kernel.Model;
         return provider.GetRequiredKeyedService<IInferenceEngine>(key);
     }
 }

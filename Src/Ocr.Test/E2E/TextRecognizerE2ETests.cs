@@ -10,7 +10,6 @@ using Ocr;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
-using Ocr.InferenceEngine.Kernels;
 using Ocr.Visualization;
 using Resources;
 using SixLabors.Fonts;
@@ -99,9 +98,16 @@ public class TextRecognizerE2ETests
     {
         var options = new OcrPipelineOptions
         {
-            RecognitionParallelism = 1,
-            SvtrQuantization = Quantization.Fp32,
-            NumIntraOpThreads = 4
+            DetectionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig { Model = Model.DbNet, Quantization = Quantization.Int8 },
+                Parallelism = 1
+            },
+            RecognitionEngine = new CpuEngineConfig
+            {
+                Kernel = new KernelConfig { Model = Model.Svtr, Quantization = Quantization.Fp32, NumIntraOpThreads = 4 },
+                Parallelism = 1
+            }
         };
 
         var services = new ServiceCollection();
