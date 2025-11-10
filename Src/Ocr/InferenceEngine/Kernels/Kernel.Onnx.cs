@@ -66,7 +66,7 @@ public class OnnxInferenceKernel : IInferenceKernel
         }
         catch (Exception ex)
         {
-            throw new OnnxInferenceException("An exception was thrown during ONNX inference", ex);
+            throw new OnnxInferenceException("An exception was thrown during Onnx inference", ex);
         }
 
         (float[], int[]) ExecuteInternal()
