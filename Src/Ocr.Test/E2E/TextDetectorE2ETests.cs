@@ -75,6 +75,8 @@ public class TextDetectorE2ETests
     {
         var options = new OcrPipelineOptions
         {
+            DetectionOptions = new DetectionOptions(),
+            RecognitionOptions = new RecognitionOptions(),
             DetectionEngine = new CpuEngineConfig
             {
                 Kernel = new OnnxInferenceKernelOptions(

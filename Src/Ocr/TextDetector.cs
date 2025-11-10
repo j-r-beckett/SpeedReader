@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using CommunityToolkit.HighPerformance;
+using Microsoft.Extensions.DependencyInjection;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
@@ -21,12 +22,19 @@ public class TextDetector
 
     public int InferenceEngineCapacity() => _inferenceEngine.CurrentMaxCapacity();
 
-    public TextDetector(IInferenceEngine inferenceEngine, int tileWidth = 640, int tileHeight = 640)
+    public static TextDetector Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredService<DetectionOptions>();
+        var engine = serviceProvider.GetRequiredKeyedService<IInferenceEngine>(key);
+        return new TextDetector(engine, options);
+    }
+
+    public TextDetector(IInferenceEngine inferenceEngine, DetectionOptions options)
     {
         _inferenceEngine = inferenceEngine;
         Console.WriteLine($"Inference engine capacity: {_inferenceEngine.CurrentMaxCapacity()}");
-        _tileWidth = tileWidth;
-        _tileHeight = tileHeight;
+        _tileWidth = options.TileWidth;
+        _tileHeight = options.TileHeight;
     }
 
     private const double OverlapMultiplier = 0.05;
