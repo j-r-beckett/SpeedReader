@@ -5,19 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Ocr.InferenceEngine.Kernels;
 
-public record NullInferenceKernelOptions : InferenceKernelOptions
-{
-    public NullInferenceKernelOptions(Model model, Quantization quantization, int[]? expectedInputShape, int[] outputShape)
-        : base(model, quantization)
-    {
-        ExpectedInputShape = expectedInputShape;
-        OutputShape = outputShape;
-    }
-
-    public int[]? ExpectedInputShape { get; init; }
-    public int[] OutputShape { get; init; }
-}
-
 public class NullInferenceKernel : IInferenceKernel
 {
     private readonly int[]? _expectedInputShape;

@@ -5,18 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Ocr.InferenceEngine.Kernels;
 
-public record CachedInferenceKernelOptions : InferenceKernelOptions
-{
-    public CachedInferenceKernelOptions(Model model, Quantization quantization, int intraOpThreads)
-        : base(model, quantization)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(intraOpThreads, 1, nameof(intraOpThreads));
-        IntraOpThreads = intraOpThreads;
-    }
-
-    public int IntraOpThreads { get; }
-}
-
 public class CachedOnnxInferenceKernel : OnnxInferenceKernel
 {
     public static new CachedOnnxInferenceKernel Factory(IServiceProvider serviceProvider, object? key)

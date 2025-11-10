@@ -7,13 +7,6 @@ using Ocr.InferenceEngine.Kernels;
 
 namespace Ocr.InferenceEngine.Engines;
 
-public record SteadyCpuEngineOptions : EngineOptions
-{
-    public SteadyCpuEngineOptions(int parallelism) => Parallelism = parallelism;
-
-    public int Parallelism { get; }
-}
-
 public class SteadyCpuEngine : IInferenceEngine
 {
     private readonly ManagedExecutor _managedExecutor;

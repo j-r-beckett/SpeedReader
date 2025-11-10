@@ -7,5 +7,3 @@ public interface IInferenceEngine : IAsyncDisposable
 {
     Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape);
 }
-
-public abstract record EngineOptions;

@@ -6,11 +6,6 @@ using Ocr.InferenceEngine.Kernels;
 
 namespace Ocr.InferenceEngine.Engines;
 
-public record SteadyGpuEngineOptions : EngineOptions
-{
-    public SteadyGpuEngineOptions() => throw new NotImplementedException();
-}
-
 public class SteadyGpuEngine : IInferenceEngine
 {
     public static SteadyGpuEngine Factory(IServiceProvider serviceProvider, object? key)

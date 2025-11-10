@@ -6,11 +6,6 @@ using Ocr.InferenceEngine.Kernels;
 
 namespace Ocr.InferenceEngine.Engines;
 
-public record AdaptiveGpuEngineOptions : EngineOptions
-{
-    public AdaptiveGpuEngineOptions() => throw new NotImplementedException();
-}
-
 public class AdaptiveGpuEngine : IInferenceEngine
 {
     public static AdaptiveGpuEngine Factory(IServiceProvider serviceProvider, object? key)
