@@ -17,15 +17,7 @@ public static class Factories
 
         services.TryAddSingleton<ModelLoader>();
 
-        var kernelOptions = new OnnxInferenceKernelOptions(
-            model: config.Kernel.Model,
-            quantization: config.Kernel.Quantization,
-            initialParallelism: config.Parallelism,
-            numIntraOpThreads: config.Kernel.NumIntraOpThreads,
-            numInterOpThreads: config.Kernel.NumInterOpThreads,
-            enableProfiling: config.Kernel.EnableProfiling);
-
-        services.AddKeyedSingleton(key, kernelOptions);
+        services.AddKeyedSingleton(key, config.Kernel);
         services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
 
         services.AddKeyedSingleton(key, config);
@@ -42,15 +34,7 @@ public static class Factories
 
         services.TryAddSingleton<ModelLoader>();
 
-        var kernelOptions = new OnnxInferenceKernelOptions(
-            model: config.Kernel.Model,
-            quantization: config.Kernel.Quantization,
-            initialParallelism: 1,
-            numIntraOpThreads: config.Kernel.NumIntraOpThreads,
-            numInterOpThreads: config.Kernel.NumInterOpThreads,
-            enableProfiling: config.Kernel.EnableProfiling);
-
-        services.AddKeyedSingleton(key, kernelOptions);
+        services.AddKeyedSingleton(key, config.Kernel);
         services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
 
         services.AddKeyedSingleton(key, config);

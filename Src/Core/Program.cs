@@ -104,23 +104,19 @@ public class Program
             MaxParallelism = 4,
             DetectionEngine = new CpuEngineConfig
             {
-                Kernel = new KernelConfig
-                {
-                    Model = Model.DbNet,
-                    Quantization = Quantization.Int8,
-                    NumIntraOpThreads = 4
-                },
+                Kernel = new OnnxInferenceKernelOptions(
+                    model: Model.DbNet,
+                    quantization: Quantization.Int8,
+                    numIntraOpThreads: 4),
                 Parallelism = 4,
                 AdaptiveTuning = new CpuTuningParameters()
             },
             RecognitionEngine = new CpuEngineConfig
             {
-                Kernel = new KernelConfig
-                {
-                    Model = Model.Svtr,
-                    Quantization = Quantization.Fp32,
-                    NumIntraOpThreads = 4
-                },
+                Kernel = new OnnxInferenceKernelOptions(
+                    model: Model.Svtr,
+                    quantization: Quantization.Fp32,
+                    numIntraOpThreads: 4),
                 Parallelism = 4,
                 AdaptiveTuning = new CpuTuningParameters()
             }
