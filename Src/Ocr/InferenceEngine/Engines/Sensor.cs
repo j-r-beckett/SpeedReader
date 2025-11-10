@@ -8,12 +8,8 @@ namespace Ocr.InferenceEngine.Engines;
 
 public class Sensor
 {
-    internal readonly ConcurrentDictionary<Token, long> StartTimes = new();
-    internal readonly ConcurrentDictionary<Token, long> EndTimes = new();
-    internal readonly Dictionary<string, string>? Tags;
-    internal int Parallelism;
-
-    public Sensor(Dictionary<string, string>? tags = null) => Tags = tags;
+    private readonly ConcurrentDictionary<Token, long> _startTimes = new();
+    private readonly ConcurrentDictionary<Token, long> _endTimes = new();
 
     public class SummaryStatistics
     {
@@ -31,28 +27,23 @@ public class Sensor
     {
         private readonly Sensor _parent;
         private readonly Token _token;
-        private readonly long _startTimestamp;
         private bool _disposed;
 
         public Job(Sensor parent)
         {
             _token = new Token();
-            _startTimestamp = Stopwatch.GetTimestamp();
-            parent.StartTimes.TryAdd(_token, _startTimestamp);
+            parent._startTimes.TryAdd(_token, Stopwatch.GetTimestamp());
             _parent = parent;
-            // MetricRecorder.RecordMetric("speedreader.inference.parallelism", Interlocked.Increment(ref _parent.Parallelism), _parent.Tags);
         }
 
         // Records a job end only the first time it's called, subsequent calls are ignored
         public void Dispose()
         {
+            // Returns current value of _disposed (before the set)
+            // Sets _disposed to true if it's false
             if (Interlocked.CompareExchange(ref _disposed, true, false))
                 return;
-            var endTimestamp = Stopwatch.GetTimestamp();
-            _parent.EndTimes.TryAdd(_token, endTimestamp);
-            // MetricRecorder.RecordMetric("speedreader.inference.counter", 1, _parent.Tags);
-            // MetricRecorder.RecordMetric("speedreader.inference.parallelism", Interlocked.Decrement(ref _parent.Parallelism), _parent.Tags);
-            // MetricRecorder.RecordMetric("speedreader.inference.duration", Stopwatch.GetElapsedTime(_startTimestamp, endTimestamp).TotalMilliseconds, _parent.Tags);
+            _parent._endTimes.TryAdd(_token, Stopwatch.GetTimestamp());
         }
     }
 
@@ -69,9 +60,6 @@ public class Sensor
         var enclosedJobs = GetEnclosedJobs(snapshot, startTimestamp, endTimestamp);
 
         // Avg job duration
-        var durations = enclosedJobs.Select(p => Stopwatch.GetElapsedTime(p.Start, p.End)).ToList();
-        if (durations.Count > 0)
-            Console.WriteLine($"Durations: {string.Join(", ", durations.Select(d => (int)d.TotalMilliseconds))}");
         var totalDuration = enclosedJobs.Aggregate(0.0, (sum, pair) => sum + Stopwatch.GetElapsedTime(pair.Start, pair.End).TotalSeconds);
         var avgDuration = enclosedJobs.Count == 0 ? 0 : totalDuration / enclosedJobs.Count;
 
@@ -169,12 +157,12 @@ public class Sensor
         foreach (var pair in GetEnclosedJobs(snapshot, 0, beforeTimestamp, inclusiveUpperBound: false))
         {
             // Remove ends first to avoid end times without corresponding start times
-            EndTimes.Remove(pair.Token, out _);
-            StartTimes.Remove(pair.Token, out _);
+            _endTimes.Remove(pair.Token, out _);
+            _startTimes.Remove(pair.Token, out _);
         }
     }
 
-    private Snapshot TakeSnapshot() => new(StartTimes, EndTimes);
+    private Snapshot TakeSnapshot() => new(_startTimes, _endTimes);
 
     // Get all jobs that started and ended in [start, end]
     private static List<(long Start, long End, Token Token)> GetEnclosedJobs(Snapshot snapshot, long startTimestamp, long endTimestamp, bool inclusiveUpperBound = true)
