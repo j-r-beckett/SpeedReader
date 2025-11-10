@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Numerics.Tensors;
+using Microsoft.Extensions.DependencyInjection;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
@@ -23,11 +24,18 @@ public class TextRecognizer
 
     public int InferenceEngineCapacity() => _inferenceEngine.CurrentMaxCapacity();
 
-    public TextRecognizer(IInferenceEngine inferenceEngine, int inputWidth = 160, int inputHeight = 48)
+    public static TextRecognizer Factory(IServiceProvider serviceProvider, object? key)
+    {
+        var options = serviceProvider.GetRequiredService<RecognitionOptions>();
+        var engine = serviceProvider.GetRequiredKeyedService<IInferenceEngine>(key);
+        return new TextRecognizer(engine, options);
+    }
+
+    public TextRecognizer(IInferenceEngine inferenceEngine, RecognitionOptions options)
     {
         _inferenceEngine = inferenceEngine;
-        _inputWidth = inputWidth;
-        _inputHeight = inputHeight;
+        _inputWidth = options.RecognitionInputWidth;
+        _inputHeight = options.RecognitionInputHeight;
     }
 
     public List<(float[], int[])> Preprocess(List<BoundingBox> regions, Image<Rgb24> image)

@@ -7,21 +7,20 @@ namespace Ocr;
 
 public record DetectionOptions
 {
-
+    public int TileWidth { get; init; } = 640;
+    public int TileHeight { get; init; } = 640;
 }
 
 public record RecognitionOptions
 {
-
+    public int RecognitionInputWidth { get; init; } = 160;
+    public int RecognitionInputHeight { get; init; } = 48;
 }
 
 public record OcrPipelineOptions
 {
-    public int TileWidth { get; init; } = 640;
-    public int TileHeight { get; init; } = 640;
-
-    public int RecognitionInputWidth { get; init; } = 160;
-    public int RecognitionInputHeight { get; init; } = 48;
+    public required DetectionOptions DetectionOptions { get; init; }
+    public required RecognitionOptions RecognitionOptions { get; init; }
 
     public required CpuEngineConfig DetectionEngine { get; init; }
     public required CpuEngineConfig RecognitionEngine { get; init; }

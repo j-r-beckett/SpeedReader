@@ -98,6 +98,8 @@ public class TextRecognizerE2ETests
     {
         var options = new OcrPipelineOptions
         {
+            DetectionOptions = new DetectionOptions(),
+            RecognitionOptions = new RecognitionOptions(),
             DetectionEngine = new CpuEngineConfig
             {
                 Kernel = new OnnxInferenceKernelOptions(

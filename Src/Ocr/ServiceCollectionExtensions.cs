@@ -16,17 +16,11 @@ public static class ServiceCollectionExtensions
         services.AddInferenceEngine(options.DetectionEngine);
         services.AddInferenceEngine(options.RecognitionEngine);
 
-        services.AddSingleton(sp =>
-        {
-            var dbnetEngine = sp.GetRequiredKeyedService<IInferenceEngine>(Model.DbNet);
-            return new TextDetector(dbnetEngine, options.TileWidth, options.TileHeight);
-        });
+        services.AddSingleton(options.DetectionOptions);
+        services.AddSingleton(options.RecognitionOptions);
 
-        services.AddSingleton(sp =>
-        {
-            var svtrEngine = sp.GetRequiredKeyedService<IInferenceEngine>(Model.Svtr);
-            return new TextRecognizer(svtrEngine, options.RecognitionInputWidth, options.RecognitionInputHeight);
-        });
+        services.AddSingleton(sp => TextDetector.Factory(sp, Model.DbNet));
+        services.AddSingleton(sp => TextRecognizer.Factory(sp, Model.Svtr));
 
         services.AddSingleton(sp =>
         {

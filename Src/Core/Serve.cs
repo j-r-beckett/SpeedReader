@@ -37,6 +37,8 @@ public static class Serve
         // Register OcrPipeline and dependencies using DI
         var ocrPipelineOptions = new OcrPipelineOptions
         {
+            DetectionOptions = new DetectionOptions(),
+            RecognitionOptions = new RecognitionOptions(),
             DetectionEngine = new CpuEngineConfig
             {
                 Kernel = new OnnxInferenceKernelOptions(
