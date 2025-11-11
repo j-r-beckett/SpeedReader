@@ -3,7 +3,7 @@
 
 using Ocr.Algorithms;
 
-namespace Ocr.Test.Algorithms;
+namespace Ocr.Test;
 
 public class MorphTests
 {

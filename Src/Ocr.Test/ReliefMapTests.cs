@@ -1,11 +1,10 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 
-namespace Ocr.Test.Algorithms;
+namespace Ocr.Test;
 
 public class ReliefMapTests
 {
