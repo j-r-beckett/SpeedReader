@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
@@ -32,7 +31,7 @@ public class MockInferenceEngine : IInferenceEngine
 public class MockTextDetector : TextDetector
 {
     public static readonly List<BoundingBox> SimpleResult
-        = [BoundingBox.Create(new Polygon { Points = new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) }.ToImmutableList() })!];
+        = [BoundingBox.Create(new Polygon(new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) }))!];
 
     private readonly Func<Task<List<BoundingBox>>> _detect;
 

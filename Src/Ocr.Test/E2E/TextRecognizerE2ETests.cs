@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
 using System.Diagnostics;
 using Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -127,10 +126,7 @@ public class TextRecognizerE2ETests
         vizBuilder.AddBaseImage(image);
         vizBuilder.AddOrientedBBoxes([rect], true);
 
-        var polygon = new Polygon
-        {
-            Points = rect.Corners().Select(p => (Geometry.Point)p).ToImmutableList()
-        };
+        var polygon = new Polygon(rect.Corners().Select(p => (Geometry.Point)p));
         var bbox = new BoundingBox(polygon, rect);
         var result = await recognizer.Recognize([bbox], image, vizBuilder);
 

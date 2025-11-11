@@ -1,7 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace Ocr.Geometry;
@@ -35,9 +35,9 @@ public record RotatedRectangle
 public static partial class RotatedRectangleExtensions
 {
     public static Polygon ToPolygon(this RotatedRectangle rotatedRectangle) =>
-        new() { Points = rotatedRectangle.Corners().Select(p => (Point)p).ToImmutableList() };
+        new(rotatedRectangle.Corners().Select(p => (Point)p));
 
-    public static ImmutableList<PointF> Corners(this RotatedRectangle rotatedRectangle)
+    public static ReadOnlyCollection<PointF> Corners(this RotatedRectangle rotatedRectangle)
     {
         var cos = Math.Cos(rotatedRectangle.Angle);
         var sin = Math.Sin(rotatedRectangle.Angle);
@@ -66,6 +66,6 @@ public static partial class RotatedRectangleExtensions
             Y = rotatedRectangle.Y + rotatedRectangle.Height * cos
         };
 
-        return [topLeft, topRight, bottomRight, bottomLeft];  // clockwise order
+        return new List<PointF> { topLeft, topRight, bottomRight, bottomLeft }.AsReadOnly();  // clockwise order
     }
 }

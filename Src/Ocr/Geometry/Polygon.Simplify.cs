@@ -1,14 +1,12 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
-
 namespace Ocr.Geometry;
 
 public static partial class PolygonExtensions
 {
     public static Polygon Simplify(this Polygon polygon, double tolerance = 1) =>
-        new() { Points = Simplify(polygon.Points.ToList(), tolerance).ToImmutableList() };
+        new(Simplify(polygon.Points.ToList(), tolerance));
 
     private static List<Point> Simplify(this List<Point> polygon, double tolerance)
     {

@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 
@@ -234,7 +233,7 @@ public class TraceAllBoundariesTests
         }
 
         // Compute convex hull
-        var polygon = new Polygon { Points = points.ToImmutableList() };
+        var polygon = new Polygon(points);
         var hull = polygon.ToConvexHull();
         return hull.Points.ToList();
     }

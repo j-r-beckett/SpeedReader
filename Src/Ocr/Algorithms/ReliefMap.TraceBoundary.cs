@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
 using Ocr.Geometry;
 
 namespace Ocr.Algorithms;
@@ -26,7 +25,7 @@ public static partial class ReliefMapExtensions
         if (direction == -1)
         {
             // Boundary is a single pixel
-            return new Polygon { Points = [start] };
+            return new Polygon([start]);
         }
 
         do
@@ -62,7 +61,7 @@ public static partial class ReliefMapExtensions
             }
         } while (true);
 
-        return new Polygon { Points = boundary.ToImmutableList() };
+        return new Polygon(boundary);
 
         // Helper method call graph:
         //   GetStartingDirection -> IsBackground

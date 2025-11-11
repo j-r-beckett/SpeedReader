@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Ocr.Geometry;
@@ -30,7 +29,7 @@ public class OrientedRectangleCreationTests
         var points = new List<Point> { (50, 0), (100, 50), (50, 100), (0, 50) };
 
         // Act
-        var convexHull = new Polygon { Points = points.ToImmutableList() }.ToConvexHull();
+        var convexHull = new Polygon(points).ToConvexHull();
         var rotatedRect = convexHull.ToRotatedRectangle();
         var orientedRectF = rotatedRect.Corners();
         var orientedRect = rotatedRect.ToPolygon().Points;
@@ -133,7 +132,7 @@ public class OrientedRectangleCreationTests
                 continue;
 
             // Act
-            var polygon = new Polygon { Points = points.ToImmutableList() };
+            var polygon = new Polygon(points);
             var convexHull = polygon.ToConvexHull();
             var rotatedRect = convexHull.ToRotatedRectangle();
             var orientedRectF = rotatedRect.Corners();

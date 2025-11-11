@@ -1,7 +1,8 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
+using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace Ocr.Geometry;
@@ -9,7 +10,10 @@ namespace Ocr.Geometry;
 public record Polygon
 {
     [JsonPropertyName("points")]
-    public required ImmutableList<Point> Points { get; init; }
+    public required ReadOnlyCollection<Point> Points { get; init; }
+
+    [SetsRequiredMembers]
+    public Polygon(IEnumerable<Point> points) => Points = points.ToList().AsReadOnly();
 }
 
 public static partial class PolygonExtensions
