@@ -7,8 +7,7 @@ namespace Ocr.Algorithms;
 
 public static partial class ReliefMapExtensions
 {
-    // Set all pixels connected to start to the given value using scanline flood fill
-    public static void FloodFill(this ReliefMap map, Point start, float value)
+    public static void FloodFill(this ReliefMap map, Point start)
     {
         // Quick exit if start is already processed or background
         if (map[start.X, start.Y] <= 0)
@@ -19,7 +18,7 @@ public static partial class ReliefMapExtensions
         // Scan and fill the initial line
         int left = ScanLeft(map, start.X, start.Y);
         int right = ScanRight(map, start.X, start.Y);
-        FillScanline(map, start.Y, left, right, value);
+        FillScanline(map, start.Y, left, right);
         stack.Push((start.Y, left, right));
 
         while (stack.Count > 0)
@@ -28,11 +27,11 @@ public static partial class ReliefMapExtensions
 
             // Check line above
             if (y > 0)
-                ScanAndPushLines(map, y - 1, xLeft, xRight, value, stack);
+                ScanAndPushLines(map, y - 1, xLeft, xRight, stack);
 
             // Check line below
             if (y < map.Height - 1)
-                ScanAndPushLines(map, y + 1, xLeft, xRight, value, stack);
+                ScanAndPushLines(map, y + 1, xLeft, xRight, stack);
         }
     }
 
@@ -50,13 +49,13 @@ public static partial class ReliefMapExtensions
         return x;
     }
 
-    private static void FillScanline(ReliefMap map, int y, int xLeft, int xRight, float value)
+    private static void FillScanline(ReliefMap map, int y, int xLeft, int xRight)
     {
         for (int x = xLeft; x <= xRight; x++)
-            map[x, y] = value;
+            map[x, y] = -1;
     }
 
-    private static void ScanAndPushLines(ReliefMap map, int y, int xLeft, int xRight, float value, Stack<(int y, int xLeft, int xRight)> stack)
+    private static void ScanAndPushLines(ReliefMap map, int y, int xLeft, int xRight, Stack<(int y, int xLeft, int xRight)> stack)
     {
         int searchLeft = Math.Max(0, xLeft - 1);
         int searchRight = Math.Min(map.Width - 1, xRight + 1);
@@ -73,7 +72,7 @@ public static partial class ReliefMapExtensions
             // Found a span to fill
             int left = ScanLeft(map, x, y);
             int right = ScanRight(map, x, y);
-            FillScanline(map, y, left, right, value);
+            FillScanline(map, y, left, right);
             stack.Push((y, left, right));
 
             x = right + 1;

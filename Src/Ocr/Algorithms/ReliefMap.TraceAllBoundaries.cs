@@ -19,7 +19,7 @@ public static partial class ReliefMapExtensions
         map.Dilate();
 
         // Find all boundaries
-        var boundaries = new List<Polygon>();  // Rough estimate of how many words can fit in a 640x640 tile
+        var boundaries = new List<Polygon>();
 
         for (int y = 0; y < map.Height; y++)
         {
@@ -34,7 +34,7 @@ public static partial class ReliefMapExtensions
                     if (boundary.Points.Count > 0)
                     {
                         boundaries.Add(boundary);
-                        map.FloodFill((x, y), -1);  // Set boundary + enclosed pixels to -1 to prevent re-tracing
+                        map.FloodFill((x, y));  // Set boundary + enclosed pixels to -1 to prevent re-tracing
                     }
                 }
             }
