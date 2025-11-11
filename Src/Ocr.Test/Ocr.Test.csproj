@@ -33,4 +33,8 @@
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Geometry\" />
+  </ItemGroup>
+
 </Project>

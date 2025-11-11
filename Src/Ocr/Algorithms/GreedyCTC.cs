@@ -118,16 +118,4 @@ public static class GreedyCTC
         }
         return maxIndex;
     }
-
-    // private static int IndexOfMax(Span<float> sequence)
-    // {
-    //     var maxIndex = 0;
-    //     for (var i = 1; i < sequence.Length; i++)
-    //     {
-    //         if (sequence[i] > sequence[maxIndex])
-    //             maxIndex = i;
-    //     }
-    //
-    //     return maxIndex;
-    // }
 }

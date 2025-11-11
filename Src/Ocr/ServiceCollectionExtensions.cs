@@ -22,12 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(sp => TextDetector.Factory(sp, Model.DbNet));
         services.AddSingleton(sp => TextRecognizer.Factory(sp, Model.Svtr));
 
-        services.AddSingleton(sp =>
-        {
-            var detector = sp.GetRequiredService<TextDetector>();
-            var recognizer = sp.GetRequiredService<TextRecognizer>();
-            return new OcrPipeline(detector, recognizer);
-        });
+        services.AddSingleton<OcrPipeline>();
 
         return services;
     }
