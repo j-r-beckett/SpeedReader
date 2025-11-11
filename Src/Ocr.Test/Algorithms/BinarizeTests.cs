@@ -30,7 +30,7 @@ public class BinarizeTests
             var mapExpected = new ReliefMap([.. data], width, height);
 
             mapActual.Binarize(threshold);
-            NaiveBinarize(mapExpected, threshold);
+            SimpleBinarize(mapExpected, threshold);
 
             for (int i = 0; i < data.Length; i++)
             {
@@ -39,7 +39,7 @@ public class BinarizeTests
         }
     }
 
-    private static void NaiveBinarize(ReliefMap map, float threshold)
+    private static void SimpleBinarize(ReliefMap map, float threshold)
     {
         for (int i = 0; i < map.Data.Length; i++)
         {
