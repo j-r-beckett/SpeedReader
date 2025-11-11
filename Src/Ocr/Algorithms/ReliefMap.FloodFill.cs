@@ -7,75 +7,33 @@ namespace Ocr.Algorithms;
 
 public static partial class ReliefMapExtensions
 {
+    // Fills all pixels > 0 that are connected to start with -1
     public static void FloodFill(this ReliefMap map, Point start)
     {
-        // Quick exit if start is already processed or background
         if (map[start.X, start.Y] <= 0)
             return;
 
-        var stack = new Stack<(int y, int xLeft, int xRight)>();
+        var queue = new Queue<(int x, int y)>();
+        queue.Enqueue((start.X, start.Y));
+        map[start.X, start.Y] = -1;
 
-        // Scan and fill the initial line
-        int left = ScanLeft(map, start.X, start.Y);
-        int right = ScanRight(map, start.X, start.Y);
-        FillScanline(map, start.Y, left, right);
-        stack.Push((start.Y, left, right));
+        (int dx, int dy)[] neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
-        while (stack.Count > 0)
+        while (queue.Count > 0)
         {
-            var (y, xLeft, xRight) = stack.Pop();
+            var (x, y) = queue.Dequeue();
 
-            // Check line above
-            if (y > 0)
-                ScanAndPushLines(map, y - 1, xLeft, xRight, stack);
+            foreach (var (dx, dy) in neighbors)
+            {
+                int nx = x + dx;
+                int ny = y + dy;
 
-            // Check line below
-            if (y < map.Height - 1)
-                ScanAndPushLines(map, y + 1, xLeft, xRight, stack);
-        }
-    }
-
-    private static int ScanLeft(ReliefMap map, int x, int y)
-    {
-        while (x > 0 && map[x - 1, y] > 0)
-            x--;
-        return x;
-    }
-
-    private static int ScanRight(ReliefMap map, int x, int y)
-    {
-        while (x < map.Width - 1 && map[x + 1, y] > 0)
-            x++;
-        return x;
-    }
-
-    private static void FillScanline(ReliefMap map, int y, int xLeft, int xRight)
-    {
-        for (int x = xLeft; x <= xRight; x++)
-            map[x, y] = -1;
-    }
-
-    private static void ScanAndPushLines(ReliefMap map, int y, int xLeft, int xRight, Stack<(int y, int xLeft, int xRight)> stack)
-    {
-        int searchLeft = Math.Max(0, xLeft - 1);
-        int searchRight = Math.Min(map.Width - 1, xRight + 1);
-
-        int x = searchLeft;
-        while (x <= searchRight)
-        {
-            while (x <= searchRight && map[x, y] <= 0)
-                x++;
-
-            if (x > searchRight)
-                break;
-
-            // Found a span to fill
-            int left = ScanLeft(map, x, y);
-            int right = ScanRight(map, x, y);
-            FillScanline(map, y, left, right);
-            stack.Push((y, left, right));
-
-            x = right + 1;
+                if (nx >= 0 && ny >= 0 && nx < map.Width && ny < map.Height && map[nx, ny] > 0)
+                {
+                    map[nx, ny] = -1;
+                    queue.Enqueue((nx, ny));
+                }
+            }
         }
     }
 }
