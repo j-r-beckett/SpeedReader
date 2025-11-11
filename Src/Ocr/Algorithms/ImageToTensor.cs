@@ -8,25 +8,16 @@ namespace Ocr.Algorithms;
 
 public static class PixelsToFloatsExtensions
 {
-    public static float[] ToNormalizedChwTensor(this Image<Rgb24> image, int height, int width, float mean, float std)
-    {
-        Span<float> means = [mean, mean, mean];
-        Span<float> stds = [std, std, std];
-        return image.ToNormalizedChwTensor(new Rectangle(0, 0, image.Width, image.Height), height, width, means, stds);
-    }
-
     public static float[] ToNormalizedChwTensor(this Image<Rgb24> image, Rectangle rect, ReadOnlySpan<float> means, ReadOnlySpan<float> stds)
-        => ToNormalizedChwTensor(image, rect, rect.Height, rect.Width, means, stds);
-
-
-    public static float[] ToNormalizedChwTensor(this Image<Rgb24> image, Rectangle rect, int height, int width, ReadOnlySpan<float> means, ReadOnlySpan<float> stds)
     {
         if (means.Length != 3 || stds.Length != 3)
             throw new ArgumentException("means and stds must have length 3 (R, G, B)");
 
-        var result = new float[3 * height * width];
+        var height = rect.Height;
+        var width = rect.Width;
+        var result = new float[3 * height * width];  // CHW, 3 channels (rgb), height, width
 
-        // Copy to local variables to avoid capturing spans in lambda
+        // Copy to local variables b/c we can't use spans in the ProcessPixelRows lambda
         var meanR = means[0];
         var meanG = means[1];
         var meanB = means[2];
@@ -36,19 +27,20 @@ public static class PixelsToFloatsExtensions
 
         image.ProcessPixelRows(accessor =>
         {
-            var maxH = Math.Min(rect.Height, height);
-            var maxW = Math.Min(rect.Width, width);
-
-            for (var h = 0; h < maxH; h++)
+            for (var h = 0; h < height; h++)
             {
                 var row = accessor.GetRowSpan(rect.Top + h);
-                for (var w = 0; w < maxW; w++)
+                for (var w = 0; w < width; w++)
                 {
+                    // Pixel position is relative to rectangle
                     var pixel = row[rect.Left + w];
+
+                    // Navigate to C -> H -> W tensor position
                     var rIndex = 0 * height * width + h * width + w;
                     var gIndex = 1 * height * width + h * width + w;
                     var bIndex = 2 * height * width + h * width + w;
 
+                    // Copy from pixel to tensor, normalizing as we go
                     result[rIndex] = (pixel.R - meanR) / stdR;
                     result[gIndex] = (pixel.G - meanG) / stdG;
                     result[bIndex] = (pixel.B - meanB) / stdB;
