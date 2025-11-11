@@ -44,8 +44,6 @@ public record ReliefMap
         return this.TraceAllBoundariesInternal();  // This mutates the relief map, so we can only do it once
     }
 
-    // private Span2D<float> Span2D => Data.AsSpan().AsSpan2D(Height, Width);
-
     internal float this[int x, int y]
     {
         get => Data[y * Width + x];

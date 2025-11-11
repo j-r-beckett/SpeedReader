@@ -32,7 +32,6 @@ public class TextDetector
     public TextDetector(IInferenceEngine inferenceEngine, DetectionOptions options)
     {
         _inferenceEngine = inferenceEngine;
-        Console.WriteLine($"Inference engine capacity: {_inferenceEngine.CurrentMaxCapacity()}");
         _tileWidth = options.TileWidth;
         _tileHeight = options.TileHeight;
     }
