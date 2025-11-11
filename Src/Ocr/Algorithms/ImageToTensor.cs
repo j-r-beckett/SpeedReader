@@ -15,6 +15,10 @@ public static class PixelsToFloatsExtensions
         return image.ToNormalizedChwTensor(new Rectangle(0, 0, image.Width, image.Height), height, width, means, stds);
     }
 
+    public static float[] ToNormalizedChwTensor(this Image<Rgb24> image, Rectangle rect, ReadOnlySpan<float> means, ReadOnlySpan<float> stds)
+        => ToNormalizedChwTensor(image, rect, rect.Height, rect.Width, means, stds);
+
+
     public static float[] ToNormalizedChwTensor(this Image<Rgb24> image, Rectangle rect, int height, int width, ReadOnlySpan<float> means, ReadOnlySpan<float> stds)
     {
         if (means.Length != 3 || stds.Length != 3)

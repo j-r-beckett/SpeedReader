@@ -11,6 +11,7 @@ using Ocr.Telemetry;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace Ocr;
 
@@ -42,20 +43,33 @@ public class TextDetector
     {
         vizBuilder.AddBaseImage(image);
 
+        // The last tile is the bottom-right tile. The bottom-right corner of the bottom-right tile is the bottom-right
+        // corner of the image formed out of all tiles
         var tileRects = tiling.Tiles;
-        var tiledWidth = tileRects[^1].Right;
-        var tiledHeight = tileRects[^1].Bottom;
-        using var resized = image.HardAspectResize(new Size(tiledWidth, tiledHeight));
-        int[] inferenceShape = [3, _tileHeight, _tileWidth];
-        return tileRects.Select(t => (PreprocessTile(t), inferenceShape)).ToList();
+        var bottomRightTile = tileRects[^1];
+        var tiledWidth = bottomRightTile.Right;
+        var tiledHeight = bottomRightTile.Bottom;
 
-        float[] PreprocessTile(Rectangle tile)
+        // Resize, preserves aspect ratio, pads with black, positions at top-left
+        using var resized = image.Clone(x => x
+            .Resize(new ResizeOptions
+            {
+                Size = new Size(tiledWidth, tiledHeight),
+                Mode = ResizeMode.Pad,
+                Position = AnchorPositionMode.TopLeft
+            }));
+
+        int[] tensorShape = [3, _tileHeight, _tileWidth];  // CHW
+
+        // Thanks to the resize, we can now cut the image perfectly into tiles
+        return tileRects.Select(t => (ToTensor(t), inferenceShape: tensorShape)).ToList();
+
+        float[] ToTensor(Rectangle tile)
         {
-            var (height, width) = (tile.Height, tile.Width);
-            // ImageNet normalization
+            // Crop tile rect out of the image, convert it to a tensor (float array), apply ImageNet normalization
             Span<float> means = [123.675f, 116.28f, 103.53f];
             Span<float> stds = [58.395f, 57.12f, 57.375f];
-            return resized.ToNormalizedChwTensor(tile, height, width, means, stds);
+            return resized.ToNormalizedChwTensor(tile, means, stds);
         }
     }
 
