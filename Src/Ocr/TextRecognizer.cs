@@ -56,10 +56,13 @@ public class TextRecognizer
                 .Resize(new ResizeOptions
                 {
                     Size = new Size(width, height),
-                    Mode = ResizeMode.Max,
-                    Sampler = KnownResamplers.Triangle
+                    Mode = ResizeMode.Pad,
+                    Position = AnchorPositionMode.TopLeft
                 }));
-            return textImg.ToNormalizedChwTensor(height, width, 127.5f, 127.5f);
+            // Normalize from [0, 255] to [-1, 1]
+            Span<float> means = [127.5f, 127.5f, 127.5f];
+            Span<float> stds = [127.5f, 127.5f, 127.5f];
+            return textImg.ToNormalizedChwTensor(new Rectangle(0, 0, width, height), means, stds);
         }
     }
 
