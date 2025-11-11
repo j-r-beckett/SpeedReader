@@ -1,7 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace Ocr.Geometry;
@@ -41,14 +41,11 @@ public record AxisAlignedRectangle
 public static class AxisAlignedRectangleExtensions
 {
     public static Polygon ToPolygon(this AxisAlignedRectangle rectangle) =>
-        new()
+        new(new List<Point>
         {
-            Points = new List<Point>
-            {
-                new() { X = rectangle.X, Y = rectangle.Y },
-                new() { X = rectangle.X + rectangle.Width, Y = rectangle.Y },
-                new() { X = rectangle.X + rectangle.Width, Y = rectangle.Y + rectangle.Height },
-                new() { X = rectangle.X, Y = rectangle.Y + rectangle.Height }
-            }.ToImmutableList()
-        };
+            new() { X = rectangle.X, Y = rectangle.Y },
+            new() { X = rectangle.X + rectangle.Width, Y = rectangle.Y },
+            new() { X = rectangle.X + rectangle.Width, Y = rectangle.Y + rectangle.Height },
+            new() { X = rectangle.X, Y = rectangle.Y + rectangle.Height }
+        });
 }

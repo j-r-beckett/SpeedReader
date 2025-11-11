@@ -1,7 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 
 namespace Ocr.Geometry;
 
@@ -43,7 +43,7 @@ public static partial class RotatedRectangleExtensions
         return bestRectangle ?? throw new InvalidOperationException("Could not compute oriented rectangle");
     }
 
-    private static RotatedRectangle FindRectangleAlignedWithEdge(ImmutableList<Point> points, (int X, int Y) edge)
+    private static RotatedRectangle FindRectangleAlignedWithEdge(ReadOnlyCollection<Point> points, (int X, int Y) edge)
     {
         // 1. Compute edge unit vector and normal vector. These are the basis vectors for the rectangle
         // 2. Project points onto the basis vectors
