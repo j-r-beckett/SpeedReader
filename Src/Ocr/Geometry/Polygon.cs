@@ -17,11 +17,12 @@ public record Polygon
 
     public Polygon(List<PointF> points) => Points = points.AsReadOnly();
 
-    public ConvexHull ToConvexHull()
+    public ConvexHull? ToConvexHull()
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(Points.Count, 3);
+        if (Points.Count < 3)
+            return null;
 
-        var points = Points.ToList();  // Copy the points to avoid modifying the original polygon
+        var points = Points.ToList();  // Create a mutable copy
 
         var stack = new List<PointF>();
         var minYPoint = GetStartPoint(points);
@@ -99,30 +100,16 @@ public record Polygon
         };
     }
 
-    public Polygon Dilate(double dilationRatio)
+    public Polygon? Dilate(double dilationRatio)
     {
-        const double MinimumArea = 9;
-
-        var points = Points;
-
-        if (points.Count < 3)
-        {
-            return new Polygon();
-        }
-
         var clipperPathD = new PathD();
-        foreach (var point in points)
+        foreach (var point in Points)
         {
             clipperPathD.Add(new PointD(point.X, point.Y));
         }
 
         double area = Math.Abs(Clipper.Area(clipperPathD));
         double perimeter = CalculatePerimeter(clipperPathD);
-
-        if (perimeter <= 0 || area < MinimumArea)
-        {
-            return new Polygon();
-        }
 
         double offset = area * dilationRatio / perimeter;
 
@@ -133,10 +120,8 @@ public record Polygon
         var solution = new Paths64();
         clipperOffset.Execute(offset, solution);
 
-        if (solution.Count == 0 || solution[0].Count < 3)
-        {
-            return new Polygon();
-        }
+        if (solution.Count == 0)
+            return null;
 
         var dilatedPolygon = new List<PointF>(solution[0].Count);
         for (int i = 0; i < solution[0].Count; i++)

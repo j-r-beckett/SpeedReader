@@ -30,8 +30,8 @@ public class OrientedRectangleCreationTests
 
         // Act
         var convexHull = new Polygon(points).ToConvexHull();
-        var rotatedRect = convexHull.ToRotatedRectangle();
-        var orientedRect = rotatedRect.Corners().Points;
+        var rotatedRect = convexHull!.ToRotatedRectangle();
+        var orientedRect = rotatedRect!.Corners().Points;
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
@@ -132,8 +132,8 @@ public class OrientedRectangleCreationTests
             // Act
             var polygon = new Polygon(points);
             var convexHull = polygon.ToConvexHull();
-            var rotatedRect = convexHull.ToRotatedRectangle();
-            var orientedRectF = rotatedRect.Corners().Points;
+            var rotatedRect = convexHull!.ToRotatedRectangle();
+            var orientedRectF = rotatedRect!.Corners().Points;
             // var orientedRect = orientedRectF.Select(c => (Point)c).ToList();
 
             // Create debug visualization

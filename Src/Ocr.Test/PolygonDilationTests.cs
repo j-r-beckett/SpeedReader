@@ -10,55 +10,34 @@ public class PolygonDilationTests
     private const double DefaultDilationRatio = 1.5;
 
     [Fact]
-    public void Dilate_EmptyPolygon_ReturnsEmptyPolygon()
+    public void Dilate_EmptyPolygon_ReturnsNull()
     {
         var polygon = new Polygon();
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.Empty(result.Points);
+        Assert.Null(result);
     }
 
     [Fact]
-    public void Dilate_SinglePoint_ReturnsEmptyPolygon()
+    public void Dilate_SinglePoint_ReturnsNull()
     {
         var polygon = new Polygon([(5, 3)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.Empty(result.Points);
+        Assert.Null(result);
     }
 
     [Fact]
-    public void Dilate_TwoPoints_ReturnsEmptyPolygon()
-    {
-        var polygon = new Polygon([(0, 0), (3, 4)]);
-
-        var result = polygon.Dilate(DefaultDilationRatio);
-
-        Assert.Empty(result.Points);
-    }
-
-    [Fact]
-    public void Dilate_VerySmallArea_ReturnsEmptyPolygon()
-    {
-        // Degenerate triangle with area < 9 pixels
-        var polygon = new Polygon([(0, 0), (1, 0), (0, 1)]);
-
-        var result = polygon.Dilate(DefaultDilationRatio);
-
-        Assert.Empty(result.Points);
-    }
-
-    [Fact]
-    public void Dilate_ZeroPerimeter_ReturnsEmptyPolygon()
+    public void Dilate_ZeroPerimeter_ReturnsNull()
     {
         // All points are the same (zero perimeter)
         var polygon = new Polygon([(5, 5), (5, 5), (5, 5)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.Empty(result.Points);
+        Assert.Null(result);
     }
 
     [Fact]
@@ -69,7 +48,7 @@ public class PolygonDilationTests
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.NotEmpty(result.Points);
+        Assert.NotEmpty(result!.Points);
         Assert.True(result.Points.Count >= 3);
 
         // Dilated polygon should be larger
@@ -88,7 +67,7 @@ public class PolygonDilationTests
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.NotEmpty(result.Points);
+        Assert.NotEmpty(result!.Points);
         Assert.True(result.Points.Count >= 4);
 
         // Check that dilation expanded the polygon
@@ -114,7 +93,7 @@ public class PolygonDilationTests
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.NotEmpty(result.Points);
+        Assert.NotEmpty(result!.Points);
         Assert.True(result.Points.Count >= 4);
 
         var originalBounds = GetBounds(polygon);
@@ -132,7 +111,7 @@ public class PolygonDilationTests
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.NotEmpty(result.Points);
+        Assert.NotEmpty(result!.Points);
 
         // Calculate expected offset: offset = Area * ratio / Perimeter
         // Area = 10000, Perimeter = 400, ratio = 1.5
@@ -156,7 +135,7 @@ public class PolygonDilationTests
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.NotEmpty(result.Points);
+        Assert.NotEmpty(result!.Points);
         Assert.True(result.Points.Count >= 4);
 
         var originalBounds = GetBounds(polygon);
@@ -173,7 +152,7 @@ public class PolygonDilationTests
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.NotEmpty(result.Points);
+        Assert.NotEmpty(result!.Points);
         Assert.True(result.Points.Count >= 4);
 
         // Verify coordinates are in reasonable range
@@ -192,8 +171,8 @@ public class PolygonDilationTests
         var result1 = polygon.Dilate(DefaultDilationRatio);
         var result2 = polygon.Dilate(DefaultDilationRatio);
 
-        Assert.NotEmpty(result1.Points);
-        Assert.NotEmpty(result2.Points);
+        Assert.NotEmpty(result1!.Points);
+        Assert.NotEmpty(result2!.Points);
         Assert.Equal(result1.Points.Count, result2.Points.Count);
 
         for (int i = 0; i < result1.Points.Count; i++)

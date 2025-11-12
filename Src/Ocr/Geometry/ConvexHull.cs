@@ -8,10 +8,10 @@ public record ConvexHull
     // No JsonPropertyName, this record is for internal use only
     public required IReadOnlyList<PointF> Points { get; init; }
 
-    public RotatedRectangle ToRotatedRectangle()
+    public RotatedRectangle? ToRotatedRectangle()
     {
         if (Points.Count < 3)
-            throw new ArgumentException("Convex hull must have at least 3 points");
+            return null;
 
         double minArea = double.MaxValue;
         RotatedRectangle? bestRectangle = null;
@@ -41,7 +41,7 @@ public record ConvexHull
             }
         }
 
-        return bestRectangle ?? throw new InvalidOperationException("Could not compute oriented rectangle");
+        return bestRectangle;
 
         static RotatedRectangle FindRectangleAlignedWithEdge(IReadOnlyList<PointF> points, (double X, double Y) edge)
         {

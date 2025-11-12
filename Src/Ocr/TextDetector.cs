@@ -131,21 +131,21 @@ public class TextDetector
                     .Simplify()  // Remove redundant points
                     .Scale(1 / scale)  // Undo scaling; convert from tiled to original coordinates
                     .Dilate(1.5)  // Undo contraction baked into DBNet during training; 1.5 is a model-specific constant
-                    .Clamp(originalImage.Height - 1, originalImage.Width - 1);  // Make sure we don't go out of bounds
+                    ?.Clamp(originalImage.Height - 1, originalImage.Width - 1);  // Make sure we don't go out of bounds
 
-                if (polygon.Points.Count <= 4)
-                    return null;  // Not enough points to define a polygon
+                var convexHull = polygon?.ToConvexHull();
+                var rotatedRectangle = convexHull?.ToRotatedRectangle();
+                var axisAlignedRectangle = rotatedRectangle?.ToAxisAlignedRectangle();
 
-                var convexHull = polygon.ToConvexHull();
-                if (convexHull.Points.Count < 3)
+                if (axisAlignedRectangle == null)
                     return null;
 
-                var rotatedRectangle = convexHull.ToRotatedRectangle();
+                // If axisAlignedRectangle is non-null then polygon and rotatedRectangle must also be non-null
                 return new BoundingBox
                 {
-                    Polygon = polygon,
-                    RotatedRectangle = rotatedRectangle,
-                    AxisAlignedRectangle = rotatedRectangle.ToAxisAlignedRectangle()
+                    Polygon = polygon!,
+                    RotatedRectangle = rotatedRectangle!,
+                    AxisAlignedRectangle = axisAlignedRectangle
                 };
             }
         }
