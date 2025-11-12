@@ -7,31 +7,32 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using TestUtils;
 using Xunit.Abstractions;
-using BoundingBoxPointF = Ocr.Geometry.PointF;
+using ImageSharpPointF = SixLabors.ImageSharp.PointF;
+using PointF = Ocr.Geometry.PointF;
 
-namespace Ocr.Test.BoundingBoxes;
+namespace Ocr.Test.Geometry;
 
-public class OrientedRectangleCroppingTests
+public class RotatedRectangleCropTests
 {
     private readonly ITestOutputHelper _outputHelper;
-    private readonly ILogger<OrientedRectangleCroppingTests> _logger;
-    private readonly FileSystemUrlPublisher<OrientedRectangleCroppingTests> _publisher;
+    private readonly ILogger<RotatedRectangleCropTests> _logger;
+    private readonly FileSystemUrlPublisher<RotatedRectangleCropTests> _publisher;
 
-    public OrientedRectangleCroppingTests(ITestOutputHelper outputHelper)
+    public RotatedRectangleCropTests(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
-        _logger = new TestLogger<OrientedRectangleCroppingTests>(outputHelper);
-        var outputDirectory = "/tmp/oriented-rectangle-tests";
-        _publisher = new FileSystemUrlPublisher<OrientedRectangleCroppingTests>(outputDirectory, _logger);
+        _logger = new TestLogger<RotatedRectangleCropTests>(outputHelper);
+        var outputDirectory = "/tmp/rotated-rectangle-crop-tests";
+        _publisher = new FileSystemUrlPublisher<RotatedRectangleCropTests>(outputDirectory, _logger);
     }
 
     [Fact]
-    public async Task AxisAlignedOrientedRectangle_GeneratesCorrectGradients()
+    public async Task Crop_WithAxisAlignedRectangle_ExtractsCorrectRegion()
     {
         var imageWidth = 400;
         var imageHeight = 300;
-        var p = new SixLabors.ImageSharp.PointF(100, 80);
-        var q = new SixLabors.ImageSharp.PointF(300, 80);
+        var p = new ImageSharpPointF(100, 80);
+        var q = new ImageSharpPointF(300, 80);
         var width = 120f;
 
         using var sourceImage = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
@@ -39,7 +40,7 @@ public class OrientedRectangleCroppingTests
         await _publisher.PublishAsync(sourceImage, "Source image with axis-aligned oriented rectangle");
 
         var vertices = OrientedRectangleTestUtils.CalculateOrientedRectangleVertices(p, q, width);
-        var corners = vertices.Select(v => new BoundingBoxPointF { X = v.X, Y = v.Y }).ToList();
+        var corners = vertices.Select(v => new PointF { X = v.X, Y = v.Y }).ToList();
 
         _outputHelper.WriteLine($"Corners: [{string.Join(", ", corners.Select(v => $"({v.X:F1},{v.Y:F1})"))}]");
 
@@ -55,12 +56,12 @@ public class OrientedRectangleCroppingTests
     }
 
     [Fact]
-    public async Task UpwardTiltedOrientedRectangle_GeneratesCorrectGradients()
+    public async Task Crop_WithUpwardTiltedRectangle_ExtractsCorrectRegion()
     {
         var imageWidth = 400;
         var imageHeight = 300;
-        var p = new SixLabors.ImageSharp.PointF(50, 200);
-        var q = new SixLabors.ImageSharp.PointF(350, 100);
+        var p = new ImageSharpPointF(50, 200);
+        var q = new ImageSharpPointF(350, 100);
         var width = 60f;
 
         using var sourceImage = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
@@ -68,7 +69,7 @@ public class OrientedRectangleCroppingTests
         await _publisher.PublishAsync(sourceImage, "Source image with upward-tilted oriented rectangle");
 
         var vertices = OrientedRectangleTestUtils.CalculateOrientedRectangleVertices(p, q, width);
-        var corners = vertices.Select(v => new BoundingBoxPointF { X = v.X, Y = v.Y }).ToList();
+        var corners = vertices.Select(v => new PointF { X = v.X, Y = v.Y }).ToList();
 
         var expectedWidth = (int)Math.Round(Math.Sqrt(Math.Pow(q.X - p.X, 2) + Math.Pow(q.Y - p.Y, 2)));
         var expectedHeight = (int)Math.Round(width);
@@ -82,12 +83,12 @@ public class OrientedRectangleCroppingTests
     }
 
     [Fact]
-    public async Task DownwardTiltedOrientedRectangle_GeneratesCorrectGradients()
+    public async Task Crop_WithDownwardTiltedRectangle_ExtractsCorrectRegion()
     {
         var imageWidth = 400;
         var imageHeight = 300;
-        var p = new SixLabors.ImageSharp.PointF(50, 80);
-        var q = new SixLabors.ImageSharp.PointF(350, 220);
+        var p = new ImageSharpPointF(50, 80);
+        var q = new ImageSharpPointF(350, 220);
         var width = 60f;
 
         using var sourceImage = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
@@ -95,7 +96,7 @@ public class OrientedRectangleCroppingTests
         await _publisher.PublishAsync(sourceImage, "Source image with downward-tilted oriented rectangle");
 
         var vertices = OrientedRectangleTestUtils.CalculateOrientedRectangleVertices(p, q, width);
-        var corners = vertices.Select(v => new BoundingBoxPointF { X = v.X, Y = v.Y }).ToList();
+        var corners = vertices.Select(v => new PointF { X = v.X, Y = v.Y }).ToList();
 
         var expectedWidth = (int)Math.Round(Math.Sqrt(Math.Pow(q.X - p.X, 2) + Math.Pow(q.Y - p.Y, 2)));
         var expectedHeight = (int)Math.Round(width);
@@ -151,7 +152,7 @@ public class OrientedRectangleCroppingTests
     }
 
     [Fact]
-    public async Task CropOriented_WithRandomOrientedRectangles_GeneratesCorrectCrops()
+    public async Task Crop_WithRandomRotations_ExtractsCorrectRegions()
     {
         var random = new Random(0);
         var numIterations = 100;
@@ -180,7 +181,7 @@ public class OrientedRectangleCroppingTests
             var halfWidth = rectWidth / 2;
             var halfHeight = rectHeight / 2;
 
-            var corners = new List<BoundingBoxPointF>
+            var corners = new List<PointF>
             {
                 new() { X = centerX + (-halfWidth * cos - -halfHeight * sin), Y = centerY + (-halfWidth * sin + -halfHeight * cos) },
                 new() { X = centerX + (halfWidth * cos - -halfHeight * sin), Y = centerY + (halfWidth * sin + -halfHeight * cos) },
@@ -203,22 +204,44 @@ public class OrientedRectangleCroppingTests
     }
 
     [Fact]
-    public void CropOriented_WithSquareOrientedRectangle_ShouldCropSuccessfully()
+    public async Task Crop_WithAxisAlignedSquare_ExtractsCorrectRegion()
     {
-        var squareCorners = new List<BoundingBoxPointF>
+        var imageWidth = 300;
+        var imageHeight = 300;
+        var p = new ImageSharpPointF(100, 100);
+        var q = new ImageSharpPointF(200, 100);
+        var width = 100f;
+
+        using var sourceImage = OrientedRectangleTestUtils.CreateGradientOrientedRectangle(
+            imageWidth, imageHeight, p, q, width);
+        await _publisher.PublishAsync(sourceImage, "Source image with axis-aligned square");
+
+        var vertices = OrientedRectangleTestUtils.CalculateOrientedRectangleVertices(p, q, width);
+        var baseCorners = vertices.Select(v => new PointF { X = v.X, Y = v.Y }).ToList();
+
+        // Test all 4 rotations of the corner order
+        for (int rotation = 0; rotation < 4; rotation++)
         {
-            new() { X = 100.0, Y = 100.0 },
-            new() { X = 200.0, Y = 100.0 },
-            new() { X = 200.0, Y = 200.0 },
-            new() { X = 100.0, Y = 200.0 }
-        };
+            var corners = RotateList(baseCorners, rotation);
+            _outputHelper.WriteLine($"Testing rotation {rotation}: [{string.Join(", ", corners.Select(c => $"({c.X:F1},{c.Y:F1})"))}]");
 
-        using var testImage = new Image<Rgb24>(300, 300);
-        var rotatedRect = new RotatedRectangle(squareCorners);
-        using var croppedImage = rotatedRect.Crop(testImage);
+            var rotatedRect = new RotatedRectangle(corners);
+            using var croppedImage = rotatedRect.Crop(sourceImage);
+            await _publisher.PublishAsync(croppedImage, $"Cropped axis-aligned square - rotation {rotation}");
 
-        Assert.Equal(100, croppedImage.Width);
-        Assert.Equal(100, croppedImage.Height);
+            Assert.Equal(100, croppedImage.Width);
+            Assert.Equal(100, croppedImage.Height);
+            VerifyCornerColors(croppedImage);
+        }
+
+        _outputHelper.WriteLine("Successfully tested all 4 rotations");
     }
 
+    private static List<T> RotateList<T>(List<T> list, int positions)
+    {
+        if (list.Count == 0)
+            return list;
+        positions = positions % list.Count;
+        return list.Skip(positions).Concat(list.Take(positions)).ToList();
+    }
 }
