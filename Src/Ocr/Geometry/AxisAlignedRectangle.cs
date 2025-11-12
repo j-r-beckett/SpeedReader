@@ -8,34 +8,34 @@ namespace Ocr.Geometry;
 public record AxisAlignedRectangle
 {
     [JsonPropertyName("x")]
-    public required int X  // Top left x
+    public required double X  // Top left x
     {
         get;
         init;
     }
 
     [JsonPropertyName("y")]
-    public required int Y  // Top left y
+    public required double Y  // Top left y
     {
         get;
         init;
     }
 
     [JsonPropertyName("height")]
-    public required int Height  // Height in pixels
+    public required double Height  // Height in pixels
     {
         get;
         init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
 
     [JsonPropertyName("width")]
-    public required int Width  // Width in pixels
+    public required double Width  // Width in pixels
     {
         get;
         init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
 
-    public Polygon ToPolygon() => new(new List<Point>
+    public Polygon ToPolygon() => new(new List<PointF>
     {
         new() { X = X, Y = Y },
         new() { X = X + Width, Y = Y },

@@ -8,7 +8,7 @@ namespace Ocr.Geometry;
 public record ConvexHull
 {
     // No JsonPropertyName, this record is for internal use only
-    public required ReadOnlyCollection<Point> Points { get; init; }
+    public required IReadOnlyList<PointF> Points { get; init; }
 
     public RotatedRectangle ToRotatedRectangle()
     {
@@ -45,7 +45,7 @@ public record ConvexHull
 
         return bestRectangle ?? throw new InvalidOperationException("Could not compute oriented rectangle");
 
-        static RotatedRectangle FindRectangleAlignedWithEdge(ReadOnlyCollection<Point> points, (int X, int Y) edge)
+        static RotatedRectangle FindRectangleAlignedWithEdge(IReadOnlyList<PointF> points, (double X, double Y) edge)
         {
             // 1. Compute edge unit vector and normal vector. These are the basis vectors for the rectangle
             // 2. Project points onto the basis vectors

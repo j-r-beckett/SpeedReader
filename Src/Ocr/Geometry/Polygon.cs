@@ -1,8 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Clipper2Lib;
 
@@ -11,10 +9,15 @@ namespace Ocr.Geometry;
 public record Polygon
 {
     [JsonPropertyName("points")]
-    public required ReadOnlyCollection<Point> Points { get; init; }
+    public IReadOnlyList<PointF> Points { get; }
 
-    [SetsRequiredMembers]
-    public Polygon(IEnumerable<Point> points) => Points = points.ToList().AsReadOnly();
+    public Polygon() => Points = [];
+
+    public Polygon(List<Point> points) => Points = points.Select(p => (PointF)p).ToList().AsReadOnly();
+
+    public Polygon(List<PointF> points) => Points = points.AsReadOnly();
+
+    public Polygon(IReadOnlyList<PointF> points) => Points = points;
 
     public ConvexHull ToConvexHull()
     {
@@ -22,7 +25,7 @@ public record Polygon
 
         var points = Points.ToList();  // Copy the points to avoid modifying the original polygon
 
-        var stack = new List<Point>();
+        var stack = new List<PointF>();
         var minYPoint = GetStartPoint(points);
         points.Sort((p1, p2) => ComparePolarAngle(minYPoint, p1, p2));
         stack.Add(points[0]);
@@ -51,7 +54,7 @@ public record Polygon
 
         return new ConvexHull { Points = stack.AsReadOnly() };
 
-        static Point GetStartPoint(List<Point> points)
+        static PointF GetStartPoint(List<PointF> points)
         {
             var (bestX, bestY) = points[0];
 
@@ -66,10 +69,10 @@ public record Polygon
             return (bestX, bestY);
         }
 
-        static int CrossProductZ(Point a, Point b, Point c) =>
+        static double CrossProductZ(PointF a, PointF b, PointF c) =>
             (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
 
-        static int ComparePolarAngle(Point anchor, Point p1, Point p2)
+        static int ComparePolarAngle(PointF anchor, PointF p1, PointF p2)
         {
             var crossZ = CrossProductZ(anchor, p1, p2);
 
@@ -79,8 +82,8 @@ public record Polygon
                 return -1;
 
             // Points are collinear, break ties by distance
-            (int X, int Y) v1 = (p1.X - anchor.X, p1.Y - anchor.Y);
-            (int X, int Y) v2 = (p2.X - anchor.X, p2.Y - anchor.Y);
+            (double X, double Y) v1 = (p1.X - anchor.X, p1.Y - anchor.Y);
+            (double X, double Y) v2 = (p2.X - anchor.X, p2.Y - anchor.Y);
             var dist1 = v1.X * v1.X + v1.Y * v1.Y;
             var dist2 = v2.X * v2.X + v2.Y * v2.Y;
             return dist1.CompareTo(dist2);
@@ -89,12 +92,12 @@ public record Polygon
 
     public Polygon Scale(double scale)
     {
-        return new Polygon(Points.Select(ScalePoint));
+        return new Polygon(Points.Select(ScalePoint).ToList());
 
-        Point ScalePoint(Point p) => new()
+        PointF ScalePoint(PointF p) => new()
         {
-            X = (int)Math.Round(p.X * scale),
-            Y = (int)Math.Round(p.Y * scale)
+            X = p.X * scale,
+            Y = p.Y * scale
         };
     }
 
@@ -106,7 +109,7 @@ public record Polygon
 
         if (points.Count < 3)
         {
-            return new Polygon([]);
+            return new Polygon();
         }
 
         var clipperPathD = new PathD();
@@ -120,7 +123,7 @@ public record Polygon
 
         if (perimeter <= 0 || area < MinimumArea)
         {
-            return new Polygon([]);
+            return new Polygon();
         }
 
         double offset = area * dilationRatio / perimeter;
@@ -134,14 +137,14 @@ public record Polygon
 
         if (solution.Count == 0 || solution[0].Count < 3)
         {
-            return new Polygon([]);
+            return new Polygon();
         }
 
-        var dilatedPolygon = new List<Point>(solution[0].Count);
+        var dilatedPolygon = new List<PointF>(solution[0].Count);
         for (int i = 0; i < solution[0].Count; i++)
         {
             var point = solution[0][i];
-            dilatedPolygon.Add(((int)point.X, (int)point.Y));
+            dilatedPolygon.Add((point.X, point.Y));
         }
 
         return new Polygon(dilatedPolygon);
@@ -163,9 +166,9 @@ public record Polygon
 
     public Polygon Clamp(int height, int width)
     {
-        return new Polygon(Points.Select(ClampPoint));
+        return new Polygon(Points.Select(ClampPoint).ToList());
 
-        Point ClampPoint(Point p) => new()
+        PointF ClampPoint(PointF p) => new()
         {
             X = Math.Clamp(p.X, 0, width),
             Y = Math.Clamp(p.Y, 0, height)
@@ -176,7 +179,7 @@ public record Polygon
     {
         return new Polygon(SimplifyInternal(Points.ToList(), tolerance));
 
-        static List<Point> SimplifyInternal(List<Point> polygon, double tolerance)
+        static List<PointF> SimplifyInternal(List<PointF> polygon, double tolerance)
         {
             // Douglas-Peucker polygon simplification
 
@@ -211,7 +214,7 @@ public record Polygon
             // All points between start and end are within tolerance, keep only endpoints
             return [start, end];
 
-            static double PerpendicularDistance(Point point, Point lineStart, Point lineEnd)
+            static double PerpendicularDistance(PointF point, PointF lineStart, PointF lineEnd)
             {
                 double dx = lineEnd.X - lineStart.X;
                 double dy = lineEnd.Y - lineStart.Y;

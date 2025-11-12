@@ -12,10 +12,10 @@ namespace Ocr.Geometry;
 public record RotatedRectangle
 {
     [JsonPropertyName("x")]
-    public required int X { get; init; }  // Top left x
+    public required double X { get; init; }  // Top left x
 
     [JsonPropertyName("y")]
-    public required int Y { get; init; }  // Top left y
+    public required double Y { get; init; }  // Top left y
 
     [JsonPropertyName("height")]
     public required double Height  // Height
@@ -96,8 +96,8 @@ public record RotatedRectangle
             };
         }
 
-        X = (int)Math.Round(topLeft.X);
-        Y = (int)Math.Round(topLeft.Y);
+        X = topLeft.X;
+        Y = topLeft.Y;
         Height = height;
         Width = width;
         Angle = angle;
@@ -111,7 +111,7 @@ public record RotatedRectangle
     }
 
     public Polygon ToPolygon() =>
-        new(Corners().Select(p => (Point)p));
+        new(Corners());
 
     public ReadOnlyCollection<PointF> Corners()
     {

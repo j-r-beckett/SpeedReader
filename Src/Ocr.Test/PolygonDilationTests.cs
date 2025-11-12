@@ -12,7 +12,7 @@ public class PolygonDilationTests
     [Fact]
     public void Dilate_EmptyPolygon_ReturnsEmptyPolygon()
     {
-        var polygon = new Polygon(Array.Empty<Point>());
+        var polygon = new Polygon();
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -203,7 +203,7 @@ public class PolygonDilationTests
     }
 
     // Helper methods
-    private static (int X, int Y, int Width, int Height) GetBounds(Polygon polygon)
+    private static (double X, double Y, double Width, double Height) GetBounds(Polygon polygon)
     {
         var points = polygon.Points;
         var minX = points.Min(p => p.X);

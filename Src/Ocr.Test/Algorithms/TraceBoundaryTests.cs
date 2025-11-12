@@ -31,7 +31,7 @@ public class TraceBoundaryTests
         // The trace starts at (1,1) (top-left most pixel) and goes clockwise.
         // It stops when reaching a neighbor of the start to avoid double-tracing,
         // so (1,2) is intentionally omitted.
-        List<Point> expectedBoundary =
+        List<PointF> expectedBoundary =
         [
             // Starting at (1,1) and going clockwise:
             (1, 1), // Start
@@ -273,8 +273,8 @@ public class TraceBoundaryTests
             var current = boundary.Points[i];
             var next = boundary.Points[i + 1];
 
-            int dx = Math.Abs(next.X - current.X);
-            int dy = Math.Abs(next.Y - current.Y);
+            int dx = (int)Math.Abs(next.X - current.X);
+            int dy = (int)Math.Abs(next.Y - current.Y);
 
             Assert.True(dx <= 1 && dy <= 1 && (dx + dy) > 0,
                 $"Points at indices {i} and {i + 1} are not 8-connected: ({current.X},{current.Y}) -> ({next.X},{next.Y})");
@@ -286,8 +286,8 @@ public class TraceBoundaryTests
             var start = boundary.Points[0];
             var end = boundary.Points[^1];
 
-            int dx = Math.Abs(end.X - start.X);
-            int dy = Math.Abs(end.Y - start.Y);
+            int dx = (int)Math.Abs(end.X - start.X);
+            int dy = (int)Math.Abs(end.Y - start.Y);
 
             Assert.True(dx <= 2 && dy <= 2,
                 $"Start and end points are too far apart: ({start.X},{start.Y}) and ({end.X},{end.Y})");

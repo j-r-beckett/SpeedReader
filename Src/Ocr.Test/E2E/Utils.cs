@@ -57,7 +57,7 @@ public static class Utils
             Angle = angleRadians
         };
 
-        return new BoundingBox(new Polygon([]), rotatedRect);
+        return new BoundingBox(new Polygon(), rotatedRect);
     }
 
     public static void ValidateDetectionsAndRecognitions(OcrPipelineResult expected, OcrPipelineResult actual)
