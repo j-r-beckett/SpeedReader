@@ -7,87 +7,79 @@ public record ConvexHull
 {
     // No JsonPropertyName, this record is for internal use only
     public required IReadOnlyList<PointF> Points { get; init; }
+}
 
-    public RotatedRectangle? ToRotatedRectangle()
+public static class PolygonExtensions
+{
+    public static ConvexHull? ToConvexHull(this Polygon polygon)
     {
-        if (Points.Count < 3)
+        if (polygon.Points.Count < 3)
             return null;
 
-        double minArea = double.MaxValue;
-        RotatedRectangle? bestRectangle = null;
+        var points = polygon.Points.ToList();  // Create a mutable copy
 
-        var points = Points;
+        var stack = new List<PointF>();
+        var minYPoint = GetStartPoint(points);
+        points.Sort((p1, p2) => ComparePolarAngle(minYPoint, p1, p2));
+        stack.Add(points[0]);
+        stack.Add(points[1]);
 
-        int n = points.Count;
-
-        // Try each edge as a potential side of the rectangle
-        for (int i = 0; i < n; i++)
+        for (var i = 2; i < points.Count; i++)
         {
-            int j = (i + 1) % n;
-            var edge = (points[j].X - points[i].X, points[j].Y - points[i].Y);
-
-            // Skip zero-length edges
-            if (edge.Item1 == 0 && edge.Item2 == 0)
-                continue;
-
-            // Find the rectangle aligned with this edge
-            var rectangle = FindRectangleAlignedWithEdge(points, edge);
-            var area = rectangle?.Height * rectangle?.Width;
-
-            if (area < minArea)
+            var next = points[i];
+            var p = stack[^1];
+            stack.RemoveAt(stack.Count - 1);
+            while (stack.Count > 0 && CrossProductZ(stack[^1], p, next) <= 0)
             {
-                minArea = area.Value;
-                bestRectangle = rectangle;
+                p = stack[^1];
+                stack.RemoveAt(stack.Count - 1);
             }
+            stack.Add(p);
+            stack.Add(next);
         }
 
-        return bestRectangle;
+        var lastPoint = stack[^1];
+        stack.RemoveAt(stack.Count - 1);
+        if (CrossProductZ(stack[^1], lastPoint, minYPoint) > 0)
+            stack.Add(lastPoint);
 
-        static RotatedRectangle? FindRectangleAlignedWithEdge(IReadOnlyList<PointF> points, (double X, double Y) edge)
+        stack.Reverse();
+
+        return new ConvexHull { Points = stack.AsReadOnly() };
+
+        static PointF GetStartPoint(List<PointF> points)
         {
-            // 1. Compute edge unit vector and normal vector. These are the basis vectors for the rectangle
-            // 2. Project points onto the basis vectors
-            // 3. Find the minimum and maximum projections of points onto the basis vectors
-            // 3. Transform from basic vector coordinates back to world coordinates
+            var (bestX, bestY) = points[0];
 
-            var edgeLength = Math.Sqrt(edge.X * edge.X + edge.Y * edge.Y);
-            var (ux, uy) = (edge.X / edgeLength, edge.Y / edgeLength);  // Edge unit vector
-            var (nx, ny) = (-uy, ux);  // Edge normal vector
-
-            // Compute minimum and maximum projections of points onto the basis vectors
-            var minU = double.PositiveInfinity;
-            var maxU = double.NegativeInfinity;
-            var minN = double.PositiveInfinity;
-            var maxN = double.NegativeInfinity;
-            foreach (var point in points)
+            for (var i = 1; i < points.Count; i++)
             {
-                var projU = point.X * ux + point.Y * uy;
-                var projN = point.X * nx + point.Y * ny;
-
-                minU = Math.Min(minU, projU);
-                maxU = Math.Max(maxU, projU);
-                minN = Math.Min(minN, projN);
-                maxN = Math.Max(maxN, projN);
+                if (points[i].Y < bestY || points[i].Y == bestY && points[i].X < bestX)
+                {
+                    (bestX, bestY) = points[i];
+                }
             }
 
-            var corner0 = (minU * ux + maxN * nx, minU * uy + maxN * ny);  // (minU, maxN)
-            var corner1 = (maxU * ux + maxN * nx, maxU * uy + maxN * ny);  // (maxU, maxN)
-            var corner2 = (maxU * ux + minN * nx, maxU * uy + minN * ny);  // (maxU, minN)
-            var corner3 = (minU * ux + minN * nx, minU * uy + minN * ny);  // (minU, minN)
+            return (bestX, bestY);
+        }
 
-            List<PointF> corners = [corner0, corner1, corner2, corner3];
+        static double CrossProductZ(PointF a, PointF b, PointF c) =>
+            (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
 
-            // Check for collinearity
-            for (int i = 1; i < corners.Count - 1; i++)
-            {
-                if (Math.Abs(CrossProductZ(corners[0], corners[i], corners[i + 1])) < 1e-8)
-                    return null;
-            }
+        static int ComparePolarAngle(PointF anchor, PointF p1, PointF p2)
+        {
+            var crossZ = CrossProductZ(anchor, p1, p2);
 
-            return new RotatedRectangle(corners);
+            if (crossZ < 0)
+                return 1;
+            if (crossZ > 0)
+                return -1;
 
-            static double CrossProductZ(PointF a, PointF b, PointF c) =>
-                (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+            // Points are collinear, break ties by distance
+            (double X, double Y) v1 = (p1.X - anchor.X, p1.Y - anchor.Y);
+            (double X, double Y) v2 = (p2.X - anchor.X, p2.Y - anchor.Y);
+            var dist1 = v1.X * v1.X + v1.Y * v1.Y;
+            var dist2 = v2.X * v2.X + v2.Y * v2.Y;
+            return dist1.CompareTo(dist2);
         }
     }
 }

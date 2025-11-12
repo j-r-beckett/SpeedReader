@@ -35,7 +35,7 @@ public class OrientedRectangleCreationTests
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
-            convexHull.Points.Select(p => (p.X, p.Y)).ToList(),
+            convexHull!.Points.Select(p => (p.X, p.Y)).ToList(),
             orientedRect.Select(p => (p.X, p.Y)).ToList());
         await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
 
@@ -138,7 +138,7 @@ public class OrientedRectangleCreationTests
 
             // Create debug visualization
             using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
-                convexHull.Points.Select(p => (p.X, p.Y)).ToList(),
+                convexHull!.Points.Select(p => (p.X, p.Y)).ToList(),
                 orientedRectF.Select(p => (p.X, p.Y)).ToList());
             await _publisher.PublishAsync(debugImage, "Random point cloud - convex hull points as black dots, oriented rectangle as red polygon");
 
