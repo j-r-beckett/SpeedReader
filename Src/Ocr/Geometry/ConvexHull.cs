@@ -32,18 +32,18 @@ public record ConvexHull
 
             // Find the rectangle aligned with this edge
             var rectangle = FindRectangleAlignedWithEdge(points, edge);
-            var area = rectangle.Height * rectangle.Width;
+            var area = rectangle?.Height * rectangle?.Width;
 
             if (area < minArea)
             {
-                minArea = area;
+                minArea = area.Value;
                 bestRectangle = rectangle;
             }
         }
 
         return bestRectangle;
 
-        static RotatedRectangle FindRectangleAlignedWithEdge(IReadOnlyList<PointF> points, (double X, double Y) edge)
+        static RotatedRectangle? FindRectangleAlignedWithEdge(IReadOnlyList<PointF> points, (double X, double Y) edge)
         {
             // 1. Compute edge unit vector and normal vector. These are the basis vectors for the rectangle
             // 2. Project points onto the basis vectors
@@ -77,7 +77,17 @@ public record ConvexHull
 
             List<PointF> corners = [corner0, corner1, corner2, corner3];
 
+            // Check for collinearity
+            for (int i = 1; i < corners.Count - 1; i++)
+            {
+                if (Math.Abs(CrossProductZ(corners[0], corners[i], corners[i + 1])) < 1e-8)
+                    return null;
+            }
+
             return new RotatedRectangle(corners);
+
+            static double CrossProductZ(PointF a, PointF b, PointF c) =>
+                (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
         }
     }
 }
