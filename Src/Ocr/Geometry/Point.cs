@@ -13,7 +13,7 @@ public readonly struct Point
     [JsonPropertyName("y")]
     public int Y { get; init; }
 
-    // Loses precision, explicit cast needed
+    // Loses precision, explicit cast
     public static explicit operator Point(PointF point) => new()
     {
         X = (int)Math.Round(point.X),
