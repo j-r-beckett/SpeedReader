@@ -17,17 +17,6 @@ public record Polygon
 
     public Polygon(List<PointF> points) => Points = points.AsReadOnly();
 
-    public Polygon Scale(double scale)
-    {
-        return new Polygon(Points.Select(ScalePoint).ToList());
-
-        PointF ScalePoint(PointF p) => new()
-        {
-            X = p.X * scale,
-            Y = p.Y * scale
-        };
-    }
-
     public Polygon? Dilate(double dilationRatio)
     {
         var clipperPathD = new PathD();
@@ -83,6 +72,17 @@ public record Polygon
         {
             X = Math.Clamp(p.X, 0, width),
             Y = Math.Clamp(p.Y, 0, height)
+        };
+    }
+
+    public Polygon Scale(double scale)
+    {
+        return new Polygon(Points.Select(ScalePoint).ToList());
+
+        PointF ScalePoint(PointF p) => new()
+        {
+            X = p.X * scale,
+            Y = p.Y * scale
         };
     }
 
