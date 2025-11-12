@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using SixLabors.ImageSharp;
@@ -67,9 +68,57 @@ public record RotatedRectangle
         var height = EdgeLength(shortEdges[0]);
         var width = EdgeLength(longEdges[0]);
 
+        if (Math.Abs(height - width) < 0.000001)  // If it's a square
+        {
+            // For squares, we always want top left to be point closest to the origin
+            // Find the corner closest to origin (0, 0)
+            topLeft = corners[0];
+            var minDistance = topLeft.X * topLeft.X + topLeft.Y * topLeft.Y;
+
+            for (int i = 1; i < corners.Count; i++)
+            {
+                var distance = corners[i].X * corners[i].X + corners[i].Y * corners[i].Y;
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    topLeft = corners[i];
+                }
+            }
+
+            // Find the adjacent corners (should be at distance equal to side length from topLeft)
+            var sideLength = width; // width == height for square
+            PointF topRightCandidate = topLeft;
+            bool foundTopRight = false;
+
+            foreach (var corner in corners)
+            {
+                if (corner.X == topLeft.X && corner.Y == topLeft.Y)
+                    continue;
+
+                var dist = Math.Sqrt(Math.Pow(corner.X - topLeft.X, 2) + Math.Pow(corner.Y - topLeft.Y, 2));
+
+                // Check if this is an adjacent corner (side of square, not diagonal)
+                if (Math.Abs(dist - sideLength) < 0.001)
+                {
+                    // Pick the corner with larger X (or if same X, smaller Y) to be "top right"
+                    if (!foundTopRight || corner.X > topRightCandidate.X ||
+                        (Math.Abs(corner.X - topRightCandidate.X) < 0.001 && corner.Y < topRightCandidate.Y))
+                    {
+                        topRightCandidate = corner;
+                        foundTopRight = true;
+                    }
+                }
+            }
+
+            if (foundTopRight)
+            {
+                angle = Math.Atan2(topRightCandidate.Y - topLeft.Y, topRightCandidate.X - topLeft.X);
+            }
+        }
+
         if (Math.Abs(angle - Math.PI / 2) < 0.00001)
         {
-            // When angle is pi/2 (vertical edge going up), we need to use the top-right corner
+            // When angle is pi/2 (vertical edge going up), we need to use the most extreme top-right virtual corner
             // of the original rectangle as the starting point to ensure proper orientation
             topLeft = new PointF
             {
@@ -79,7 +128,7 @@ public record RotatedRectangle
         }
         else if (Math.Abs(angle + Math.PI / 2) < 0.00001)
         {
-            // When angle is -pi/2 (vertical edge going down), we need to use the bottom-left corner
+            // When angle is -pi/2 (vertical edge going down), we need to use the most extreme bottom-left virtual corner
             // of the original rectangle as the starting point to ensure proper orientation
             topLeft = new PointF
             {
@@ -100,6 +149,8 @@ public record RotatedRectangle
             Math.Sqrt(Math.Pow(edge.End.X - edge.Start.X, 2) + Math.Pow(edge.End.Y - edge.Start.Y, 2));
 
         double YMidpoint((PointF Start, PointF End) edge) => (edge.Start.Y + edge.End.Y) / 2;
+
+        double XMidpoint((PointF Start, PointF End) edge) => (edge.Start.X + edge.End.X) / 2;
     }
 
     public Polygon Corners()

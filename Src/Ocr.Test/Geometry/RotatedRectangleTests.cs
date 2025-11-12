@@ -216,6 +216,121 @@ public class RotatedRectangleTests
     }
     #endregion ToRotatedRectangle
 
+    #region Corners
+    [Fact]
+    public void Corners_WithAxisAlignedRectangle_ReturnsCorrectCorners()
+    {
+        var rect = new RotatedRectangle
+        {
+            X = 10,
+            Y = 20,
+            Width = 50,
+            Height = 30,
+            Angle = 0
+        };
+
+        var corners = rect.Corners().Points;
+
+        Assert.Equal(4, corners.Count);
+        AssertPointEquals((10, 20), corners[0], "top-left");
+        AssertPointEquals((60, 20), corners[1], "top-right");
+        AssertPointEquals((60, 50), corners[2], "bottom-right");
+        AssertPointEquals((10, 50), corners[3], "bottom-left");
+    }
+
+    [Fact]
+    public void Corners_WithPi4RotatedSquare_ReturnsCorrectCorners()
+    {
+        var rect = new RotatedRectangle
+        {
+            X = 0,
+            Y = 0,
+            Width = 1,
+            Height = 1,
+            Angle = Math.PI / 4
+        };
+
+        var corners = rect.Corners().Points;
+
+        Assert.Equal(4, corners.Count);
+
+        var sqrt2over2 = Math.Sqrt(2) / 2;
+        AssertPointEquals((0, 0), corners[0], "top-left");
+        AssertPointEquals((sqrt2over2, sqrt2over2), corners[1], "top-right");
+        AssertPointEquals((0, Math.Sqrt(2)), corners[2], "bottom-right");
+        AssertPointEquals((-sqrt2over2, sqrt2over2), corners[3], "bottom-left");
+    }
+
+    [Fact]
+    public void Corners_RoundTrip_PreservesRectangleShape()
+    {
+        var random = new Random(0);
+        var numIterations = 10000;
+
+        for (int n = 0; n < numIterations; n++)
+        {
+            var x = random.NextDouble() * 100;
+            var y = random.NextDouble() * 100;
+            var width = 10 + random.NextDouble() * 90;
+            var height = 10 + random.NextDouble() * 90;
+            var angle = (random.NextDouble() - 0.5) * 2 * Math.PI;
+
+            var original = new RotatedRectangle
+            {
+                X = x,
+                Y = y,
+                Width = width,
+                Height = height,
+                Angle = angle
+            };
+
+            var originalCorners = original.Corners().Points;
+            var reconstructed = new RotatedRectangle(originalCorners.ToList());
+            var reconstructedCorners = reconstructed.Corners().Points;
+
+            Assert.Equal(4, reconstructedCorners.Count);
+
+            // Corners should be the same set of points (order-independent)
+            foreach (var originalCorner in originalCorners)
+            {
+                bool found = false;
+                foreach (var reconstructedCorner in reconstructedCorners)
+                {
+                    if (Math.Abs(originalCorner.X - reconstructedCorner.X) < 1e-6 &&
+                        Math.Abs(originalCorner.Y - reconstructedCorner.Y) < 1e-6)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                Assert.True(found, $"Original corner ({originalCorner.X}, {originalCorner.Y}) not found in reconstructed corners");
+            }
+        }
+    }
+
+    private void AssertPointEquals((double X, double Y) expected, PointF actual, string label, double tolerance = 1e-10)
+    {
+        Assert.True(Math.Abs(expected.X - actual.X) < tolerance,
+            $"{label} X mismatch: expected {expected.X:F10}, got {actual.X:F10}");
+        Assert.True(Math.Abs(expected.Y - actual.Y) < tolerance,
+            $"{label} Y mismatch: expected {expected.Y:F10}, got {actual.Y:F10}");
+    }
+
+    private void AssertRectangleEquals(RotatedRectangle expected, RotatedRectangle actual, double tolerance)
+    {
+        Assert.True(Math.Abs(expected.X - actual.X) < tolerance,
+            $"X mismatch: expected {expected.X:F10}, got {actual.X:F10}");
+        Assert.True(Math.Abs(expected.Y - actual.Y) < tolerance,
+            $"Y mismatch: expected {expected.Y:F10}, got {actual.Y:F10}");
+        Assert.True(Math.Abs(expected.Width - actual.Width) < tolerance,
+            $"Width mismatch: expected {expected.Width:F10}, got {actual.Width:F10}");
+        Assert.True(Math.Abs(expected.Height - actual.Height) < tolerance,
+            $"Height mismatch: expected {expected.Height:F10}, got {actual.Height:F10}");
+        Assert.True(Math.Abs(expected.Angle - actual.Angle) < tolerance,
+            $"Angle mismatch: expected {expected.Angle:F10}, got {actual.Angle:F10}");
+    }
+    #endregion Corners
+
     #region Utils
     private bool AreVectorsParallel((double X, double Y) v1, (double X, double Y) v2, double tolerance)
     {
