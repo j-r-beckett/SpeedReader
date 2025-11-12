@@ -217,7 +217,7 @@ public class TraceAllBoundariesTests
         });
     }
 
-    private static List<Point> GenerateRandomConvexHull(Random random)
+    private static List<PointF> GenerateRandomConvexHull(Random random)
     {
         // Generate random points scattered in a circle
         var points = new List<Point>();
@@ -238,7 +238,7 @@ public class TraceAllBoundariesTests
         return hull.Points.ToList();
     }
 
-    private static void RasterizeConvexPolygon(float[] data, int width, int height, List<Point> polygon)
+    private static void RasterizeConvexPolygon(float[] data, int width, int height, List<PointF> polygon)
     {
         // Simple point-in-polygon test for each pixel
         for (int y = 0; y < height; y++)
@@ -253,7 +253,7 @@ public class TraceAllBoundariesTests
         }
     }
 
-    private static bool IsPointInConvexPolygon(int px, int py, List<Point> polygon)
+    private static bool IsPointInConvexPolygon(int px, int py, List<PointF> polygon)
     {
         // For convex polygons, point is inside if it's on the same side of all edges
         if (polygon.Count < 3)
@@ -265,7 +265,7 @@ public class TraceAllBoundariesTests
             var p1 = polygon[i];
             var p2 = polygon[(i + 1) % polygon.Count];
 
-            int cross = (p2.X - p1.X) * (py - p1.Y) - (p2.Y - p1.Y) * (px - p1.X);
+            double cross = (p2.X - p1.X) * (py - p1.Y) - (p2.Y - p1.Y) * (px - p1.X);
 
             if (cross != 0)
             {
@@ -301,8 +301,8 @@ public class TraceAllBoundariesTests
             var current = boundary.Points[i];
             var next = boundary.Points[i + 1];
 
-            int dx = Math.Abs(next.X - current.X);
-            int dy = Math.Abs(next.Y - current.Y);
+            int dx = (int)Math.Abs(next.X - current.X);
+            int dy = (int)Math.Abs(next.Y - current.Y);
 
             Assert.True(dx <= 1 && dy <= 1 && (dx + dy) > 0,
                 $"Points at indices {i} and {i + 1} are not 8-connected: ({current.X},{current.Y}) -> ({next.X},{next.Y})");
@@ -314,8 +314,8 @@ public class TraceAllBoundariesTests
             var start = boundary.Points[0];
             var end = boundary.Points[^1];
 
-            int dx = Math.Abs(end.X - start.X);
-            int dy = Math.Abs(end.Y - start.Y);
+            int dx = (int)Math.Abs(end.X - start.X);
+            int dy = (int)Math.Abs(end.Y - start.Y);
 
             Assert.True(dx <= 2 && dy <= 2,
                 $"Start and end points are too far apart: ({start.X},{start.Y}) and ({end.X},{end.Y})");

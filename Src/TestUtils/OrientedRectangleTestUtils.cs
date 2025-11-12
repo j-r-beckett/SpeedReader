@@ -252,7 +252,7 @@ public static class OrientedRectangleTestUtils
     /// <param name="imageHeight">Height of the debug image</param>
     /// <returns>Debug image with white background, black dots for hull points, red rectangle</returns>
     public static Image<Rgb24> CreateDebugVisualization(
-        List<(int X, int Y)> convexHull,
+        List<(double X, double Y)> convexHull,
         List<(double X, double Y)> orientedRect,
         int imageWidth = 400,
         int imageHeight = 300)
@@ -272,9 +272,11 @@ public static class OrientedRectangleTestUtils
         // Draw convex hull points as black dots
         foreach (var point in convexHull)
         {
-            if (point.X >= 0 && point.X < imageWidth && point.Y >= 0 && point.Y < imageHeight)
+            int x = (int)Math.Round(point.X);
+            int y = (int)Math.Round(point.Y);
+            if (x >= 0 && x < imageWidth && y >= 0 && y < imageHeight)
             {
-                var rect = new Rectangle(point.X - 2, point.Y - 2, 4, 4);
+                var rect = new Rectangle(x - 2, y - 2, 4, 4);
                 image.Mutate(ctx => ctx.Fill(Color.Black, rect));
             }
         }

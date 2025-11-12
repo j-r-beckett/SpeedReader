@@ -55,7 +55,7 @@ public class OrientedRectangleCreationTests
     public async Task ComputeOrientedRectangle_WithVerticalLongEdges_PositivePi2Angle()
     {
         // Arrange
-        var points = new List<Point> { (27, 141), (160, 141), (160, 1), (27, 1) };
+        var points = new List<PointF> { (27, 141), (160, 141), (160, 1), (27, 1) };
 
         // Act
         var orientedRectF = new RotatedRectangle(points);
@@ -63,7 +63,7 @@ public class OrientedRectangleCreationTests
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
-            points.Select(p => (p.X, p.Y)).ToList(),
+            points.Select(p => ((double)p.X, (double)p.Y)).ToList(),
             corners.Select(p => (p.X, p.Y)).ToList());
         await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
 
@@ -76,14 +76,13 @@ public class OrientedRectangleCreationTests
         VerifyRectangleHasParallelSides(corners);
         VerifyAllPointsContained(points, orientedRectF);
         VerifyAtLeastTwoPointsOnBoundary(points, orientedRectF.ToPolygon().Points.ToList());
-        ;
     }
 
     [Fact]
     public async Task ComputeOrientedRectangle_WithVerticalLongEdges_NegativePi2Angle()
     {
         // Arrange
-        var points = new List<Point> { (159, 150), (159, 7), (282, 7), (282, 150) };
+        var points = new List<PointF> { (159, 150), (159, 7), (282, 7), (282, 150) };
 
         // Act
         var orientedRectF = new RotatedRectangle(points);
@@ -91,7 +90,7 @@ public class OrientedRectangleCreationTests
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
-            points.Select(p => (p.X, p.Y)).ToList(),
+            points.Select(p => ((double)p.X, (double)p.Y)).ToList(),
             corners.Select(p => (p.X, p.Y)).ToList());
         await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
 
@@ -194,7 +193,7 @@ public class OrientedRectangleCreationTests
         return Math.Abs(crossProduct) < tolerance;
     }
 
-    private void VerifyAllPointsContained(List<Point> points, RotatedRectangle rect)
+    private void VerifyAllPointsContained(List<PointF> points, RotatedRectangle rect)
     {
         foreach (var point in points)
         {
@@ -203,14 +202,14 @@ public class OrientedRectangleCreationTests
         }
     }
 
-    private void VerifyAtLeastTwoPointsOnBoundary(List<Point> points, List<Point> rectangleCorners)
+    private void VerifyAtLeastTwoPointsOnBoundary(List<PointF> points, List<PointF> rectangleCorners)
     {
         int pointsOnBoundary = 0;
         var tolerance = 1.0;
 
         foreach (var point in points)
         {
-            if (IsPointOnRectangleBoundary(point, rectangleCorners.Select(c => new PointF { X = c.X, Y = c.Y }).ToList(), tolerance))
+            if (IsPointOnRectangleBoundary(point, rectangleCorners, tolerance))
             {
                 pointsOnBoundary++;
             }
@@ -220,7 +219,7 @@ public class OrientedRectangleCreationTests
             $"At least 2 original points should lie within {tolerance} pixels of the rectangle boundary. Found {pointsOnBoundary} points on boundary.");
     }
 
-    private bool IsPointOnRectangleBoundary(Point point, List<PointF> rectangle, double tolerance)
+    private bool IsPointOnRectangleBoundary(PointF point, List<PointF> rectangle, double tolerance)
     {
         for (int i = 0; i < 4; i++)
         {
@@ -258,7 +257,7 @@ public class OrientedRectangleCreationTests
                point.Y >= minY - tolerance && point.Y <= maxY + tolerance;
     }
 
-    private bool IsPointInRotatedRect(Point point, RotatedRectangle rect)
+    private bool IsPointInRotatedRect(PointF point, RotatedRectangle rect)
     {
         var padding = 1.0;
 

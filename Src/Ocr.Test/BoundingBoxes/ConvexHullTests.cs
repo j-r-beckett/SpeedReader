@@ -224,7 +224,7 @@ public class ConvexHullTests
         // Arrange
         // Generate random points inside a circle
         var random = new Random(0);
-        var points = new List<Point>();
+        var points = new List<PointF>();
 
         for (int i = 0; i < 500; i++)
         {

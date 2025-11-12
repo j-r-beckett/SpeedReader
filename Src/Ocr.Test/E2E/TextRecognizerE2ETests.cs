@@ -126,7 +126,7 @@ public class TextRecognizerE2ETests
         vizBuilder.AddBaseImage(image);
         vizBuilder.AddOrientedBBoxes([rect], true);
 
-        var polygon = new Polygon(rect.Corners().Select(p => (Geometry.Point)p));
+        var polygon = new Polygon(rect.Corners());
         var bbox = new BoundingBox(polygon, rect);
         var result = await recognizer.Recognize([bbox], image, vizBuilder);
 
