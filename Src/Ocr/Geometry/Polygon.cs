@@ -17,8 +17,6 @@ public record Polygon
 
     public Polygon(List<PointF> points) => Points = points.AsReadOnly();
 
-    public Polygon(IReadOnlyList<PointF> points) => Points = points;
-
     public ConvexHull ToConvexHull()
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(Points.Count, 3);

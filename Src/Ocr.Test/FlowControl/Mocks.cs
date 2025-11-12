@@ -30,8 +30,15 @@ public class MockInferenceEngine : IInferenceEngine
 
 public class MockTextDetector : TextDetector
 {
-    public static readonly List<BoundingBox> SimpleResult
-        = [BoundingBox.Create(new Polygon(new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) }))!];
+    public static readonly List<BoundingBox> SimpleResult =
+    [
+        new BoundingBox
+        {
+            Polygon = new Polygon(new List<Point> { (100, 100), (200, 100), (200, 200), (100, 200) }),
+            RotatedRectangle = new RotatedRectangle { X = 100, Y = 100, Width = 100, Height = 100, Angle = 0 },
+            AxisAlignedRectangle = new AxisAlignedRectangle { X = 100, Y = 100, Width = 100, Height = 100 }
+        }
+    ];
 
     private readonly Func<Task<List<BoundingBox>>> _detect;
 
