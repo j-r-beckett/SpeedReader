@@ -22,7 +22,7 @@ public class PolygonDilationTests
     [Fact]
     public void Dilate_SinglePoint_ReturnsEmptyPolygon()
     {
-        var polygon = new Polygon(new List<Point> { (5, 3) });
+        var polygon = new Polygon([(5, 3)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -32,7 +32,7 @@ public class PolygonDilationTests
     [Fact]
     public void Dilate_TwoPoints_ReturnsEmptyPolygon()
     {
-        var polygon = new Polygon(new List<Point> { (0, 0), (3, 4) });
+        var polygon = new Polygon([(0, 0), (3, 4)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -43,7 +43,7 @@ public class PolygonDilationTests
     public void Dilate_VerySmallArea_ReturnsEmptyPolygon()
     {
         // Degenerate triangle with area < 9 pixels
-        var polygon = new Polygon(new List<Point> { (0, 0), (1, 0), (0, 1) });
+        var polygon = new Polygon([(0, 0), (1, 0), (0, 1)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -54,7 +54,7 @@ public class PolygonDilationTests
     public void Dilate_ZeroPerimeter_ReturnsEmptyPolygon()
     {
         // All points are the same (zero perimeter)
-        var polygon = new Polygon(new List<Point> { (5, 5), (5, 5), (5, 5) });
+        var polygon = new Polygon([(5, 5), (5, 5), (5, 5)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -65,7 +65,7 @@ public class PolygonDilationTests
     public void Dilate_MinimumValidTriangle_ReturnsDilatedPolygon()
     {
         // Triangle with area >= 9 pixels: area = 0.5 * 6 * 3 = 9
-        var polygon = new Polygon(new List<Point> { (0, 0), (6, 0), (3, 3) });
+        var polygon = new Polygon([(0, 0), (6, 0), (3, 3)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -84,7 +84,7 @@ public class PolygonDilationTests
     public void Dilate_Square_ExpandsPolygon()
     {
         // 10x10 square (area = 100)
-        var polygon = new Polygon(new List<Point> { (0, 0), (10, 0), (10, 10), (0, 10) });
+        var polygon = new Polygon([(0, 0), (10, 0), (10, 10), (0, 10)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -110,7 +110,7 @@ public class PolygonDilationTests
     public void Dilate_Rectangle_ExpandsPolygon()
     {
         // 20x5 rectangle (area = 100)
-        var polygon = new Polygon(new List<Point> { (0, 0), (20, 0), (20, 5), (0, 5) });
+        var polygon = new Polygon([(0, 0), (20, 0), (20, 5), (0, 5)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -128,7 +128,7 @@ public class PolygonDilationTests
     public void Dilate_LargeSquare_ProducesProportionalDilation()
     {
         // 100x100 square (area = 10000)
-        var polygon = new Polygon(new List<Point> { (0, 0), (100, 0), (100, 100), (0, 100) });
+        var polygon = new Polygon([(0, 0), (100, 0), (100, 100), (0, 100)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -152,7 +152,7 @@ public class PolygonDilationTests
     [Fact]
     public void Dilate_NegativeCoordinates_WorksCorrectly()
     {
-        var polygon = new Polygon(new List<Point> { (-10, -10), (0, -10), (0, 0), (-10, 0) });
+        var polygon = new Polygon([(-10, -10), (0, -10), (0, 0), (-10, 0)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -169,7 +169,7 @@ public class PolygonDilationTests
     [Fact]
     public void Dilate_LargeCoordinates_WorksCorrectly()
     {
-        var polygon = new Polygon(new List<Point> { (1000, 1000), (1100, 1000), (1100, 1100), (1000, 1100) });
+        var polygon = new Polygon([(1000, 1000), (1100, 1000), (1100, 1100), (1000, 1100)]);
 
         var result = polygon.Dilate(DefaultDilationRatio);
 
@@ -187,7 +187,7 @@ public class PolygonDilationTests
     [Fact]
     public void Dilate_ConsistentResults_SameInputSameOutput()
     {
-        var polygon = new Polygon(new List<Point> { (0, 0), (10, 0), (10, 10), (0, 10) });
+        var polygon = new Polygon([(0, 0), (10, 0), (10, 10), (0, 10)]);
 
         var result1 = polygon.Dilate(DefaultDilationRatio);
         var result2 = polygon.Dilate(DefaultDilationRatio);
