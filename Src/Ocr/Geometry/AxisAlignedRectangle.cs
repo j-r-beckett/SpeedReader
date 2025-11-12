@@ -36,9 +36,9 @@ public record AxisAlignedRectangle
     }
 
     public Polygon Corners() => new([
-        new PointF { X = X, Y = Y },
-        new PointF { X = X + Width, Y = Y },
-        new PointF { X = X + Width, Y = Y + Height },
-        new PointF { X = X, Y = Y + Height }
+        new PointF { X = X, Y = Y },                   // Top left
+        new PointF { X = X + Width, Y = Y },           // Top right
+        new PointF { X = X + Width, Y = Y + Height },  // Bottom right
+        new PointF { X = X, Y = Y + Height }           // Bottom left
     ]);
 }

@@ -126,7 +126,12 @@ public class TextRecognizerE2ETests
         vizBuilder.AddBaseImage(image);
         vizBuilder.AddOrientedBBoxes([rect], true);
 
-        var bbox = new BoundingBox(rect.Corners(), rect);
+        var bbox = new BoundingBox
+        {
+            Polygon = rect.Corners(),
+            RotatedRectangle = rect,
+            AxisAlignedRectangle = rect.ToAxisAlignedRectangle()
+        };
         var result = await recognizer.Recognize([bbox], image, vizBuilder);
 
         var svg = vizBuilder.RenderSvg();
