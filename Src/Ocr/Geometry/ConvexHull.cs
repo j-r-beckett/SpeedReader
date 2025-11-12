@@ -45,7 +45,7 @@ public static class PolygonExtensions
 
         stack.Reverse();
 
-        return new ConvexHull { Points = stack.AsReadOnly() };
+        return stack.Count < 3 ? null : new ConvexHull { Points = stack.AsReadOnly() };
 
         static PointF GetStartPoint(List<PointF> points)
         {

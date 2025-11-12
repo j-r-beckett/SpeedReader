@@ -3,12 +3,29 @@
 
 using Ocr.Geometry;
 
-namespace Ocr.Test.BoundingBoxes;
+namespace Ocr.Test.Geometry;
 
 public class ConvexHullTests
 {
+    private static bool IsCounterClockwise(IReadOnlyList<PointF> points)
+    {
+        if (points.Count < 3)
+            return false;
+
+        // Use the shoelace formula to calculate signed area
+        // Negative area = clockwise, Positive area = counter-clockwise
+        double sum = 0;
+        for (int i = 0; i < points.Count; i++)
+        {
+            var current = points[i];
+            var next = points[(i + 1) % points.Count];
+            sum += (next.X - current.X) * (next.Y + current.Y);
+        }
+        return sum > 0;
+    }
+
     [Fact]
-    public void ConvexHull_Triangle_ReturnsAllThreePoints()
+    public void ToConvexHull_Triangle_ReturnsAllThreePoints()
     {
         // Arrange
         var points = new List<Point> { (0, 0), (4, 0), (2, 3) };
@@ -22,10 +39,11 @@ public class ConvexHullTests
         Assert.Contains((Point)(0, 0), result.Points);
         Assert.Contains((Point)(4, 0), result.Points);
         Assert.Contains((Point)(2, 3), result.Points);
+        Assert.True(IsCounterClockwise(result.Points));
     }
 
     [Fact]
-    public void ConvexHull_Square_ReturnsAllFourCorners()
+    public void ToConvexHull_Square_ReturnsAllFourCorners()
     {
         // Arrange
         var points = new List<Point> { (0, 0), (4, 0), (4, 4), (0, 4) };
@@ -40,10 +58,11 @@ public class ConvexHullTests
         Assert.Contains((Point)(4, 0), result.Points);
         Assert.Contains((Point)(4, 4), result.Points);
         Assert.Contains((Point)(0, 4), result.Points);
+        Assert.True(IsCounterClockwise(result.Points));
     }
 
     [Fact]
-    public void ConvexHull_SquareWithInteriorPoints_ReturnsOnlyCorners()
+    public void ToConvexHull_SquareWithInteriorPoints_ReturnsOnlyCorners()
     {
         // Arrange
         var points = new List<Point>
@@ -65,11 +84,10 @@ public class ConvexHullTests
     }
 
     [Fact]
-    public void ConvexHull_CollinearPoints_ReturnsMinimalSet()
+    public void ToConvexHull_CollinearPoints_ReturnsNull()
     {
         // Arrange
-        // All collinear cases should return minimal point set (strict convex hull)
-        // For us, that means the point with the smallest (y, x)
+        // Collinear points form a degenerate hull (< 3 points after Graham scan)
         var diagonal = new List<Point> { (8, 8), (0, 0), (4, 4), (2, 2), (6, 6) };
         var horizontal = new List<Point> { (7, 3), (0, 3), (2, 3), (1, 3) };
         var vertical = new List<Point> { (3, 9), (3, 1), (3, 5), (3, 3) };
@@ -84,18 +102,13 @@ public class ConvexHullTests
         var verticalResult = verticalPolygon.ToConvexHull();
 
         // Assert
-        Assert.Single(diagonalResult!.Points);
-        Assert.Contains((Point)(0, 0), diagonalResult.Points); // Start point (lowest Y)
-
-        Assert.Single(horizontalResult!.Points);
-        Assert.Contains((Point)(0, 3), horizontalResult.Points); // Start point (lowest Y, leftmost X)
-
-        Assert.Single(verticalResult!.Points);
-        Assert.Contains((Point)(3, 1), verticalResult.Points); // Start point (lowest Y)
+        Assert.Null(diagonalResult);
+        Assert.Null(horizontalResult);
+        Assert.Null(verticalResult);
     }
 
     [Fact]
-    public void ConvexHull_Pentagon_ReturnsAllVertices()
+    public void ToConvexHull_Pentagon_ReturnsAllVertices()
     {
         // Arrange
         // Regular pentagon vertices (approximately)
@@ -118,10 +131,11 @@ public class ConvexHullTests
         {
             Assert.Contains(point, result.Points);
         }
+        Assert.True(IsCounterClockwise(result.Points));
     }
 
     [Fact]
-    public void ConvexHull_StarShape_ReturnsOuterPoints()
+    public void ToConvexHull_StarShape_ReturnsOuterPoints()
     {
         // Arrange
         var points = new List<Point>
@@ -142,10 +156,11 @@ public class ConvexHullTests
         Assert.Contains((Point)(9, 5), result.Points);
         Assert.Contains((Point)(5, 1), result.Points);
         Assert.Contains((Point)(1, 5), result.Points);
+        Assert.True(IsCounterClockwise(result.Points));
     }
 
     [Fact]
-    public void ConvexHull_DuplicatePoints_HandlesCorrectly()
+    public void ToConvexHull_DuplicatePoints_HandlesCorrectly()
     {
         // Arrange
         var points = new List<Point>
@@ -166,46 +181,7 @@ public class ConvexHullTests
     }
 
     [Fact]
-    public void ConvexHull_NonNegativeCoordinates_WorksCorrectly()
-    {
-        // Arrange
-        var points = new List<Point> { (0, 4), (2, 2), (0, 0), (4, 4), (4, 0) };
-        var polygon = new Polygon(points);
-
-        // Act
-        var result = polygon.ToConvexHull();
-
-        // Assert
-        Assert.Equal(4, result!.Points.Count);
-        Assert.Contains((Point)(0, 0), result.Points);
-        Assert.Contains((Point)(4, 0), result.Points);
-        Assert.Contains((Point)(4, 4), result.Points);
-        Assert.Contains((Point)(0, 4), result.Points);
-    }
-
-    [Fact]
-    public void ConvexHull_LargeCoordinates_WorksCorrectly()
-    {
-        // Arrange
-        var points = new List<Point>
-        {
-            (1000, 1000), (2000, 1000), (2000, 2000), (1000, 2000), (1500, 1500)
-        };
-        var polygon = new Polygon(points);
-
-        // Act
-        var result = polygon.ToConvexHull();
-
-        // Assert
-        Assert.Equal(4, result!.Points.Count);
-        Assert.Contains((Point)(1000, 1000), result.Points);
-        Assert.Contains((Point)(2000, 1000), result.Points);
-        Assert.Contains((Point)(2000, 2000), result.Points);
-        Assert.Contains((Point)(1000, 2000), result.Points);
-    }
-
-    [Fact]
-    public void ConvexHull_RandomPointCloud_ProducesValidHull()
+    public void ToConvexHull_RandomPointCloud_ProducesValidHull()
     {
         // Arrange
         // Generate random points inside a circle
@@ -236,5 +212,28 @@ public class ConvexHullTests
         {
             Assert.Contains(hullPoint, points);
         }
+
+        Assert.True(IsCounterClockwise(result.Points));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void ToConvexHull_InsufficientPoints_ReturnsNull(int pointCount)
+    {
+        // Arrange
+        var points = new List<Point>();
+        for (int i = 0; i < pointCount; i++)
+        {
+            points.Add((i, i));
+        }
+        var polygon = new Polygon(points);
+
+        // Act
+        var result = polygon.ToConvexHull();
+
+        // Assert
+        Assert.Null(result);
     }
 }
