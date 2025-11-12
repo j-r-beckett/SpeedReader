@@ -2,12 +2,12 @@
 // Licensed under the Apache License, Version 2.0
 
 using Ocr.Geometry;
-using Xunit.Abstractions;
 
 namespace Ocr.Test.Geometry;
 
-public class ConvexHullTests
+public class RotatedRectangleTests
 {
+    #region ToRotatedRectangle
     [Fact]
     public void ToRotatedRectangle_WithLessThan3Points_ReturnsNull()
     {
@@ -214,7 +214,9 @@ public class ConvexHullTests
         Assert.True(Math.Abs(dotProduct) < perpendicularTolerance,
             $"Adjacent edges should be perpendicular within tolerance {perpendicularTolerance:F1}, dot product was {dotProduct}");
     }
+    #endregion ToRotatedRectangle
 
+    #region Utils
     private bool AreVectorsParallel((double X, double Y) v1, (double X, double Y) v2, double tolerance)
     {
         double crossProduct = v1.X * v2.Y - v1.Y * v2.X;
@@ -300,4 +302,5 @@ public class ConvexHullTests
         return localX >= -padding && localX <= rect.Width + padding &&
                localY >= -padding && localY <= rect.Height + padding;
     }
+    #endregion Utils
 }

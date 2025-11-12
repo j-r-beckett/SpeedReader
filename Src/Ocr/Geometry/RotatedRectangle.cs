@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using SixLabors.ImageSharp;
@@ -222,30 +221,90 @@ public record RotatedRectangle
             return new Rgb24(r, g, b);
         }
     }
+}
 
-    public AxisAlignedRectangle ToAxisAlignedRectangle()
+public static class ConvexHullExtensions
+{
+    public static RotatedRectangle? ToRotatedRectangle(this ConvexHull convexHull)
     {
-        var points = Corners().Points;
+        if (convexHull.Points.Count < 3)
+            return null;
 
-        var maxX = double.NegativeInfinity;
-        var maxY = double.NegativeInfinity;
-        var minX = double.PositiveInfinity;
-        var minY = double.PositiveInfinity;
-        foreach (var point in points)
+        double minArea = double.MaxValue;
+        RotatedRectangle? bestRectangle = null;
+
+        var points = convexHull.Points;
+
+        int n = points.Count;
+
+        // Try each edge as a potential side of the rectangle
+        for (int i = 0; i < n; i++)
         {
-            maxX = Math.Max(maxX, point.X);
-            maxY = Math.Max(maxY, point.Y);
-            minX = Math.Min(minX, point.X);
-            minY = Math.Min(minY, point.Y);
+            int j = (i + 1) % n;
+            var edge = (points[j].X - points[i].X, points[j].Y - points[i].Y);
+
+            // Skip zero-length edges
+            if (edge.Item1 == 0 && edge.Item2 == 0)
+                continue;
+
+            // Find the rectangle aligned with this edge
+            var rectangle = FindRectangleAlignedWithEdge(points, edge);
+            var area = rectangle?.Height * rectangle?.Width;
+
+            if (area < minArea)
+            {
+                minArea = area.Value;
+                bestRectangle = rectangle;
+            }
         }
 
-        // Ensure rectangle completely encloses points
-        return new AxisAlignedRectangle
+        return bestRectangle;
+
+        static RotatedRectangle? FindRectangleAlignedWithEdge(IReadOnlyList<PointF> points, (double X, double Y) edge)
         {
-            X = (int)Math.Floor(minX),
-            Y = (int)Math.Floor(minY),
-            Width = (int)Math.Ceiling(maxX) - (int)Math.Floor(minX),
-            Height = (int)Math.Ceiling(maxY) - (int)Math.Floor(minY)
-        };
+            // 1. Compute edge unit vector and normal vector. These are the basis vectors for the rectangle
+            // 2. Project points onto the basis vectors
+            // 3. Find the minimum and maximum projections of points onto the basis vectors
+            // 3. Transform from basic vector coordinates back to world coordinates
+
+            var edgeLength = Math.Sqrt(edge.X * edge.X + edge.Y * edge.Y);
+            var (ux, uy) = (edge.X / edgeLength, edge.Y / edgeLength);  // Edge unit vector
+            var (nx, ny) = (-uy, ux);  // Edge normal vector
+
+            // Compute minimum and maximum projections of points onto the basis vectors
+            var minU = double.PositiveInfinity;
+            var maxU = double.NegativeInfinity;
+            var minN = double.PositiveInfinity;
+            var maxN = double.NegativeInfinity;
+            foreach (var point in points)
+            {
+                var projU = point.X * ux + point.Y * uy;
+                var projN = point.X * nx + point.Y * ny;
+
+                minU = Math.Min(minU, projU);
+                maxU = Math.Max(maxU, projU);
+                minN = Math.Min(minN, projN);
+                maxN = Math.Max(maxN, projN);
+            }
+
+            var corner0 = (minU * ux + maxN * nx, minU * uy + maxN * ny);  // (minU, maxN)
+            var corner1 = (maxU * ux + maxN * nx, maxU * uy + maxN * ny);  // (maxU, maxN)
+            var corner2 = (maxU * ux + minN * nx, maxU * uy + minN * ny);  // (maxU, minN)
+            var corner3 = (minU * ux + minN * nx, minU * uy + minN * ny);  // (minU, minN)
+
+            List<PointF> corners = [corner0, corner1, corner2, corner3];
+
+            // Check for collinearity
+            for (int i = 1; i < corners.Count - 1; i++)
+            {
+                if (Math.Abs(CrossProductZ(corners[0], corners[i], corners[i + 1])) < 1e-8)
+                    return null;
+            }
+
+            return new RotatedRectangle(corners);
+
+            static double CrossProductZ(PointF a, PointF b, PointF c) =>
+                (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+        }
     }
 }
