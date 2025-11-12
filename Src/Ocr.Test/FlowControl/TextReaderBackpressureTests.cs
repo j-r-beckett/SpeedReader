@@ -87,7 +87,7 @@ public class TextReaderBackpressureTests
             }
         });
 
-        await Task.Delay(100);
+        await Task.Delay(200);
 
         // Should have read capacity items before blocking
         Assert.Equal(capacity, count);

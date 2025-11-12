@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace Ocr.Geometry;
@@ -14,7 +13,6 @@ public record AxisAlignedRectangle
         get;
         init;
     }
-
 
     [JsonPropertyName("y")]
     public required int Y  // Top left y
@@ -36,16 +34,12 @@ public record AxisAlignedRectangle
         get;
         init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
-}
 
-public static class AxisAlignedRectangleExtensions
-{
-    public static Polygon ToPolygon(this AxisAlignedRectangle rectangle) =>
-        new(new List<Point>
-        {
-            new() { X = rectangle.X, Y = rectangle.Y },
-            new() { X = rectangle.X + rectangle.Width, Y = rectangle.Y },
-            new() { X = rectangle.X + rectangle.Width, Y = rectangle.Y + rectangle.Height },
-            new() { X = rectangle.X, Y = rectangle.Y + rectangle.Height }
-        });
+    public Polygon ToPolygon() => new(new List<Point>
+    {
+        new() { X = X, Y = Y },
+        new() { X = X + Width, Y = Y },
+        new() { X = X + Width, Y = Y + Height },
+        new() { X = X, Y = Y + Height }
+    });
 }
