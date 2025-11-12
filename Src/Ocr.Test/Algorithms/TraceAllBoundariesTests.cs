@@ -235,7 +235,7 @@ public class TraceAllBoundariesTests
         // Compute convex hull
         var polygon = new Polygon(points);
         var hull = polygon.ToConvexHull();
-        return hull.Points.ToList();
+        return hull!.Points.ToList();
     }
 
     private static void RasterizeConvexPolygon(float[] data, int width, int height, List<PointF> polygon)
