@@ -151,8 +151,8 @@ public static class Utils
     public static double IoU(RotatedRectangle a, RotatedRectangle b)
     {
         // Convert polygon points to Clipper2 format
-        var pathA = new Path64(a.Corners().Select(p => new Point64(p.X, p.Y)));
-        var pathB = new Path64(b.Corners().Select(p => new Point64(p.X, p.Y)));
+        var pathA = new Path64(a.Corners().Points.Select(p => new Point64(p.X, p.Y)));
+        var pathB = new Path64(b.Corners().Points.Select(p => new Point64(p.X, p.Y)));
 
         // Calculate intersection
         var clipper = new Clipper64();

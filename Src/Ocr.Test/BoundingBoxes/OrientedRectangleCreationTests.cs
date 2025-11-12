@@ -31,8 +31,7 @@ public class OrientedRectangleCreationTests
         // Act
         var convexHull = new Polygon(points).ToConvexHull();
         var rotatedRect = convexHull.ToRotatedRectangle();
-        var orientedRectF = rotatedRect.Corners();
-        var orientedRect = rotatedRect.ToPolygon().Points;
+        var orientedRect = rotatedRect.Corners().Points;
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
@@ -46,7 +45,7 @@ public class OrientedRectangleCreationTests
         // Assert: Verify rectangle properties
         Assert.Equal(4, orientedRect.Count);
 
-        VerifyRectangleHasParallelSides(orientedRectF.ToList());
+        VerifyRectangleHasParallelSides(orientedRect.ToList());
         VerifyAllPointsContained(convexHull.Points.ToList(), rotatedRect);
         VerifyAtLeastTwoPointsOnBoundary(convexHull.Points.ToList(), orientedRect.ToList());
     }
@@ -59,7 +58,7 @@ public class OrientedRectangleCreationTests
 
         // Act
         var orientedRectF = new RotatedRectangle(points);
-        var corners = orientedRectF.Corners().ToList();
+        var corners = orientedRectF.Corners().Points;
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
@@ -73,9 +72,9 @@ public class OrientedRectangleCreationTests
         // Assert: Verify rectangle properties
         Assert.Equal(4, corners.Count);
 
-        VerifyRectangleHasParallelSides(corners);
+        VerifyRectangleHasParallelSides(corners.ToList());
         VerifyAllPointsContained(points, orientedRectF);
-        VerifyAtLeastTwoPointsOnBoundary(points, orientedRectF.ToPolygon().Points.ToList());
+        VerifyAtLeastTwoPointsOnBoundary(points, corners.ToList());
     }
 
     [Fact]
@@ -86,7 +85,7 @@ public class OrientedRectangleCreationTests
 
         // Act
         var orientedRectF = new RotatedRectangle(points);
-        var corners = orientedRectF.Corners().ToList();
+        var corners = orientedRectF.Corners().Points;
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
@@ -100,9 +99,9 @@ public class OrientedRectangleCreationTests
         // Assert: Verify rectangle properties
         Assert.Equal(4, corners.Count);
 
-        VerifyRectangleHasParallelSides(corners);
+        VerifyRectangleHasParallelSides(corners.ToList());
         VerifyAllPointsContained(points, orientedRectF);
-        VerifyAtLeastTwoPointsOnBoundary(points, orientedRectF.ToPolygon().Points.ToList());
+        VerifyAtLeastTwoPointsOnBoundary(points, corners.ToList());
     }
 
     [Fact]
@@ -134,7 +133,7 @@ public class OrientedRectangleCreationTests
             var polygon = new Polygon(points);
             var convexHull = polygon.ToConvexHull();
             var rotatedRect = convexHull.ToRotatedRectangle();
-            var orientedRectF = rotatedRect.Corners();
+            var orientedRectF = rotatedRect.Corners().Points;
             // var orientedRect = orientedRectF.Select(c => (Point)c).ToList();
 
             // Create debug visualization
@@ -155,7 +154,7 @@ public class OrientedRectangleCreationTests
 
             VerifyRectangleHasParallelSides(orientedRectF.ToList());
             VerifyAllPointsContained(convexHull.Points.ToList(), rotatedRect);
-            VerifyAtLeastTwoPointsOnBoundary(convexHull.Points.ToList(), rotatedRect.ToPolygon().Points.ToList());
+            VerifyAtLeastTwoPointsOnBoundary(convexHull.Points.ToList(), orientedRectF.ToList());
         }
     }
 

@@ -35,11 +35,10 @@ public record AxisAlignedRectangle
         init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
     }
 
-    public Polygon ToPolygon() => new(new List<PointF>
-    {
-        new() { X = X, Y = Y },
-        new() { X = X + Width, Y = Y },
-        new() { X = X + Width, Y = Y + Height },
-        new() { X = X, Y = Y + Height }
-    });
+    public Polygon Corners() => new([
+        new PointF { X = X, Y = Y },
+        new PointF { X = X + Width, Y = Y },
+        new PointF { X = X + Width, Y = Y + Height },
+        new PointF { X = X, Y = Y + Height }
+    ]);
 }

@@ -44,7 +44,7 @@ public class OrientedRectangleCroppingTests
         _outputHelper.WriteLine($"Corners: [{string.Join(", ", corners.Select(v => $"({v.X:F1},{v.Y:F1})"))}]");
 
         var rotatedRect = new RotatedRectangle(corners);
-        var detectedCorners = rotatedRect.Corners();
+        var detectedCorners = rotatedRect.Corners().Points;
         _outputHelper.WriteLine($"Detected corners: [{string.Join(", ", detectedCorners.Select(c => $"({c.X:F1},{c.Y:F1})"))}]");
 
         using var croppedImage = rotatedRect.Crop(sourceImage);

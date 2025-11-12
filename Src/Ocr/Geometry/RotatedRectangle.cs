@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using SixLabors.ImageSharp;
@@ -35,9 +34,6 @@ public record RotatedRectangle
     public required double Angle { get; init; }  // Angle in radians
 
     public RotatedRectangle() { }
-
-    [SetsRequiredMembers]
-    public RotatedRectangle(List<Point> corners) : this(corners.Select(p => (PointF)p).ToList()) { }
 
     [SetsRequiredMembers]
     public RotatedRectangle(List<PointF> corners)  // corners must be convex and in clockwise order
@@ -110,10 +106,7 @@ public record RotatedRectangle
         double YMidpoint((PointF Start, PointF End) edge) => (edge.Start.Y + edge.End.Y) / 2;
     }
 
-    public Polygon ToPolygon() =>
-        new(Corners());
-
-    public ReadOnlyCollection<PointF> Corners()
+    public Polygon Corners()
     {
         var cos = Math.Cos(Angle);
         var sin = Math.Sin(Angle);
@@ -142,12 +135,12 @@ public record RotatedRectangle
             Y = Y + Height * cos
         };
 
-        return new List<PointF> { topLeft, topRight, bottomRight, bottomLeft }.AsReadOnly();  // clockwise order
+        return new Polygon([topLeft, topRight, bottomRight, bottomLeft]);  // clockwise order
     }
 
     public Image<Rgb24> Crop(Image<Rgb24> image)
     {
-        var corners = Corners();
+        var corners = Corners().Points;
 
         var topLeft = corners[0];
         var topRight = corners[1];
@@ -235,7 +228,7 @@ public record RotatedRectangle
 
     public AxisAlignedRectangle ToAxisAlignedRectangle()
     {
-        var points = Corners().ToList();
+        var points = Corners().Points;
 
         var maxX = double.NegativeInfinity;
         var maxY = double.NegativeInfinity;
