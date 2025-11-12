@@ -13,14 +13,10 @@ public record PointF
     [JsonPropertyName("y")]
     public required double Y { get; init; }
 
-    // No loss in precision
+    // No loss in precision, implicit cast
     public static implicit operator PointF(Point point) => new() { X = point.X, Y = point.Y };
 
     public static implicit operator PointF((double X, double Y) point) => new() { X = point.X, Y = point.Y };
 
-    public void Deconstruct(out double x, out double y)
-    {
-        x = X;
-        y = Y;
-    }
+    public void Deconstruct(out double x, out double y) { x = X; y = Y; }
 }

@@ -84,13 +84,13 @@ public static class OrientedRectangleTestUtils
         var perpX = -pqY / pqLength * width;
         var perpY = pqX / pqLength * width;
 
-        return new PointF[]
-        {
-            p,                                          // Corner 0: origin
-            q,                                          // Corner 1: along main edge
-            new PointF(q.X + perpX, q.Y + perpY),     // Corner 2: opposite corner
-            new PointF(p.X + perpX, p.Y + perpY)      // Corner 3: complete rectangle
-        };
+        return
+        [
+            p,                                     // Corner 0: origin
+            q,                                     // Corner 1: along main edge
+            new PointF(q.X + perpX, q.Y + perpY),  // Corner 2: opposite corner
+            new PointF(p.X + perpX, p.Y + perpY)   // Corner 3: complete rectangle
+        ];
     }
 
     /// <summary>
