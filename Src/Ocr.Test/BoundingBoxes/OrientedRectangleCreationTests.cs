@@ -36,7 +36,7 @@ public class OrientedRectangleCreationTests
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
             convexHull.Points.Select(p => (p.X, p.Y)).ToList(),
-            orientedRect.Select(p => ((double)p.X, (double)p.Y)).ToList());
+            orientedRect.Select(p => (p.X, p.Y)).ToList());
         await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
 
         _outputHelper.WriteLine($"Points: [{string.Join(", ", points)}]");
@@ -62,7 +62,7 @@ public class OrientedRectangleCreationTests
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
-            points.Select(p => ((double)p.X, (double)p.Y)).ToList(),
+            points.Select(p => (p.X, p.Y)).ToList(),
             corners.Select(p => (p.X, p.Y)).ToList());
         await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
 
@@ -89,7 +89,7 @@ public class OrientedRectangleCreationTests
 
         // Create debug visualization
         using var debugImage = OrientedRectangleTestUtils.CreateDebugVisualization(
-            points.Select(p => ((double)p.X, (double)p.Y)).ToList(),
+            points.Select(p => (p.X, p.Y)).ToList(),
             corners.Select(p => (p.X, p.Y)).ToList());
         await _publisher.PublishAsync(debugImage, "Debug oriented rectangle computation - black dots show convex hull, red polygon shows computed rectangle");
 

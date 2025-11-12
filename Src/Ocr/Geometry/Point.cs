@@ -13,14 +13,14 @@ public readonly struct Point
     [JsonPropertyName("y")]
     public int Y { get; init; }
 
-    // Loses precision
+    // Loses precision, explicit cast needed
     public static explicit operator Point(PointF point) => new()
     {
         X = (int)Math.Round(point.X),
         Y = (int)Math.Round(point.Y)
     };
 
-    public void Deconstruct(out int x, out int y) { x = X; y = Y; }
-
     public static implicit operator Point((int X, int Y) point) => new() { X = point.X, Y = point.Y };
+
+    public void Deconstruct(out int x, out int y) { x = X; y = Y; }
 }
