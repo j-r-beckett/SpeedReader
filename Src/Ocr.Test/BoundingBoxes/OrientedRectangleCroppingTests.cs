@@ -43,11 +43,11 @@ public class OrientedRectangleCroppingTests
 
         _outputHelper.WriteLine($"Corners: [{string.Join(", ", corners.Select(v => $"({v.X:F1},{v.Y:F1})"))}]");
 
-        var rotatedRect = corners.ToRotatedRectangle();
+        var rotatedRect = new RotatedRectangle(corners);
         var detectedCorners = rotatedRect.Corners();
         _outputHelper.WriteLine($"Detected corners: [{string.Join(", ", detectedCorners.Select(c => $"({c.X:F1},{c.Y:F1})"))}]");
 
-        using var croppedImage = sourceImage.Crop(rotatedRect);
+        using var croppedImage = rotatedRect.Crop(sourceImage);
         await _publisher.PublishAsync(croppedImage, "Cropped oriented rectangle");
 
         VerifyCornerColors(croppedImage);
@@ -73,8 +73,8 @@ public class OrientedRectangleCroppingTests
         var expectedWidth = (int)Math.Round(Math.Sqrt(Math.Pow(q.X - p.X, 2) + Math.Pow(q.Y - p.Y, 2)));
         var expectedHeight = (int)Math.Round(width);
 
-        var rotatedRect = corners.ToRotatedRectangle();
-        using var croppedImage = sourceImage.Crop(rotatedRect);
+        var rotatedRect = new RotatedRectangle(corners);
+        using var croppedImage = rotatedRect.Crop(sourceImage);
         await _publisher.PublishAsync(croppedImage, "Cropped upward-tilted oriented rectangle");
 
         VerifyCornerColors(croppedImage);
@@ -100,8 +100,8 @@ public class OrientedRectangleCroppingTests
         var expectedWidth = (int)Math.Round(Math.Sqrt(Math.Pow(q.X - p.X, 2) + Math.Pow(q.Y - p.Y, 2)));
         var expectedHeight = (int)Math.Round(width);
 
-        var rotatedRect = corners.ToRotatedRectangle();
-        using var croppedImage = sourceImage.Crop(rotatedRect);
+        var rotatedRect = new RotatedRectangle(corners);
+        using var croppedImage = rotatedRect.Crop(sourceImage);
         await _publisher.PublishAsync(croppedImage, "Cropped downward-tilted oriented rectangle");
 
         VerifyCornerColors(croppedImage);
@@ -190,8 +190,8 @@ public class OrientedRectangleCroppingTests
 
             _outputHelper.WriteLine($"Iteration {n}: Center=({centerX:F1},{centerY:F1}), Size={rectWidth:F1}x{rectHeight:F1}, Angle={angleDegrees:F1}°");
 
-            var rotatedRect = corners.ToRotatedRectangle();
-            using var croppedImage = sourceImage.Crop(rotatedRect);
+            var rotatedRect = new RotatedRectangle(corners);
+            using var croppedImage = rotatedRect.Crop(sourceImage);
 
             await _publisher.PublishAsync(croppedImage, $"Random cropped image {n}");
 
@@ -214,8 +214,8 @@ public class OrientedRectangleCroppingTests
         };
 
         using var testImage = new Image<Rgb24>(300, 300);
-        var rotatedRect = squareCorners.ToRotatedRectangle();
-        using var croppedImage = testImage.Crop(rotatedRect);
+        var rotatedRect = new RotatedRectangle(squareCorners);
+        using var croppedImage = rotatedRect.Crop(testImage);
 
         Assert.Equal(100, croppedImage.Width);
         Assert.Equal(100, croppedImage.Height);

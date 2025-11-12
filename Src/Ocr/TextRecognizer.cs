@@ -51,7 +51,7 @@ public class TextRecognizer
 
         static float[] PreprocessRegion(BoundingBox region, Image<Rgb24> image, int height, int width)
         {
-            using var textImg = image.Crop(region.RotatedRectangle);
+            using var textImg = region.RotatedRectangle.Crop(image);
             textImg.Mutate(x => x
                 .Resize(new ResizeOptions
                 {

@@ -58,7 +58,7 @@ public class OrientedRectangleCreationTests
         var points = new List<Point> { (27, 141), (160, 141), (160, 1), (27, 1) };
 
         // Act
-        var orientedRectF = points.ToRotatedRectangle();
+        var orientedRectF = new RotatedRectangle(points);
         var corners = orientedRectF.Corners().ToList();
 
         // Create debug visualization
@@ -86,7 +86,7 @@ public class OrientedRectangleCreationTests
         var points = new List<Point> { (159, 150), (159, 7), (282, 7), (282, 150) };
 
         // Act
-        var orientedRectF = points.ToRotatedRectangle();
+        var orientedRectF = new RotatedRectangle(points);
         var corners = orientedRectF.Corners().ToList();
 
         // Create debug visualization

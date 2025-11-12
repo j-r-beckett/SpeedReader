@@ -26,8 +26,6 @@ public record BoundingBox
     public BoundingBox(Polygon polygon, RotatedRectangle rotatedRectangle)
         : this(polygon, rotatedRectangle, rotatedRectangle.ToAxisAlignedRectangle()) { }
 
-    private BoundingBox(Polygon polygon) : this(polygon, polygon.ToRotatedRectangle()) { }
-
     public static BoundingBox? Create(Polygon polygon)
     {
         var convexHull = polygon.ToConvexHull();
