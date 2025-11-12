@@ -61,13 +61,12 @@ public static class RotatedRectangleExtensions
             minY = Math.Min(minY, point.Y);
         }
 
-        // Ensure rectangle completely encloses points
         return new AxisAlignedRectangle
         {
-            X = (int)Math.Floor(minX),
-            Y = (int)Math.Floor(minY),
-            Width = (int)Math.Ceiling(maxX) - (int)Math.Floor(minX),
-            Height = (int)Math.Ceiling(maxY) - (int)Math.Floor(minY)
+            X = minX,
+            Y = minY,
+            Width = maxX - minX,
+            Height = maxY - minY
         };
     }
 }
