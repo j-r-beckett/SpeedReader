@@ -115,7 +115,7 @@ public class VizBuilder
             throw new MultipleAddException($"{nameof(AddAxisAlignedBBoxes)} cannot be called twice");
         }
 
-        _axisAlignedBBoxes = axisAlignedBBoxes.Select(rect => rect.ToPolygon()).ToList();
+        _axisAlignedBBoxes = axisAlignedBBoxes.Select(rect => rect.Corners()).ToList();
         _displayAxisAlignedBBoxesByDefault = displayByDefault;
 
         return this;
@@ -128,7 +128,7 @@ public class VizBuilder
             throw new MultipleAddException($"{nameof(AddOrientedBBoxes)} cannot be called twice");
         }
 
-        _orientedBBoxes = orientedBBoxes.Select(rect => rect.ToPolygon()).ToList();
+        _orientedBBoxes = orientedBBoxes.Select(rect => rect.Corners()).ToList();
         _displayOrientedBBoxesByDefault = displayByDefault;
 
         return this;
@@ -141,7 +141,7 @@ public class VizBuilder
             throw new MultipleAddException($"{nameof(AddExpectedAxisAlignedBBoxes)} cannot be called twice");
         }
 
-        _expectedAxisAlignedBBoxes = expectedAxisAlignedBBoxes.Select(rect => rect.ToPolygon()).ToList();
+        _expectedAxisAlignedBBoxes = expectedAxisAlignedBBoxes.Select(rect => rect.Corners()).ToList();
         _displayExpectedAxisAlignedBBoxesByDefault = displayByDefault;
 
         return this;
@@ -154,7 +154,7 @@ public class VizBuilder
             throw new MultipleAddException($"{nameof(AddExpectedOrientedBBoxes)} cannot be called twice");
         }
 
-        _expectedOrientedBBoxes = expectedOrientedBBoxes.Select(rect => rect.ToPolygon()).ToList();
+        _expectedOrientedBBoxes = expectedOrientedBBoxes.Select(rect => rect.Corners()).ToList();
         _displayExpectedOrientedBBoxesByDefault = displayByDefault;
 
         return this;
