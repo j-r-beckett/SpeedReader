@@ -115,8 +115,36 @@ g++ \
 echo "   ✓ Compiled smoke_test"
 echo ""
 
+echo "3. Creating combined static library for C# integration..."
+
+# Create MRI script for combining archives
+MRI_SCRIPT="$BUILD_DIR/combine.mri"
+cat > "$MRI_SCRIPT" << EOF
+CREATE $BUILD_DIR/libspeedreader_ort.a
+ADDMOD $BUILD_DIR/speedreader_ort.o
+EOF
+
+# Add all ONNX Runtime libraries to the MRI script
+for lib in "${ONNX_LIBS[@]}"; do
+    echo "ADDLIB $lib" >> "$MRI_SCRIPT"
+done
+
+echo "SAVE" >> "$MRI_SCRIPT"
+echo "END" >> "$MRI_SCRIPT"
+
+# Execute the MRI script to combine all archives
+ar -M < "$MRI_SCRIPT"
+
+# Remove the MRI script
+rm "$MRI_SCRIPT"
+
+LIB_SIZE=$(du -h "$BUILD_DIR/libspeedreader_ort.a" | cut -f1)
+echo "   ✓ Created libspeedreader_ort.a ($LIB_SIZE)"
+echo ""
+
 echo "=== Build Complete ==="
-echo "Output: $BUILD_DIR/smoke_test"
+echo "Smoke test: $BUILD_DIR/smoke_test"
+echo "Static library: $BUILD_DIR/libspeedreader_ort.a"
 echo ""
 echo "Run smoke test:"
 echo "  $BUILD_DIR/smoke_test <path_to_svtr_model.onnx>"
