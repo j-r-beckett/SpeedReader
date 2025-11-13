@@ -22,16 +22,14 @@ namespace Core;
 
 public static class Serve
 {
-    [RequiresDynamicCode("")]
-    [RequiresUnreferencedCode("")]
     public static async Task RunServer()
     {
         // Create performance metrics collection
-        var metricsChannel = Channel.CreateUnbounded<MetricPoint>();
-        var processMetricsCollector = new ProcessMetricsCollector();
-        var containerMetricsCollector = ContainerMetricsCollector.IsRunningInContainer()
-            ? new ContainerMetricsCollector()
-            : null;
+        // var metricsChannel = Channel.CreateUnbounded<MetricPoint>();
+        // var processMetricsCollector = new ProcessMetricsCollector();
+        // var containerMetricsCollector = ContainerMetricsCollector.IsRunningInContainer()
+        //     ? new ContainerMetricsCollector()
+        //     : null;
         // var metricsWriter = new MetricRecorder(metricsChannel.Reader);
 
         // Create minimal web app
