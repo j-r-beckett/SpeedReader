@@ -28,6 +28,9 @@ public record Polygon
         double area = Math.Abs(Clipper.Area(clipperPathD));
         double perimeter = CalculatePerimeter(clipperPathD);
 
+        if (perimeter == 0)
+            return null;
+
         double offset = area * dilationRatio / perimeter;
 
         var clipperPath = Clipper.Path64(clipperPathD);
@@ -86,63 +89,166 @@ public record Polygon
         };
     }
 
-    public Polygon Simplify(double tolerance = 1)
+    public Polygon Simplify(double aggressiveness = 1)
     {
-        return new Polygon(SimplifyInternal(Points.ToList(), tolerance));
+        // Visvalingam-Whyatt polygon simplification
+        // Iteratively removes points that cause the smallest area change
 
-        static List<PointF> SimplifyInternal(List<PointF> polygon, double tolerance)
+        if (Points.Count <= 3)
+            return this;
+
+        // Create a list of vertices with their effective areas
+        var vertices = new List<Vertex>();
+        for (int i = 0; i < Points.Count; i++)
         {
-            // Douglas-Peucker polygon simplification
-
-            if (polygon.Count <= 3)
-                return polygon;
-
-            // Find the point with maximum distance from the line segment
-            var start = polygon[0];
-            var end = polygon[^1];
-
-            double maxDistance = 0;
-            int maxIndex = 0;
-
-            for (int i = 1; i < polygon.Count - 1; i++)
+            vertices.Add(new Vertex
             {
-                double distance = PerpendicularDistance(polygon[i], start, end);
-                if (distance > maxDistance)
-                {
-                    maxDistance = distance;
-                    maxIndex = i;
-                }
+                Point = Points[i],
+                Index = i
+            });
+        }
+
+        // Calculate initial effective areas for all points
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            vertices[i].EffectiveArea = CalculateTriangleArea(
+                GetPrevVertex(vertices, i).Point,
+                vertices[i].Point,
+                GetNextVertex(vertices, i).Point
+            );
+        }
+
+        // Use a priority queue to efficiently find minimum area point
+        var heap = new PriorityQueue<int, double>();
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            heap.Enqueue(i, vertices[i].EffectiveArea);
+        }
+
+        // Remove points until we reach tolerance or minimum point count
+        while (heap.Count > 0)
+        {
+            var minIndex = heap.Dequeue();
+
+            // Skip if already removed
+            if (vertices[minIndex].Removed)
+                continue;
+
+            // Count remaining points
+            var remainingCount = vertices.Count(v => !v.Removed);
+            if (remainingCount <= 3)
+                break;
+
+            // Stop if minimum area exceeds tolerance
+            if (vertices[minIndex].EffectiveArea > aggressiveness)
+                break;
+
+            // Mark as removed
+            vertices[minIndex].Removed = true;
+
+            // Recalculate areas for neighboring vertices
+            var prevIdx = GetPrevVertexIndex(vertices, minIndex);
+            var nextIdx = GetNextVertexIndex(vertices, minIndex);
+
+            if (prevIdx != -1)
+            {
+                vertices[prevIdx].EffectiveArea = CalculateTriangleArea(
+                    GetPrevVertex(vertices, prevIdx).Point,
+                    vertices[prevIdx].Point,
+                    GetNextVertex(vertices, prevIdx).Point
+                );
+                heap.Enqueue(prevIdx, vertices[prevIdx].EffectiveArea);
             }
 
-            // If the maximum distance is greater than tolerance, recursively simplify
-            if (maxDistance > tolerance)
+            if (nextIdx != -1)
             {
-                var leftSegment = SimplifyInternal(polygon[..(maxIndex + 1)], tolerance);
-                var rightSegment = SimplifyInternal(polygon[maxIndex..], tolerance);
-                return leftSegment.Concat(rightSegment.Skip(1)).ToList(); // Skip duplicate point at junction
-            }
-
-            // All points between start and end are within tolerance, keep only endpoints
-            return [start, end];
-
-            static double PerpendicularDistance(PointF point, PointF lineStart, PointF lineEnd)
-            {
-                double dx = lineEnd.X - lineStart.X;
-                double dy = lineEnd.Y - lineStart.Y;
-
-                // If the line segment has zero length, return distance to start point
-                if (dx == 0 && dy == 0)
-                    return Math.Sqrt(Math.Pow(point.X - lineStart.X, 2) + Math.Pow(point.Y - lineStart.Y, 2));
-
-                // Calculate perpendicular distance using the formula:
-                // |ax + by + c| / sqrt(a^2 + b^2)
-                // where the line equation is ax + by + c = 0
-                double a = dy;
-                double b = -dx;
-                double c = dx * lineStart.Y - dy * lineStart.X;
-
-                return Math.Abs(a * point.X + b * point.Y + c) / Math.Sqrt(a * a + b * b);
+                vertices[nextIdx].EffectiveArea = CalculateTriangleArea(
+                    GetPrevVertex(vertices, nextIdx).Point,
+                    vertices[nextIdx].Point,
+                    GetNextVertex(vertices, nextIdx).Point
+                );
+                heap.Enqueue(nextIdx, vertices[nextIdx].EffectiveArea);
             }
         }
+
+        // Collect remaining points
+        var simplified = vertices.Where(v => !v.Removed).Select(v => v.Point).ToList();
+        return new Polygon(simplified);
+
+        static double CalculateTriangleArea(PointF p1, PointF p2, PointF p3) =>
+            // Use cross product formula: |((p2-p1) × (p3-p1))| / 2
+            Math.Abs((p2.X - p1.X) * (p3.Y - p1.Y) - (p3.X - p1.X) * (p2.Y - p1.Y)) / 2;
+
+        static Vertex GetPrevVertex(List<Vertex> vertices, int index)
+        {
+            for (int i = index - 1; i >= 0; i--)
+            {
+                if (!vertices[i].Removed)
+                    return vertices[i];
+            }
+            // Wrap around for closed polygon
+            for (int i = vertices.Count - 1; i > index; i--)
+            {
+                if (!vertices[i].Removed)
+                    return vertices[i];
+            }
+            return vertices[index]; // Shouldn't happen if count > 3
+        }
+
+        static Vertex GetNextVertex(List<Vertex> vertices, int index)
+        {
+            for (int i = index + 1; i < vertices.Count; i++)
+            {
+                if (!vertices[i].Removed)
+                    return vertices[i];
+            }
+            // Wrap around for closed polygon
+            for (int i = 0; i < index; i++)
+            {
+                if (!vertices[i].Removed)
+                    return vertices[i];
+            }
+            return vertices[index]; // Shouldn't happen if count > 3
+        }
+
+        static int GetPrevVertexIndex(List<Vertex> vertices, int index)
+        {
+            for (int i = index - 1; i >= 0; i--)
+            {
+                if (!vertices[i].Removed)
+                    return i;
+            }
+            // Wrap around for closed polygon
+            for (int i = vertices.Count - 1; i > index; i--)
+            {
+                if (!vertices[i].Removed)
+                    return i;
+            }
+            return -1;
+        }
+
+        static int GetNextVertexIndex(List<Vertex> vertices, int index)
+        {
+            for (int i = index + 1; i < vertices.Count; i++)
+            {
+                if (!vertices[i].Removed)
+                    return i;
+            }
+            // Wrap around for closed polygon
+            for (int i = 0; i < index; i++)
+            {
+                if (!vertices[i].Removed)
+                    return i;
+            }
+            return -1;
+        }
+    }
+
+    private class Vertex
+    {
+        public required PointF Point { get; init; }
+        public required int Index { get; init; }
+        public double EffectiveArea { get; set; }
+        public bool Removed { get; set; }
     }
 }
