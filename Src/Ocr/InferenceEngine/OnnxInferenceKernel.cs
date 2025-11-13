@@ -1,6 +1,12 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+// LEGACY: Original managed ONNX Runtime implementation.
+// Replaced by NativeOnnxInferenceKernel using statically-linked native library.
+// This code is kept for reference but should not be used in production.
+
+#if false
+
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.ML.OnnxRuntime;
@@ -90,6 +96,8 @@ public class OnnxInferenceKernel : IInferenceKernel
         }
     }
 }
+
+#endif
 
 public class OnnxInferenceException : Exception
 {

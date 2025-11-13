@@ -142,9 +142,28 @@ LIB_SIZE=$(du -h "$BUILD_DIR/libspeedreader_ort.a" | cut -f1)
 echo "   ✓ Created libspeedreader_ort.a ($LIB_SIZE)"
 echo ""
 
+echo "4. Creating shared library for testing..."
+
+# Build shared library (.so) for use with dotnet test
+g++ -shared -fPIC \
+    -o "$BUILD_DIR/libspeedreader_ort.so" \
+    "$BUILD_DIR/speedreader_ort.o" \
+    -Wl,--whole-archive \
+    "${ONNX_LIBS[@]}" \
+    -Wl,--no-whole-archive \
+    -lpthread \
+    -lm \
+    -ldl \
+    -lstdc++
+
+SO_SIZE=$(du -h "$BUILD_DIR/libspeedreader_ort.so" | cut -f1)
+echo "   ✓ Created libspeedreader_ort.so ($SO_SIZE)"
+echo ""
+
 echo "=== Build Complete ==="
 echo "Smoke test: $BUILD_DIR/smoke_test"
 echo "Static library: $BUILD_DIR/libspeedreader_ort.a"
+echo "Shared library: $BUILD_DIR/libspeedreader_ort.so"
 echo ""
 echo "Run smoke test:"
 echo "  $BUILD_DIR/smoke_test <path_to_svtr_model.onnx>"
