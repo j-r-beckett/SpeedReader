@@ -1,3 +1,6 @@
+# Copyright (c) 2025 j-r-beckett
+# Licensed under the Apache License, Version 2.0
+
 FROM ubuntu:22.04 AS onnx-builder
 
 # Install build dependencies
@@ -31,4 +34,17 @@ RUN ./build.sh \
     --allow_running_as_root \
     --cmake_extra_defines CMAKE_POSITION_INDEPENDENT_CODE=ON
 
-ENTRYPOINT ["/bin/bash"]
+# Stage 2: Build SpeedReader wrapper
+FROM onnx-builder AS wrapper-builder
+
+# Copy wrapper source
+COPY speedreader_ort.c speedreader_ort.h onnxruntime_c_api.h onnxruntime_ep_c_api.h /build/wrapper/
+
+# Compile wrapper object file
+WORKDIR /build/wrapper
+RUN gcc -c \
+    -O3 \
+    -fPIC \
+    -I/build/wrapper \
+    -o speedreader_ort.o \
+    speedreader_ort.c

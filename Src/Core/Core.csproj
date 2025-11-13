@@ -35,10 +35,18 @@
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
+  <!-- Collect all ONNX Runtime .a files -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <OnnxLibs Include="$(MSBuildThisFileDirectory)../../native/build/onnx/**/*.a" />
+  </ItemGroup>
+
   <!-- Native ONNX Runtime Static Library -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
     <DirectPInvoke Include="speedreader_ort" />
-    <LinkerArg Include="-Wl,--whole-archive,$(MSBuildThisFileDirectory)../../native/build/libspeedreader_ort.a,--no-whole-archive" />
+    <LinkerArg Include="-Wl,--start-group" />
+    <LinkerArg Include="$(MSBuildThisFileDirectory)../../native/build/speedreader_ort.o" />
+    <LinkerArg Include="@(OnnxLibs)" />
+    <LinkerArg Include="-Wl,--end-group" />
     <LinkerArg Include="-lstdc++" />
     <LinkerArg Include="-lpthread" />
   </ItemGroup>
