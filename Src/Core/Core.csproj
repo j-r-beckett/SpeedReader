@@ -38,7 +38,7 @@
   <!-- Native ONNX Runtime Static Library -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
     <DirectPInvoke Include="speedreader_ort" />
-    <LinkerArg Include="-Wl,--whole-archive,$(MSBuildThisFileDirectory)../native/$(RuntimeIdentifier)/libspeedreader_ort.a,--no-whole-archive" />
+    <LinkerArg Include="-Wl,--whole-archive,$(MSBuildThisFileDirectory)../../native/build/libspeedreader_ort.a,--no-whole-archive" />
     <LinkerArg Include="-lstdc++" />
     <LinkerArg Include="-lpthread" />
   </ItemGroup>

@@ -22,8 +22,8 @@ namespace Core;
 
 public static class Serve
 {
-    // [RequiresDynamicCode("")]
-    // [RequiresUnreferencedCode("")]
+    [RequiresDynamicCode("")]
+    [RequiresUnreferencedCode("")]
     public static async Task RunServer()
     {
         // Create performance metrics collection

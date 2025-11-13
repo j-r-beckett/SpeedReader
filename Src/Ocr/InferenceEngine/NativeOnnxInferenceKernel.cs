@@ -8,14 +8,10 @@ using Ocr.InferenceEngine.Native;
 
 namespace Ocr.InferenceEngine;
 
-/// <summary>
-/// ONNX inference kernel using statically-linked native ONNX Runtime.
-/// This implementation replaces the managed Microsoft.ML.OnnxRuntime package
-/// with direct P/Invoke calls to our C wrapper.
-/// </summary>
+
 public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
 {
-    private static readonly Lazy<SafeEnvironmentHandle> SharedEnvironment = new(CreateEnvironment);
+    private static readonly Lazy<SafeEnvironmentHandle> _sharedEnvironment = new(CreateEnvironment);
     private readonly SafeSessionHandle _session;
 
     private const int ErrorBufferSize = 512;
@@ -42,7 +38,7 @@ public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
         };
 
         // Create session (triggers lazy environment initialization on first use)
-        _session = CreateSession(SharedEnvironment.Value, weights, nativeOptions);
+        _session = CreateSession(_sharedEnvironment.Value, weights, nativeOptions);
     }
 
     public virtual (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape)
@@ -161,9 +157,12 @@ public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
             }
             finally
             {
-                if (outputDataHandle.IsAllocated) outputDataHandle.Free();
-                if (outputShapeHandle.IsAllocated) outputShapeHandle.Free();
-                if (errorHandle.IsAllocated) errorHandle.Free();
+                if (outputDataHandle.IsAllocated)
+                    outputDataHandle.Free();
+                if (outputShapeHandle.IsAllocated)
+                    outputShapeHandle.Free();
+                if (errorHandle.IsAllocated)
+                    errorHandle.Free();
             }
         }
         finally
@@ -249,4 +248,9 @@ public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
         _session?.Dispose();
         GC.SuppressFinalize(this);
     }
+}
+
+public class OnnxInferenceException : Exception
+{
+    public OnnxInferenceException(string message, Exception innerException) : base(message, innerException) { }
 }
