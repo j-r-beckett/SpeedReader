@@ -8,6 +8,9 @@ Src/Resources/models/
 # Generated ffmpeg binaries
 Src/Resources/binaries/
 
+# Native ONNX Runtime build artifacts
+native/build/
+
 # Rider
 .idea/
 
