@@ -14,30 +14,54 @@ Replace the dynamically-linked ONNX Runtime dependency with a statically-linked 
 
 ## Current Status
 
-**Planning Phase** - Specifications and research complete, ready for implementation.
+**C Wrapper Complete** - ONNX Runtime built, C API wrapper implemented and tested. Ready for C# integration.
 
-## Quick Reference
+## Build Instructions
 
-### ONNX Runtime C API Header
-`~/library/onnxruntime/include/onnxruntime/core/session/onnxruntime_c_api.h`
-
-### Build ONNX Runtime Static Library
+### 1. Build ONNX Runtime Static Libraries (one-time setup)
 ```bash
-cd ~/library/onnxruntime
-./build.sh --config Release --parallel --skip_tests
+./build.sh
 ```
-Output: `build/Linux/Release/libonnxruntime.a` (+ component libraries)
+This uses Docker to build ONNX Runtime 1.15.0 as static libraries (~45-60 min first run).
+Output: `build/onnx/*.a` files (~55 libraries)
 
-### Key Technologies
-- **C** - Wrapper language (not C++)
-- **Zig** - Compiler for C wrapper
-- **Docker** - Reproducible build environment
+### 2. Compile C Wrapper and Create Combined Library
+```bash
+./compile.sh
+```
+Output:
+- `build/libspeedreader_ort.a` (80MB) - Combined static library for C# integration
+- `build/smoke_test` (21MB) - Standalone test binary
+
+### 3. Run Smoke Test
+```bash
+./build/smoke_test <path_to_svtr_model.onnx>
+```
+Example:
+```bash
+./build/smoke_test ../Src/Resources/models/svtrv2_base_ctc/end2end.onnx
+```
+
+## Files
+
+- **speedreader_ort.h** - C API header for P/Invoke
+- **speedreader_ort.c** - C wrapper implementation
+- **smoke_test.c** - Standalone test that validates the wrapper
+- **compile.sh** - Builds wrapper object, smoke test, and combined static library
+- **build.sh** - Docker-based ONNX Runtime build
+- **Dockerfile** - ONNX Runtime build environment
+
+## Key Technologies
+- **C** - Wrapper language (stable ABI for P/Invoke)
+- **Docker** - Reproducible ONNX Runtime build environment
 - **.NET Native AOT** - Static library integration via P/Invoke
 
 ## Next Steps
 
-1. Create Dockerfile for ONNX Runtime build
-2. Write C wrapper implementation
-3. Create smoke test
-4. Integrate with C# codebase
-5. Test and validate
+1. ✅ ~~Create Dockerfile for ONNX Runtime build~~
+2. ✅ ~~Write C wrapper implementation~~
+3. ✅ ~~Create smoke test~~
+4. ✅ ~~Build combined static library~~
+5. Create P/Invoke bindings in C#
+6. Integrate with existing inference engine
+7. Test and validate
