@@ -149,8 +149,6 @@ public record RotatedRectangle
             Math.Sqrt(Math.Pow(edge.End.X - edge.Start.X, 2) + Math.Pow(edge.End.Y - edge.Start.Y, 2));
 
         double YMidpoint((PointF Start, PointF End) edge) => (edge.Start.Y + edge.End.Y) / 2;
-
-        double XMidpoint((PointF Start, PointF End) edge) => (edge.Start.X + edge.End.X) / 2;
     }
 
     public Polygon Corners()
