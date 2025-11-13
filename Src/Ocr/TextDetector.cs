@@ -128,7 +128,7 @@ public class TextDetector
             BoundingBox? BoundaryToBBox(Polygon boundary)
             {
                 var polygon = boundary
-                    .Simplify()  // Remove redundant points
+                    .Simplify(4)  // Remove redundant points; see https://en.wikipedia.org/wiki/Visvalingam%E2%80%93Whyatt_algorithm
                     .Scale(1 / scale)  // Undo scaling; convert from tiled to original coordinates
                     .Dilate(1.5)  // Undo contraction baked into DBNet during training; 1.5 is a model-specific constant
                     ?.Clamp(originalImage.Height - 1, originalImage.Width - 1);  // Make sure we don't go out of bounds
