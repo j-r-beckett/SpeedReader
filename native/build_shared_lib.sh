@@ -18,14 +18,14 @@ echo ""
 # Check if wrapper object exists
 if [ ! -f "$BUILD_DIR/speedreader_ort.o" ]; then
     echo "ERROR: Wrapper object not found at $BUILD_DIR/speedreader_ort.o"
-    echo "Please run ./build.sh first"
+    echo "Please run ./build_static_lib.sh first"
     exit 1
 fi
 
 # Check if ONNX libraries exist
 if [ ! -d "$ONNX_LIB_DIR" ] || [ -z "$(find "$ONNX_LIB_DIR" -name "*.a" 2>/dev/null)" ]; then
     echo "ERROR: ONNX libraries not found in $ONNX_LIB_DIR"
-    echo "Please run ./build.sh first"
+    echo "Please run ./build_static_lib.sh first"
     exit 1
 fi
 
@@ -48,6 +48,6 @@ g++ -shared -fPIC \
     -ldl
 
 SO_SIZE=$(du -h "$BUILD_DIR/libspeedreader_ort.so" | cut -f1)
-echo "✓ Created libspeedreader_ort.so ($SO_SIZE)"
+echo "Created libspeedreader_ort.so ($SO_SIZE)"
 echo ""
 echo "=== Build Complete ==="

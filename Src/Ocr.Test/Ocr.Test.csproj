@@ -37,7 +37,7 @@
     <Folder Include="Algorithms\" />
   </ItemGroup>
 
-  <!-- Copy native shared library for testing (not needed for Native AOT publish) -->
+  <!-- Copy native shared library for testing -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == ''">
     <Content Include="../../native/build/libspeedreader_ort.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

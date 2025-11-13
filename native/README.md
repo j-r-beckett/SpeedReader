@@ -13,30 +13,30 @@ All builds happen inside Docker for reproducibility. The Dockerfile:
 For Native AOT integration:
 
 ```bash
-./build.sh
+./build_static_lib.sh
 ```
 
 Output:
 - `build/speedreader_ort.o` - Compiled wrapper object file
 - `build/onnx/` - 55 ONNX Runtime static libraries
 
-### Build Shared Library (.so)
+### Build Shared Library
 
 For running tests (tests use dynamic linking):
 
 ```bash
-./compile.sh
+./build_shared_lib.sh
 ```
 
-Output: `build/libspeedreader_ort.so` (30MB)
+Output: `build/libspeedreader_ort.so` (~24MB)
 
-Requires `./build.sh` to run first. Auto-extracts ONNX libraries from Docker if needed.
+Requires `./build_static_lib.sh` to run first.
 
 ## Files
 
 - **speedreader_ort.{h,c}** - C wrapper around ONNX Runtime C API
-- **build.sh** - Builds Docker image, extracts individual `.a` libraries and wrapper `.o`
-- **compile.sh** - Builds `.so` for testing from existing artifacts
+- **build_static_lib.sh** - Builds Docker image, extracts individual `.a` libraries and wrapper `.o`
+- **build_shared_lib.sh** - Builds `.so` for testing from existing artifacts
 - **Dockerfile** - Multi-stage build: ONNX Runtime → wrapper → artifacts
 - **onnxruntime_c_api.h** - ONNX Runtime C API header (for reference)
 - **onnxruntime_ep_c_api.h** - ONNX Runtime execution provider API header
@@ -46,8 +46,8 @@ Requires `./build.sh` to run first. Auto-extracts ONNX libraries from Docker if 
 The Dockerized build makes CI trivial:
 
 ```yaml
-- name: Build Native Library
-  run: cd native && ./build.sh
+- name: Build Native Libraries
+  run: cd native && ./build_static_lib.sh && ./build_shared_lib.sh
 ```
 
 Docker layer caching dramatically speeds up subsequent builds.
