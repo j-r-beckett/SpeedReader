@@ -18,7 +18,7 @@ public static class Factories
         services.TryAddSingleton<ModelLoader>();
 
         services.AddKeyedSingleton(key, config.Kernel);
-        services.AddKeyedSingleton<IInferenceKernel>(key, OnnxInferenceKernel.Factory);
+        services.AddKeyedSingleton<IInferenceKernel>(key, NativeOnnxInferenceKernel.Factory);
 
         services.AddKeyedSingleton(key, config);
         services.AddKeyedSingleton<IInferenceEngine>(key, CpuEngine.Factory);

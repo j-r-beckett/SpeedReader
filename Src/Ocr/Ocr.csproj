@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <LangVersion>preview</LangVersion>
+    <IsAotCompatible>true</IsAotCompatible>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +26,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Resources\Resources.csproj" />
   </ItemGroup>
-
 
 </Project>

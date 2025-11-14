@@ -9,12 +9,12 @@
     <AssemblyName>speedread</AssemblyName>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,5 +35,20 @@
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
+  <!-- Collect all ONNX Runtime .a files -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <OnnxLibs Include="$(MSBuildThisFileDirectory)../../native/build/onnx/**/*.a" />
+  </ItemGroup>
+
+  <!-- Native ONNX Runtime Static Library -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <DirectPInvoke Include="speedreader_ort" />
+    <LinkerArg Include="-Wl,--start-group" />
+    <LinkerArg Include="$(MSBuildThisFileDirectory)../../native/build/speedreader_ort.o" />
+    <LinkerArg Include="@(OnnxLibs)" />
+    <LinkerArg Include="-Wl,--end-group" />
+    <LinkerArg Include="-lstdc++" />
+    <LinkerArg Include="-lpthread" />
+  </ItemGroup>
 
 </Project>

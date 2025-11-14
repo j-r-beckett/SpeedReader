@@ -4,7 +4,6 @@
 using Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.ML.OnnxRuntime;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;

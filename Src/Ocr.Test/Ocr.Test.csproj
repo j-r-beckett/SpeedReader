@@ -37,4 +37,12 @@
     <Folder Include="Algorithms\" />
   </ItemGroup>
 
+  <!-- Copy native shared library for testing -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == ''">
+    <Content Include="../../native/build/libspeedreader_ort.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libspeedreader_ort.so</Link>
+    </Content>
+  </ItemGroup>
+
 </Project>

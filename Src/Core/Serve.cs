@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using System.Net.WebSockets;
 using System.Text;
@@ -24,11 +25,11 @@ public static class Serve
     public static async Task RunServer()
     {
         // Create performance metrics collection
-        var metricsChannel = Channel.CreateUnbounded<MetricPoint>();
-        var processMetricsCollector = new ProcessMetricsCollector();
-        var containerMetricsCollector = ContainerMetricsCollector.IsRunningInContainer()
-            ? new ContainerMetricsCollector()
-            : null;
+        // var metricsChannel = Channel.CreateUnbounded<MetricPoint>();
+        // var processMetricsCollector = new ProcessMetricsCollector();
+        // var containerMetricsCollector = ContainerMetricsCollector.IsRunningInContainer()
+        //     ? new ContainerMetricsCollector()
+        //     : null;
         // var metricsWriter = new MetricRecorder(metricsChannel.Reader);
 
         // Create minimal web app
@@ -80,20 +81,19 @@ public static class Serve
             var images = ParseImagesFromRequest(context.Request);
             var results = speedReader.ReadMany(images);
 
-            var ocrResults = new List<object>();
+            var ocrResults = new List<OcrJsonResult>();
             await foreach (var result in results)
             {
                 try
                 {
-                    var jsonResult = new
-                    {
-                        Results = result.Results.Select(r => new
-                        {
-                            BoundingBox = r.BBox,
-                            r.Text,
-                            r.Confidence
-                        }).ToList()
-                    };
+                    var jsonResult = new OcrJsonResult(
+                        Filename: null,
+                        Results: result.Results.Select(r => new OcrTextResult(
+                            BoundingBox: r.BBox,
+                            Text: r.Text,
+                            Confidence: r.Confidence
+                        )).ToList()
+                    );
                     ocrResults.Add(jsonResult);
                 }
                 finally
@@ -109,13 +109,7 @@ public static class Serve
 
             // Return JSON response
             context.Response.ContentType = "application/json";
-            var jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
-            var json = JsonSerializer.Serialize(ocrResults, jsonOptions);
+            var json = JsonSerializer.Serialize(ocrResults, JsonContext.Default.ListOcrJsonResult);
             await context.Response.WriteAsync(json);
         });
 
@@ -168,27 +162,20 @@ public static class Serve
 
         var sendTask = Task.Run(async () =>
         {
-            var jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = false,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
             await foreach (var result in speedReader.ReadMany(inputBuffer.Reader.ReadAllAsync()))
             {
                 try
                 {
-                    var jsonResult = new
-                    {
-                        Results = result.Results.Select(r => new
-                        {
-                            BoundingBox = r.BBox,
-                            r.Text,
-                            r.Confidence
-                        }).ToList()
-                    };
+                    var jsonResult = new OcrJsonResult(
+                        Filename: null,
+                        Results: result.Results.Select(r => new OcrTextResult(
+                            BoundingBox: r.BBox,
+                            Text: r.Text,
+                            Confidence: r.Confidence
+                        )).ToList()
+                    );
 
-                    var json = JsonSerializer.Serialize(jsonResult, jsonOptions);
+                    var json = JsonSerializer.Serialize(jsonResult, JsonContext.Default.OcrJsonResult);
                     var jsonBytes = Encoding.UTF8.GetBytes(json);
                     await webSocket.SendAsync(
                         new ArraySegment<byte>(jsonBytes),
@@ -198,7 +185,8 @@ public static class Serve
                 }
                 catch (Exception ex)
                 {
-                    var errorJson = JsonSerializer.Serialize(new { Error = $"Processing error: {ex.Message}" }, jsonOptions);
+                    var errorResponse = new ErrorResponse($"Processing error: {ex.Message}");
+                    var errorJson = JsonSerializer.Serialize(errorResponse, JsonContext.Default.ErrorResponse);
                     var errorBytes = Encoding.UTF8.GetBytes(errorJson);
                     await webSocket.SendAsync(
                         new ArraySegment<byte>(errorBytes),

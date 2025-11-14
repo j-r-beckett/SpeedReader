@@ -73,7 +73,7 @@ public static class MetricRecorder
 
                         if (metric.Tags != null)
                         {
-                            var tagsJson = JsonSerializer.Serialize(metric.Tags);
+                            var tagsJson = JsonSerializer.Serialize(metric.Tags, MetricJsonContext.Default.DictionaryStringString);
                             await importer.WriteAsync(tagsJson, NpgsqlDbType.Jsonb, _cts.Token);
                         }
                         else

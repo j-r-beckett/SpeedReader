@@ -130,29 +130,21 @@ public class Program
 
     private static async Task EmitOutput(IAsyncEnumerable<OcrPipelineResult> results, List<string> filenames, bool viz)
     {
-        var jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
         var idx = 0;
         await foreach (var result in results)
         {
             try
             {
-                var jsonResult = new
-                {
-                    Filename = filenames[idx],
-                    Results = result.Results.Select(r => new
-                    {
-                        BoundingBox = r.BBox,
-                        r.Text,
-                        r.Confidence
-                    }).ToList()
-                };
+                var jsonResult = new OcrJsonResult(
+                    Filename: filenames[idx],
+                    Results: result.Results.Select(r => new OcrTextResult(
+                        BoundingBox: r.BBox,
+                        Text: r.Text,
+                        Confidence: r.Confidence
+                    )).ToList()
+                );
 
-                var json = JsonSerializer.Serialize(jsonResult, jsonOptions);
+                var json = JsonSerializer.Serialize(jsonResult, JsonContext.Default.OcrJsonResult);
                 var indentedJson = string.Join('\n', json.Split('\n').Select(line => "  " + line));
 
                 Console.WriteLine(idx == 0 ? "[" : ",");
