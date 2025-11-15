@@ -1,12 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.13"
-# dependencies = [
-#   "click",
-#   "rich",
-#   "psutil"
-# ]
-# ///
+#!/usr/bin/env -S uv run
 
 import subprocess
 import time

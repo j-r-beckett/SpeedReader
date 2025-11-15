@@ -33,3 +33,8 @@ Thumbs.db
 
 # Playwright
 .playwright-mcp/
+
+# Python
+.venv/
+*.pyc
+__pycache__/

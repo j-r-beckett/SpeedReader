@@ -1,0 +1,13 @@
+[project]
+name = "scripts"
+version = "0.1.0"
+description = "Build scripts for SpeedReader"
+authors = [
+    { name = "Jimmy Beckett", email = "jimmybeckett1+github@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "click",
+    "rich",
+    "psutil",
+]
