@@ -1,6 +1,7 @@
 # Build results
 bin/
 obj/
+target/
 
 # Generated models
 Src/Resources/models/
