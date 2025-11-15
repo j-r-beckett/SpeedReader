@@ -9,7 +9,6 @@
 # ///
 
 import subprocess
-import sys
 import time
 import click
 import psutil
@@ -174,6 +173,7 @@ def build_onnx(onnx_version, platform_dir):
     return static_libs
 
 
+# Typically run with `./build_onnx.py --onnx-version 1.15.0 --platform-dir ../target/platforms/linux-x64`
 if __name__ == "__main__":
     try:
         build_onnx()
