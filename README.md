@@ -1,6 +1,8 @@
 # SpeedReader
 
-An OCR pipeline written in C# with video support.
+SpeedReader is an OCR pipeline for images and video. It handles threading, batching, backpressure, and inference optimization internally, providing simple interfaces: CLI tool and HTTP API.
+
+**Status**: Early development (v0.x). Breaking changes expected before 1.0.
 
 ## Quickstart
 
@@ -14,7 +16,7 @@ version=0.1.0
 wget https://jimmybeckett.com/speedreader/binaries/$version/linux-x64/speedread
 chmod +x speedread
 wget https://jimmybeckett.com/speedreader/examples/rat.png
-./speedread process rat.png
+./speedread rat.png
 ```
 
 ### Windows
@@ -23,7 +25,7 @@ $version="0.1.0"
 $ProgressPreference = 'SilentlyContinue'
 Invoke-WebRequest -Uri "https://jimmybeckett.com/speedreader/binaries/$version/win-x64/speedread.exe" -OutFile speedread.exe
 Invoke-WebRequest -Uri "https://jimmybeckett.com/speedreader/examples/rat.png" -OutFile rat.png
-.\speedread.exe process rat.png
+.\speedread.exe rat.png
 ```
 
 ### MacOS
@@ -32,13 +34,15 @@ version=0.1.0
 wget https://jimmybeckett.com/speedreader/binaries/$version/osx-arm64/speedread
 chmod +x speedread
 wget https://jimmybeckett.com/speedreader/examples/rat.png
-./speedread process rat.png
+./speedread rat.png
 ```
 
 ## Server Mode
 
+Run as an HTTP server with a simple POST endpoint:
+
 ```bash
-./speedread serve
+./speedread --serve
 curl -X POST -H "Content-Type: image/jpeg" --data-binary @image.jpg http://localhost:5000/api/ocr
 ```
 
@@ -48,20 +52,20 @@ Configure the server interface and port using the `ASPNETCORE_URLS` environment 
 
 ```bash
 # Listen on all interfaces, port 8080
-ASPNETCORE_URLS=http://0.0.0.0:8080 ./speedread serve
+ASPNETCORE_URLS=http://0.0.0.0:8080 ./speedread --serve
 
 # Listen on specific interface and port
-ASPNETCORE_URLS=http://192.168.1.100:5000 ./speedread serve
+ASPNETCORE_URLS=http://192.168.1.100:5000 ./speedread --serve
 
 # Multiple URLs
-ASPNETCORE_URLS="http://localhost:5000;https://localhost:5001" ./speedread serve
+ASPNETCORE_URLS="http://localhost:5000;https://localhost:5001" ./speedread --serve
 ```
 
 Default: `http://localhost:5000`
 
 ## Development
 
-### Build
+### Building from Source
 
 Supported platforms: linux-x64, win-x64, osx-arm64
 
@@ -71,7 +75,7 @@ dotnet publish -c Release -r <platform> Src/Core
 
 The `speedread` binary will be in `Src/Core/bin/Release/net10.0/<platform>/publish/`
 
-### Precommit Hook
+### Pre-commit Hook
 
 To install the pre-commit hook:
 
@@ -79,17 +83,28 @@ To install the pre-commit hook:
 ln -sf "../../pre-commit.sh" .git/hooks/pre-commit
 ```
 
-## Benchmarks
+This enforces code formatting, builds with warnings as errors, and requires 100% test pass rate.
 
-| Date      | Commit | CPU (Cores) | RAM (Gb) | GPU | Throughput (Items / Sec) | Notes                                                        |
-|-----------|--------|-------------|----------| --- |--------------------------|--------------------------------------------------------------|
-| 2025-7-14 | ecba50ed7d7b | 6           | 8        | - | 0.5                      | -                                                            |
-| 2025-7-18 | 5ccfc1a4d7cb | 6 | 8 | - | 1.1                      | DBNet inference w/ size 640x640 instead of 1344x736          |
-| 2025-7-18 | 2ee550e49bb6 | 6 | 8 | - | 5.8                      | Turn on ONNX intra-operation parallelism                     |
-| 2025-9-6  | bb505e062a3c | 6 | 8 | - | 8.0                      | Use application threading instead of ONNX intra-op threading |
-| 2025-9-6  | caa6d6e1587d | 6 | 8 | - | 18.3                     | Quantize DBNet model to int8 |
+### Project Guidance
+
+See [CLAUDE.md](CLAUDE.md) for detailed development guidelines and project structure.
+
+## Architecture
+
+SpeedReader uses a two-stage OCR pipeline:
+
+1. **Text Detection**: [DBNet](https://github.com/open-mmlab/mmocr) (ResNet18 backbone) detects text regions in images
+2. **Text Recognition**: [SVTRv2](https://github.com/Topdu/OpenOCR) recognizes characters within detected regions
+
+Both models are converted to ONNX format and quantized to INT8 for performance. The pipeline includes adaptive CPU concurrency tuning that adjusts parallelism based on throughput.
+
+### Models
+
+- **DBNet**: [MMOCR](https://github.com/open-mmlab/mmocr) v1.0.1, `dbnet_resnet18_fpnc_1200e_icdar2015`
+- **SVTRv2**: [OpenOCR](https://github.com/Topdu/OpenOCR), `repsvtr_ch`
+
+Models are automatically downloaded and converted during the build process.
 
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
-
