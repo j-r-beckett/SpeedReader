@@ -17,9 +17,11 @@ target/
         ffmpeg/
         speedreader/  # working directory for speedreader build
       bin/
-        speedreader  # main executable, release mode, built with `dotnet publish`,
-                     # build runner passes filenames of deps (models, libs, etc)
-                     # into publish as build args
+        static/
+          speedreader
+        dynamic/  # TODO: later
+          speedreader
+          onnxruntime.so
       lib/
         onnxruntime/
           version.txt  # contains the version that was successfully built
@@ -31,6 +33,9 @@ target/
           static/
           shared/
           include/
+        speedreader_ort/
+          static/
+            speedreader_ort.a
         speedreader/  # speedreader will also be published as a lib used for,
                       # among other things, the python package
                       # no version, we always want the most recently built version here
@@ -41,6 +46,3 @@ target/
         python/
         java/  # eventually, python is far and away #1 priority
         csharp/
-
-
-
