@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - -I/home/jimmy/repos/SpeedReader/native
+    - -I/home/jimmy/repos/SpeedReader/target/platforms/linux-x64/lib/onnxruntime/include

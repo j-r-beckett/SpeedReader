@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 #include "speedreader_ort.h"
-#include "onnxruntime_c_api.h"
+#include <onnxruntime_c_api.h>
 #include <string.h>
 #include <stdlib.h>
 

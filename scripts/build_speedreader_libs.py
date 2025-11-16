@@ -30,12 +30,17 @@ def build_speedreader_libs(platform_dir):
     info(f"Compiling {len(c_files)} C source files")
 
     # 2. Compile each .c file to .o
+    onnx_include_dir = platform_dir / "lib" / "onnxruntime" / "include"
+    if not onnx_include_dir.exists():
+        raise ScriptError(f"ONNX headers not found at {onnx_include_dir}. Build ONNX first.")
+
     object_files = []
     for c_file in c_files:
         o_file = static_dir / f"{c_file.stem}.o"
         bash(
             f"gcc -c -O3 -fPIC "
             f"-I{native_dir} "
+            f"-I{onnx_include_dir} "
             f"-o {o_file} "
             f"{c_file}"
         )
