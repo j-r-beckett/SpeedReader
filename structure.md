@@ -13,25 +13,24 @@ target/
   platforms/
     linux-x64/
       build/
-        onnxruntime/
-          <version>/  # shallow clone and build here
+        onnxruntime/  # shallow clone and build here
         ffmpeg/
-          <version>/
+        speedreader/  # working directory for speedreader build
       bin/
         speedreader  # main executable, release mode, built with `dotnet publish`,
                      # build runner passes filenames of deps (models, libs, etc)
                      # into publish as build args
       lib/
-        onnx/
-          <version>/  # if we already have the specified version, don't build
-            static/
-            shared/
-            include/
+        onnxruntime/
+          version.txt  # contains the version that was successfully built
+          static/
+          shared/
+          include/
         ffmpeg/
-          <version>/
-            static/
-            shared/
-            include/
+          version.txt  # contains the version that was successfully built
+          static/
+          shared/
+          include/
         speedreader/  # speedreader will also be published as a lib used for,
                       # among other things, the python package
                       # no version, we always want the most recently built version here
@@ -42,6 +41,6 @@ target/
         python/
         java/  # eventually, python is far and away #1 priority
         csharp/
-          
+
 
 
