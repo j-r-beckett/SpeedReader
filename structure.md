@@ -36,6 +36,8 @@ target/
         speedreader_ort/
           static/
             speedreader_ort.a
+          shared/
+            speedreader_ort.so
         speedreader/  # speedreader will also be published as a lib used for,
                       # among other things, the python package
                       # no version, we always want the most recently built version here

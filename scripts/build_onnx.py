@@ -73,6 +73,19 @@ def checkout_onnx_sources(onnx_src_dir: Path, version: str):
     return onnx_src_dir
 
 
+def combine_static_libs(lib_paths: list[Path], output_path: Path):
+    """Combine multiple .a files into a single archive using AR MRI script"""
+    mri_script = output_path.parent / "combine.mri"
+    mri_commands = [f"CREATE {output_path}"]
+    for lib in lib_paths:
+        mri_commands.append(f"ADDLIB {lib}")
+    mri_commands.extend(["SAVE", "END"])
+
+    mri_script.write_text("\n".join(mri_commands))
+    bash(f"ar -M < {mri_script}")
+    mri_script.unlink()
+
+
 @click.command()
 @click.option("--onnx-version", help="Onnx version to build", required=True)
 @click.option(
@@ -111,21 +124,46 @@ def build_onnx(onnx_version, platform_dir):
             f"--parallel {parallelism} "
             "--skip_tests "
             "--allow_running_as_root "  # needed for building in docker
+            "--build_shared_lib "  # always build shared library
             "--cmake_extra_defines CMAKE_POSITION_INDEPENDENT_CODE=ON"
         )
     )
     elapsed_time = time.time() - start_time
     info(f"Onnx build completed in {format_duration(elapsed_time)}")
 
-    # Copy static libraries to lib directory
+    # 1. Get .a file paths
     static_libs = list(build_dir.rglob("Release/**/*.a"))
-    static_lib_dir = lib_dir / "static"
-    static_lib_dir.mkdir(parents=True, exist_ok=True)
+    info(f"Found {len(static_libs)} static libraries")
 
-    for lib in static_libs:
-        shutil.copy2(lib, static_lib_dir / lib.name)
+    # 2. Combine into single onnxruntime.a
+    static_dir = lib_dir / "static"
+    static_dir.mkdir(parents=True, exist_ok=True)
+    combined_archive = static_dir / "onnxruntime.a"
 
-    info(f"Copied {len(static_libs)} static libs to {static_lib_dir}")
+    info("Combining static libraries into onnxruntime.a")
+    combine_static_libs(static_libs, combined_archive)
+    info(f"Created {combined_archive}")
+
+    # 3. Copy shared library
+    shared_libs = list(build_dir.rglob("Release/**/libonnxruntime.so*"))
+    if shared_libs:
+        shared_dir = lib_dir / "shared"
+        shared_dir.mkdir(parents=True, exist_ok=True)
+        for so in shared_libs:
+            shutil.copy2(so, shared_dir / so.name)
+        info(f"Copied {len(shared_libs)} shared libraries to {shared_dir}")
+    else:
+        info("Warning: No shared libraries found")
+
+    # 4. Copy headers
+    include_dir = lib_dir / "include"
+    include_dir.mkdir(parents=True, exist_ok=True)
+    header_src = build_dir / "include" / "onnxruntime" / "core" / "session"
+    if header_src.exists():
+        headers = list(header_src.glob("*.h"))
+        for header in headers:
+            shutil.copy2(header, include_dir / header.name)
+        info(f"Copied {len(headers)} headers to {include_dir}")
 
     # Write version file after successful build
     lib_dir.mkdir(parents=True, exist_ok=True)
