@@ -11,7 +11,7 @@ namespace Resources.Test;
 
 public class FFmpegBinariesTests
 {
-    [Theory]
+    [Theory(Skip = "FFmpeg build is currently disabled")]
     [InlineData("ffmpeg")]
     [InlineData("ffprobe")]
     public void GetBinaryPath_ReturnsValidExecutablePath(string binaryType)
@@ -30,7 +30,7 @@ public class FFmpegBinariesTests
         Assert.True(File.Exists(binaryPath), $"Binary file should exist at path: {binaryPath}");
     }
 
-    [Theory]
+    [Theory(Skip = "FFmpeg build is currently disabled")]
     [InlineData("ffmpeg", "-version")]
     [InlineData("ffprobe", "-version")]
     public async Task SystemPathResolution_WhenSystemBinaryExists_ReturnsSystemPath(string binaryType, string args)
@@ -61,7 +61,7 @@ public class FFmpegBinariesTests
         Assert.Contains(binaryType, result.StandardOutput, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Theory]
+    [Theory(Skip = "FFmpeg build is currently disabled")]
     [InlineData("ffmpeg", "-version")]
     [InlineData("ffprobe", "-version")]
     public async Task BinaryExecution_DefaultBehavior_ReturnsVersionInfo(string binaryType, string args)
@@ -87,7 +87,7 @@ public class FFmpegBinariesTests
         Assert.Contains(binaryType, result.StandardOutput, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Theory]
+    [Theory(Skip = "FFmpeg build is currently disabled")]
     [InlineData("ffmpeg", "-version")]
     [InlineData("ffprobe", "-version")]
     public async Task EmbeddedBinaryExecution_SkipsSystemPath_ExtractsAndExecutes(string binaryType, string args)
@@ -122,7 +122,7 @@ public class FFmpegBinariesTests
         Assert.NotEqual(systemPath, binaryPath);
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public void GetFFmpegPath_MultipleCalls_ReturnsSamePath()
     {
         // Arrange & Act
@@ -133,7 +133,7 @@ public class FFmpegBinariesTests
         Assert.Equal(path1, path2);
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public void GetFFprobePath_MultipleCalls_ReturnsSamePath()
     {
         // Arrange & Act
@@ -144,7 +144,7 @@ public class FFmpegBinariesTests
         Assert.Equal(path1, path2);
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public void GetFFmpegPath_And_GetFFprobePath_ReturnDifferentPaths()
     {
         // Arrange & Act

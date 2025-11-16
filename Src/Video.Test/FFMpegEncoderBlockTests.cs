@@ -30,7 +30,7 @@ public class FFMpegEncoderBlockTests
         _publisher = new FileSystemUrlPublisher<FFMpegEncoderBlockTests>(outputDirectory, _logger);
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public async Task CanEncodeRedBlueFramesToVideo()
     {
         // Generate test frames: 10 red + 10 blue
@@ -82,7 +82,7 @@ public class FFMpegEncoderBlockTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public async Task BackpressureStopsFrameAcceptance()
     {
         const int frameCount = 3000;

@@ -30,7 +30,7 @@ public class FFMpegDecoderBlockTests
 
     public FFMpegDecoderBlockTests(ITestOutputHelper outputHelper) => _logger = new TestLogger(outputHelper);
 
-    [Theory]
+    [Theory(Skip = "FFmpeg build is currently disabled")]
     [InlineData(10)]
     [InlineData(10000)]
     public async Task CanDecodeRedBlueFrames(int totalFrames)
@@ -65,7 +65,7 @@ public class FFMpegDecoderBlockTests
         });
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public async Task BackpressureStopsInputConsumption()
     {
         var largeVideoStream = await CreateTestVideo(5000);
@@ -100,7 +100,7 @@ public class FFMpegDecoderBlockTests
         largeVideoStream.Dispose();
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public async Task BackpressureRespondsToFrameConsumption()
     {
         var videoStream = await CreateTestVideo(5760); // Target ~80% backpressure engagement for safety margin
@@ -165,7 +165,7 @@ public class FFMpegDecoderBlockTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public async Task HandlesCancellationGracefully()
     {
         var videoStream = await CreateTestVideo(50);
@@ -211,7 +211,7 @@ public class FFMpegDecoderBlockTests
         videoStream.Dispose();
     }
 
-    [Fact]
+    [Fact(Skip = "FFmpeg build is currently disabled")]
     public async Task FrameSamplingIsAccurate()
     {
         var videoStream = await CreateTestVideo(18, FramePattern.Alternating);
