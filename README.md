@@ -1,95 +1,9 @@
 # SpeedReader
 
-An OCR pipeline written in C# with video support.
+SpeedReader is an OCR pipeline for images and video. It handles threading, batching, backpressure, and inference optimization internally, providing simple interfaces: CLI tool and HTTP API.
 
-## Quickstart
-
-Download and run a prebuilt binary from the author's website.
-
-The current most recent version is `0.1.0`.
-
-### Linux
-```bash
-version=0.1.0
-wget https://jimmybeckett.com/speedreader/binaries/$version/linux-x64/speedread
-chmod +x speedread
-wget https://jimmybeckett.com/speedreader/examples/rat.png
-./speedread process rat.png
-```
-
-### Windows
-```powershell
-$version="0.1.0"
-$ProgressPreference = 'SilentlyContinue'
-Invoke-WebRequest -Uri "https://jimmybeckett.com/speedreader/binaries/$version/win-x64/speedread.exe" -OutFile speedread.exe
-Invoke-WebRequest -Uri "https://jimmybeckett.com/speedreader/examples/rat.png" -OutFile rat.png
-.\speedread.exe process rat.png
-```
-
-### MacOS
-```bash
-version=0.1.0
-wget https://jimmybeckett.com/speedreader/binaries/$version/osx-arm64/speedread
-chmod +x speedread
-wget https://jimmybeckett.com/speedreader/examples/rat.png
-./speedread process rat.png
-```
-
-## Server Mode
-
-```bash
-./speedread serve
-curl -X POST -H "Content-Type: image/jpeg" --data-binary @image.jpg http://localhost:5000/api/ocr
-```
-
-### Configuration
-
-Configure the server interface and port using the `ASPNETCORE_URLS` environment variable:
-
-```bash
-# Listen on all interfaces, port 8080
-ASPNETCORE_URLS=http://0.0.0.0:8080 ./speedread serve
-
-# Listen on specific interface and port
-ASPNETCORE_URLS=http://192.168.1.100:5000 ./speedread serve
-
-# Multiple URLs
-ASPNETCORE_URLS="http://localhost:5000;https://localhost:5001" ./speedread serve
-```
-
-Default: `http://localhost:5000`
-
-## Development
-
-### Build
-
-Supported platforms: linux-x64, win-x64, osx-arm64
-
-```bash
-dotnet publish -c Release -r <platform> Src/Core
-```
-
-The `speedread` binary will be in `Src/Core/bin/Release/net10.0/<platform>/publish/`
-
-### Precommit Hook
-
-To install the pre-commit hook:
-
-```bash
-ln -sf "../../pre-commit.sh" .git/hooks/pre-commit
-```
-
-## Benchmarks
-
-| Date      | Commit | CPU (Cores) | RAM (Gb) | GPU | Throughput (Items / Sec) | Notes                                                        |
-|-----------|--------|-------------|----------| --- |--------------------------|--------------------------------------------------------------|
-| 2025-7-14 | ecba50ed7d7b | 6           | 8        | - | 0.5                      | -                                                            |
-| 2025-7-18 | 5ccfc1a4d7cb | 6 | 8 | - | 1.1                      | DBNet inference w/ size 640x640 instead of 1344x736          |
-| 2025-7-18 | 2ee550e49bb6 | 6 | 8 | - | 5.8                      | Turn on ONNX intra-operation parallelism                     |
-| 2025-9-6  | bb505e062a3c | 6 | 8 | - | 8.0                      | Use application threading instead of ONNX intra-op threading |
-| 2025-9-6  | caa6d6e1587d | 6 | 8 | - | 18.3                     | Quantize DBNet model to int8 |
+**Status**: Early development (v0.x). Breaking changes expected before 1.0.
 
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
-
