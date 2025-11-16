@@ -47,7 +47,7 @@ def bash(command: str, directory: str | Path = None) -> str:
     output_lines = []
     for line in process.stdout:
         output_lines.append(line)
-        console.print(line, style="bright_black", end="", highlight=False)
+        console.print(line, style="bright_black", end="", highlight=False, markup=False)
 
     # Wait for process to complete and get return code
     returnCode = process.wait()
@@ -66,11 +66,11 @@ def bash(command: str, directory: str | Path = None) -> str:
 
 
 def info(msg):
-    console.print(msg, style="green", highlight=False)
+    console.print(msg, style="green", highlight=False, markup=False)
 
 
 def error(msg):
-    console.print(msg, style="red", highlight=False)
+    console.print(msg, style="red", highlight=False, markup=False)
 
 
 def format_duration(seconds: float) -> str:

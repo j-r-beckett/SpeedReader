@@ -3,7 +3,7 @@
 import click
 import shutil
 from pathlib import Path
-from utils import ScriptError, info, error
+from utils import ScriptError, info, error, bash
 
 
 def clean_dir(path):
@@ -43,6 +43,10 @@ def clean(deps, nuke):
     lib_path = platform_dir / "lib"
     info(f"Cleaning {lib_path}")
     clean_dir(lib_path)
+
+    dotnet_dir = ".."
+    info("Running dotnet clean")
+    bash("dotnet clean --verbosity quiet", dotnet_dir)
 
 
 if __name__ == "__main__":
