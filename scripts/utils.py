@@ -71,3 +71,17 @@ def info(msg):
 
 def error(msg):
     console.print(msg, style="red", highlight=False)
+
+
+def format_duration(seconds: float) -> str:
+    """Format duration in human-readable form"""
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+    elif seconds < 3600:
+        mins = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{mins}m {secs}s"
+    else:
+        hours = int(seconds // 3600)
+        mins = int((seconds % 3600) // 60)
+        return f"{hours}h {mins}m"

@@ -4,7 +4,7 @@ import time
 import click
 import psutil
 from pathlib import Path
-from utils import ScriptError, bash, info, error
+from utils import ScriptError, bash, info, error, format_duration
 
 
 def get_parallel_jobs() -> int:
@@ -79,7 +79,7 @@ def build_onnx(onnx_version, platform_dir):
         )
     )
     elapsed_time = time.time() - start_time
-    info(f"Onnx build completed in {elapsed_time:.1f}s")
+    info(f"Onnx build completed in {format_duration(elapsed_time)}")
 
     static_libs = [str(p) for p in src_dir.rglob("Release/**/*.a")]
     info(f"Found {len(static_libs)} static libs")
