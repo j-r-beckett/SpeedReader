@@ -55,6 +55,7 @@
     <LinkerArg Include="-Wl,--end-group" />
     <LinkerArg Include="-lstdc++" />
     <LinkerArg Include="-lpthread" />
+    <LinkerArg Include="-Wl,-z,noexecstack" />
   </ItemGroup>
 
   <!-- ONNX Runtime: Dynamic linking mode -->
