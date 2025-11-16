@@ -86,11 +86,11 @@ def combine_static_libs(lib_paths: list[Path], output_path: Path):
     mri_script.unlink()
 
 
-@click.command()
-@click.option("--onnx-version", help="Onnx version to build", required=True)
-@click.option(
-    "--platform-dir", help="Platform directory in build output", required=True
-)
+# @click.command()
+# @click.option("--onnx-version", help="Onnx version to build", required=True)
+# @click.option(
+#     "--platform-dir", help="Platform directory in build output", required=True
+# )
 def build_onnx(onnx_version, platform_dir):
     gcc_version = 11
     platform_dir = Path(platform_dir).resolve()
@@ -190,8 +190,8 @@ def build_onnx(onnx_version, platform_dir):
 
 
 # Typically run with `./build_onnx.py --onnx-version 1.15.0 --platform-dir ../target/platforms/linux-x64`
-if __name__ == "__main__":
-    try:
-        build_onnx()
-    except ScriptError as e:
-        error(f"Fatal: {e}")
+# if __name__ == "__main__":
+# try:
+#     build_onnx()
+# except ScriptError as e:
+#     error(f"Fatal: {e}")

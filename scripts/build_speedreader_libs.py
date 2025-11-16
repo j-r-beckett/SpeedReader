@@ -6,8 +6,8 @@ from pathlib import Path
 from utils import ScriptError, bash, info, error, format_duration
 
 
-@click.command()
-@click.option("--platform-dir", help="Platform directory in build output", required=True)
+# @click.command()
+# @click.option("--platform-dir", help="Platform directory in build output", required=True)
 def build_speedreader_libs(platform_dir):
     platform_dir = Path(platform_dir).resolve()
     native_dir = Path(__file__).parent.parent / "native"
@@ -31,18 +31,11 @@ def build_speedreader_libs(platform_dir):
 
     # 2. Compile each .c file to .o
     onnx_include_dir = platform_dir / "lib" / "onnxruntime" / "include"
-    if not onnx_include_dir.exists():
-        raise ScriptError(f"ONNX headers not found at {onnx_include_dir}. Build ONNX first.")
-
     object_files = []
     for c_file in c_files:
         o_file = static_dir / f"{c_file.stem}.o"
         bash(
-            f"gcc -c -O3 -fPIC "
-            f"-I{native_dir} "
-            f"-I{onnx_include_dir} "
-            f"-o {o_file} "
-            f"{c_file}"
+            f"gcc -c -O3 -fPIC -I{native_dir} -I{onnx_include_dir} -o {o_file} {c_file}"
         )
         object_files.append(o_file)
 
@@ -56,7 +49,9 @@ def build_speedreader_libs(platform_dir):
     onnx_shared_lib = onnx_shared_dir / "libonnxruntime.so"
 
     if not onnx_shared_lib.exists():
-        raise ScriptError(f"ONNX shared library not found at {onnx_shared_lib}. Build ONNX first.")
+        raise ScriptError(
+            f"ONNX shared library not found at {onnx_shared_lib}. Build ONNX first."
+        )
 
     bash(
         f"g++ -shared -fPIC "
@@ -75,8 +70,8 @@ def build_speedreader_libs(platform_dir):
     info(f"Built {static_lib} and {shared_lib} in {format_duration(elapsed_time)}")
 
 
-if __name__ == "__main__":
-    try:
-        build_speedreader_libs()
-    except ScriptError as e:
-        error(f"Fatal: {e}")
+# if __name__ == "__main__":
+#     try:
+#         build_speedreader_libs()
+#     except ScriptError as e:
+#         error(f"Fatal: {e}")

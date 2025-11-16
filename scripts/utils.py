@@ -31,7 +31,7 @@ def bash(command: str, directory: str | Path = None) -> str:
     dir_path = Path(directory)
 
     # Print the command being executed in yellow
-    console.print(command, style="yellow", highlight=False)
+    console.print(f"$ {command}", style="yellow", highlight=False)
 
     # Execute the command using bash with streaming output
     process = subprocess.Popen(
