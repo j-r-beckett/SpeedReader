@@ -7,11 +7,17 @@ namespace Resources;
 
 public static class FFmpegBinaries
 {
-    public static string GetFFmpegPath() => GetFFmpegPath(useSystemPath: true);
-    public static string GetFFprobePath() => GetFFprobePath(useSystemPath: true);
+    public static string GetFFmpegPath() => "";
+    public static string GetFFprobePath() => "";
 
-    public static string GetFFmpegPath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFmpeg, useSystemPath);
-    public static string GetFFprobePath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFprobe, useSystemPath);
+    public static string GetFFmpegPath(bool useSystemPath) => "";
+    public static string GetFFprobePath(bool useSystemPath) => "";
+
+    // public static string GetFFmpegPath() => GetFFmpegPath(useSystemPath: true);
+    // public static string GetFFprobePath() => GetFFprobePath(useSystemPath: true);
+
+    // public static string GetFFmpegPath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFmpeg, useSystemPath);
+    // public static string GetFFprobePath(bool useSystemPath) => BinaryResolver.GetBinaryPath(FFmpegBinary.FFprobe, useSystemPath);
 }
 
 public enum FFmpegBinary
