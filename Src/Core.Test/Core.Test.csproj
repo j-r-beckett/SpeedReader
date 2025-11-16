@@ -33,7 +33,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>libspeedreader_ort.so</Link>
     </Content>
-    <Content Include="../../target/platforms/linux-x64/lib/onnxruntime/shared/libonnxruntime.so*">
+    <Content Include="../../target/platforms/linux-x64/lib/onnxruntime/shared/libonnxruntime.so.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>%(Filename)%(Extension)</Link>
     </Content>

@@ -144,8 +144,8 @@ def build_onnx(onnx_version, platform_dir):
     combine_static_libs(static_libs, combined_archive)
     info(f"Created {combined_archive}")
 
-    # 3. Copy shared library
-    shared_libs = list(build_dir.rglob("Release/**/libonnxruntime.so*"))
+    # 3. Copy shared library (only the versioned file, not symlinks)
+    shared_libs = list(build_dir.rglob("Release/**/libonnxruntime.so.*"))
     if shared_libs:
         shared_dir = lib_dir / "shared"
         shared_dir.mkdir(parents=True, exist_ok=True)
