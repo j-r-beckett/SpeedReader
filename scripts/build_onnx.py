@@ -13,13 +13,6 @@ def get_parallel_jobs() -> int:
     return max(1, int(mem_gb / 2))
 
 
-def verify_gcc_version(major_version: int):
-    """Verify that a specific gcc version is installed"""
-    result = bash("ls /usr/bin/gcc-* | grep -E 'gcc-[0-9]+'")
-    if f"gcc-{major_version}" not in result:
-        raise ScriptError(f"gcc-{major_version} not found")
-
-
 def create_onnx_venv(src_dir: Path) -> Path:
     venv_dir = src_dir / ".venv"
     requirements_file = src_dir / "tools/ci_build/requirements.txt"
@@ -69,7 +62,6 @@ def build_onnx(onnx_version, platform_dir):
     gcc_version = 11
     platform_dir = Path(platform_dir).resolve()
     info(f"Building Onnx {onnx_version}")
-    verify_gcc_version(gcc_version)
     src_dir = clone_onnx(platform_dir, onnx_version)
     venv_dir = create_onnx_venv(src_dir)
 
