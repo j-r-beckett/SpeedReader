@@ -68,7 +68,7 @@
 
   <!-- Copy ONNX shared library to output for dynamic mode -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' AND '$(OnnxLinkMode)' == 'Dynamic'">
-    <None Include="$(LibDir)/onnxruntime/shared/libonnxruntime.so*">
+    <None Include="$(LibDir)/onnxruntime/shared/libonnxruntime.so.1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>%(Filename)%(Extension)</Link>
     </None>

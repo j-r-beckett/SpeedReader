@@ -144,14 +144,32 @@ def build_onnx(onnx_version, platform_dir):
     combine_static_libs(static_libs, combined_archive)
     info(f"Created {combined_archive}")
 
-    # 3. Copy shared library (only the versioned file, not symlinks)
-    shared_libs = list(build_dir.rglob("Release/**/libonnxruntime.so.*"))
+    # 3. Copy shared library and patch SONAME for version compatibility
+    shared_libs = list(build_dir.rglob("Release/**/libonnxruntime.so"))
     if shared_libs:
         shared_dir = lib_dir / "shared"
         shared_dir.mkdir(parents=True, exist_ok=True)
         for so in shared_libs:
-            shutil.copy2(so, shared_dir / so.name)
-        info(f"Copied {len(shared_libs)} shared libraries to {shared_dir}")
+            # Copy the library (following symlink to get actual file content)
+            temp_lib = shared_dir / "libonnxruntime.so"
+            shutil.copy2(so, temp_lib)
+
+            # Patch SONAME from libonnxruntime.so.1.15.0 to libonnxruntime.so.1
+            # This allows users to swap any 1.x version of ONNX Runtime
+            info("Patching SONAME to libonnxruntime.so.1 for version compatibility")
+            bash(f"patchelf --set-soname libonnxruntime.so.1 {temp_lib}")
+
+            # Rename to match the new SONAME
+            final_lib = shared_dir / "libonnxruntime.so.1"
+            temp_lib.rename(final_lib)
+
+            # Create linker symlink for build time
+            linker_symlink = shared_dir / "libonnxruntime.so"
+            if linker_symlink.exists():
+                linker_symlink.unlink()
+            linker_symlink.symlink_to("libonnxruntime.so.1")
+
+        info(f"Copied and patched shared library to {shared_dir}")
     else:
         info("Warning: No shared libraries found")
 
