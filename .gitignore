@@ -6,6 +6,9 @@ target/
 # Generated models
 Src/Resources/models/
 
+# Downloaded datasets
+datasets/
+
 # Generated ffmpeg binaries
 Src/Resources/binaries/
 

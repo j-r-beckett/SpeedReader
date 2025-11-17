@@ -10,4 +10,9 @@ dependencies = [
     "click",
     "rich",
     "psutil",
+    "onnx",
+    "onnxruntime",
+    "onnxsim",
+    "pillow",
+    "numpy",
 ]

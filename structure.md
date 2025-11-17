@@ -1,15 +1,13 @@
 target/
   models/
-    pytorch/  # downloaded from the internet
-      dbnet_resnet18.pth
-      svtrv2.pth
-    onnx/  # converted from pytorch and quantized by a python script
+    onnx/  # copied from /models
       dbnet_resnet18_fp32.onnx
-      dbnet_resnet18_bf16.onnx
       dbnet_resnet18_int8.onnx
       svtrv2_fp32.onnx
-      svtrv2_bf16.onnx
-      svtrv2_int8.onnx
+    build/  # shallow clones of repos
+      mmdeploy/
+      mmocr/
+      openocr/
   platforms/
     linux-x64/
       build/

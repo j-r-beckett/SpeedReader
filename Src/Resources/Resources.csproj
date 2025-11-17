@@ -10,31 +10,12 @@
     <PackageReference Include="SixLabors.Fonts" />
   </ItemGroup>
 
-
   <ItemGroup>
-    <ModelBuilderFiles Include="$(MSBuildProjectDirectory)/modelBuilder/**/*" />
-  </ItemGroup>
-
-  <Target Name="BuildModels"
-          BeforeTargets="BeforeBuild"
-          Inputs="@(ModelBuilderFiles)"
-          Outputs="models/.built">
-    <RemoveDir Directories="models" Condition="Exists('models')" />
-    <Exec Command="uv run build_models.py ../models" WorkingDirectory="$(MSBuildProjectDirectory)/modelBuilder" />
-    <Touch Files="models/.built" AlwaysCreate="true" />
-  </Target>
-
-  <ItemGroup>
-    <EmbeddedResource Include="models/**/*.onnx" />
-    <EmbeddedResource Include="models/**/*.json" />
+    <EmbeddedResource Include="$(MSBuildProjectDirectory)/../../models/*.onnx" Link="models/%(Filename)%(Extension)" />
     <EmbeddedResource Include="arial.ttf" />
     <EmbeddedResource Include="CharacterDictionary.Data.txt" />
     <EmbeddedResource Include="templates/*.liquid" />
   </ItemGroup>
-
-  <Target Name="CleanModels" BeforeTargets="BeforeClean">
-    <RemoveDir Directories="models" Condition="Exists('models')" />
-  </Target>
 
   <Target Name="CleanBinaries" BeforeTargets="BeforeClean">
     <RemoveDir Directories="binaries" Condition="Exists('binaries')" />

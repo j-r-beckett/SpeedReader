@@ -12,9 +12,9 @@ public class ModelLoader
     {
         var resourceName = (model, quantization) switch
         {
-            (Model.DbNet, Quantization.Fp32) => "models.dbnet_resnet18_fpnc_1200e_icdar2015.end2end.onnx",
-            (Model.DbNet, Quantization.Int8) => "models.dbnet_resnet18_fpnc_1200e_icdar2015.end2end_int8.onnx",
-            (Model.Svtr, Quantization.Fp32) => "models.svtrv2_base_ctc.end2end.onnx",
+            (Model.DbNet, Quantization.Fp32) => "models.dbnet_resnet18_fpnc_1200e_icdar2015_fp32.onnx",
+            (Model.DbNet, Quantization.Int8) => "models.dbnet_resnet18_fpnc_1200e_icdar2015_int8.onnx",
+            (Model.Svtr, Quantization.Fp32) => "models.svtrv2_base_ctc_fp32.onnx",
             _ => throw new ModelNotFoundException($"{model} quantized to {quantization} is not supported")
         };
         try
