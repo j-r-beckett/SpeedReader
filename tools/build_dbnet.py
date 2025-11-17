@@ -5,8 +5,47 @@ import time
 import shutil
 import urllib.request
 from pathlib import Path
+import numpy as np
+from PIL import Image
+import onnxruntime
+from onnxruntime.quantization import quantize_static, CalibrationDataReader, QuantType
 from utils import ScriptError, bash, info, error, format_duration
 from download_dataset import download_dataset
+
+
+class CalibrationDataset(CalibrationDataReader):
+    """Calibration dataset reader for DBNet quantization"""
+
+    def __init__(self, calibration_dir: Path, max_images: int = None):
+        self.calibration_dir = calibration_dir
+        self.image_files = list(self.calibration_dir.glob("*.jpg")) + list(self.calibration_dir.glob("*.png"))
+
+        if max_images:
+            self.image_files = self.image_files[:max_images]
+
+        info(f"Using {len(self.image_files)} calibration images")
+        self.current_index = 0
+
+    def get_next(self):
+        if self.current_index >= len(self.image_files):
+            return None
+
+        image_path = self.image_files[self.current_index]
+        self.current_index += 1
+
+        # Load and preprocess image for DBNet
+        image = Image.open(image_path).convert('RGB')
+        image = image.resize((640, 640))
+
+        # Convert to numpy array and normalize
+        image_array = np.array(image, dtype=np.float32)
+        image_array = image_array.transpose(2, 0, 1)  # HWC to CHW
+        image_array = image_array / 255.0  # Normalize to [0, 1]
+
+        # Add batch dimension
+        image_array = np.expand_dims(image_array, axis=0)
+
+        return {'input': image_array}
 
 
 def checkout_repo(repo_dir: Path, repo_url: str, version: str, repo_name: str):
@@ -125,6 +164,33 @@ def build_dbnet_model(mmdeploy_dir: Path, mmocr_dir: Path, venv_dir: Path, check
     return model_path
 
 
+def quantize_dbnet(fp32_model_path: Path, calibration_dir: Path, max_images: int = 100):
+    """Quantize DBNet FP32 model to INT8"""
+    info(f"Quantizing DBNet model with {max_images} calibration images")
+
+    # Create calibration data reader
+    calibration_data_reader = CalibrationDataset(calibration_dir, max_images)
+
+    # Output path for quantized model
+    int8_model_path = fp32_model_path.with_name(
+        fp32_model_path.name.replace("_fp32.onnx", "_int8.onnx")
+    )
+
+    start_time = time.time()
+    quantize_static(
+        model_input=str(fp32_model_path),
+        model_output=str(int8_model_path),
+        calibration_data_reader=calibration_data_reader,
+        quant_format=onnxruntime.quantization.QuantFormat.QDQ,
+        weight_type=QuantType.QInt8,
+        activation_type=QuantType.QUInt8
+    )
+    elapsed_time = time.time() - start_time
+
+    info(f"Quantized model created in {format_duration(elapsed_time)}: {int8_model_path}")
+    return int8_model_path
+
+
 def build_dbnet():
     """Build DBNet FP32 model end-to-end"""
     start_time = time.time()
@@ -166,17 +232,21 @@ def build_dbnet():
     model_path = build_dbnet_model(mmdeploy_dir, mmocr_dir, venv_dir, checkpoint_path, work_dir)
 
     # Download calibration dataset
-    download_dataset("icdar2015", datasets_dir)
+    calibration_dataset_dir = download_dataset("icdar2015", datasets_dir)
 
     # Copy model to final location
     models_dir.mkdir(parents=True, exist_ok=True)
     final_model_path = models_dir / "dbnet_resnet18_fpnc_1200e_icdar2015_fp32.onnx"
     shutil.copy2(model_path, final_model_path)
 
+    # Quantize model to INT8
+    int8_model_path = quantize_dbnet(final_model_path, calibration_dataset_dir, max_images=100)
+
     elapsed_time = time.time() - start_time
-    info(f"DBNet FP32 model built successfully in {format_duration(elapsed_time)}")
-    info(f"Model: {final_model_path}")
-    info(f"Calibration data: {datasets_dir / 'icdar2015'}")
+    info(f"DBNet models built successfully in {format_duration(elapsed_time)}")
+    info(f"FP32 Model: {final_model_path}")
+    info(f"INT8 Model: {int8_model_path}")
+    info(f"Calibration data: {calibration_dataset_dir}")
 
 
 if __name__ == "__main__":
