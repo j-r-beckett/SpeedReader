@@ -23,7 +23,7 @@ def create_onnx_venv(src_dir: Path) -> Path:
 
     if not venv_dir.exists():
         info("Creating onnx python environment")
-        # onnx uses python 3.11 for building, relies on pre-build 3.11 numpy wheels
+        # onnx uses python 3.11 for building, relies on pre-built 3.11 numpy wheels
         bash(f"uv venv {venv_dir} --python 3.11", directory=src_dir)
 
     # uv automatically caches dependencies
