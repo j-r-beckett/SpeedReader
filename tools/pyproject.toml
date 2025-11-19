@@ -5,7 +5,7 @@ description = "Build scripts for SpeedReader"
 authors = [
     { name = "Jimmy Beckett", email = "jimmybeckett1+github@gmail.com" }
 ]
-requires-python = ">=3.13"
+requires-python = "~=3.11.0"
 dependencies = [
     "click",
     "rich",
