@@ -5,8 +5,8 @@ jobs:
     name: Build the ONNX Runtime
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v5
-        if: ${{ !env.ACT }}
+      - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
+      # - run: echo "$(pwd)/.github/workflows" >> $GITHUB_PATH
       - name: Install uv
         uses: astral-sh/setup-uv@v6
       - name: Sync uv
@@ -14,15 +14,56 @@ jobs:
       - name: Build Libs
         run: cd tools && uv run build.py --onnx-version 1.15.0
         # if libs updated, copy to libs/ and print a message
+      - name: Upload libonnxruntime.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: libonnxruntime.so
+          path: target/platforms/linux-x64/lib/onnxruntime/shared/libonnxruntime.so
+      - name: Upload onnxruntime.a
+        uses: actions/upload-artifact@v4
+        with:
+          name: onnxruntime.a
+          path: target/platforms/linux-x64/lib/onnxruntime/static/onnxruntime.a
+      - name: Upload speedreader_ort.a
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedreader_ort.a
+          path: target/platforms/linux-x64/lib/speedreader_ort/static/speedreader_ort.a
+      # - name: Debug Info
+      #   if: always()
+      #   run: |
+      #     ID=$(./github/workflows/get-container-id-final.sh --short)
+      #     echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"l    
+
+  build-speedreader:
+    name: Build SpeedReader
+    runs-on: ubuntu-22.04
+    needs: build-onnx
+    # if: ${{ needs.build.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
+      - uses: actions/download-artifact@v4
+        with:
+          name: onnxruntime.a
+          path: target/platforms/linux-x64/lib/onnxruntime/static/onnxruntime.a
+      - uses: actions/download-artifact@v4
+        with:
+          name: speedreader_ort.a
+          path: target/platforms/linux-x64/lib/speedreader_ort/static/speedreader_ort.a
       - name: Install Dotnet
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
       - name: Build Binary
-        run: dotnet publish -r linux-x64 Src/Core
+        run: dotnet publish -r linux-x64 Src/Core --property OnnxLinkMode=Static
       - name: Smoke Binary
         run: |
           cp Src/Core/bin/Release/net10.0/linux-x64/publish/speedread . 
           ./speedread hello.png | grep '"text": "Hello"' || exit 1
-    
+          echo "Smoke test passed"
+      - name: Debug Info
+        if: always()
+        run: |
+          ID=$(./.github/workflows/get-container-id-final.sh --short)
+          echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
 # have a python validatation script that validates a binary (run with only one available onnx .so so we know where it links)
