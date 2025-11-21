@@ -15,6 +15,9 @@ Src/Resources/binaries/
 # Native ONNX Runtime build artifacts
 native/build/
 
+# Test coverage results
+**/*.Test/TestResults
+
 # Rider
 .idea/
 

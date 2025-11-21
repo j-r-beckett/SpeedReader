@@ -4,6 +4,12 @@ SpeedReader is an OCR pipeline for images and video. It handles threading, batch
 
 **Status**: Early development (v0.x). Breaking changes expected before 1.0.
 
+## Build
+
+Build release binaries locally with [act](github.com/nektos/act).
+
+`rm -f /tmp/speedreader && act push --artifact-server-path /tmp/speedreader -r`
+
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.

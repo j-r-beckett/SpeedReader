@@ -8,12 +8,13 @@ jobs:
       - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
       # - run: echo "$(pwd)/.github/workflows" >> $GITHUB_PATH
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh 
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Sync uv
         run: cd tools && uv sync --link-mode=copy
       - name: Build Libs
         run: cd tools && uv run build.py --onnx-version 1.15.0
-        # if libs updated, copy to libs/ and print a message
       - name: Upload libonnxruntime.so
         uses: actions/upload-artifact@v4
         with:
@@ -29,41 +30,85 @@ jobs:
         with:
           name: speedreader_ort.a
           path: target/platforms/linux-x64/lib/speedreader_ort/static/speedreader_ort.a
-      # - name: Debug Info
-      #   if: always()
-      #   run: |
-      #     ID=$(./github/workflows/get-container-id-final.sh --short)
-      #     echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"l    
-
+      - name: Debug Info
+        if: always()
+        run: |
+          ID=$(./.github/workflows/get-container-id.sh --short)
+          echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
+  
   build-speedreader:
     name: Build SpeedReader
     runs-on: ubuntu-22.04
     needs: build-onnx
-    # if: ${{ needs.build.result == 'success' }}
     steps:
       - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
       - uses: actions/download-artifact@v4
         with:
+          name: libonnxruntime.so
+          path: target/platforms/linux-x64/lib/onnxruntime/shared
+      - uses: actions/download-artifact@v4
+        with:
           name: onnxruntime.a
-          path: target/platforms/linux-x64/lib/onnxruntime/static/onnxruntime.a
+          path: target/platforms/linux-x64/lib/onnxruntime/static
       - uses: actions/download-artifact@v4
         with:
           name: speedreader_ort.a
-          path: target/platforms/linux-x64/lib/speedreader_ort/static/speedreader_ort.a
+          path: target/platforms/linux-x64/lib/speedreader_ort/static
       - name: Install Dotnet
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
-      - name: Build Binary
+      - name: Build Statically Linked Binary
         run: dotnet publish -r linux-x64 Src/Core --property OnnxLinkMode=Static
-      - name: Smoke Binary
-        run: |
-          cp Src/Core/bin/Release/net10.0/linux-x64/publish/speedread . 
-          ./speedread hello.png | grep '"text": "Hello"' || exit 1
-          echo "Smoke test passed"
+      - name: Upload Statically Linked Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedreader-static
+          path: Src/Core/bin/Release/net10.0/linux-x64/publish/speedread
+      - name: Build Dynamically Linked Binary
+        run: dotnet publish -r linux-x64 Src/Core --property OnnxLinkMode=Dynamic
+      - name: Upload Dynamically Linked Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedreader-dynamic
+          path: Src/Core/bin/Release/net10.0/linux-x64/publish/speedread
       - name: Debug Info
         if: always()
         run: |
-          ID=$(./.github/workflows/get-container-id-final.sh --short)
+          ID=$(./.github/workflows/get-container-id.sh --short)
           echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
-# have a python validatation script that validates a binary (run with only one available onnx .so so we know where it links)
+
+  validate-speedreader:
+    name: Validate SpeedReader Binaries
+    runs-on: ubuntu-22.04
+    needs: build-speedreader
+    steps:
+      - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
+      - uses: actions/download-artifact@v4
+        with:
+          name: speedreader-static
+          path: .
+      - name: Smoke Static Binary
+        run: |
+          chmod +x speedread
+          ./speedread hello.png | grep '"text": "Hello"' || exit 1
+      - run: rm speedread
+      - uses: actions/download-artifact@v4
+        with:
+          name: libonnxruntime.so
+          path: .
+      - uses: actions/download-artifact@v4
+        with:
+          name: speedreader-dynamic
+          path: .
+      - name: Smoke Dynamic Binary
+        run: |
+          chmod +x speedread
+          ./speedread hello.png | grep '"text": "Hello"' || exit 1
+      - name: Debug Info
+        if: always()
+        run: |
+          ID=$(./.github/workflows/get-container-id.sh --short)
+          echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
+
+

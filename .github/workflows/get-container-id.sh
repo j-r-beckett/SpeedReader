@@ -2,17 +2,9 @@
 #
 # Get Docker Container ID from inside a container
 #
-# Works by parsing /proc/self/mountinfo which contains mount paths like:
-#   /var/lib/docker/containers/<CONTAINER_ID>/resolv.conf
-#
-# This works in act containers where traditional methods fail:
-#   - hostname returns the host machine name (e.g., "desktop")
-#   - /proc/self/cgroup shows "/" or "0::/" (cgroups v2)
-#   - /proc/1/cpuset shows "/"
-#
 # Usage:
-#   ./get-container-id-final.sh           # Full 64-char container ID
-#   ./get-container-id-final.sh --short   # Short 12-char container ID
+#   ./get-container-id.sh           # Full 64-char container ID
+#   ./get-container-id.sh --short   # Short 12-char container ID
 #
 
 set -euo pipefail
