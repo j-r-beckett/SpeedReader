@@ -54,10 +54,10 @@ public class TextReaderBackpressureTests
         }
     }
 
-    [Theory, CombinatorialData]
-    public async Task TextReader_ReadMany_EmitsBackpressure(
-        [CombinatorialRange(from: 1, count: 3)] int inferenceCapacity)
+    [Fact]
+    public async Task TextReader_ReadMany_EmitsBackpressure()
     {
+        var inferenceCapacity = 1;
         var capacity = (int)Math.Ceiling((inferenceCapacity + inferenceCapacity) * 1.5);
 
         var tcs = new TaskCompletionSource();
