@@ -60,7 +60,17 @@ public class OcrPipeline
 
         await foreach (var task in processingTasks.Reader.ReadAllAsync())
         {
-            yield return await task;
+            Result<OcrPipelineResult> result;
+            try
+            {
+                result = new Result<OcrPipelineResult>(await task);
+            }
+            catch (Exception ex)
+            {
+                result = new Result<OcrPipelineResult>(ex);
+            }
+
+            yield return result;
         }
 
         await processingTaskStarter;
