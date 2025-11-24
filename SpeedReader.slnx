@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Src/">
+    <Project Path="Src/Frontend.Test/Frontend.Test.csproj" />
+    <Project Path="Src/Frontend/Frontend.csproj" />
+    <Project Path="Src/Ocr.Test/Ocr.Test.csproj" />
+    <Project Path="Src/Ocr/Ocr.csproj" />
+    <Project Path="Src/Resources.Test/Resources.Test.csproj" />
+    <Project Path="Src/Resources/Resources.csproj" />
+    <Project Path="Src/TestUtils/TestUtils.csproj" />
+    <Project Path="Src/Video.Test/Video.Test.csproj" />
+    <Project Path="Src/Video/Video.csproj" />
+  </Folder>
+</Solution>
