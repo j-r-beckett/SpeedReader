@@ -323,7 +323,7 @@ public class ServerFixture : IDisposable
         // Start server using CliWrap with the built DLL
         var serverDll = Path.Combine(AppContext.BaseDirectory, "speedread.dll");
 
-        var serverCommand = Cli.Wrap("dotnet")
+        var serverCommand = CliWrap.Cli.Wrap("dotnet")
             .WithArguments($"{serverDll} --serve")
             .WithEnvironmentVariables(env => env.Set("ASPNETCORE_URLS", $"http://localhost:{_serverPort}"))
             .WithStandardOutputPipe(PipeTarget.ToStringBuilder(_stdOutBuffer))

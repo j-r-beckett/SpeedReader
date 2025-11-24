@@ -1,8 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Metrics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -12,13 +10,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Ocr;
 using Ocr.InferenceEngine;
-using Ocr.Telemetry;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
 using Model = Ocr.InferenceEngine.Model;
 
-namespace Frontend;
+namespace Frontend.Server;
 
 public static class Serve
 {
