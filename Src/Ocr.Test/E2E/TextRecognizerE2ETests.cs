@@ -26,7 +26,7 @@ public class TextRecognizerE2ETests
 
     public TextRecognizerE2ETests(ITestOutputHelper outputHelper)
     {
-        _font = Fonts.GetFont(fontSize: 24f);
+        _font = EmbeddedFont.Default.Get(fontSize: 24f);
         _logger = new TestLogger(outputHelper);
     }
 

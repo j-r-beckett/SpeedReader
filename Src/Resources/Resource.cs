@@ -5,14 +5,14 @@ using System.Reflection;
 
 namespace Resources;
 
-public class Resource
+public record Resource
 {
     private readonly Lazy<byte[]> _bytes;
 
     // Throws ResourceNotFoundException if the resource does not exist
     public Resource(string resourceName)
     {
-        using var stream = GetResourceStream(resourceName);  // Side effect, throw if not exists
+        using var stream = GetResourceStream(resourceName);  // Done for side effect purposes, throws if resource DNE
         _bytes = new Lazy<byte[]>(() => LoadResource(resourceName));
     }
 

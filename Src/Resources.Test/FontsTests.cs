@@ -1,67 +1,64 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using SixLabors.Fonts;
 
 namespace Resources.Test;
 
 public class FontsTests
 {
-    [Theory]
-    [MemberData(nameof(GetAllFontNames))]
-    public void CanLoadFont(FontName fontName)
+    [Fact]
+    public void CanLoadDefaultFont()
     {
-        var font = Fonts.GetFont(fontName);
+        var font = EmbeddedFont.Default.Get();
+        Assert.NotNull(font);
+    }
+
+    [Fact]
+    public void CanLoadArialFont()
+    {
+        var font = EmbeddedFont.Arial.Get();
         Assert.NotNull(font);
     }
 
     [Theory]
-    [MemberData(nameof(GetFontSizeTestCases))]
-    public void CanLoadFontWithCustomSize(FontName fontName, float fontSize)
+    [InlineData(8f)]
+    [InlineData(12f)]
+    [InlineData(14f)]
+    [InlineData(18f)]
+    [InlineData(24f)]
+    [InlineData(36f)]
+    public void CanLoadFontWithCustomSize(float fontSize)
     {
-        var font = Fonts.GetFont(fontName, fontSize);
+        var font = EmbeddedFont.Default.Get(fontSize);
         Assert.NotNull(font);
         Assert.Equal(fontSize, font.Size);
     }
 
     [Theory]
-    [MemberData(nameof(GetFontStyleTestCases))]
-    public void CanLoadFontWithStyle(FontName fontName, FontStyle fontStyle)
+    [InlineData(FontStyle.Regular)]
+    [InlineData(FontStyle.Bold)]
+    [InlineData(FontStyle.Italic)]
+    [InlineData(FontStyle.BoldItalic)]
+    public void CanLoadFontWithStyle(FontStyle fontStyle)
     {
-        var font = Fonts.GetFont(fontName, fontStyle: fontStyle);
+        var font = EmbeddedFont.Default.Get(fontStyle: fontStyle);
         Assert.NotNull(font);
     }
 
-    public static IEnumerable<object[]> GetAllFontNames() => Enum.GetValues<FontName>().Select(fontName => new object[] { fontName });
-
-    public static IEnumerable<object[]> GetFontSizeTestCases()
+    [Fact]
+    public void CanLoadFontWithCustomSizeAndStyle()
     {
-        var fontNames = Enum.GetValues<FontName>();
-        var sizes = new[] { 8f, 12f, 14f, 18f, 24f, 36f };
-
-        foreach (var fontName in fontNames)
-        {
-            foreach (var size in sizes)
-            {
-                yield return new object[] { fontName, size };
-            }
-        }
+        var font = EmbeddedFont.Default.Get(fontSize: 20f, fontStyle: FontStyle.Bold);
+        Assert.NotNull(font);
+        Assert.Equal(20f, font.Size);
     }
 
-    public static IEnumerable<object[]> GetFontStyleTestCases()
+    [Fact]
+    public void ArialIsCached()
     {
-        var fontNames = Enum.GetValues<FontName>();
-        var styles = new[] { FontStyle.Regular, FontStyle.Bold, FontStyle.Italic, FontStyle.BoldItalic };
-
-        foreach (var fontName in fontNames)
-        {
-            foreach (var style in styles)
-            {
-                yield return new object[] { fontName, style };
-            }
-        }
+        var font1 = EmbeddedFont.Arial;
+        var font2 = EmbeddedFont.Arial;
+        Assert.Same(font1, font2);
     }
 }

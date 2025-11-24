@@ -25,7 +25,7 @@ public class ApiE2ETests : IClassFixture<ServerFixture>
     {
         _server = server;
         _httpClient = _server.HttpClient;
-        _font = Resources.Fonts.GetFont(fontSize: 18f);
+        _font = Resources.EmbeddedFont.Default.Get(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<ApiE2ETests>("/tmp", new TestLogger<ApiE2ETests>(outputHelper));
     }
 

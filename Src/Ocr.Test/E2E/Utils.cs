@@ -35,7 +35,7 @@ public static class Utils
 
     public static BoundingBox DrawText(Image image, string text, int x, int y, float angleDegrees = 0)
     {
-        var font = Fonts.GetFont(fontSize: 24f);
+        var font = EmbeddedFont.Default.Get(fontSize: 24f);
         var textRect = TextMeasurer.MeasureAdvance(text, new TextOptions(font));
         var width = Math.Ceiling(textRect.Width);
         var height = Math.Ceiling(textRect.Height);
