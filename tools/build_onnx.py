@@ -86,19 +86,6 @@ def combine_static_libs(libs_path: Path, output_path: Path):
     mri_script.unlink()
 
 
-def combine_static_libs(lib_paths: list[Path], output_path: Path):
-    """Combine multiple .a files into a single archive using AR MRI script"""
-    mri_script = output_path.parent / "combine.mri"
-    mri_commands = [f"CREATE {output_path}"]
-    for lib in lib_paths:
-        mri_commands.append(f"ADDLIB {lib}")
-    mri_commands.extend(["SAVE", "END"])
-
-    mri_script.write_text("\n".join(mri_commands))
-    bash(f"ar -M < {mri_script}")
-    mri_script.unlink()
-
-
 # @click.command()
 # @click.option("--onnx-version", help="Onnx version to build", required=True)
 # @click.option(
