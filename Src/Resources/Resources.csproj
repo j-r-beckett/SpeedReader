@@ -17,8 +17,4 @@
     <EmbeddedResource Include="templates/*.liquid" />
   </ItemGroup>
 
-  <Target Name="CleanBinaries" BeforeTargets="BeforeClean">
-    <RemoveDir Directories="binaries" Condition="Exists('binaries')" />
-  </Target>
-
 </Project>
