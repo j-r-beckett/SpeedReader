@@ -15,7 +15,7 @@ using SixLabors.ImageSharp.Processing;
 using TestUtils;
 using Xunit.Abstractions;
 
-namespace Core.Test;
+namespace Frontend.Test;
 
 public class WebSocketTests : IClassFixture<ServerFixture>
 {

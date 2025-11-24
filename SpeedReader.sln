@@ -13,9 +13,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources", "Src\Resources\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources.Test", "Src\Resources.Test\Resources.Test.csproj", "{5C2552A6-4D67-402D-9005-4C5A4D06C819}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Src\Core\Core.csproj", "{DA43D58F-4F67-4ECC-81C3-A3DAFC2FBE64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Frontend", "Src\Frontend\Frontend.csproj", "{DA43D58F-4F67-4ECC-81C3-A3DAFC2FBE64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Test", "Src\Core.Test\Core.Test.csproj", "{1068EC1F-D716-4AC6-9191-A9C45EB8CDB2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Frontend.Test", "Src\Frontend.Test\Frontend.Test.csproj", "{1068EC1F-D716-4AC6-9191-A9C45EB8CDB2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "Src\TestUtils\TestUtils.csproj", "{C177F9BD-E951-4E61-BFD3-E691F03AC174}"
 EndProject

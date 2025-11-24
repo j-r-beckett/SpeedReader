@@ -18,7 +18,7 @@ using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
 using Model = Ocr.InferenceEngine.Model;
 
-namespace Core;
+namespace Frontend;
 
 public static class Serve
 {

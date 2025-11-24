@@ -14,10 +14,10 @@
 
 ## Projects
 
-### Core
+### Frontend
 Application entrypoint. Builds a self-contained binary that can identify and recognize text in images and videos. Can be used either as a CLI tool or as an API server.
 
-### Core.Test
+### Frontend.Test
 
 ### Ocr
 OCR functionality. Uses a TPL Dataflow pipeline: text detection (DBNet) -> text recognition (SVTR) -> post-processing.
@@ -95,15 +95,15 @@ dotnet run MyFile.cs
 ## CLI
 ```bash
 # Run the CLI application
-dotnet run --project Src/Core/ -- [arguments]
+dotnet run --project Src/Frontend/ -- [arguments]
 
 # Start and wait for debugger to attach
-SPEEDREADER_DEBUG_WAIT=true dotnet run --project Src/Core/ -- [arguments]
+SPEEDREADER_DEBUG_WAIT=true dotnet run --project Src/Frontend/ -- [arguments]
 ```
 
 ```bash
 # CLI help
-$ dotnet run --project Src/Core/ -- -h
+$ dotnet run --project Src/Frontend/ -- -h
 Description:
   SpeedReader - Blazing fast OCR
 

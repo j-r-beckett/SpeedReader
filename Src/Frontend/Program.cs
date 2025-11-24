@@ -8,7 +8,7 @@ using Ocr;
 using Ocr.InferenceEngine;
 using Model = Ocr.InferenceEngine.Model;
 
-namespace Core;
+namespace Frontend;
 
 public class Program
 {

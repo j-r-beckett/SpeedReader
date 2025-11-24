@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Ocr.Geometry;
 
-namespace Core;
+namespace Frontend;
 
 [JsonSerializable(typeof(OcrJsonResult))]
 [JsonSerializable(typeof(List<OcrJsonResult>))]
