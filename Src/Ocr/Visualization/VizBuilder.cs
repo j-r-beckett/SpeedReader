@@ -2,8 +2,9 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CommunityToolkit.HighPerformance;
-using Fluid;
 using Ocr.Geometry;
 using Resources;
 using SixLabors.ImageSharp;
@@ -17,35 +18,74 @@ public class VizBuilder
 {
     public class LegendItem
     {
-        public required string Color;
-        public required string Description;
-        public required string ElementClass;
-        public required bool DefaultVisible;
+        [JsonPropertyName("color")]
+        public required string Color { get; init; }
+
+        [JsonPropertyName("description")]
+        public required string Description { get; init; }
+
+        [JsonPropertyName("elementClass")]
+        public required string ElementClass { get; init; }
+
+        [JsonPropertyName("defaultVisible")]
+        public required bool DefaultVisible { get; init; }
     }
 
     public class TextItem
     {
-        public required string Text;
-        public required double CenterX;
-        public required double CenterY;
-        public required double FontSize;
-        public required double RotationAngle;
-        public required double Confidence;
+        [JsonPropertyName("text")]
+        public required string Text { get; init; }
+
+        [JsonPropertyName("centerX")]
+        public required double CenterX { get; init; }
+
+        [JsonPropertyName("centerY")]
+        public required double CenterY { get; init; }
+
+        [JsonPropertyName("fontSize")]
+        public required double FontSize { get; init; }
+
+        [JsonPropertyName("rotationAngle")]
+        public required double RotationAngle { get; init; }
+
+        [JsonPropertyName("confidence")]
+        public required double Confidence { get; init; }
     }
 
     public class TemplateData
     {
-        public required int Width;
-        public required int Height;
-        public required string BaseImageDataUri;
-        public string? ProbabilityMapDataUri;
-        public required List<Polygon> AxisAlignedBoundingBoxes;
-        public required List<Polygon> OrientedBoundingBoxes;
-        public required List<Polygon> ExpectedAxisAlignedBoundingBoxes;
-        public required List<Polygon> ExpectedOrientedBoundingBoxes;
-        public required List<Polygon> Polygons = [];
-        public required List<TextItem> TextItems = [];
-        public required LegendItem[] Legend;
+        [JsonPropertyName("width")]
+        public required int Width { get; init; }
+
+        [JsonPropertyName("height")]
+        public required int Height { get; init; }
+
+        [JsonPropertyName("baseImageDataUri")]
+        public required string BaseImageDataUri { get; init; }
+
+        [JsonPropertyName("probabilityMapDataUri")]
+        public string? ProbabilityMapDataUri { get; init; }
+
+        [JsonPropertyName("axisAlignedBoundingBoxes")]
+        public required List<Polygon> AxisAlignedBoundingBoxes { get; init; }
+
+        [JsonPropertyName("orientedBoundingBoxes")]
+        public required List<Polygon> OrientedBoundingBoxes { get; init; }
+
+        [JsonPropertyName("expectedAxisAlignedBoundingBoxes")]
+        public required List<Polygon> ExpectedAxisAlignedBoundingBoxes { get; init; }
+
+        [JsonPropertyName("expectedOrientedBoundingBoxes")]
+        public required List<Polygon> ExpectedOrientedBoundingBoxes { get; init; }
+
+        [JsonPropertyName("polygons")]
+        public required List<Polygon> Polygons { get; init; }
+
+        [JsonPropertyName("textItems")]
+        public required List<TextItem> TextItems { get; init; }
+
+        [JsonPropertyName("legend")]
+        public required LegendItem[] Legend { get; init; }
     }
 
     public class MultipleAddException : Exception
@@ -76,8 +116,7 @@ public class VizBuilder
 
     private ConcurrentBag<(string Text, double Confidence, List<(double X, double Y)> ORectangle)>? _textItemsData;
 
-    private static readonly FluidParser _parser = new();
-    private static readonly Lazy<IFluidTemplate> _template = new(LoadTemplate);
+    private static readonly Lazy<string> _template = new(LoadTemplate);
 
     public VizBuilder AddBaseImage(Image image)
     {
@@ -231,19 +270,11 @@ public class VizBuilder
         var template = _template.Value;
         var baseImageDataUri = ConvertImageToDataUri(_baseImage);
 
-        var options = new TemplateOptions();
-        options.MemberAccessStrategy.Register<TemplateData>();
-        options.MemberAccessStrategy.Register<Point>();
-        options.MemberAccessStrategy.Register<Polygon>();
-        options.MemberAccessStrategy.Register<TextItem>();
-
-        options.MemberAccessStrategy.Register<LegendItem>();
-
         List<LegendItem> legend = [];
 
         if (_axisAlignedBBoxes != null)
         {
-            legend.Add(new()
+            legend.Add(new LegendItem
             {
                 Color = "red",
                 Description = "Axis-aligned bounding boxes",
@@ -254,7 +285,7 @@ public class VizBuilder
 
         if (_orientedBBoxes != null)
         {
-            legend.Add(new()
+            legend.Add(new LegendItem
             {
                 Color = "blue",
                 Description = "Oriented bounding boxes",
@@ -265,7 +296,7 @@ public class VizBuilder
 
         if (_expectedAxisAlignedBBoxes != null)
         {
-            legend.Add(new()
+            legend.Add(new LegendItem
             {
                 Color = "black",
                 Description = "Expected axis-aligned bounding boxes",
@@ -276,7 +307,7 @@ public class VizBuilder
 
         if (_expectedOrientedBBoxes != null)
         {
-            legend.Add(new()
+            legend.Add(new LegendItem
             {
                 Color = "orange",
                 Description = "Expected oriented bounding boxes",
@@ -287,7 +318,7 @@ public class VizBuilder
 
         if (_polygonBBoxes != null)
         {
-            legend.Add(new()
+            legend.Add(new LegendItem
             {
                 Color = "green",
                 Description = "Polygon bounding boxes",
@@ -298,7 +329,7 @@ public class VizBuilder
 
         if (_textItemsData != null)
         {
-            legend.Add(new()
+            legend.Add(new LegendItem
             {
                 Color = "white",
                 Description = "Recognized Text",
@@ -311,7 +342,7 @@ public class VizBuilder
         if (_probabilityMap != null)
         {
             probabilityMapDataUri = ConvertProbabilityMapToDataUri(_probabilityMap);
-            legend.Add(new()
+            legend.Add(new LegendItem
             {
                 Color = "yellow",
                 Description = "Raw text detection output",
@@ -343,7 +374,7 @@ public class VizBuilder
                 var textHeight = Math.Sqrt(
                     Math.Pow(bottomLeft.X - topLeft.X, 2) +
                     Math.Pow(bottomLeft.Y - topLeft.Y, 2));
-                var fontSize = textHeight * 0.70;
+                var fontSize = textHeight;
 
                 return new TextItem
                 {
@@ -372,9 +403,10 @@ public class VizBuilder
             Legend = legend.ToArray()
         };
 
-        var context = new TemplateContext(templateData, options);
+        var json = JsonSerializer.Serialize(templateData, VizJsonContext.Default.TemplateData);
+        var svg = template.Replace("{{VIZ_DATA}}", json);
 
-        return new Svg(template.Render(context));
+        return new Svg(svg);
     }
 
     private static string ConvertImageToDataUri(Image image)
@@ -385,13 +417,10 @@ public class VizBuilder
         return $"data:image/png;base64,{base64}";
     }
 
-    private static IFluidTemplate LoadTemplate()
+    private static string LoadTemplate()
     {
-        var templateBytes = new Resource("templates.svg-visualization-2.liquid").Bytes;
-        var templateContent = System.Text.Encoding.UTF8.GetString(templateBytes);
-        return !_parser.TryParse(templateContent, out var template, out var error)
-            ? throw new InvalidOperationException($"Failed to parse SVG template: {error}")
-            : template;
+        var templateBytes = new Resource("templates.svg-visualization-3.svg").Bytes;
+        return System.Text.Encoding.UTF8.GetString(templateBytes);
     }
 
     private static string ConvertProbabilityMapToDataUri(Image<L8> probabilityMap)
@@ -411,4 +440,13 @@ public class VizBuilder
 
         return ConvertImageToDataUri(overlayImage);
     }
+}
+
+[JsonSerializable(typeof(VizBuilder.TemplateData))]
+[JsonSerializable(typeof(VizBuilder.LegendItem))]
+[JsonSerializable(typeof(VizBuilder.TextItem))]
+[JsonSerializable(typeof(Polygon))]
+[JsonSerializable(typeof(Ocr.Geometry.PointF))]
+internal partial class VizJsonContext : JsonSerializerContext
+{
 }

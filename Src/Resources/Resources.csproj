@@ -15,6 +15,7 @@
     <EmbeddedResource Include="arial.ttf" />
     <EmbeddedResource Include="CharacterDictionary.Data.txt" />
     <EmbeddedResource Include="templates/*.liquid" />
+    <EmbeddedResource Include="templates/*.svg" />
   </ItemGroup>
 
 </Project>

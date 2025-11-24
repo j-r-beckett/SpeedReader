@@ -1,0 +1,239 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1 1" width="1" height="1">
+  <defs>
+    <style>
+      .bounding-box { fill: none; stroke: red; stroke-width: 2; }
+      .oriented-bounding-box { fill: none; stroke: blue; stroke-width: 2; }
+      .expected-bounding-box { fill: none; stroke: black; stroke-width: 2; stroke-dasharray: 5,5; }
+      .expected-oriented-bounding-box { fill: none; stroke: orange; stroke-width: 2; stroke-dasharray: 5,5; }
+      .polygon { fill: none; stroke: green; stroke-width: 2; }
+      .dbnet-overlay { opacity: 0.5; }
+      .recognized-text {
+        fill: white;
+        text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+        pointer-events: all;
+      }
+
+      .legend {
+        font-family: Arial, sans-serif;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        border-radius: 12px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: fit-content;
+      }
+      .legend-item {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        user-select: none;
+      }
+      .legend-item:hover { color: #ddd; }
+      .legend-swatch {
+        width: 20px;
+        height: 6px;
+        border-radius: 3px;
+      }
+      .hidden { display: none; }
+    </style>
+  </defs>
+
+  <script>
+    <![CDATA[
+    (function() {
+      const data = {{VIZ_DATA}};
+      const svg = document.currentScript.ownerSVGElement;
+
+      // Update viewBox and dimensions
+      svg.setAttribute('viewBox', `0 0 ${data.width} ${data.height}`);
+      svg.setAttribute('width', data.width);
+      svg.setAttribute('height', data.height);
+
+      // Create base image
+      const baseImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      baseImage.setAttribute('width', data.width);
+      baseImage.setAttribute('height', data.height);
+      baseImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', data.baseImageDataUri);
+      svg.appendChild(baseImage);
+
+      // Create probability map overlay if present
+      if (data.probabilityMapDataUri) {
+        const dbnetItem = data.legend.find(item => item.elementClass === 'dbnet-overlay');
+        const dbnetGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        dbnetGroup.setAttribute('class', dbnetItem?.defaultVisible ? 'dbnet-overlay' : 'dbnet-overlay hidden');
+
+        const probImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        probImage.setAttribute('width', data.width);
+        probImage.setAttribute('height', data.height);
+        probImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', data.probabilityMapDataUri);
+
+        dbnetGroup.appendChild(probImage);
+        svg.appendChild(dbnetGroup);
+      }
+
+      // Helper function to create polygon group
+      function createPolygonGroup(polygons, className, polygonClass, defaultVisible) {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('class', defaultVisible ? className : className + ' hidden');
+
+        polygons.forEach(polygon => {
+          const points = polygon.points.map(p => `${p.x},${p.y}`).join(' ');
+          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          poly.setAttribute('class', polygonClass);
+          poly.setAttribute('points', points);
+          group.appendChild(poly);
+        });
+
+        return group;
+      }
+
+      // Create axis-aligned bounding boxes
+      const bboxItem = data.legend.find(item => item.elementClass === 'bounding-boxes');
+      if (bboxItem && data.axisAlignedBoundingBoxes.length > 0) {
+        svg.appendChild(createPolygonGroup(
+          data.axisAlignedBoundingBoxes,
+          'bounding-boxes',
+          'bounding-box',
+          bboxItem.defaultVisible
+        ));
+      }
+
+      // Create oriented bounding boxes
+      const obbItem = data.legend.find(item => item.elementClass === 'oriented-bounding-boxes');
+      if (obbItem && data.orientedBoundingBoxes.length > 0) {
+        svg.appendChild(createPolygonGroup(
+          data.orientedBoundingBoxes,
+          'oriented-bounding-boxes',
+          'oriented-bounding-box',
+          obbItem.defaultVisible
+        ));
+      }
+
+      // Create expected axis-aligned bounding boxes
+      const expBboxItem = data.legend.find(item => item.elementClass === 'expected-bounding-boxes');
+      if (expBboxItem && data.expectedAxisAlignedBoundingBoxes.length > 0) {
+        svg.appendChild(createPolygonGroup(
+          data.expectedAxisAlignedBoundingBoxes,
+          'expected-bounding-boxes',
+          'expected-bounding-box',
+          expBboxItem.defaultVisible
+        ));
+      }
+
+      // Create expected oriented bounding boxes
+      const expObbItem = data.legend.find(item => item.elementClass === 'expected-oriented-bounding-boxes');
+      if (expObbItem && data.expectedOrientedBoundingBoxes.length > 0) {
+        svg.appendChild(createPolygonGroup(
+          data.expectedOrientedBoundingBoxes,
+          'expected-oriented-bounding-boxes',
+          'expected-oriented-bounding-box',
+          expObbItem.defaultVisible
+        ));
+      }
+
+      // Create polygons
+      const polyItem = data.legend.find(item => item.elementClass === 'polygons');
+      if (polyItem && data.polygons.length > 0) {
+        svg.appendChild(createPolygonGroup(
+          data.polygons,
+          'polygons',
+          'polygon',
+          polyItem.defaultVisible
+        ));
+      }
+
+      // Create text overlay
+      const textItem = data.legend.find(item => item.elementClass === 'text-overlay');
+      if (textItem && data.textItems.length > 0) {
+        const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        textGroup.setAttribute('class', textItem.defaultVisible ? 'text-overlay' : 'text-overlay hidden');
+
+        data.textItems.forEach(item => {
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', item.centerX);
+          text.setAttribute('y', item.centerY);
+          text.setAttribute('font-size', item.fontSize + 'px');
+          text.setAttribute('transform', `rotate(${item.rotationAngle}, ${item.centerX}, ${item.centerY})`);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'central');
+          text.setAttribute('class', 'recognized-text');
+
+          const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+          title.textContent = (item.confidence * 100).toFixed(1) + '%';
+          text.appendChild(title);
+
+          text.appendChild(document.createTextNode(item.text));
+          textGroup.appendChild(text);
+        });
+
+        svg.appendChild(textGroup);
+      }
+
+      // Create legend
+      const legendFO = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+      const legendPadding = data.width / 50;
+      const legendWidth = data.width / 3;
+      const legendHeight = data.width / 4;
+      const fontSize = data.width / 65;
+
+      legendFO.setAttribute('x', legendPadding);
+      legendFO.setAttribute('y', legendPadding);
+      legendFO.setAttribute('width', legendWidth);
+      legendFO.setAttribute('height', legendHeight);
+
+      const legendDiv = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      legendDiv.setAttribute('class', 'legend');
+      legendDiv.style.fontSize = fontSize + 'px';
+      legendDiv.style.padding = (data.width / 100) + 'px';
+      legendDiv.style.gap = (data.width / 100) + 'px';
+
+      data.legend.forEach(item => {
+        const legendItem = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+        legendItem.setAttribute('class', 'legend-item');
+        legendItem.setAttribute('data-class', item.elementClass);
+        legendItem.style.opacity = item.defaultVisible ? '1' : '0.5';
+        legendItem.style.gap = (data.width / 75) + 'px';
+        legendItem.onclick = () => toggleLayer(item.elementClass);
+
+        const swatch = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+        swatch.setAttribute('class', 'legend-swatch');
+        swatch.style.backgroundColor = item.color;
+        swatch.style.width = (data.width / 50) + 'px';
+
+        const span = document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+        span.textContent = item.description;
+
+        legendItem.appendChild(swatch);
+        legendItem.appendChild(span);
+        legendDiv.appendChild(legendItem);
+      });
+
+      legendFO.appendChild(legendDiv);
+      svg.appendChild(legendFO);
+
+      // Toggle layer function
+      window.toggleLayer = function(className) {
+        const elements = svg.querySelectorAll('.' + className);
+        const legendItem = svg.querySelector('.legend-item[data-class="' + className + '"]');
+
+        elements.forEach(element => {
+          if (element.classList.contains('hidden')) {
+            element.classList.remove('hidden');
+            legendItem.style.opacity = '1';
+          } else {
+            element.classList.add('hidden');
+            legendItem.style.opacity = '0.5';
+          }
+        });
+      };
+    })();
+    ]]>
+  </script>
+</svg>

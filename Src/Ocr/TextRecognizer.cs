@@ -86,8 +86,20 @@ public class TextRecognizer
     {
         var modelInput = Preprocess(regions, image);
         var inferenceOutput = await RunInference(modelInput);
-        return Postprocess(inferenceOutput);
+        var results = Postprocess(inferenceOutput);
 
+        // Add text items to visualization
+        var textItems = new List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)>();
+        for (int i = 0; i < results.Count; i++)
+        {
+            var (text, confidence) = results[i];
+            var rect = regions[i].RotatedRectangle;
+            var corners = rect.Corners().Points.Select(p => (p.X, p.Y)).ToList();
+            textItems.Add((text, confidence, corners));
+        }
+        vizBuilder.AddTextItems(textItems);
+
+        return results;
     }
 
     public virtual async Task<(float[], int[])[]> RunInference(List<(float[], int[])> inputs)
