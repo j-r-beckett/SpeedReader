@@ -3,7 +3,7 @@
 
 namespace Resources.Test;
 
-public class CharacterDictionaryTests
+public class EmbeddedCharDictTests
 {
     [Theory]
     [InlineData(4544, 'a')]  // Line 4544 in data file -> index 4544 (4543 + 1 for blank offset)
@@ -14,7 +14,7 @@ public class CharacterDictionaryTests
     [InlineData(6624, ' ')]  // Space character at index 6624
     public void IndexToChar_ReturnsExpectedCharacter(int index, char expectedChar)
     {
-        var dictionary = new CharacterDictionary();
+        var dictionary = new EmbeddedCharDict();
         var actualChar = dictionary.IndexToChar(index);
         Assert.Equal(expectedChar, actualChar);
     }
@@ -22,14 +22,14 @@ public class CharacterDictionaryTests
     [Fact]
     public void Count_ReturnsExpectedVocabularySize()
     {
-        var dictionary = new CharacterDictionary();
+        var dictionary = new EmbeddedCharDict();
         Assert.Equal(6625, dictionary.Count);
     }
 
     [Fact]
     public void IndexToChar_UnknownIndex_ReturnsQuestionMark()
     {
-        var dictionary = new CharacterDictionary();
+        var dictionary = new EmbeddedCharDict();
         var actualChar = dictionary.IndexToChar(99999);
         Assert.Equal('?', actualChar);
     }

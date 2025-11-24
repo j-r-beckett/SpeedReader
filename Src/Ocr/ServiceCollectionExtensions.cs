@@ -20,7 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(options.DetectionOptions);
         services.AddSingleton(options.RecognitionOptions);
 
-        services.AddSingleton<CharacterDictionary>();
+        services.AddSingleton<EmbeddedCharDict>();
 
         services.AddSingleton(sp => TextDetector.Factory(sp, Model.DbNet));
         services.AddSingleton(sp => TextRecognizer.Factory(sp, Model.Svtr));

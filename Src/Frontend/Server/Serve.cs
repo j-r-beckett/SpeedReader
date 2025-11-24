@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -20,8 +19,6 @@ namespace Frontend.Server;
 
 public static class Serve
 {
-    [RequiresDynamicCode()]
-    [RequiresUnreferencedCode()]
     public static async Task RunServer()
     {
         // Create performance metrics collection

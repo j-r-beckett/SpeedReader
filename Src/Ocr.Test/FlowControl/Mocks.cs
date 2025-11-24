@@ -79,7 +79,7 @@ public class MockTextRecognizer : TextRecognizer
 
     public MockTextRecognizer(Func<List<(string, double)>> recognize, int capacity = 1) : this(() => Task.FromResult(recognize()), capacity) { }
 
-    public MockTextRecognizer(Func<Task<List<(string, double)>>> recognize, int capacity = 1) : base(new MockInferenceEngine(capacity), new CharacterDictionary(), new RecognitionOptions()) => _recognize = recognize;
+    public MockTextRecognizer(Func<Task<List<(string, double)>>> recognize, int capacity = 1) : base(new MockInferenceEngine(capacity), new EmbeddedCharDict(), new RecognitionOptions()) => _recognize = recognize;
 
     public override async Task<List<(string Text, double Confidence)>> Recognize(List<BoundingBox> regions, Image<Rgb24> image, VizBuilder vizBuilder) => await _recognize();
 }

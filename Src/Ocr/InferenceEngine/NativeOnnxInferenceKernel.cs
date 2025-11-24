@@ -22,11 +22,11 @@ public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
     public static NativeOnnxInferenceKernel Factory(IServiceProvider serviceProvider, object? key)
     {
         var options = serviceProvider.GetRequiredKeyedService<OnnxInferenceKernelOptions>(key);
-        var modelWeights = serviceProvider.GetRequiredKeyedService<ModelWeights>(key);
+        var modelWeights = serviceProvider.GetRequiredKeyedService<EmbeddedWeights>(key);
         return new NativeOnnxInferenceKernel(options, modelWeights);
     }
 
-    protected NativeOnnxInferenceKernel(OnnxInferenceKernelOptions inferenceOptions, ModelWeights weights)
+    protected NativeOnnxInferenceKernel(OnnxInferenceKernelOptions inferenceOptions, EmbeddedWeights weights)
     {
         // Convert options to native format
         var nativeOptions = new SpeedReaderOrt.SessionOptions

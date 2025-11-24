@@ -19,7 +19,7 @@ namespace Ocr;
 public class TextRecognizer
 {
     private readonly IInferenceEngine _inferenceEngine;
-    private readonly CharacterDictionary _characterDictionary;
+    private readonly EmbeddedCharDict _embeddedCharDict;
     private readonly int _inputWidth;
     private readonly int _inputHeight;
 
@@ -29,14 +29,14 @@ public class TextRecognizer
     {
         var options = serviceProvider.GetRequiredService<RecognitionOptions>();
         var engine = serviceProvider.GetRequiredKeyedService<IInferenceEngine>(key);
-        var dictionary = serviceProvider.GetRequiredService<CharacterDictionary>();
+        var dictionary = serviceProvider.GetRequiredService<EmbeddedCharDict>();
         return new TextRecognizer(engine, dictionary, options);
     }
 
-    public TextRecognizer(IInferenceEngine inferenceEngine, CharacterDictionary characterDictionary, RecognitionOptions options)
+    public TextRecognizer(IInferenceEngine inferenceEngine, EmbeddedCharDict embeddedCharDict, RecognitionOptions options)
     {
         _inferenceEngine = inferenceEngine;
-        _characterDictionary = characterDictionary;
+        _embeddedCharDict = embeddedCharDict;
         _inputWidth = options.RecognitionInputWidth;
         _inputHeight = options.RecognitionInputHeight;
     }
@@ -75,11 +75,11 @@ public class TextRecognizer
         var shape = inferenceOutput[0].Item2;
         Debug.Assert(inferenceOutput.Select(item => item.Item2).All(item => item.SequenceEqual(shape)));
         Debug.Assert(shape.Length == 2);
-        Debug.Assert(shape[1] == _characterDictionary.Count);
+        Debug.Assert(shape[1] == _embeddedCharDict.Count);
 #endif
 
         return inferenceOutput
-            .Select(item => item.Item1.GreedyCTCDecode(_characterDictionary))
+            .Select(item => item.Item1.GreedyCTCDecode(_embeddedCharDict))
             .Select(item => (item.Text.Trim(), confidence: item.Confidence))
             .ToList();
     }

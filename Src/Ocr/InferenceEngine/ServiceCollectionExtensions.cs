@@ -27,15 +27,15 @@ public static class Factories
         return services;
     }
 
-    private static ModelWeights GetModelWeights(Model model, Quantization quantization)
+    private static EmbeddedWeights GetModelWeights(Model model, Quantization quantization)
     {
         try
         {
             return (model, quantization) switch
             {
-                (Model.DbNet, Quantization.Fp32) => ModelWeights.Dbnet_Fp32,
-                (Model.DbNet, Quantization.Int8) => ModelWeights.Dbnet_Int8,
-                (Model.Svtr, Quantization.Fp32) => ModelWeights.Svtr_Fp32,
+                (Model.DbNet, Quantization.Fp32) => EmbeddedWeights.Dbnet_Fp32,
+                (Model.DbNet, Quantization.Int8) => EmbeddedWeights.Dbnet_Int8,
+                (Model.Svtr, Quantization.Fp32) => EmbeddedWeights.Svtr_Fp32,
                 _ => throw new UnsupportedModelException($"{model} quantized to {quantization} is not supported")
             };
         }

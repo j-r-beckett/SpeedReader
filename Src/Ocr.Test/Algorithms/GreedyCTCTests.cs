@@ -8,7 +8,7 @@ namespace Ocr.Test.Algorithms;
 
 public class GreedyCTCTests
 {
-    private readonly CharacterDictionary _dictionary = new();
+    private readonly EmbeddedCharDict _dictionary = new();
 
     [Fact]
     public void GreedyCTCDecode_EmptySequence_ReturnsEmptyStringAndZeroConfidence()
@@ -32,7 +32,7 @@ public class GreedyCTCTests
         var ctcSequence = new float[numClasses];
         int charIndex = 1;
         ctcSequence[charIndex] = 0.9f;
-        ctcSequence[CharacterDictionary.Blank] = 0.1f;
+        ctcSequence[EmbeddedCharDict.Blank] = 0.1f;
 
         // Act
         var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
@@ -52,7 +52,7 @@ public class GreedyCTCTests
         var ctcSequence = new float[numClasses * numTimesteps];
         for (int t = 0; t < numTimesteps; t++)
         {
-            ctcSequence[t * numClasses + CharacterDictionary.Blank] = 1.0f;
+            ctcSequence[t * numClasses + EmbeddedCharDict.Blank] = 1.0f;
         }
 
         // Act
@@ -93,7 +93,7 @@ public class GreedyCTCTests
         var ctcSequence = new float[numClasses * numTimesteps];
         int charIndex = 1;
         ctcSequence[0 * numClasses + charIndex] = 0.9f;
-        ctcSequence[1 * numClasses + CharacterDictionary.Blank] = 0.9f;
+        ctcSequence[1 * numClasses + EmbeddedCharDict.Blank] = 0.9f;
         ctcSequence[2 * numClasses + charIndex] = 0.9f;
 
         // Act
@@ -182,13 +182,13 @@ public class GreedyCTCTests
         var ctcSequence = new float[numClasses * numTimesteps];
         int char1 = 1;
         int char2 = 2;
-        ctcSequence[0 * numClasses + CharacterDictionary.Blank] = 0.9f;
+        ctcSequence[0 * numClasses + EmbeddedCharDict.Blank] = 0.9f;
         ctcSequence[1 * numClasses + char1] = 0.8f;
         ctcSequence[2 * numClasses + char1] = 0.8f;
-        ctcSequence[3 * numClasses + CharacterDictionary.Blank] = 0.9f;
+        ctcSequence[3 * numClasses + EmbeddedCharDict.Blank] = 0.9f;
         ctcSequence[4 * numClasses + char2] = 0.7f;
-        ctcSequence[5 * numClasses + CharacterDictionary.Blank] = 0.9f;
-        ctcSequence[6 * numClasses + CharacterDictionary.Blank] = 0.9f;
+        ctcSequence[5 * numClasses + EmbeddedCharDict.Blank] = 0.9f;
+        ctcSequence[6 * numClasses + EmbeddedCharDict.Blank] = 0.9f;
 
         // Act
         var (text, _) = ctcSequence.GreedyCTCDecode(_dictionary);

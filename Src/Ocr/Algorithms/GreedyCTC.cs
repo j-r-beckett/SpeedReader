@@ -11,7 +11,7 @@ namespace Ocr.Algorithms;
 
 public static class GreedyCTC
 {
-    public static (string Text, double Confidence) GreedyCTCDecode(this float[] ctcSequence, CharacterDictionary dictionary)
+    public static (string Text, double Confidence) GreedyCTCDecode(this float[] ctcSequence, EmbeddedCharDict dictionary)
     {
         var numClasses = dictionary.Count;
         Debug.Assert(ctcSequence.Length % numClasses == 0);
@@ -32,10 +32,10 @@ public static class GreedyCTC
             double maxProb = ctcSequence[offset + maxIndex];
 
             // CTC greedy decoding rule: only add if different from previous and not blank
-            if (maxIndex != prevIndex && maxIndex != CharacterDictionary.Blank)
+            if (maxIndex != prevIndex && maxIndex != EmbeddedCharDict.Blank)
             {
                 // If we had a previous character, save its confidence
-                if (prevIndex != -1 && prevIndex != CharacterDictionary.Blank)
+                if (prevIndex != -1 && prevIndex != EmbeddedCharDict.Blank)
                 {
                     characterConfidences.Add(currentCharMaxProb);
                 }

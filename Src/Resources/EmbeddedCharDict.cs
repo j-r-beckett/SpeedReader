@@ -5,13 +5,13 @@ using System.Text;
 
 namespace Resources;
 
-public class CharacterDictionary
+public class EmbeddedCharDict
 {
     public const int Blank = 0;
 
     private readonly char[] _indexToChar;
 
-    public CharacterDictionary()
+    public EmbeddedCharDict()
     {
         var data = new Resource("CharacterDictionary.Data.txt").Bytes;
         var content = Encoding.UTF8.GetString(data);
