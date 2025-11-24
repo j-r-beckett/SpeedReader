@@ -9,38 +9,26 @@ public class CharacterDictionary
 {
     public const int Blank = 0;
 
-    private readonly Dictionary<int, char> _indexToChar;
+    private readonly char[] _indexToChar;
 
     public CharacterDictionary()
     {
-        _indexToChar = new Dictionary<int, char>();
-
         var data = new Resource("CharacterDictionary.Data.txt").Bytes;
         var content = Encoding.UTF8.GetString(data);
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-        // Index 0 reserved for CTC blank token
-        _indexToChar[0] = '\0'; // Use null character for blank
+        // Two additional characters are CTC blank (at [0]) and space (at [end])
+        _indexToChar = new char[lines.Length + 2];
+        _indexToChar[Blank] = '\0';  // CTC blank represented by the null character
+        _indexToChar[^1] = ' ';
 
-        // Load characters from file (indices 1-6623)
-        for (int i = 0; i < lines.Length; i++)
-        {
-            if (string.IsNullOrEmpty(lines[i]))
-            {
-                continue;
-            }
-
-            char character = lines[i][0]; // Take first character of each line
-            int index = i + 1; // Offset by 1 for blank token
-
-            _indexToChar[index] = character;
-        }
-
-        // Index 6624: Space character (completing the 6625 vocabulary)
-        _indexToChar[6624] = ' ';
+        // Load characters from dictionary file
+        for (var i = 0; i < lines.Length; i++)
+            _indexToChar[i + 1] = lines[i][0];
     }
 
-    public char IndexToChar(int index) => _indexToChar.GetValueOrDefault(index, '?');
+    // Returns ? if index is out of range
+    public char IndexToChar(int index) => index < 0 || index >= _indexToChar.Length ? '?' : _indexToChar[index];
 
-    public int Count => _indexToChar.Count;
+    public int Count => _indexToChar.Length;
 }
