@@ -71,7 +71,7 @@ public static class Serve
 
         app.UseWebSockets();
 
-#pragma warning disable IL2026, IL3050 // Suppress AOT warnings for minimal API route registration
+#pragma warning disable IL2026, IL3050 // Suppress strict AOT warnings for minimal API route registration, it's safe
         app.MapGet("/api/health", () => "Healthy");
         app.MapPost("/api/ocr", Rest.PostOcr);
         app.Map("/api/ws/ocr", Websockets.HandleOcrWebSocket);
