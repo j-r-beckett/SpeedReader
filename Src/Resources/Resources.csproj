@@ -14,8 +14,7 @@
     <EmbeddedResource Include="$(MSBuildProjectDirectory)/../../models/*.onnx" Link="models/%(Filename)%(Extension)" />
     <EmbeddedResource Include="arial.ttf" />
     <EmbeddedResource Include="CharacterDictionary.Data.txt" />
-    <EmbeddedResource Include="templates/*.liquid" />
-    <EmbeddedResource Include="templates/*.svg" />
+    <EmbeddedResource Include="viz.svg" />
   </ItemGroup>
 
 </Project>

@@ -419,7 +419,7 @@ public class VizBuilder
 
     private static string LoadTemplate()
     {
-        var templateBytes = new Resource("templates.svg-visualization-3.svg").Bytes;
+        var templateBytes = new Resource("viz.svg").Bytes;
         return System.Text.Encoding.UTF8.GetString(templateBytes);
     }
 
