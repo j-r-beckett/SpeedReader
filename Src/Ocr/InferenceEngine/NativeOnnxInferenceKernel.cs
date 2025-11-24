@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Ocr.InferenceEngine.Native;
+using Resources;
 
 namespace Ocr.InferenceEngine;
 
@@ -21,14 +22,12 @@ public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
     public static NativeOnnxInferenceKernel Factory(IServiceProvider serviceProvider, object? key)
     {
         var options = serviceProvider.GetRequiredKeyedService<OnnxInferenceKernelOptions>(key);
-        var modelLoader = serviceProvider.GetRequiredService<ModelLoader>();
-        return new NativeOnnxInferenceKernel(options, modelLoader);
+        var modelWeights = serviceProvider.GetRequiredKeyedService<ModelWeights>(key);
+        return new NativeOnnxInferenceKernel(options, modelWeights);
     }
 
-    protected NativeOnnxInferenceKernel(OnnxInferenceKernelOptions inferenceOptions, ModelLoader modelLoader)
+    protected NativeOnnxInferenceKernel(OnnxInferenceKernelOptions inferenceOptions, ModelWeights weights)
     {
-        var weights = modelLoader.LoadModel(inferenceOptions.Model, inferenceOptions.Quantization);
-
         // Convert options to native format
         var nativeOptions = new SpeedReaderOrt.SessionOptions
         {
@@ -38,7 +37,7 @@ public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
         };
 
         // Create session (triggers lazy environment initialization on first use)
-        _session = CreateSession(_sharedEnvironment.Value, weights, nativeOptions);
+        _session = CreateSession(_sharedEnvironment.Value, weights.Bytes, nativeOptions);
     }
 
     public virtual (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape)
