@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Frontend\Frontend.csproj" />
-    <ProjectReference Include="..\Video\Video.csproj" />
     <ProjectReference Include="..\TestUtils\TestUtils.csproj" />
   </ItemGroup>
 

@@ -11,7 +11,5 @@
     <Project Path="Src/Resources.Test/Resources.Test.csproj" />
     <Project Path="Src/Resources/Resources.csproj" />
     <Project Path="Src/TestUtils/TestUtils.csproj" />
-    <Project Path="Src/Video.Test/Video.Test.csproj" />
-    <Project Path="Src/Video/Video.csproj" />
   </Folder>
 </Solution>

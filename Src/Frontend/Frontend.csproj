@@ -31,7 +31,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Resources\Resources.csproj" />
-    <ProjectReference Include="..\Video\Video.csproj" />
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
