@@ -128,11 +128,12 @@ public class Program
         await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }
 
-    private static async Task EmitOutput(IAsyncEnumerable<OcrPipelineResult> results, List<string> filenames, bool viz)
+    private static async Task EmitOutput(IAsyncEnumerable<Result<OcrPipelineResult>> results, List<string> filenames, bool viz)
     {
         var idx = 0;
-        await foreach (var result in results)
+        await foreach (var resultWrapper in results)
         {
+            var result = resultWrapper.Value();
             try
             {
                 var jsonResult = new OcrJsonResult(

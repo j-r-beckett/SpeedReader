@@ -82,8 +82,9 @@ public static class Serve
             var results = speedReader.ReadMany(images);
 
             var ocrResults = new List<OcrJsonResult>();
-            await foreach (var result in results)
+            await foreach (var resultWrapper in results)
             {
+                var result = resultWrapper.Value();
                 try
                 {
                     var jsonResult = new OcrJsonResult(
@@ -162,8 +163,9 @@ public static class Serve
 
         var sendTask = Task.Run(async () =>
         {
-            await foreach (var result in speedReader.ReadMany(inputBuffer.Reader.ReadAllAsync()))
+            await foreach (var resultWrapper in speedReader.ReadMany(inputBuffer.Reader.ReadAllAsync()))
             {
+                var result = resultWrapper.Value();
                 try
                 {
                     var jsonResult = new OcrJsonResult(

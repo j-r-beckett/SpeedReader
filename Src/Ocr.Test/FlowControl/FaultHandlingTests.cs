@@ -31,7 +31,7 @@ public class OcrPipelineTests
         await Assert.ThrowsAsync<TestException>(async () => await await reader.ReadOne(new Image<Rgb24>(720, 720)));
     }
 
-    [Theory(Skip = "Working on it")]
+    [Theory]
     [InlineData("detection")]
     [InlineData("recognition")]
     public async Task OcrPipeline_ReadMany_PropagatesExceptionAndContinues(string stage)
@@ -65,13 +65,18 @@ public class OcrPipelineTests
         // First result should succeed
         var first = await Next(enumerator);
         Assert.NotNull(first);
+        Assert.True(first.HasValue());
 
         // Second result should fail with TestException
-        await Assert.ThrowsAsync<TestException>(async () => await Next(enumerator));
+        var second = await Next(enumerator);
+        Assert.NotNull(second);
+        Assert.False(second.HasValue());
+        await Assert.ThrowsAsync<TestException>(() => Task.FromResult(second.Value()));
 
         // Third result should succeed
         var third = await Next(enumerator);
         Assert.NotNull(third);
+        Assert.True(third.HasValue());
 
         return;
 
@@ -102,13 +107,17 @@ public class OcrPipelineTests
         // First result should succeed
         var enumerator = results.GetAsyncEnumerator();
         Assert.True(await enumerator.MoveNextAsync());
-        var firstResult = enumerator.Current;
-        Assert.NotNull(firstResult);
+        var firstResultWrapper = enumerator.Current;
+        Assert.NotNull(firstResultWrapper);
+        Assert.True(firstResultWrapper.HasValue());
+        var firstResult = firstResultWrapper.Value();
         firstResult.Image.Dispose();
 
         // Second result should fail with TestException
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-        await Assert.ThrowsAsync<TestException>(async () => await Next(enumerator));
+        var secondResultWrapper = await Next(enumerator);
+        Assert.NotNull(secondResultWrapper);
+        Assert.False(secondResultWrapper.HasValue());
+        await Assert.ThrowsAsync<TestException>(() => Task.FromResult(secondResultWrapper.Value()));
 
         await enumerator.DisposeAsync();
 

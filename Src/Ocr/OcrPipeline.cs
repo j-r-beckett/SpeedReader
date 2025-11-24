@@ -29,17 +29,17 @@ public class OcrPipeline
         _taskPool.SetPoolSize((int)Math.Ceiling(targetSize));
     }
 
-    public IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<string> paths) =>
+    public IAsyncEnumerable<Result<OcrPipelineResult>> ReadMany(IAsyncEnumerable<string> paths) =>
         ReadMany(paths.Select(path => Image.LoadAsync<Rgb24>(path)));
 
     public Task<Task<OcrPipelineResult>> ReadOne(string path) => ReadOne(Image.LoadAsync<Rgb24>(path));
 
-    public IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<Image<Rgb24>> images) =>
+    public IAsyncEnumerable<Result<OcrPipelineResult>> ReadMany(IAsyncEnumerable<Image<Rgb24>> images) =>
         ReadMany(images.Select(Task.FromResult));
 
     public Task<Task<OcrPipelineResult>> ReadOne(Image<Rgb24> image) => ReadOne(Task.FromResult(image));
 
-    private async IAsyncEnumerable<OcrPipelineResult> ReadMany(IAsyncEnumerable<Task<Image<Rgb24>>> images)
+    private async IAsyncEnumerable<Result<OcrPipelineResult>> ReadMany(IAsyncEnumerable<Task<Image<Rgb24>>> images)
     {
         var processingTasks = Channel.CreateUnbounded<Task<OcrPipelineResult>>();
 
@@ -51,6 +51,10 @@ public class OcrPipeline
                 {
                     await processingTasks.Writer.WriteAsync(await ReadOne(image));
                 }
+            }
+            catch (Exception ex)
+            {
+                await processingTasks.Writer.WriteAsync(Task.FromException<OcrPipelineResult>(ex));
             }
             finally
             {

@@ -161,7 +161,8 @@ public class TextReaderE2ETests
     {
         var reader = CreateTextReader();
 
-        var results = await reader.ReadMany(images.ToAsyncEnumerable()).ToListAsync();
+        var resultWrappers = await reader.ReadMany(images.ToAsyncEnumerable()).ToListAsync();
+        var results = resultWrappers.Select(r => r.Value()).ToList();
 
         foreach (var result in results)
         {
