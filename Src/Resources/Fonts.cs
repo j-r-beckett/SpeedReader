@@ -36,7 +36,7 @@ public static class Fonts
             }
 
             var resourceName = GetResourceName(fontName);
-            var fontBytes = ResourceProvider.GetBytes(resourceName);
+            var fontBytes = new Resource(resourceName).Bytes;
             using var stream = new MemoryStream(fontBytes);
             _collection.Add(stream);
 
