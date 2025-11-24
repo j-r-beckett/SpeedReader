@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Ocr.Algorithms;
-using Resources;
+using Resources.CharDict;
 
 namespace Ocr.Test.Algorithms;
 

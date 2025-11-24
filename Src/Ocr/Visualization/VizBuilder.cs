@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CommunityToolkit.HighPerformance;
 using Ocr.Geometry;
-using Resources;
+using Resources.Viz;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -419,8 +419,7 @@ public class VizBuilder
 
     private static string LoadTemplate()
     {
-        var templateBytes = new Resource("viz.svg").Bytes;
-        return System.Text.Encoding.UTF8.GetString(templateBytes);
+        return new EmbeddedViz().Template;
     }
 
     private static string ConvertProbabilityMapToDataUri(Image<L8> probabilityMap)

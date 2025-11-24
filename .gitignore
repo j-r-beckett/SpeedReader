@@ -3,9 +3,6 @@ bin/
 obj/
 target/
 
-# Generated models
-Src/Resources/models/
-
 # Downloaded datasets
 datasets/
 

@@ -27,7 +27,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
     public WebSocketTests(ServerFixture server, ITestOutputHelper outputHelper)
     {
         _server = server;
-        _font = Resources.EmbeddedFont.Default.Get(fontSize: 18f);
+        _font = Resources.Font.EmbeddedFont.Default.Get(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<WebSocketTests>("/tmp", new TestLogger<WebSocketTests>(outputHelper));
         _logger = new TestLogger(outputHelper);
     }

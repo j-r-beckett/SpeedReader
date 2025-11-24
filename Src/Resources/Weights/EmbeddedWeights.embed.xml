@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <!-- Models files are symlinked to actual .onnx files in /models -->
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)*.onnx" />
+  </ItemGroup>
+</Project>

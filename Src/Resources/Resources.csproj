@@ -10,11 +10,6 @@
     <PackageReference Include="SixLabors.Fonts" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildProjectDirectory)/../../models/*.onnx" Link="models/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="arial.ttf" />
-    <EmbeddedResource Include="CharacterDictionary.Data.txt" />
-    <EmbeddedResource Include="viz.svg" />
-  </ItemGroup>
+  <Import Project="**/*.embed.xml" />
 
 </Project>

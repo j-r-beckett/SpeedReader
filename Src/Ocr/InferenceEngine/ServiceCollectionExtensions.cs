@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ocr.InferenceEngine.Engines;
 using Resources;
+using Resources.Weights;
 
 namespace Ocr.InferenceEngine;
 

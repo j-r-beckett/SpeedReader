@@ -3,8 +3,9 @@
 
 using System.Collections.Concurrent;
 using SixLabors.Fonts;
+using SixLaborsFont = SixLabors.Fonts.Font;
 
-namespace Resources;
+namespace Resources.Font;
 
 public class EmbeddedFont
 {
@@ -26,8 +27,8 @@ public class EmbeddedFont
 
     public static EmbeddedFont Default => Arial;
 
-    public static EmbeddedFont Arial => _cache.GetOrAdd(nameof(Arial), _ => new EmbeddedFont("arial.ttf"));
+    public static EmbeddedFont Arial => _cache.GetOrAdd(nameof(Arial), _ => new EmbeddedFont("Font.arial.ttf"));
 
-    public Font Get(float fontSize = 14f, FontStyle fontStyle = FontStyle.Regular)
+    public SixLaborsFont Get(float fontSize = 14f, FontStyle fontStyle = FontStyle.Regular)
         => _fontFamily.CreateFont(fontSize, fontStyle);
 }

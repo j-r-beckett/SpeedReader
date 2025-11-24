@@ -10,7 +10,7 @@ using Ocr.Geometry;
 using Ocr.InferenceEngine;
 using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
-using Resources;
+using Resources.Font;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

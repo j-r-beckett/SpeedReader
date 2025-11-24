@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace Resources;
+namespace Resources.CharDict;
 
 public class EmbeddedCharDict
 {
@@ -13,7 +13,7 @@ public class EmbeddedCharDict
 
     public EmbeddedCharDict()
     {
-        var data = new Resource("CharacterDictionary.Data.txt").Bytes;
+        var data = new Resource("CharDict.dict.txt").Bytes;
         var content = Encoding.UTF8.GetString(data);
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 

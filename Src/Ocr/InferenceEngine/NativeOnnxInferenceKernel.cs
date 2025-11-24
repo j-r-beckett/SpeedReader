@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Ocr.InferenceEngine.Native;
-using Resources;
+using Resources.Weights;
 
 namespace Ocr.InferenceEngine;
 
