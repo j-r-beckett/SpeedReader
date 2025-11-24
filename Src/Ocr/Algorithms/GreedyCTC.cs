@@ -11,9 +11,9 @@ namespace Ocr.Algorithms;
 
 public static class GreedyCTC
 {
-    public static (string Text, double Confidence) GreedyCTCDecode(this float[] ctcSequence)
+    public static (string Text, double Confidence) GreedyCTCDecode(this float[] ctcSequence, CharacterDictionary dictionary)
     {
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = dictionary.Count;
         Debug.Assert(ctcSequence.Length % numClasses == 0);
 
         var decoded = new StringBuilder();
@@ -41,7 +41,7 @@ public static class GreedyCTC
                 }
 
                 // Start new character
-                char character = CharacterDictionary.IndexToChar(maxIndex);
+                char character = dictionary.IndexToChar(maxIndex);
                 decoded.Append(character);
                 currentCharMaxProb = maxProb; // Reset for new character
                 currentCharIndex = maxIndex;

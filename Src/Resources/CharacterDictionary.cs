@@ -5,13 +5,13 @@ using System.Text;
 
 namespace Resources;
 
-public static class CharacterDictionary
+public class CharacterDictionary
 {
     public const int Blank = 0;
 
-    private static readonly Dictionary<int, char> _indexToChar;
+    private readonly Dictionary<int, char> _indexToChar;
 
-    static CharacterDictionary()
+    public CharacterDictionary()
     {
         _indexToChar = new Dictionary<int, char>();
 
@@ -40,7 +40,7 @@ public static class CharacterDictionary
         _indexToChar[6624] = ' ';
     }
 
-    public static char IndexToChar(int index) => _indexToChar.GetValueOrDefault(index, '?');
+    public char IndexToChar(int index) => _indexToChar.GetValueOrDefault(index, '?');
 
-    public static int Count => _indexToChar.Count;
+    public int Count => _indexToChar.Count;
 }

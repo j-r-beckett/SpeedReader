@@ -14,17 +14,23 @@ public class CharacterDictionaryTests
     [InlineData(6624, ' ')]  // Space character at index 6624
     public void IndexToChar_ReturnsExpectedCharacter(int index, char expectedChar)
     {
-        var actualChar = CharacterDictionary.IndexToChar(index);
+        var dictionary = new CharacterDictionary();
+        var actualChar = dictionary.IndexToChar(index);
         Assert.Equal(expectedChar, actualChar);
     }
 
     [Fact]
-    public void Count_ReturnsExpectedVocabularySize() => Assert.Equal(6625, CharacterDictionary.Count);
+    public void Count_ReturnsExpectedVocabularySize()
+    {
+        var dictionary = new CharacterDictionary();
+        Assert.Equal(6625, dictionary.Count);
+    }
 
     [Fact]
     public void IndexToChar_UnknownIndex_ReturnsQuestionMark()
     {
-        var actualChar = CharacterDictionary.IndexToChar(99999);
+        var dictionary = new CharacterDictionary();
+        var actualChar = dictionary.IndexToChar(99999);
         Assert.Equal('?', actualChar);
     }
 }

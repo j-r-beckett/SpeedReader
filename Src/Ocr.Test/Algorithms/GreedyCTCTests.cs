@@ -8,6 +8,8 @@ namespace Ocr.Test.Algorithms;
 
 public class GreedyCTCTests
 {
+    private readonly CharacterDictionary _dictionary = new();
+
     [Fact]
     public void GreedyCTCDecode_EmptySequence_ReturnsEmptyStringAndZeroConfidence()
     {
@@ -15,7 +17,7 @@ public class GreedyCTCTests
         var ctcSequence = Array.Empty<float>();
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Equal("", text);
@@ -26,18 +28,18 @@ public class GreedyCTCTests
     public void GreedyCTCDecode_SingleCharacterSingleTimestep_ReturnsCharacterWithConfidence()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var ctcSequence = new float[numClasses];
         int charIndex = 1;
         ctcSequence[charIndex] = 0.9f;
         ctcSequence[CharacterDictionary.Blank] = 0.1f;
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Single(text);
-        Assert.Equal(CharacterDictionary.IndexToChar(charIndex), text[0]);
+        Assert.Equal(_dictionary.IndexToChar(charIndex), text[0]);
         Assert.Equal(0.9, confidence, precision: 5);
     }
 
@@ -45,7 +47,7 @@ public class GreedyCTCTests
     public void GreedyCTCDecode_AllBlankTokens_ReturnsEmptyString()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var numTimesteps = 10;
         var ctcSequence = new float[numClasses * numTimesteps];
         for (int t = 0; t < numTimesteps; t++)
@@ -54,7 +56,7 @@ public class GreedyCTCTests
         }
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Equal("", text);
@@ -65,7 +67,7 @@ public class GreedyCTCTests
     public void GreedyCTCDecode_SameCharacterConsecutive_AppearsOnce()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var numTimesteps = 5;
         var ctcSequence = new float[numClasses * numTimesteps];
         int charIndex = 1;
@@ -75,18 +77,18 @@ public class GreedyCTCTests
         }
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Single(text);
-        Assert.Equal(CharacterDictionary.IndexToChar(charIndex), text[0]);
+        Assert.Equal(_dictionary.IndexToChar(charIndex), text[0]);
     }
 
     [Fact]
     public void GreedyCTCDecode_SameCharacterWithBlankBetween_AppearsTwice()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var numTimesteps = 3;
         var ctcSequence = new float[numClasses * numTimesteps];
         int charIndex = 1;
@@ -95,19 +97,19 @@ public class GreedyCTCTests
         ctcSequence[2 * numClasses + charIndex] = 0.9f;
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Equal(2, text.Length);
-        Assert.Equal(CharacterDictionary.IndexToChar(charIndex), text[0]);
-        Assert.Equal(CharacterDictionary.IndexToChar(charIndex), text[1]);
+        Assert.Equal(_dictionary.IndexToChar(charIndex), text[0]);
+        Assert.Equal(_dictionary.IndexToChar(charIndex), text[1]);
     }
 
     [Fact]
     public void GreedyCTCDecode_MultipleCharacters_DecodesCorrectly()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var numTimesteps = 3;
         var ctcSequence = new float[numClasses * numTimesteps];
         int char1 = 1;
@@ -118,20 +120,20 @@ public class GreedyCTCTests
         ctcSequence[2 * numClasses + char3] = 0.7f;
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Equal(3, text.Length);
-        Assert.Equal(CharacterDictionary.IndexToChar(char1), text[0]);
-        Assert.Equal(CharacterDictionary.IndexToChar(char2), text[1]);
-        Assert.Equal(CharacterDictionary.IndexToChar(char3), text[2]);
+        Assert.Equal(_dictionary.IndexToChar(char1), text[0]);
+        Assert.Equal(_dictionary.IndexToChar(char2), text[1]);
+        Assert.Equal(_dictionary.IndexToChar(char3), text[2]);
     }
 
     [Fact]
     public void GreedyCTCDecode_CharacterWithVaryingProbabilities_UsesMaxProbability()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var numTimesteps = 4;
         var ctcSequence = new float[numClasses * numTimesteps];
         int charIndex = 1;
@@ -141,7 +143,7 @@ public class GreedyCTCTests
         ctcSequence[3 * numClasses + charIndex] = 0.5f;
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Single(text);
@@ -152,7 +154,7 @@ public class GreedyCTCTests
     public void GreedyCTCDecode_MultipleCharactersWithVaryingProbabilities_ComputesGeometricMean()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var numTimesteps = 5;
         var ctcSequence = new float[numClasses * numTimesteps];
         int char1 = 1;
@@ -164,7 +166,7 @@ public class GreedyCTCTests
         ctcSequence[4 * numClasses + char2] = 0.7f;
 
         // Act
-        var (text, confidence) = ctcSequence.GreedyCTCDecode();
+        var (text, confidence) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Equal(2, text.Length);
@@ -175,7 +177,7 @@ public class GreedyCTCTests
     public void GreedyCTCDecode_BlanksInterspersed_IgnoresBlanksProperly()
     {
         // Arrange
-        var numClasses = CharacterDictionary.Count;
+        var numClasses = _dictionary.Count;
         var numTimesteps = 7;
         var ctcSequence = new float[numClasses * numTimesteps];
         int char1 = 1;
@@ -189,12 +191,12 @@ public class GreedyCTCTests
         ctcSequence[6 * numClasses + CharacterDictionary.Blank] = 0.9f;
 
         // Act
-        var (text, _) = ctcSequence.GreedyCTCDecode();
+        var (text, _) = ctcSequence.GreedyCTCDecode(_dictionary);
 
         // Assert
         Assert.Equal(2, text.Length);
-        Assert.Equal(CharacterDictionary.IndexToChar(char1), text[0]);
-        Assert.Equal(CharacterDictionary.IndexToChar(char2), text[1]);
+        Assert.Equal(_dictionary.IndexToChar(char1), text[0]);
+        Assert.Equal(_dictionary.IndexToChar(char2), text[1]);
     }
 
     [Fact]
