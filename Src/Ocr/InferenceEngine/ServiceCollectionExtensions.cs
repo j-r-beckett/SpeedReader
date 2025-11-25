@@ -34,7 +34,6 @@ public static class Factories
         {
             return (model, quantization) switch
             {
-                (Model.DbNet, Quantization.Fp32) => EmbeddedWeights.Dbnet_Fp32,
                 (Model.DbNet, Quantization.Int8) => EmbeddedWeights.Dbnet_Int8,
                 (Model.Svtr, Quantization.Fp32) => EmbeddedWeights.Svtr_Fp32,
                 _ => throw new UnsupportedModelException($"{model} quantized to {quantization} is not supported")
