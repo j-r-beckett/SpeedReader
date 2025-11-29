@@ -100,6 +100,7 @@ public class VizBuilder
     private bool _displayPolygonBBoxesByDefault;
 
     private ConcurrentBag<(string Text, double Confidence, List<(double X, double Y)> ORectangle)>? _textItemsData;
+    private bool _displayTextItemsByDefault;
 
     private static readonly Lazy<string> _template = new(LoadTemplate);
 
@@ -116,14 +117,13 @@ public class VizBuilder
     }
 
 
-    // Supports being called from multiple threads
-    public VizBuilder AddTextItems(List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)> textItems)
+    // Supports being called from multiple threads. If any call sets displayByDefault=true, it stays true.
+    public VizBuilder AddTextItems(List<(string Text, double Confidence, List<(double X, double Y)> ORectangle)> textItems, bool displayByDefault = false)
     {
-        // Allow adding text items multiple times
-
         _textItemsData ??= [];
         foreach (var item in textItems)
             _textItemsData.Add(item);
+        _displayTextItemsByDefault |= displayByDefault;
 
         return this;
     }
@@ -262,7 +262,7 @@ public class VizBuilder
             ["expected-bounding-boxes"] = _displayExpectedAxisAlignedBBoxesByDefault,
             ["expected-oriented-bounding-boxes"] = _displayExpectedOrientedBBoxesByDefault,
             ["polygons"] = _displayPolygonBBoxesByDefault,
-            ["text-overlay"] = false,
+            ["text-overlay"] = _displayTextItemsByDefault,
             ["dbnet-overlay"] = _displayProbabilityMapByDefault
         };
 

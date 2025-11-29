@@ -1,19 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1 1" width="1" height="1">
   <defs>
     <style>
-      .bounding-box { fill: none; stroke: red; stroke-width: 2; }
-      .oriented-bounding-box { fill: none; stroke: blue; stroke-width: 2; }
-      .expected-bounding-box { fill: none; stroke: black; stroke-width: 2; stroke-dasharray: 5,5; }
-      .expected-oriented-bounding-box { fill: none; stroke: orange; stroke-width: 2; stroke-dasharray: 5,5; }
-      .polygon { fill: none; stroke: green; stroke-width: 2; }
+      :root {
+        --color-aa-bbox: #ff0000;
+        --color-oriented-bbox: #0000ff;
+        --color-expected-aa-bbox: #000000;
+        --color-expected-oriented-bbox: #ffa500;
+        --color-polygon: #008000;
+        --color-text: #ffffff;
+        --color-dbnet: #ffff00;
+      }
+
+      .bounding-box { fill: none; stroke: var(--color-aa-bbox); stroke-width: 2; }
+      .oriented-bounding-box { fill: none; stroke: var(--color-oriented-bbox); stroke-width: 2; }
+      .expected-bounding-box { fill: none; stroke: var(--color-expected-aa-bbox); stroke-width: 2; stroke-dasharray: 5,5; }
+      .expected-oriented-bounding-box { fill: none; stroke: var(--color-expected-oriented-bbox); stroke-width: 2; stroke-dasharray: 5,5; }
+      .polygon { fill: none; stroke: var(--color-polygon); stroke-width: 2; }
       .dbnet-overlay { opacity: 0.5; }
       .recognized-text {
-        fill: white;
-        text-shadow: 1px 1px 1px black, -1px -1px 1px black, 1px -1px 1px black, -1px 1px 1px black;
+        fill: var(--color-text);
+        stroke: black;
+        stroke-width: 3px;
+        paint-order: stroke fill;
         font-family: Arial, sans-serif;
         font-weight: bold;
         pointer-events: all;
       }
+
+      .legend-item[data-class="bounding-boxes"] .legend-swatch { background-color: var(--color-aa-bbox); }
+      .legend-item[data-class="oriented-bounding-boxes"] .legend-swatch { background-color: var(--color-oriented-bbox); }
+      .legend-item[data-class="expected-bounding-boxes"] .legend-swatch { background-color: var(--color-expected-aa-bbox); }
+      .legend-item[data-class="expected-oriented-bounding-boxes"] .legend-swatch { background-color: var(--color-expected-oriented-bbox); }
+      .legend-item[data-class="polygons"] .legend-swatch { background-color: var(--color-polygon); }
+      .legend-item[data-class="text-overlay"] .legend-swatch { background-color: var(--color-text); }
+      .legend-item[data-class="dbnet-overlay"] .legend-swatch { background-color: var(--color-dbnet); }
 
       .legend {
         font-family: Arial, sans-serif;
@@ -35,6 +55,7 @@
         color: white;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         user-select: none;
+        white-space: nowrap;
       }
       .legend-item:hover { color: #ddd; }
       .legend-swatch {
@@ -46,34 +67,46 @@
     </style>
   </defs>
 
-  <foreignObject x="10" y="10" width="100%" height="100%">
+  <!-- Layer structure (render order: bottom to top) -->
+  <g id="image-container">
+    <image id="base-image" />
+    <g class="dbnet-overlay hidden"></g>
+    <g class="bounding-boxes hidden"></g>
+    <g class="oriented-bounding-boxes hidden"></g>
+    <g class="expected-bounding-boxes hidden"></g>
+    <g class="expected-oriented-bounding-boxes hidden"></g>
+    <g class="polygons hidden"></g>
+    <g class="text-overlay hidden"></g>
+  </g>
+
+  <foreignObject id="legend-container" x="10" y="10" width="1" height="1">
     <div xmlns="http://www.w3.org/1999/xhtml" class="legend">
-      <div class="legend-item" data-class="bounding-boxes">
-        <div class="legend-swatch" style="background-color: red"></div>
+      <div class="legend-item" data-class="bounding-boxes" data-source="axisAlignedBoundingBoxes" data-check="length">
+        <div class="legend-swatch"></div>
         <span>Axis-aligned bounding boxes</span>
       </div>
-      <div class="legend-item" data-class="oriented-bounding-boxes">
-        <div class="legend-swatch" style="background-color: blue"></div>
+      <div class="legend-item" data-class="oriented-bounding-boxes" data-source="orientedBoundingBoxes" data-check="length">
+        <div class="legend-swatch"></div>
         <span>Oriented bounding boxes</span>
       </div>
-      <div class="legend-item" data-class="expected-bounding-boxes">
-        <div class="legend-swatch" style="background-color: black"></div>
+      <div class="legend-item" data-class="expected-bounding-boxes" data-source="expectedAxisAlignedBoundingBoxes" data-check="length">
+        <div class="legend-swatch"></div>
         <span>Expected axis-aligned</span>
       </div>
-      <div class="legend-item" data-class="expected-oriented-bounding-boxes">
-        <div class="legend-swatch" style="background-color: orange"></div>
+      <div class="legend-item" data-class="expected-oriented-bounding-boxes" data-source="expectedOrientedBoundingBoxes" data-check="length">
+        <div class="legend-swatch"></div>
         <span>Expected oriented</span>
       </div>
-      <div class="legend-item" data-class="polygons">
-        <div class="legend-swatch" style="background-color: green"></div>
+      <div class="legend-item" data-class="polygons" data-source="polygons" data-check="length">
+        <div class="legend-swatch"></div>
         <span>Polygons</span>
       </div>
-      <div class="legend-item" data-class="text-overlay">
-        <div class="legend-swatch" style="background-color: white"></div>
+      <div class="legend-item" data-class="text-overlay" data-source="textItems" data-check="length">
+        <div class="legend-swatch"></div>
         <span>Recognized text</span>
       </div>
-      <div class="legend-item" data-class="dbnet-overlay">
-        <div class="legend-swatch" style="background-color: yellow"></div>
+      <div class="legend-item" data-class="dbnet-overlay" data-source="probabilityMapDataUri" data-check="exists">
+        <div class="legend-swatch"></div>
         <span>Raw detection output</span>
       </div>
     </div>
@@ -90,31 +123,32 @@
       svg.setAttribute('width', data.width);
       svg.setAttribute('height', data.height);
 
-      // Create base image
-      const baseImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      // Populate base image
+      const baseImage = svg.querySelector('#base-image');
       baseImage.setAttribute('width', data.width);
       baseImage.setAttribute('height', data.height);
       baseImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', data.baseImageDataUri);
-      svg.appendChild(baseImage);
 
-      // Create probability map overlay if present
+      // Populate probability map overlay if present
       if (data.probabilityMapDataUri) {
-        const dbnetGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        dbnetGroup.setAttribute('class', data.defaultVisible['dbnet-overlay'] ? 'dbnet-overlay' : 'dbnet-overlay hidden');
+        const dbnetGroup = svg.querySelector('.dbnet-overlay');
+        if (data.defaultVisible['dbnet-overlay']) {
+          dbnetGroup.classList.remove('hidden');
+        }
 
         const probImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
         probImage.setAttribute('width', data.width);
         probImage.setAttribute('height', data.height);
         probImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', data.probabilityMapDataUri);
-
         dbnetGroup.appendChild(probImage);
-        svg.appendChild(dbnetGroup);
       }
 
-      // Helper function to create polygon group
-      function createPolygonGroup(polygons, className, polygonClass, defaultVisible) {
-        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        group.setAttribute('class', defaultVisible ? className : className + ' hidden');
+      // Helper function to populate a polygon group
+      function populatePolygonGroup(polygons, groupClass, polygonClass, defaultVisible) {
+        const group = svg.querySelector('.' + groupClass);
+        if (defaultVisible) {
+          group.classList.remove('hidden');
+        }
 
         polygons.forEach(polygon => {
           const points = polygon.points.map(p => `${p.x},${p.y}`).join(' ');
@@ -123,64 +157,31 @@
           poly.setAttribute('points', points);
           group.appendChild(poly);
         });
-
-        return group;
       }
 
-      // Create axis-aligned bounding boxes
+      // Populate polygon layers
       if (data.axisAlignedBoundingBoxes.length > 0) {
-        svg.appendChild(createPolygonGroup(
-          data.axisAlignedBoundingBoxes,
-          'bounding-boxes',
-          'bounding-box',
-          data.defaultVisible['bounding-boxes']
-        ));
+        populatePolygonGroup(data.axisAlignedBoundingBoxes, 'bounding-boxes', 'bounding-box', data.defaultVisible['bounding-boxes']);
       }
-
-      // Create oriented bounding boxes
       if (data.orientedBoundingBoxes.length > 0) {
-        svg.appendChild(createPolygonGroup(
-          data.orientedBoundingBoxes,
-          'oriented-bounding-boxes',
-          'oriented-bounding-box',
-          data.defaultVisible['oriented-bounding-boxes']
-        ));
+        populatePolygonGroup(data.orientedBoundingBoxes, 'oriented-bounding-boxes', 'oriented-bounding-box', data.defaultVisible['oriented-bounding-boxes']);
       }
-
-      // Create expected axis-aligned bounding boxes
       if (data.expectedAxisAlignedBoundingBoxes.length > 0) {
-        svg.appendChild(createPolygonGroup(
-          data.expectedAxisAlignedBoundingBoxes,
-          'expected-bounding-boxes',
-          'expected-bounding-box',
-          data.defaultVisible['expected-bounding-boxes']
-        ));
+        populatePolygonGroup(data.expectedAxisAlignedBoundingBoxes, 'expected-bounding-boxes', 'expected-bounding-box', data.defaultVisible['expected-bounding-boxes']);
       }
-
-      // Create expected oriented bounding boxes
       if (data.expectedOrientedBoundingBoxes.length > 0) {
-        svg.appendChild(createPolygonGroup(
-          data.expectedOrientedBoundingBoxes,
-          'expected-oriented-bounding-boxes',
-          'expected-oriented-bounding-box',
-          data.defaultVisible['expected-oriented-bounding-boxes']
-        ));
+        populatePolygonGroup(data.expectedOrientedBoundingBoxes, 'expected-oriented-bounding-boxes', 'expected-oriented-bounding-box', data.defaultVisible['expected-oriented-bounding-boxes']);
       }
-
-      // Create polygons
       if (data.polygons.length > 0) {
-        svg.appendChild(createPolygonGroup(
-          data.polygons,
-          'polygons',
-          'polygon',
-          data.defaultVisible['polygons']
-        ));
+        populatePolygonGroup(data.polygons, 'polygons', 'polygon', data.defaultVisible['polygons']);
       }
 
-      // Create text overlay
+      // Populate text overlay
       if (data.textItems.length > 0) {
-        const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        textGroup.setAttribute('class', data.defaultVisible['text-overlay'] ? 'text-overlay' : 'text-overlay hidden');
+        const textGroup = svg.querySelector('.text-overlay');
+        if (data.defaultVisible['text-overlay']) {
+          textGroup.classList.remove('hidden');
+        }
 
         data.textItems.forEach(item => {
           const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -199,29 +200,15 @@
           text.appendChild(document.createTextNode(item.text));
           textGroup.appendChild(text);
         });
-
-        svg.appendChild(textGroup);
       }
-
-      // Move legend to end so it renders on top of other elements
-      const legend = svg.querySelector('foreignObject');
-      svg.appendChild(legend);
-
-      // Hardcoded mapping: legend item class -> check if data exists
-      const legendDataMap = {
-        'bounding-boxes': data.axisAlignedBoundingBoxes.length > 0,
-        'oriented-bounding-boxes': data.orientedBoundingBoxes.length > 0,
-        'expected-bounding-boxes': data.expectedAxisAlignedBoundingBoxes.length > 0,
-        'expected-oriented-bounding-boxes': data.expectedOrientedBoundingBoxes.length > 0,
-        'polygons': data.polygons.length > 0,
-        'text-overlay': data.textItems.length > 0,
-        'dbnet-overlay': !!data.probabilityMapDataUri
-      };
 
       // Initialize legend items: hide if no data, set initial visibility state
       svg.querySelectorAll('.legend-item').forEach(item => {
         const cls = item.dataset.class;
-        const hasData = legendDataMap[cls];
+        const source = item.dataset.source;
+        const check = item.dataset.check;
+        const value = data[source];
+        const hasData = check === 'length' ? value?.length > 0 : !!value;
 
         if (!hasData) {
           item.style.display = 'none';
@@ -247,6 +234,23 @@
           }
         });
       }
+
+      // Measure legend and adjust layout to place image to its right
+      const legendDiv = svg.querySelector('.legend');
+      const legendRect = legendDiv.getBoundingClientRect();
+      const margin = 10;
+      const imageOffset = margin + legendRect.width + margin;
+
+      const legendContainer = svg.querySelector('#legend-container');
+      legendContainer.setAttribute('width', legendRect.width);
+      legendContainer.setAttribute('height', legendRect.height);
+
+      const imageContainer = svg.querySelector('#image-container');
+      imageContainer.setAttribute('transform', `translate(${imageOffset}, 0)`);
+
+      const totalWidth = imageOffset + data.width;
+      svg.setAttribute('viewBox', `0 0 ${totalWidth} ${data.height}`);
+      svg.setAttribute('width', totalWidth);
     })();
     ]]>
   </script>
