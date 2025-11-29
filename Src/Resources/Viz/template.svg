@@ -17,6 +17,7 @@
 
       .legend {
         font-family: Arial, sans-serif;
+        font-size: 14px;
         background: rgba(60, 60, 60, 1);
         border: 1px solid rgba(0, 0, 0, 0.5);
         border-radius: 12px;
@@ -45,6 +46,39 @@
     </style>
   </defs>
 
+  <foreignObject x="10" y="10" width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml" class="legend">
+      <div class="legend-item" data-class="bounding-boxes">
+        <div class="legend-swatch" style="background-color: red"></div>
+        <span>Axis-aligned bounding boxes</span>
+      </div>
+      <div class="legend-item" data-class="oriented-bounding-boxes">
+        <div class="legend-swatch" style="background-color: blue"></div>
+        <span>Oriented bounding boxes</span>
+      </div>
+      <div class="legend-item" data-class="expected-bounding-boxes">
+        <div class="legend-swatch" style="background-color: black"></div>
+        <span>Expected axis-aligned</span>
+      </div>
+      <div class="legend-item" data-class="expected-oriented-bounding-boxes">
+        <div class="legend-swatch" style="background-color: orange"></div>
+        <span>Expected oriented</span>
+      </div>
+      <div class="legend-item" data-class="polygons">
+        <div class="legend-swatch" style="background-color: green"></div>
+        <span>Polygons</span>
+      </div>
+      <div class="legend-item" data-class="text-overlay">
+        <div class="legend-swatch" style="background-color: white"></div>
+        <span>Recognized text</span>
+      </div>
+      <div class="legend-item" data-class="dbnet-overlay">
+        <div class="legend-swatch" style="background-color: yellow"></div>
+        <span>Raw detection output</span>
+      </div>
+    </div>
+  </foreignObject>
+
   <script>
     <![CDATA[
     (function() {
@@ -65,9 +99,8 @@
 
       // Create probability map overlay if present
       if (data.probabilityMapDataUri) {
-        const dbnetItem = data.legend.find(item => item.elementClass === 'dbnet-overlay');
         const dbnetGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        dbnetGroup.setAttribute('class', dbnetItem?.defaultVisible ? 'dbnet-overlay' : 'dbnet-overlay hidden');
+        dbnetGroup.setAttribute('class', data.defaultVisible['dbnet-overlay'] ? 'dbnet-overlay' : 'dbnet-overlay hidden');
 
         const probImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
         probImage.setAttribute('width', data.width);
@@ -95,65 +128,59 @@
       }
 
       // Create axis-aligned bounding boxes
-      const bboxItem = data.legend.find(item => item.elementClass === 'bounding-boxes');
-      if (bboxItem && data.axisAlignedBoundingBoxes.length > 0) {
+      if (data.axisAlignedBoundingBoxes.length > 0) {
         svg.appendChild(createPolygonGroup(
           data.axisAlignedBoundingBoxes,
           'bounding-boxes',
           'bounding-box',
-          bboxItem.defaultVisible
+          data.defaultVisible['bounding-boxes']
         ));
       }
 
       // Create oriented bounding boxes
-      const obbItem = data.legend.find(item => item.elementClass === 'oriented-bounding-boxes');
-      if (obbItem && data.orientedBoundingBoxes.length > 0) {
+      if (data.orientedBoundingBoxes.length > 0) {
         svg.appendChild(createPolygonGroup(
           data.orientedBoundingBoxes,
           'oriented-bounding-boxes',
           'oriented-bounding-box',
-          obbItem.defaultVisible
+          data.defaultVisible['oriented-bounding-boxes']
         ));
       }
 
       // Create expected axis-aligned bounding boxes
-      const expBboxItem = data.legend.find(item => item.elementClass === 'expected-bounding-boxes');
-      if (expBboxItem && data.expectedAxisAlignedBoundingBoxes.length > 0) {
+      if (data.expectedAxisAlignedBoundingBoxes.length > 0) {
         svg.appendChild(createPolygonGroup(
           data.expectedAxisAlignedBoundingBoxes,
           'expected-bounding-boxes',
           'expected-bounding-box',
-          expBboxItem.defaultVisible
+          data.defaultVisible['expected-bounding-boxes']
         ));
       }
 
       // Create expected oriented bounding boxes
-      const expObbItem = data.legend.find(item => item.elementClass === 'expected-oriented-bounding-boxes');
-      if (expObbItem && data.expectedOrientedBoundingBoxes.length > 0) {
+      if (data.expectedOrientedBoundingBoxes.length > 0) {
         svg.appendChild(createPolygonGroup(
           data.expectedOrientedBoundingBoxes,
           'expected-oriented-bounding-boxes',
           'expected-oriented-bounding-box',
-          expObbItem.defaultVisible
+          data.defaultVisible['expected-oriented-bounding-boxes']
         ));
       }
 
       // Create polygons
-      const polyItem = data.legend.find(item => item.elementClass === 'polygons');
-      if (polyItem && data.polygons.length > 0) {
+      if (data.polygons.length > 0) {
         svg.appendChild(createPolygonGroup(
           data.polygons,
           'polygons',
           'polygon',
-          polyItem.defaultVisible
+          data.defaultVisible['polygons']
         ));
       }
 
       // Create text overlay
-      const textItem = data.legend.find(item => item.elementClass === 'text-overlay');
-      if (textItem && data.textItems.length > 0) {
+      if (data.textItems.length > 0) {
         const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        textGroup.setAttribute('class', textItem.defaultVisible ? 'text-overlay' : 'text-overlay hidden');
+        textGroup.setAttribute('class', data.defaultVisible['text-overlay'] ? 'text-overlay' : 'text-overlay hidden');
 
         data.textItems.forEach(item => {
           const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -176,50 +203,37 @@
         svg.appendChild(textGroup);
       }
 
-      // Create legend
-      const legendFO = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-      const legendPadding = data.width / 50;
-      const legendWidth = data.width / 3;
-      const legendHeight = data.width / 4;
-      const fontSize = data.width / 65;
+      // Move legend to end so it renders on top of other elements
+      const legend = svg.querySelector('foreignObject');
+      svg.appendChild(legend);
 
-      legendFO.setAttribute('x', legendPadding);
-      legendFO.setAttribute('y', legendPadding);
-      legendFO.setAttribute('width', legendWidth);
-      legendFO.setAttribute('height', legendHeight);
+      // Hardcoded mapping: legend item class -> check if data exists
+      const legendDataMap = {
+        'bounding-boxes': data.axisAlignedBoundingBoxes.length > 0,
+        'oriented-bounding-boxes': data.orientedBoundingBoxes.length > 0,
+        'expected-bounding-boxes': data.expectedAxisAlignedBoundingBoxes.length > 0,
+        'expected-oriented-bounding-boxes': data.expectedOrientedBoundingBoxes.length > 0,
+        'polygons': data.polygons.length > 0,
+        'text-overlay': data.textItems.length > 0,
+        'dbnet-overlay': !!data.probabilityMapDataUri
+      };
 
-      const legendDiv = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
-      legendDiv.setAttribute('class', 'legend');
-      legendDiv.style.fontSize = fontSize + 'px';
-      legendDiv.style.padding = (data.width / 100) + 'px';
-      legendDiv.style.gap = (data.width / 100) + 'px';
+      // Initialize legend items: hide if no data, set initial visibility state
+      svg.querySelectorAll('.legend-item').forEach(item => {
+        const cls = item.dataset.class;
+        const hasData = legendDataMap[cls];
 
-      data.legend.forEach(item => {
-        const legendItem = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
-        legendItem.setAttribute('class', 'legend-item');
-        legendItem.setAttribute('data-class', item.elementClass);
-        legendItem.style.opacity = item.defaultVisible ? '1' : '0.5';
-        legendItem.style.gap = (data.width / 75) + 'px';
-        legendItem.onclick = () => toggleLayer(item.elementClass);
-
-        const swatch = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
-        swatch.setAttribute('class', 'legend-swatch');
-        swatch.style.backgroundColor = item.color;
-        swatch.style.width = (data.width / 50) + 'px';
-
-        const span = document.createElementNS('http://www.w3.org/1999/xhtml', 'span');
-        span.textContent = item.description;
-
-        legendItem.appendChild(swatch);
-        legendItem.appendChild(span);
-        legendDiv.appendChild(legendItem);
+        if (!hasData) {
+          item.style.display = 'none';
+        } else {
+          const visible = data.defaultVisible[cls] ?? false;
+          item.style.opacity = visible ? '1' : '0.5';
+          item.onclick = () => toggleLayer(cls);
+        }
       });
 
-      legendFO.appendChild(legendDiv);
-      svg.appendChild(legendFO);
-
       // Toggle layer function
-      window.toggleLayer = function(className) {
+      function toggleLayer(className) {
         const elements = svg.querySelectorAll('.' + className);
         const legendItem = svg.querySelector('.legend-item[data-class="' + className + '"]');
 
@@ -232,7 +246,7 @@
             legendItem.style.opacity = '0.5';
           }
         });
-      };
+      }
     })();
     ]]>
   </script>

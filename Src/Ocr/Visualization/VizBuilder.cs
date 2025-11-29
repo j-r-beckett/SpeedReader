@@ -16,21 +16,6 @@ namespace Ocr.Visualization;
 
 public class VizBuilder
 {
-    public class LegendItem
-    {
-        [JsonPropertyName("color")]
-        public required string Color { get; init; }
-
-        [JsonPropertyName("description")]
-        public required string Description { get; init; }
-
-        [JsonPropertyName("elementClass")]
-        public required string ElementClass { get; init; }
-
-        [JsonPropertyName("defaultVisible")]
-        public required bool DefaultVisible { get; init; }
-    }
-
     public class TextItem
     {
         [JsonPropertyName("text")]
@@ -84,8 +69,8 @@ public class VizBuilder
         [JsonPropertyName("textItems")]
         public required List<TextItem> TextItems { get; init; }
 
-        [JsonPropertyName("legend")]
-        public required LegendItem[] Legend { get; init; }
+        [JsonPropertyName("defaultVisible")]
+        public required Dictionary<string, bool> DefaultVisible { get; init; }
     }
 
     public class MultipleAddException : Exception
@@ -270,85 +255,21 @@ public class VizBuilder
         var template = _template.Value;
         var baseImageDataUri = ConvertImageToDataUri(_baseImage);
 
-        List<LegendItem> legend = [];
-
-        if (_axisAlignedBBoxes != null)
+        var defaultVisible = new Dictionary<string, bool>
         {
-            legend.Add(new LegendItem
-            {
-                Color = "red",
-                Description = "Axis-aligned bounding boxes",
-                ElementClass = "bounding-boxes",
-                DefaultVisible = _displayAxisAlignedBBoxesByDefault
-            });
-        }
-
-        if (_orientedBBoxes != null)
-        {
-            legend.Add(new LegendItem
-            {
-                Color = "blue",
-                Description = "Oriented bounding boxes",
-                ElementClass = "oriented-bounding-boxes",
-                DefaultVisible = _displayOrientedBBoxesByDefault
-            });
-        }
-
-        if (_expectedAxisAlignedBBoxes != null)
-        {
-            legend.Add(new LegendItem
-            {
-                Color = "black",
-                Description = "Expected axis-aligned bounding boxes",
-                ElementClass = "expected-bounding-boxes",
-                DefaultVisible = _displayExpectedAxisAlignedBBoxesByDefault
-            });
-        }
-
-        if (_expectedOrientedBBoxes != null)
-        {
-            legend.Add(new LegendItem
-            {
-                Color = "orange",
-                Description = "Expected oriented bounding boxes",
-                ElementClass = "expected-oriented-bounding-boxes",
-                DefaultVisible = _displayExpectedOrientedBBoxesByDefault
-            });
-        }
-
-        if (_polygonBBoxes != null)
-        {
-            legend.Add(new LegendItem
-            {
-                Color = "green",
-                Description = "Polygon bounding boxes",
-                ElementClass = "polygons",
-                DefaultVisible = _displayPolygonBBoxesByDefault
-            });
-        }
-
-        if (_textItemsData != null)
-        {
-            legend.Add(new LegendItem
-            {
-                Color = "white",
-                Description = "Recognized Text",
-                ElementClass = "text-overlay",
-                DefaultVisible = false
-            });
-        }
+            ["bounding-boxes"] = _displayAxisAlignedBBoxesByDefault,
+            ["oriented-bounding-boxes"] = _displayOrientedBBoxesByDefault,
+            ["expected-bounding-boxes"] = _displayExpectedAxisAlignedBBoxesByDefault,
+            ["expected-oriented-bounding-boxes"] = _displayExpectedOrientedBBoxesByDefault,
+            ["polygons"] = _displayPolygonBBoxesByDefault,
+            ["text-overlay"] = false,
+            ["dbnet-overlay"] = _displayProbabilityMapByDefault
+        };
 
         string? probabilityMapDataUri = null;
         if (_probabilityMap != null)
         {
             probabilityMapDataUri = ConvertProbabilityMapToDataUri(_probabilityMap);
-            legend.Add(new LegendItem
-            {
-                Color = "yellow",
-                Description = "Raw text detection output",
-                ElementClass = "dbnet-overlay",
-                DefaultVisible = _displayProbabilityMapByDefault
-            });
         }
 
         List<TextItem> textItems = [];
@@ -400,7 +321,7 @@ public class VizBuilder
             ExpectedOrientedBoundingBoxes = _expectedOrientedBBoxes ?? [],
             Polygons = _polygonBBoxes ?? [],
             TextItems = textItems,
-            Legend = legend.ToArray()
+            DefaultVisible = defaultVisible
         };
 
         var json = JsonSerializer.Serialize(templateData, VizJsonContext.Default.TemplateData);
@@ -442,10 +363,10 @@ public class VizBuilder
 }
 
 [JsonSerializable(typeof(VizBuilder.TemplateData))]
-[JsonSerializable(typeof(VizBuilder.LegendItem))]
 [JsonSerializable(typeof(VizBuilder.TextItem))]
 [JsonSerializable(typeof(Polygon))]
 [JsonSerializable(typeof(Ocr.Geometry.PointF))]
+[JsonSerializable(typeof(Dictionary<string, bool>))]
 internal partial class VizJsonContext : JsonSerializerContext
 {
 }
