@@ -33,7 +33,7 @@ public class TextReaderE2ETests
         ]);
 
         // Act
-        var actualResult = await ReadOne(expectedResult.Image);
+        var actualResult = await ReadOne(expectedResult.Image, expectedResult);
 
         // Assert
         Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
@@ -51,7 +51,7 @@ public class TextReaderE2ETests
         ]);
 
         // Act
-        var actualResult = await ReadOne(expectedResult.Image);
+        var actualResult = await ReadOne(expectedResult.Image, expectedResult);
 
         // Assert
         Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
@@ -68,7 +68,7 @@ public class TextReaderE2ETests
         ]);
 
         // Act
-        var actualResult = await ReadOne(expectedResult.Image);
+        var actualResult = await ReadOne(expectedResult.Image, expectedResult);
 
         // Assert
         Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
@@ -86,7 +86,7 @@ public class TextReaderE2ETests
         ]);
 
         // Act
-        var actualResult = await ReadOne(expectedResult.Image);
+        var actualResult = await ReadOne(expectedResult.Image, expectedResult);
 
         // Assert
         Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
@@ -104,7 +104,7 @@ public class TextReaderE2ETests
         ]);
 
         // Act
-        var actualResult = await ReadOne(expectedResult.Image);
+        var actualResult = await ReadOne(expectedResult.Image, expectedResult);
 
         // Assert
         Utils.ValidateDetectionsAndRecognitions(expectedResult, actualResult);
@@ -134,7 +134,7 @@ public class TextReaderE2ETests
 
         // Act
         var images = expectedResults.Select(r => r.Image).ToList();
-        var actualResults = await ReadMany(images);
+        var actualResults = await ReadMany(images, expectedResults);
 
         // Assert
         Assert.Equal(expectedResults.Count, actualResults.Count);
@@ -145,11 +145,17 @@ public class TextReaderE2ETests
         }
     }
 
-    private async Task<OcrPipelineResult> ReadOne(Image<Rgb24> image)
+    private async Task<OcrPipelineResult> ReadOne(Image<Rgb24> image, OcrPipelineResult expectedResult)
     {
         var reader = CreateTextReader();
 
         var result = await await reader.ReadOne(image);
+
+        // Add expected bboxes for visualization
+        var expectedBBoxes = expectedResult.Results.Select(r => r.BBox).ToList();
+        result.VizBuilder
+            .AddExpectedAxisAlignedBBoxes(expectedBBoxes.Select(b => b.AxisAlignedRectangle).ToList())
+            .AddExpectedOrientedBBoxes(expectedBBoxes.Select(b => b.RotatedRectangle).ToList(), true);
 
         var svg = result.VizBuilder.RenderSvg();
         _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
@@ -157,15 +163,21 @@ public class TextReaderE2ETests
         return result;
     }
 
-    private async Task<List<OcrPipelineResult>> ReadMany(List<Image<Rgb24>> images)
+    private async Task<List<OcrPipelineResult>> ReadMany(List<Image<Rgb24>> images, List<OcrPipelineResult> expectedResults)
     {
         var reader = CreateTextReader();
 
         var resultWrappers = await reader.ReadMany(images.ToAsyncEnumerable()).ToListAsync();
         var results = resultWrappers.Select(r => r.Value()).ToList();
 
-        foreach (var result in results)
+        foreach (var (result, expectedResult) in results.Zip(expectedResults))
         {
+            // Add expected bboxes for visualization
+            var expectedBBoxes = expectedResult.Results.Select(r => r.BBox).ToList();
+            result.VizBuilder
+                .AddExpectedAxisAlignedBBoxes(expectedBBoxes.Select(b => b.AxisAlignedRectangle).ToList())
+                .AddExpectedOrientedBBoxes(expectedBBoxes.Select(b => b.RotatedRectangle).ToList(), true);
+
             var svg = result.VizBuilder.RenderSvg();
             _logger.LogInformation($"Saved visualization to {await svg.SaveAsDataUri()}");
         }
