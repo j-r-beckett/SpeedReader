@@ -27,13 +27,48 @@
         pointer-events: all;
       }
 
-      .legend-item[data-class="bounding-boxes"] .legend-swatch { background-color: var(--color-aa-bbox); }
-      .legend-item[data-class="oriented-bounding-boxes"] .legend-swatch { background-color: var(--color-oriented-bbox); }
-      .legend-item[data-class="expected-bounding-boxes"] .legend-swatch { background-color: var(--color-expected-aa-bbox); }
-      .legend-item[data-class="expected-oriented-bounding-boxes"] .legend-swatch { background-color: var(--color-expected-oriented-bbox); }
-      .legend-item[data-class="polygons"] .legend-swatch { background-color: var(--color-polygon); }
-      .legend-item[data-class="text-overlay"] .legend-swatch { background-color: var(--color-text); }
-      .legend-item[data-class="dbnet-overlay"] .legend-swatch { background-color: var(--color-dbnet); }
+      .legend-checkbox {
+        opacity: 0;
+        position: absolute;
+        cursor: pointer;
+      }
+      .legend-item label { cursor: pointer; display: flex; align-items: center; gap: 8px; flex: 1; }
+      .legend-swatch {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        box-shadow: 0 0 0 2px #858484a1;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        background-color: transparent;
+      }
+      .legend-item[data-class="bounding-boxes"] input:checked + label .legend-swatch {
+        background-color: var(--color-aa-bbox);
+        box-shadow: 0 0 0 2px var(--color-aa-bbox), 0 0 5px rgba(255, 255, 255, 0.5);
+      }
+      .legend-item[data-class="oriented-bounding-boxes"] input:checked + label .legend-swatch {
+        background-color: var(--color-oriented-bbox);
+        box-shadow: 0 0 0 2px var(--color-oriented-bbox), 0 0 5px rgba(255, 255, 255, 0.5);
+      }
+      .legend-item[data-class="expected-bounding-boxes"] input:checked + label .legend-swatch {
+        background-color: var(--color-expected-aa-bbox);
+        box-shadow: 0 0 0 2px var(--color-expected-aa-bbox), 0 0 5px rgba(255, 255, 255, 0.5);
+      }
+      .legend-item[data-class="expected-oriented-bounding-boxes"] input:checked + label .legend-swatch {
+        background-color: var(--color-expected-oriented-bbox);
+        box-shadow: 0 0 0 2px var(--color-expected-oriented-bbox), 0 0 5px rgba(255, 255, 255, 0.5);
+      }
+      .legend-item[data-class="polygons"] input:checked + label .legend-swatch {
+        background-color: var(--color-polygon);
+        box-shadow: 0 0 0 2px var(--color-polygon), 0 0 5px rgba(255, 255, 255, 0.5);
+      }
+      .legend-item[data-class="text-overlay"] input:checked + label .legend-swatch {
+        background-color: var(--color-text);
+        box-shadow: 0 0 0 2px var(--color-text), 0 0 5px rgba(255, 255, 255, 0.5);
+      }
+      .legend-item[data-class="dbnet-overlay"] input:checked + label .legend-swatch {
+        background-color: var(--color-dbnet);
+        box-shadow: 0 0 0 2px var(--color-dbnet), 0 0 5px rgba(255, 255, 255, 0.5);
+      }
 
       .legend {
         font-family: Arial, sans-serif;
@@ -47,6 +82,15 @@
         gap: 8px;
         width: fit-content;
       }
+      .legend-header {
+        color: white;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        padding-bottom: 6px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        width: 80%;
+      }
       .legend-item {
         cursor: pointer;
         display: flex;
@@ -56,13 +100,9 @@
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         user-select: none;
         white-space: nowrap;
+        position: relative;
       }
       .legend-item:hover { color: #ddd; }
-      .legend-swatch {
-        width: 20px;
-        height: 6px;
-        border-radius: 3px;
-      }
       .hidden { display: none; }
     </style>
   </defs>
@@ -81,33 +121,34 @@
 
   <foreignObject id="legend-container" x="10" y="10" width="1" height="1">
     <div xmlns="http://www.w3.org/1999/xhtml" class="legend">
+      <div class="legend-header">Layers</div>
       <div class="legend-item" data-class="bounding-boxes" data-source="axisAlignedBoundingBoxes" data-check="length">
-        <div class="legend-swatch"></div>
-        <span>Axis-aligned bounding boxes</span>
+        <input type="checkbox" class="legend-checkbox" id="check-aa-bbox" />
+        <label for="check-aa-bbox"><div class="legend-swatch"></div>Axis-aligned bounding boxes</label>
       </div>
       <div class="legend-item" data-class="oriented-bounding-boxes" data-source="orientedBoundingBoxes" data-check="length">
-        <div class="legend-swatch"></div>
-        <span>Oriented bounding boxes</span>
+        <input type="checkbox" class="legend-checkbox" id="check-oriented-bbox" />
+        <label for="check-oriented-bbox"><div class="legend-swatch"></div>Oriented bounding boxes</label>
       </div>
       <div class="legend-item" data-class="expected-bounding-boxes" data-source="expectedAxisAlignedBoundingBoxes" data-check="length">
-        <div class="legend-swatch"></div>
-        <span>Expected axis-aligned</span>
+        <input type="checkbox" class="legend-checkbox" id="check-expected-aa-bbox" />
+        <label for="check-expected-aa-bbox"><div class="legend-swatch"></div>Expected axis-aligned</label>
       </div>
       <div class="legend-item" data-class="expected-oriented-bounding-boxes" data-source="expectedOrientedBoundingBoxes" data-check="length">
-        <div class="legend-swatch"></div>
-        <span>Expected oriented</span>
+        <input type="checkbox" class="legend-checkbox" id="check-expected-oriented-bbox" />
+        <label for="check-expected-oriented-bbox"><div class="legend-swatch"></div>Expected oriented</label>
       </div>
       <div class="legend-item" data-class="polygons" data-source="polygons" data-check="length">
-        <div class="legend-swatch"></div>
-        <span>Polygons</span>
+        <input type="checkbox" class="legend-checkbox" id="check-polygons" />
+        <label for="check-polygons"><div class="legend-swatch"></div>Polygons</label>
       </div>
       <div class="legend-item" data-class="text-overlay" data-source="textItems" data-check="length">
-        <div class="legend-swatch"></div>
-        <span>Recognized text</span>
+        <input type="checkbox" class="legend-checkbox" id="check-text-overlay" />
+        <label for="check-text-overlay"><div class="legend-swatch"></div>Recognized text</label>
       </div>
       <div class="legend-item" data-class="dbnet-overlay" data-source="probabilityMapDataUri" data-check="exists">
-        <div class="legend-swatch"></div>
-        <span>Raw detection output</span>
+        <input type="checkbox" class="legend-checkbox" id="check-dbnet-overlay" />
+        <label for="check-dbnet-overlay"><div class="legend-swatch"></div>Raw detection output</label>
       </div>
     </div>
   </foreignObject>
@@ -214,8 +255,9 @@
           item.style.display = 'none';
         } else {
           const visible = data.defaultVisible[cls] ?? false;
-          item.style.opacity = visible ? '1' : '0.5';
-          item.onclick = () => toggleLayer(cls);
+          const checkbox = item.querySelector('input');
+          checkbox.checked = visible;
+          checkbox.addEventListener('change', () => toggleLayer(cls));
         }
       });
 
@@ -223,15 +265,11 @@
       function toggleLayer(className) {
         const elements = svg.querySelectorAll('.' + className);
         const legendItem = svg.querySelector('.legend-item[data-class="' + className + '"]');
+        const checkbox = legendItem.querySelector('input');
+        const visible = checkbox.checked;
 
         elements.forEach(element => {
-          if (element.classList.contains('hidden')) {
-            element.classList.remove('hidden');
-            legendItem.style.opacity = '1';
-          } else {
-            element.classList.add('hidden');
-            legendItem.style.opacity = '0.5';
-          }
+          element.classList.toggle('hidden', !visible);
         });
       }
 
