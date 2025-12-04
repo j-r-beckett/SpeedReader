@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="System.CommandLine" />

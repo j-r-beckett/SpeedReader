@@ -8,8 +8,11 @@ using System.Threading.Channels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Ocr;
 using Ocr.InferenceEngine;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
@@ -21,14 +24,6 @@ public static class Serve
 {
     public static async Task RunServer()
     {
-        // Create performance metrics collection
-        // var metricsChannel = Channel.CreateUnbounded<MetricPoint>();
-        // var processMetricsCollector = new ProcessMetricsCollector();
-        // var containerMetricsCollector = ContainerMetricsCollector.IsRunningInContainer()
-        //     ? new ContainerMetricsCollector()
-        //     : null;
-        // var metricsWriter = new MetricRecorder(metricsChannel.Reader);
-
         // Create minimal web app
         var builder = WebApplication.CreateSlimBuilder();
 
@@ -56,16 +51,13 @@ public static class Serve
         };
         builder.Services.AddOcrPipeline(ocrPipelineOptions);
 
-        // // Configure OpenTelemetry with Prometheus exporter
-        // builder.Services.AddOpenTelemetry()
-        //     .WithMetrics(metrics => metrics
-        //         .AddMeter("SpeedReader.Inference")
-        //         .AddMeter("SpeedReader.Application")
-        //         .AddView("InferenceDuration", new ExplicitBucketHistogramConfiguration
-        //         {
-        //             Boundaries = Enumerable.Range(0, 40).Select(i => i * 25.0).ToArray()
-        //         })
-        //         .AddPrometheusExporter());
+        // Configure OpenTelemetry
+        builder.Services
+            .AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(serviceName: "SpeedReader"))
+            .WithMetrics(metrics => metrics
+                .AddMeter("speedreader.*")
+                .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317")));
 
         var app = builder.Build();
 
@@ -76,9 +68,6 @@ public static class Serve
         app.MapPost("/api/ocr", Rest.PostOcr);
         app.Map("/api/ws/ocr", Websockets.HandleOcrWebSocket);
 #pragma warning restore IL2026, IL3050
-
-        // // Map OpenTelemetry Prometheus metrics endpoint
-        // app.MapPrometheusScrapingEndpoint();
 
         Console.WriteLine("Starting SpeedReader server...");
         await app.RunAsync();

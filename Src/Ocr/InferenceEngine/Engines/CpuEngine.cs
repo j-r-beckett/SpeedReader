@@ -2,47 +2,57 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
+using Ocr.SmartMetrics;
 
 namespace Ocr.InferenceEngine.Engines;
 
-public interface IMetricRecorder
-{
-    void RecordMetric(string name, double value, Dictionary<string, string>? tags = null);
-    IMetricRecorder WithTags(Dictionary<string, string> tags);
-}
-
 public class CpuEngine : IInferenceEngine
 {
-    private readonly CpuEngineConfig _config;
     private readonly IInferenceKernel _inferenceKernel;
     private readonly ManagedExecutor _managedExecutor;
     private readonly Sensor _sensor = new();
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _tuningTask;
-    private readonly IMetricRecorder? _metricRecorder;
+
+    private readonly AvgGauge _currentParallelismGauge;
+    private readonly AvgGauge _queueDepthGauge;
+    private readonly AvgGauge _queueWaitDurationGauge;
+    private readonly AvgGauge _inferenceDurationGauge;
+    private readonly Histogram<double> _inferenceDurationHistogram;
+    private readonly AvgGauge _maxParallelismGauge;
+    private readonly ThroughputGauge _inferenceThroughputGauge;
 
     private int _queueDepth;
     private int _currentParallelism;
-
-    private const string MetricPrefix = "speedreader.inference.cpu.";
-
 
     public static CpuEngine Factory(IServiceProvider serviceProvider, object? key)
     {
         var config = serviceProvider.GetRequiredKeyedService<CpuEngineConfig>(key);
         var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
-        var metricRecorder = serviceProvider.GetKeyedService<IMetricRecorder>(key);
-        return new CpuEngine(config, kernel, metricRecorder);
+        var meterFactory = serviceProvider.GetRequiredService<IMeterFactory>();
+        return new CpuEngine(config, kernel, meterFactory);
     }
 
-    private CpuEngine(CpuEngineConfig config, IInferenceKernel inferenceKernel, IMetricRecorder? metricRecorder = null)
+    private CpuEngine(CpuEngineConfig config, IInferenceKernel inferenceKernel, IMeterFactory meterFactory)
     {
-        _config = config;
         _inferenceKernel = inferenceKernel;
         _managedExecutor = new ManagedExecutor(config.Parallelism);
-        var telemetryTags = new Dictionary<string, string> { ["model"] = config.Kernel.Model.ToString() };
-        _metricRecorder = metricRecorder?.WithTags(telemetryTags);
+
+        KeyValuePair<string, object?>[] tags = [new ("model", config.Kernel.Model.ToString())];
+        var meter = meterFactory.Create("speedreader.inference.cpu", version: null, tags);
+        _currentParallelismGauge = meter.CreateAvgGauge("parallelism", "tasks", "Number of parallel inference tasks", tags);
+        _queueDepthGauge = meter.CreateAvgGauge("queue_depth", "tasks", "Number of inference tasks waiting in the queue", tags);
+        _queueWaitDurationGauge = meter.CreateAvgGauge("queue_wait_duration", "ms", "Average time spent waiting in the queue", tags);
+        _inferenceDurationGauge = meter.CreateAvgGauge("inference_duration", "ms", "Average inference duration", tags);
+        _inferenceDurationHistogram = meter.CreateHistogram("inference_duration", "ms", "Histogram of inference durations", tags, new InstrumentAdvice<double>()
+        {
+            HistogramBucketBoundaries = Enumerable.Range(0, 40).Select(i => i * 25.0).ToArray()
+        });
+        _maxParallelismGauge = meter.CreateAvgGauge("max_parallelism", "tasks", "Maximum number of parallel inference tasks", tags);
+        _inferenceThroughputGauge = meter.CreateThroughputGauge("throughput", "tasks/sec", "Inference throughput", tags);
+
 
         _tuningTask = config.AdaptiveTuning != null
             ? Task.Run(() => AdaptiveTune(config.AdaptiveTuning, _cts.Token))
@@ -54,15 +64,15 @@ public class CpuEngine : IInferenceEngine
     public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape)
     {
         var queueWaitStart = Stopwatch.GetTimestamp();
-        _metricRecorder?.RecordMetric($"{MetricPrefix}queue_depth", Interlocked.Increment(ref _queueDepth));
+        _queueDepthGauge.Record(Interlocked.Increment(ref _queueDepth));
         return await _managedExecutor.ExecuteSingle(DoInference);
 
         (float[], int[]) DoInference()
         {
             var queueWaitTime = Stopwatch.GetElapsedTime(queueWaitStart).TotalMilliseconds;
-            _metricRecorder?.RecordMetric($"{MetricPrefix}queue_wait_duration", queueWaitTime);
-            _metricRecorder?.RecordMetric($"{MetricPrefix}queue_depth", Interlocked.Decrement(ref _queueDepth));
-            _metricRecorder?.RecordMetric($"{MetricPrefix}parallelism", Interlocked.Increment(ref _currentParallelism));
+            _queueWaitDurationGauge.Record(queueWaitTime);
+            _queueDepthGauge.Record(Interlocked.Decrement(ref _queueDepth));
+            _currentParallelismGauge.Record(Interlocked.Increment(ref _currentParallelism));
             var inferenceStart = Stopwatch.GetTimestamp();
             try
             {
@@ -83,11 +93,12 @@ public class CpuEngine : IInferenceEngine
             }
             finally
             {
-                var inferenceEndTime = Stopwatch.GetElapsedTime(inferenceStart).TotalMilliseconds;
-                _metricRecorder?.RecordMetric($"{MetricPrefix}inference_duration", inferenceEndTime);
-                _metricRecorder?.RecordMetric($"{MetricPrefix}parallelism", Interlocked.Decrement(ref _currentParallelism));
-                _metricRecorder?.RecordMetric($"{MetricPrefix}max_parallelism", _managedExecutor.CurrentMaxParallelism);
-                _metricRecorder?.RecordMetric($"{MetricPrefix}counter", 1);
+                var inferenceDuration = Stopwatch.GetElapsedTime(inferenceStart).TotalMilliseconds;
+                _inferenceDurationGauge.Record(inferenceDuration);
+                _inferenceDurationHistogram.Record(inferenceDuration);
+                _currentParallelismGauge.Record(Interlocked.Decrement(ref _currentParallelism));
+                _maxParallelismGauge.Record(_managedExecutor.CurrentMaxParallelism);
+                _inferenceThroughputGauge.Record();
             }
         }
     }

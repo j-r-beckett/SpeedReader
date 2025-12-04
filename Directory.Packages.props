@@ -14,6 +14,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="Npgsql" Version="9.0.4" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.13.1-beta.1" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
     <PackageVersion Include="prometheus-net.AspNetCore" Version="8.2.1" />
