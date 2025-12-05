@@ -45,63 +45,63 @@ public static class MetricRecorder
     {
         while (!_cts.Token.IsCancellationRequested)
         {
-            try
-            {
-                var loopStartTimestamp = Stopwatch.GetTimestamp();
-                var batch = new List<MetricPoint>();
-
-                // Read all available metrics from channel
-                while (_channel.Reader.TryRead(out var metric))
-                {
-                    batch.Add(metric);
-                }
-
-                // Write batch to TimescaleDB using Binary COPY
-                if (batch.Count > 0)
-                {
-                    await using var connection = await _dataSource!.OpenConnectionAsync(_cts.Token);
-                    await using var importer = await connection.BeginBinaryImportAsync(
-                        "COPY metrics (time, metric_name, value, tags) FROM STDIN (FORMAT BINARY)",
-                        _cts.Token);
-
-                    foreach (var metric in batch)
-                    {
-                        await importer.StartRowAsync(_cts.Token);
-                        await importer.WriteAsync(metric.Timestamp, NpgsqlDbType.TimestampTz, _cts.Token);
-                        await importer.WriteAsync(metric.Name, NpgsqlDbType.Text, _cts.Token);
-                        await importer.WriteAsync(metric.Value, NpgsqlDbType.Double, _cts.Token);
-
-                        if (metric.Tags != null)
-                        {
-                            var tagsJson = JsonSerializer.Serialize(metric.Tags, MetricJsonContext.Default.DictionaryStringString);
-                            await importer.WriteAsync(tagsJson, NpgsqlDbType.Jsonb, _cts.Token);
-                        }
-                        else
-                        {
-                            await importer.WriteNullAsync(_cts.Token);
-                        }
-                    }
-
-                    await importer.CompleteAsync(_cts.Token);
-                }
-
-                // Calculate remaining wait time
-                var elapsed = Stopwatch.GetElapsedTime(loopStartTimestamp);
-                var remaining = _flushInterval - elapsed;
-
-                if (remaining > TimeSpan.Zero)
-                {
-                    await Task.Delay(remaining, _cts.Token);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in TimescaleDbWriter: {ex}");
-            }
+            // try
+            // {
+            //     var loopStartTimestamp = Stopwatch.GetTimestamp();
+            //     var batch = new List<MetricPoint>();
+            //
+            //     // Read all available metrics from channel
+            //     while (_channel.Reader.TryRead(out var metric))
+            //     {
+            //         batch.Add(metric);
+            //     }
+            //
+            //     // Write batch to TimescaleDB using Binary COPY
+            //     if (batch.Count > 0)
+            //     {
+            //         await using var connection = await _dataSource!.OpenConnectionAsync(_cts.Token);
+            //         await using var importer = await connection.BeginBinaryImportAsync(
+            //             "COPY metrics (time, metric_name, value, tags) FROM STDIN (FORMAT BINARY)",
+            //             _cts.Token);
+            //
+            //         foreach (var metric in batch)
+            //         {
+            //             await importer.StartRowAsync(_cts.Token);
+            //             await importer.WriteAsync(metric.Timestamp, NpgsqlDbType.TimestampTz, _cts.Token);
+            //             await importer.WriteAsync(metric.Name, NpgsqlDbType.Text, _cts.Token);
+            //             await importer.WriteAsync(metric.Value, NpgsqlDbType.Double, _cts.Token);
+            //
+            //             if (metric.Tags != null)
+            //             {
+            //                 var tagsJson = JsonSerializer.Serialize(metric.Tags, MetricJsonContext.Default.DictionaryStringString);
+            //                 await importer.WriteAsync(tagsJson, NpgsqlDbType.Jsonb, _cts.Token);
+            //             }
+            //             else
+            //             {
+            //                 await importer.WriteNullAsync(_cts.Token);
+            //             }
+            //         }
+            //
+            //         await importer.CompleteAsync(_cts.Token);
+            //     }
+            //
+            //     // Calculate remaining wait time
+            //     var elapsed = Stopwatch.GetElapsedTime(loopStartTimestamp);
+            //     var remaining = _flushInterval - elapsed;
+            //
+            //     if (remaining > TimeSpan.Zero)
+            //     {
+            //         await Task.Delay(remaining, _cts.Token);
+            //     }
+            // }
+            // catch (OperationCanceledException)
+            // {
+            //     break;
+            // }
+            // catch (Exception ex)
+            // {
+            //     Console.WriteLine($"Error in TimescaleDbWriter: {ex}");
+            // }
         }
     }
 }

@@ -16,13 +16,13 @@ public class CpuEngine : IInferenceEngine
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _tuningTask;
 
-    private readonly AvgGauge _currentParallelismGauge;
-    private readonly AvgGauge _queueDepthGauge;
-    private readonly AvgGauge _queueWaitDurationGauge;
-    private readonly AvgGauge _inferenceDurationGauge;
-    private readonly Histogram<double> _inferenceDurationHistogram;
-    private readonly AvgGauge _maxParallelismGauge;
-    private readonly ThroughputGauge _inferenceThroughputGauge;
+    private readonly AvgGauge? _currentParallelismGauge;
+    private readonly AvgGauge? _queueDepthGauge;
+    private readonly AvgGauge? _queueWaitDurationGauge;
+    private readonly Histogram<double>? _inferenceDurationHistogram;
+    private readonly AvgGauge? _maxParallelismGauge;
+    private readonly ThroughputGauge? _inferenceThroughputGauge;
+    private readonly KeyValuePair<string, object?>[] _tags;
 
     private int _queueDepth;
     private int _currentParallelism;
@@ -31,28 +31,26 @@ public class CpuEngine : IInferenceEngine
     {
         var config = serviceProvider.GetRequiredKeyedService<CpuEngineConfig>(key);
         var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
-        var meterFactory = serviceProvider.GetRequiredService<IMeterFactory>();
+        var meterFactory = serviceProvider.GetService<IMeterFactory>();
         return new CpuEngine(config, kernel, meterFactory);
     }
 
-    private CpuEngine(CpuEngineConfig config, IInferenceKernel inferenceKernel, IMeterFactory meterFactory)
+    private CpuEngine(CpuEngineConfig config, IInferenceKernel inferenceKernel, IMeterFactory? meterFactory)
     {
         _inferenceKernel = inferenceKernel;
         _managedExecutor = new ManagedExecutor(config.Parallelism);
 
-        KeyValuePair<string, object?>[] tags = [new ("model", config.Kernel.Model.ToString())];
-        var meter = meterFactory.Create("speedreader.inference.cpu", version: null, tags);
-        _currentParallelismGauge = meter.CreateAvgGauge("parallelism", "tasks", "Number of parallel inference tasks", tags);
-        _queueDepthGauge = meter.CreateAvgGauge("queue_depth", "tasks", "Number of inference tasks waiting in the queue", tags);
-        _queueWaitDurationGauge = meter.CreateAvgGauge("queue_wait_duration", "ms", "Average time spent waiting in the queue", tags);
-        _inferenceDurationGauge = meter.CreateAvgGauge("inference_duration", "ms", "Average inference duration", tags);
-        _inferenceDurationHistogram = meter.CreateHistogram("inference_duration", "ms", "Histogram of inference durations", tags, new InstrumentAdvice<double>()
+        _tags = [new ("model", config.Kernel.Model.ToString())];
+        var meter = meterFactory?.Create("speedreader.inference.cpu");
+        _currentParallelismGauge = meter?.CreateAvgGauge("parallelism", "tasks", "Number of parallel inference tasks", _tags);
+        _queueDepthGauge = meter?.CreateAvgGauge("queue_depth", "tasks", "Number of inference tasks waiting in the queue", _tags);
+        _queueWaitDurationGauge = meter?.CreateAvgGauge("queue_wait_duration", "ms", "Average time spent waiting in the queue", _tags);
+        _inferenceDurationHistogram = meter?.CreateHistogram("inference_duration", "ms", "Histogram of inference durations", _tags, new InstrumentAdvice<double>()
         {
-            HistogramBucketBoundaries = Enumerable.Range(0, 40).Select(i => i * 25.0).ToArray()
+            HistogramBucketBoundaries = Enumerable.Range(0, 40).Select(i => i * 25.0).ToArray(),
         });
-        _maxParallelismGauge = meter.CreateAvgGauge("max_parallelism", "tasks", "Maximum number of parallel inference tasks", tags);
-        _inferenceThroughputGauge = meter.CreateThroughputGauge("throughput", "tasks/sec", "Inference throughput", tags);
-
+        _maxParallelismGauge = meter?.CreateAvgGauge("max_parallelism", "tasks", "Maximum number of parallel inference tasks", _tags);
+        _inferenceThroughputGauge = meter?.CreateThroughputGauge("throughput", "tasks/sec", "Inference throughput", _tags);
 
         _tuningTask = config.AdaptiveTuning != null
             ? Task.Run(() => AdaptiveTune(config.AdaptiveTuning, _cts.Token))
@@ -64,15 +62,15 @@ public class CpuEngine : IInferenceEngine
     public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape)
     {
         var queueWaitStart = Stopwatch.GetTimestamp();
-        _queueDepthGauge.Record(Interlocked.Increment(ref _queueDepth));
+        _queueDepthGauge?.Record(Interlocked.Increment(ref _queueDepth));
         return await _managedExecutor.ExecuteSingle(DoInference);
 
         (float[], int[]) DoInference()
         {
             var queueWaitTime = Stopwatch.GetElapsedTime(queueWaitStart).TotalMilliseconds;
-            _queueWaitDurationGauge.Record(queueWaitTime);
-            _queueDepthGauge.Record(Interlocked.Decrement(ref _queueDepth));
-            _currentParallelismGauge.Record(Interlocked.Increment(ref _currentParallelism));
+            _queueWaitDurationGauge?.Record(queueWaitTime);
+            _queueDepthGauge?.Record(Interlocked.Decrement(ref _queueDepth));
+            _currentParallelismGauge?.Record(Interlocked.Increment(ref _currentParallelism));
             var inferenceStart = Stopwatch.GetTimestamp();
             try
             {
@@ -94,11 +92,10 @@ public class CpuEngine : IInferenceEngine
             finally
             {
                 var inferenceDuration = Stopwatch.GetElapsedTime(inferenceStart).TotalMilliseconds;
-                _inferenceDurationGauge.Record(inferenceDuration);
-                _inferenceDurationHistogram.Record(inferenceDuration);
-                _currentParallelismGauge.Record(Interlocked.Decrement(ref _currentParallelism));
-                _maxParallelismGauge.Record(_managedExecutor.CurrentMaxParallelism);
-                _inferenceThroughputGauge.Record();
+                _inferenceDurationHistogram?.Record(inferenceDuration, _tags);
+                _currentParallelismGauge?.Record(Interlocked.Decrement(ref _currentParallelism));
+                _maxParallelismGauge?.Record(_managedExecutor.CurrentMaxParallelism);
+                _inferenceThroughputGauge?.Record();
             }
         }
     }

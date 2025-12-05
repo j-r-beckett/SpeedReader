@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 COPY bin/Release/net10.0/linux-x64/publish /app
 EXPOSE 5001
 ENV ASPNETCORE_URLS=http://0.0.0.0:5001

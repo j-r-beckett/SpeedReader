@@ -56,8 +56,12 @@ public static class Serve
             .AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(serviceName: "SpeedReader"))
             .WithMetrics(metrics => metrics
-                .AddMeter("speedreader.*")
-                .AddOtlpExporter(options => options.Endpoint = new Uri("http://localhost:4317")));
+                .AddMeter("speedreader.inference.cpu")
+                .AddOtlpExporter((exporterOptions, readerOptions) =>
+                {
+                    exporterOptions.Endpoint = new Uri("http://otel-collector:4317");
+                    readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+                }));
 
         var app = builder.Build();
 
