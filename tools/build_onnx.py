@@ -73,11 +73,11 @@ def checkout_onnx_sources(onnx_src_dir: Path, version: str):
     return onnx_src_dir
 
 
-def combine_static_libs(libs_path: Path, output_path: Path):
+def combine_static_libs(libs, output_path: Path):
     """Combine multiple .a files into a single archive using AR MRI script"""
     mri_script = output_path.parent / "combine.mri"
     mri_commands = [f"CREATE {output_path}"]
-    for lib in list(libs_path.rglob("Release/**/*.a")):
+    for lib in libs:
         mri_commands.append(f"ADDLIB {lib}")
     mri_commands.extend(["SAVE", "END"])
 
