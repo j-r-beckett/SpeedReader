@@ -9,38 +9,15 @@ internal static partial class SpeedReaderOrt
 {
     private const string LibraryName = "speedreader_ort";
 
+    // Constants matching the C header
+    internal const int ErrorBufSize = 256;
+    internal const int MaxShapeDims = 16;
+
     // Status codes
     internal enum Status
     {
         Ok = 0,
-        Unknown = 1,
-        InvalidArgument = 2,
-        Truncated = 3,
-    }
-
-    // Buffer structures
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct StringBuf
-    {
-        public IntPtr Buffer;
-        public nuint Capacity;
-        public nuint Length;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct FloatBuf
-    {
-        public IntPtr Buffer;
-        public nuint Capacity;
-        public nuint Length;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct Int64Buf
-    {
-        public IntPtr Buffer;
-        public nuint Capacity;
-        public nuint Length;
+        Error = 1,
     }
 
     // Session options
@@ -54,32 +31,36 @@ internal static partial class SpeedReaderOrt
 
     // Environment management
     [LibraryImport(LibraryName)]
-    internal static partial Status speedreader_ort_create_env(out SafeEnvironmentHandle env, ref StringBuf error);
+    internal static unsafe partial Status speedreader_ort_create_env(
+        out SafeEnvironmentHandle env,
+        byte* error);
 
     [LibraryImport(LibraryName)]
     internal static partial void speedreader_ort_destroy_env(IntPtr env);
 
     // Session management
     [LibraryImport(LibraryName)]
-    internal static partial Status speedreader_ort_create_session(
+    internal static unsafe partial Status speedreader_ort_create_session(
         SafeEnvironmentHandle env,
-        IntPtr modelData,
-        nuint modelDataLength,
+        byte* modelData,
+        nuint modelDataSize,
         ref SessionOptions options,
         out SafeSessionHandle session,
-        ref StringBuf error);
+        byte* error);
 
     [LibraryImport(LibraryName)]
     internal static partial void speedreader_ort_destroy_session(IntPtr session);
 
     // Inference execution
     [LibraryImport(LibraryName)]
-    internal static partial Status speedreader_ort_run(
+    internal static unsafe partial Status speedreader_ort_run(
         SafeSessionHandle session,
-        IntPtr inputData,
-        IntPtr inputShape,
-        nuint inputShapeLength,
-        ref FloatBuf outputData,
-        ref Int64Buf outputShape,
-        ref StringBuf error);
+        float* inputData,
+        long* inputShape,
+        nuint inputNdim,
+        float* outputData,
+        nuint outputCount,
+        long* outputShape,
+        nuint* outputNdim,
+        byte* error);
 }

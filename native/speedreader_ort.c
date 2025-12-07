@@ -5,6 +5,7 @@
 #include <onnxruntime_c_api.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 // ************
 // Opaque handle internal structures
@@ -35,28 +36,33 @@ static const OrtApi* get_api(void) {
 // Error handling helpers
 // ************
 
-static void write_error_message(OrtStatus* status, SpeedReaderOrtStringBuf* error) {
-    if (error == NULL || status == NULL) {
-        if (status != NULL) {
-            get_api()->ReleaseStatus(status);
-        }
+static void write_error(char* error, const char* msg) {
+    if (error == NULL || msg == NULL) {
+        return;
+    }
+    size_t msg_len = strlen(msg);
+    size_t copy_len = msg_len < SPEEDREADER_ORT_ERROR_BUF_SIZE - 1
+                    ? msg_len
+                    : SPEEDREADER_ORT_ERROR_BUF_SIZE - 1;
+    memcpy(error, msg, copy_len);
+    error[copy_len] = '\0';
+}
+
+static void write_ort_error(OrtStatus* status, char* error) {
+    if (status == NULL) {
         return;
     }
 
     const OrtApi* api = get_api();
     const char* msg = api->GetErrorMessage(status);
-
-    if (msg != NULL && error->buffer != NULL && error->capacity > 0) {
-        size_t msg_len = strlen(msg);
-        size_t copy_len = msg_len < error->capacity ? msg_len : error->capacity - 1;
-        memcpy(error->buffer, msg, copy_len);
-        error->buffer[copy_len] = '\0';
-        error->length = copy_len;
-    } else {
-        error->length = 0;
-    }
-
+    write_error(error, msg);
     api->ReleaseStatus(status);
+}
+
+static void clear_error(char* error) {
+    if (error != NULL) {
+        error[0] = '\0';
+    }
 }
 
 // ************
@@ -65,24 +71,28 @@ static void write_error_message(OrtStatus* status, SpeedReaderOrtStringBuf* erro
 
 SpeedReaderOrtStatus speedreader_ort_create_env(
     SpeedReaderOrtEnv** env,
-    SpeedReaderOrtStringBuf* error
+    char* error
 ) {
+    clear_error(error);
+
     if (env == NULL) {
-        return SPEEDREADER_ORT_INVALID_ARGUMENT;
+        write_error(error, "env parameter is NULL");
+        return SPEEDREADER_ORT_ERROR;
     }
 
     const OrtApi* api = get_api();
 
     SpeedReaderOrtEnv* new_env = (SpeedReaderOrtEnv*)malloc(sizeof(SpeedReaderOrtEnv));
     if (new_env == NULL) {
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_error(error, "failed to allocate environment");
+        return SPEEDREADER_ORT_ERROR;
     }
 
     OrtStatus* status = api->CreateEnv(ORT_LOGGING_LEVEL_WARNING, "SpeedReader", &new_env->ort_env);
     if (status != NULL) {
         free(new_env);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     *env = new_env;
@@ -106,13 +116,16 @@ void speedreader_ort_destroy_env(SpeedReaderOrtEnv* env) {
 SpeedReaderOrtStatus speedreader_ort_create_session(
     SpeedReaderOrtEnv* env,
     const void* model_data,
-    size_t model_data_length,
+    size_t model_data_size,
     const SpeedReaderOrtSessionOptions* options,
     SpeedReaderOrtSession** session,
-    SpeedReaderOrtStringBuf* error
+    char* error
 ) {
+    clear_error(error);
+
     if (env == NULL || model_data == NULL || options == NULL || session == NULL) {
-        return SPEEDREADER_ORT_INVALID_ARGUMENT;
+        write_error(error, "invalid argument: NULL parameter");
+        return SPEEDREADER_ORT_ERROR;
     }
 
     const OrtApi* api = get_api();
@@ -122,23 +135,23 @@ SpeedReaderOrtStatus speedreader_ort_create_session(
     // Create session options
     status = api->CreateSessionOptions(&session_options);
     if (status != NULL) {
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Set thread configuration
     status = api->SetIntraOpNumThreads(session_options, options->intra_op_num_threads);
     if (status != NULL) {
         api->ReleaseSessionOptions(session_options);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     status = api->SetInterOpNumThreads(session_options, options->inter_op_num_threads);
     if (status != NULL) {
         api->ReleaseSessionOptions(session_options);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Enable profiling if requested
@@ -146,8 +159,8 @@ SpeedReaderOrtStatus speedreader_ort_create_session(
         status = api->EnableProfiling(session_options, "speedreader_profile");
         if (status != NULL) {
             api->ReleaseSessionOptions(session_options);
-            write_error_message(status, error);
-            return SPEEDREADER_ORT_UNKNOWN;
+            write_ort_error(status, error);
+            return SPEEDREADER_ORT_ERROR;
         }
     }
 
@@ -155,14 +168,15 @@ SpeedReaderOrtStatus speedreader_ort_create_session(
     SpeedReaderOrtSession* new_session = (SpeedReaderOrtSession*)malloc(sizeof(SpeedReaderOrtSession));
     if (new_session == NULL) {
         api->ReleaseSessionOptions(session_options);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_error(error, "failed to allocate session");
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Create session from model bytes
     status = api->CreateSessionFromArray(
         env->ort_env,
         model_data,
-        model_data_length,
+        model_data_size,
         session_options,
         &new_session->ort_session
     );
@@ -171,8 +185,8 @@ SpeedReaderOrtStatus speedreader_ort_create_session(
 
     if (status != NULL) {
         free(new_session);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     *session = new_session;
@@ -197,22 +211,19 @@ SpeedReaderOrtStatus speedreader_ort_run(
     SpeedReaderOrtSession* session,
     const float* input_data,
     const int64_t* input_shape,
-    size_t input_shape_length,
-    SpeedReaderOrtFloatBuf* output_data,
-    SpeedReaderOrtInt64Buf* output_shape,
-    SpeedReaderOrtStringBuf* error
+    size_t input_ndim,
+    float* output_data,
+    size_t output_count,
+    int64_t* output_shape,
+    size_t* output_ndim,
+    char* error
 ) {
+    clear_error(error);
+
     if (session == NULL || input_data == NULL || input_shape == NULL ||
-        output_data == NULL || output_shape == NULL) {
-        return SPEEDREADER_ORT_INVALID_ARGUMENT;
-    }
-
-    if (output_data->buffer == NULL && output_data->capacity > 0) {
-        return SPEEDREADER_ORT_INVALID_ARGUMENT;
-    }
-
-    if (output_shape->buffer == NULL && output_shape->capacity > 0) {
-        return SPEEDREADER_ORT_INVALID_ARGUMENT;
+        output_data == NULL || output_shape == NULL || output_ndim == NULL) {
+        write_error(error, "invalid argument: NULL parameter");
+        return SPEEDREADER_ORT_ERROR;
     }
 
     const OrtApi* api = get_api();
@@ -221,18 +232,17 @@ SpeedReaderOrtStatus speedreader_ort_run(
     OrtValue* input_tensor = NULL;
     OrtValue* output_tensor = NULL;
     OrtTensorTypeAndShapeInfo* shape_info = NULL;
-    SpeedReaderOrtStatus result = SPEEDREADER_ORT_OK;
 
     // Create CPU memory info for input tensor
     status = api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &mem_info);
     if (status != NULL) {
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Calculate input tensor size
     size_t input_element_count = 1;
-    for (size_t i = 0; i < input_shape_length; i++) {
+    for (size_t i = 0; i < input_ndim; i++) {
         input_element_count *= input_shape[i];
     }
     size_t input_size_bytes = input_element_count * sizeof(float);
@@ -243,7 +253,7 @@ SpeedReaderOrtStatus speedreader_ort_run(
         (void*)input_data,
         input_size_bytes,
         input_shape,
-        input_shape_length,
+        input_ndim,
         ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT,
         &input_tensor
     );
@@ -251,8 +261,8 @@ SpeedReaderOrtStatus speedreader_ort_run(
     api->ReleaseMemoryInfo(mem_info);
 
     if (status != NULL) {
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Run inference
@@ -274,16 +284,16 @@ SpeedReaderOrtStatus speedreader_ort_run(
     input_tensor = NULL;
 
     if (status != NULL) {
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Get output tensor shape information
     status = api->GetTensorTypeAndShape(output_tensor, &shape_info);
     if (status != NULL) {
         api->ReleaseValue(output_tensor);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Get number of dimensions
@@ -292,27 +302,29 @@ SpeedReaderOrtStatus speedreader_ort_run(
     if (status != NULL) {
         api->ReleaseTensorTypeAndShapeInfo(shape_info);
         api->ReleaseValue(output_tensor);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Check if output shape buffer has sufficient capacity
-    if (num_dims > output_shape->capacity) {
+    if (num_dims > SPEEDREADER_ORT_MAX_SHAPE_DIMS) {
         api->ReleaseTensorTypeAndShapeInfo(shape_info);
         api->ReleaseValue(output_tensor);
-        output_shape->length = num_dims;
-        return SPEEDREADER_ORT_TRUNCATED;
+        snprintf(error, SPEEDREADER_ORT_ERROR_BUF_SIZE,
+                 "output has %zu dimensions, max supported is %d",
+                 num_dims, SPEEDREADER_ORT_MAX_SHAPE_DIMS);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Get dimensions
-    status = api->GetDimensions(shape_info, output_shape->buffer, num_dims);
+    status = api->GetDimensions(shape_info, output_shape, num_dims);
     if (status != NULL) {
         api->ReleaseTensorTypeAndShapeInfo(shape_info);
         api->ReleaseValue(output_tensor);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
-    output_shape->length = num_dims;
+    *output_ndim = num_dims;
 
     // Get total element count
     size_t output_element_count = 0;
@@ -323,15 +335,17 @@ SpeedReaderOrtStatus speedreader_ort_run(
 
     if (status != NULL) {
         api->ReleaseValue(output_tensor);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
-    // Check if output data buffer has sufficient capacity
-    if (output_element_count > output_data->capacity) {
+    // Verify output data size matches exactly
+    if (output_element_count != output_count) {
         api->ReleaseValue(output_tensor);
-        output_data->length = output_element_count;
-        return SPEEDREADER_ORT_TRUNCATED;
+        snprintf(error, SPEEDREADER_ORT_ERROR_BUF_SIZE,
+                 "output size mismatch: expected %zu, got %zu",
+                 output_count, output_element_count);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Get pointer to output data
@@ -339,13 +353,12 @@ SpeedReaderOrtStatus speedreader_ort_run(
     status = api->GetTensorMutableData(output_tensor, (void**)&output_ptr);
     if (status != NULL) {
         api->ReleaseValue(output_tensor);
-        write_error_message(status, error);
-        return SPEEDREADER_ORT_UNKNOWN;
+        write_ort_error(status, error);
+        return SPEEDREADER_ORT_ERROR;
     }
 
     // Copy output data to caller's buffer
-    memcpy(output_data->buffer, output_ptr, output_element_count * sizeof(float));
-    output_data->length = output_element_count;
+    memcpy(output_data, output_ptr, output_element_count * sizeof(float));
 
     api->ReleaseValue(output_tensor);
     return SPEEDREADER_ORT_OK;

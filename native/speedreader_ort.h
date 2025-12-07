@@ -12,6 +12,13 @@ extern "C" {
 #endif
 
 // ************
+// Constants
+// ************
+
+#define SPEEDREADER_ORT_ERROR_BUF_SIZE 256
+#define SPEEDREADER_ORT_MAX_SHAPE_DIMS 16
+
+// ************
 // Opaque handle types
 // ************
 
@@ -24,38 +31,8 @@ typedef struct SpeedReaderOrtSession SpeedReaderOrtSession;
 
 typedef enum {
     SPEEDREADER_ORT_OK = 0,
-    SPEEDREADER_ORT_UNKNOWN = 1,
-    SPEEDREADER_ORT_INVALID_ARGUMENT = 2,
-    SPEEDREADER_ORT_TRUNCATED = 3,
+    SPEEDREADER_ORT_ERROR = 1,
 } SpeedReaderOrtStatus;
-
-// ************
-// Generic output buffer types
-// ************
-// - Caller allocates buffer, sets capacity in elements
-// - Callee writes to buffer, sets length in elements
-// - If insufficient buffer capacity, callee returns TRUNCATED
-// - Callee does not set TRUNCATED if error buffer is truncated
-//   when writing an error message to avoid overwriting the actual error
-// - Buffer pointer may only be null when capacity == 0
-
-typedef struct {
-    char* buffer;
-    size_t capacity;
-    size_t length;
-} SpeedReaderOrtStringBuf;
-
-typedef struct {
-    float* buffer;
-    size_t capacity;
-    size_t length;
-} SpeedReaderOrtFloatBuf;
-
-typedef struct {
-    int64_t* buffer;
-    size_t capacity;
-    size_t length;
-} SpeedReaderOrtInt64Buf;
 
 // ************
 // Session options
@@ -70,14 +47,16 @@ typedef struct {
 // ************
 // API
 // ************
-// - If caller does not want detailed error information, they may pass a NULL error ptr
-// - Error will only have length > 0 if result is not OK
+// - Error buffer must be at least SPEEDREADER_ORT_ERROR_BUF_SIZE bytes
+// - On error, error buffer contains null-terminated message
+// - On success, error[0] is set to '\0'
+// - Caller may pass NULL for error if not interested in error details
 
 // Environment management (one per process).
 // Not thread-safe.
 SpeedReaderOrtStatus speedreader_ort_create_env(
     SpeedReaderOrtEnv** env,
-    SpeedReaderOrtStringBuf* error
+    char* error
 );
 void speedreader_ort_destroy_env(SpeedReaderOrtEnv* env);
 
@@ -86,23 +65,33 @@ void speedreader_ort_destroy_env(SpeedReaderOrtEnv* env);
 SpeedReaderOrtStatus speedreader_ort_create_session(
     SpeedReaderOrtEnv* env,
     const void* model_data,
-    size_t model_data_length,
+    size_t model_data_size,
     const SpeedReaderOrtSessionOptions* options,
     SpeedReaderOrtSession** session,
-    SpeedReaderOrtStringBuf* error
+    char* error
 );
 void speedreader_ort_destroy_session(SpeedReaderOrtSession* session);
 
 // Inference execution.
 // Thread-safe.
+//
+// - output_data: caller-allocated buffer, must be exactly output_count elements
+// - output_count: expected number of float elements (must match actual output)
+// - output_shape: caller-allocated buffer, at least SPEEDREADER_ORT_MAX_SHAPE_DIMS elements
+// - output_ndim: out parameter, set to actual number of dimensions
+//
+// Returns error if output_count does not match actual output size.
+// Error message includes expected vs actual sizes for debugging.
 SpeedReaderOrtStatus speedreader_ort_run(
     SpeedReaderOrtSession* session,
     const float* input_data,
     const int64_t* input_shape,
-    size_t input_shape_length,
-    SpeedReaderOrtFloatBuf* output_data,
-    SpeedReaderOrtInt64Buf* output_shape,
-    SpeedReaderOrtStringBuf* error
+    size_t input_ndim,
+    float* output_data,
+    size_t output_count,
+    int64_t* output_shape,
+    size_t* output_ndim,
+    char* error
 );
 
 #ifdef __cplusplus
