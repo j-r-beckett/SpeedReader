@@ -3,7 +3,7 @@
 
 using Microsoft.Win32.SafeHandles;
 
-namespace Ocr.InferenceEngine.Native;
+namespace Native.Internal;
 
 internal sealed class SafeEnvironmentHandle : SafeHandleZeroOrMinusOneIsInvalid
 {

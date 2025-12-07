@@ -6,6 +6,7 @@
   <Folder Name="/Src/">
     <Project Path="Src/Frontend.Test/Frontend.Test.csproj" />
     <Project Path="Src/Frontend/Frontend.csproj" />
+    <Project Path="Src/Native/Native.csproj" />
     <Project Path="Src/Ocr.Test/Ocr.Test.csproj" />
     <Project Path="Src/Ocr/Ocr.csproj" />
     <Project Path="Src/Resources.Test/Resources.Test.csproj" />

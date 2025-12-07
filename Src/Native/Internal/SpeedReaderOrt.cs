@@ -3,33 +3,29 @@
 
 using System.Runtime.InteropServices;
 
-namespace Ocr.InferenceEngine.Native;
+namespace Native.Internal;
 
 internal static partial class SpeedReaderOrt
 {
     private const string LibraryName = "speedreader_ort";
 
-    // Constants matching the C header
-    internal const int ErrorBufSize = 256;
+    internal const int ErrorBufSize = 1024;
     internal const int MaxShapeDims = 16;
 
-    // Status codes
     internal enum Status
     {
         Ok = 0,
         Error = 1,
     }
 
-    // Session options
     [StructLayout(LayoutKind.Sequential)]
     internal struct SessionOptions
     {
         public int IntraOpNumThreads;
         public int InterOpNumThreads;
-        public int EnableProfiling;  // 0 = disabled, 1 = enabled
+        public int EnableProfiling;
     }
 
-    // Environment management
     [LibraryImport(LibraryName)]
     internal static unsafe partial Status speedreader_ort_create_env(
         out SafeEnvironmentHandle env,
@@ -38,7 +34,6 @@ internal static partial class SpeedReaderOrt
     [LibraryImport(LibraryName)]
     internal static partial void speedreader_ort_destroy_env(IntPtr env);
 
-    // Session management
     [LibraryImport(LibraryName)]
     internal static unsafe partial Status speedreader_ort_create_session(
         SafeEnvironmentHandle env,
@@ -51,7 +46,6 @@ internal static partial class SpeedReaderOrt
     [LibraryImport(LibraryName)]
     internal static partial void speedreader_ort_destroy_session(IntPtr session);
 
-    // Inference execution
     [LibraryImport(LibraryName)]
     internal static unsafe partial Status speedreader_ort_run(
         SafeSessionHandle session,

@@ -338,10 +338,7 @@ public class VizBuilder
         return $"data:image/png;base64,{base64}";
     }
 
-    private static string LoadTemplate()
-    {
-        return new EmbeddedViz().Template;
-    }
+    private static string LoadTemplate() => new EmbeddedViz().Template;
 
     private static string ConvertProbabilityMapToDataUri(Image<L8> probabilityMap)
     {

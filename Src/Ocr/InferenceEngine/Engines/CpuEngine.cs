@@ -40,7 +40,7 @@ public class CpuEngine : IInferenceEngine
         _inferenceKernel = inferenceKernel;
         _managedExecutor = new ManagedExecutor(config.Parallelism);
 
-        _tags = [new ("model", config.Kernel.Model.ToString())];
+        _tags = [new("model", config.Kernel.Model.ToString())];
         var meter = meterFactory?.Create("speedreader.inference.cpu");
         _currentParallelismGauge = meter?.CreateAvgGauge("parallelism", "tasks", "Number of parallel inference tasks", _tags);
         _queueDepthGauge = meter?.CreateAvgGauge("queue_depth", "tasks", "Number of inference tasks waiting in the queue", _tags);
