@@ -29,42 +29,33 @@ def build_speedreader_libs(platform_dir):
 
     info(f"Compiling {len(c_files)} C source files")
 
-    # 2. Compile each .c file to .o
     onnx_include_dir = platform_dir / "lib" / "onnxruntime" / "include"
-    object_files = []
-    for c_file in c_files:
-        o_file = static_dir / f"{c_file.stem}.o"
-        bash(
-            f"gcc -c -O3 -fPIC -I{native_dir} -I{onnx_include_dir} -o {o_file} {c_file}"
-        )
-        object_files.append(o_file)
-
-    # 3. Create static library from all object files
-    info("Creating speedreader_ort.a")
-    bash(f"ar rcs {static_lib} {' '.join(str(o) for o in object_files)}")
-
-    # 4. Create shared library that links with libonnxruntime.so
-    info("Creating speedreader_ort.so")
     onnx_shared_dir = platform_dir / "lib" / "onnxruntime" / "shared"
-    onnx_shared_lib = onnx_shared_dir / "libonnxruntime.so"
-
-    if not onnx_shared_lib.exists():
+    if not (onnx_shared_dir / "libonnxruntime.so").exists():
         raise ScriptError(
-            f"ONNX shared library not found at {onnx_shared_lib}. Build ONNX first."
+            f"ONNX shared library not found at {onnx_shared_dir}. Build ONNX first."
         )
 
+    c_files_str = " ".join(str(f) for f in c_files)
+    include_flags = f"-I{native_dir} -I{onnx_include_dir}"
+
+    # 2. Create static library
+    info("Creating speedreader_ort.a")
     bash(
-        f"g++ -shared -fPIC "
-        f"-Wl,--whole-archive {static_lib} -Wl,--no-whole-archive "
-        f"-L{onnx_shared_dir} -lonnxruntime "
-        f"-Wl,-rpath,'$ORIGIN:$ORIGIN/../onnxruntime/shared' "
-        f"-o {shared_lib} "
-        f"-lstdc++ -lpthread -lm -ldl"
+        f"zig build-lib -lc -static -O ReleaseFast "
+        f"{include_flags} {c_files_str} "
+        f"-femit-bin={static_lib}"
     )
 
-    # Cleanup object files
-    for o_file in object_files:
-        o_file.unlink()
+    # 3. Create shared library that links with libonnxruntime.so
+    info("Creating speedreader_ort.so")
+    bash(
+        f"zig build-lib -lc -dynamic -O ReleaseFast "
+        f"{include_flags} {c_files_str} "
+        f"-L{onnx_shared_dir} -lonnxruntime "
+        f"-rpath '$ORIGIN:$ORIGIN/../onnxruntime/shared' "
+        f"-femit-bin={shared_lib}"
+    )
 
     elapsed_time = time.time() - start_time
     info(f"Built {static_lib} and {shared_lib} in {format_duration(elapsed_time)}")

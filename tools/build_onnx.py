@@ -82,7 +82,7 @@ def combine_static_libs(libs, output_path: Path):
     mri_commands.extend(["SAVE", "END"])
 
     mri_script.write_text("\n".join(mri_commands))
-    bash(f"ar -M < {mri_script}")
+    bash(f"zig ar -M < {mri_script}")
     mri_script.unlink()
 
 
