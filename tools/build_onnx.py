@@ -1,11 +1,10 @@
 #!/usr/bin/env -S uv run
 
 import time
-import click
 import psutil
 import shutil
 from pathlib import Path
-from utils import ScriptError, bash, info, error, format_duration
+from utils import ScriptError, bash, info, format_duration
 
 
 def get_parallel_jobs() -> int:
@@ -86,11 +85,6 @@ def combine_static_libs(libs, output_path: Path):
     mri_script.unlink()
 
 
-# @click.command()
-# @click.option("--onnx-version", help="Onnx version to build", required=True)
-# @click.option(
-#     "--platform-dir", help="Platform directory in build output", required=True
-# )
 def apply_musl_patches(build_dir: Path):
     """Apply patches needed for musl/Alpine build"""
     patches_dir = Path(__file__).parent / "patches" / "alpine-onnx"
@@ -221,11 +215,3 @@ def build_onnx(onnx_version, platform_dir, musl=False):
     lib_dir.mkdir(parents=True, exist_ok=True)
     version_file.write_text(onnx_version)
     info(f"Wrote version {onnx_version} to {version_file}")
-
-
-# Typically run with `./build_onnx.py --onnx-version 1.15.0 --platform-dir ../target/platforms/linux-x64`
-# if __name__ == "__main__":
-# try:
-#     build_onnx()
-# except ScriptError as e:
-#     error(f"Fatal: {e}")

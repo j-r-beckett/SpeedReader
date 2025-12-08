@@ -1,13 +1,10 @@
 #!/usr/bin/env -S uv run
 
 import time
-import click
 from pathlib import Path
-from utils import ScriptError, bash, info, error, format_duration
+from utils import ScriptError, bash, info, format_duration
 
 
-# @click.command()
-# @click.option("--platform-dir", help="Platform directory in build output", required=True)
 def build_speedreader_libs(platform_dir, musl=False):
     platform_dir = Path(platform_dir).resolve()
     native_dir = Path(__file__).parent.parent / "native"
@@ -59,10 +56,3 @@ def build_speedreader_libs(platform_dir, musl=False):
 
     elapsed_time = time.time() - start_time
     info(f"Built {static_lib} and {shared_lib} in {format_duration(elapsed_time)}")
-
-
-# if __name__ == "__main__":
-#     try:
-#         build_speedreader_libs()
-#     except ScriptError as e:
-#         error(f"Fatal: {e}")
