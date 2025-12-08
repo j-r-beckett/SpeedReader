@@ -219,15 +219,18 @@ jobs:
       - name: Install Alpine packages
         run: |
           apk upgrade --no-cache
-          apk add --no-cache bash nodejs
+          apk add --no-cache bash nodejs file
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: speedreader-musl-static
           path: .
-      - name: Smoke Static Binary
+      - name: Verify Static Binary
         run: |
           chmod +x speedread
+          file speedread | grep -q "static-pie linked\|statically linked" || { echo "ERROR: Binary is not statically linked"; file speedread; exit 1; }
+      - name: Smoke Static Binary
+        run: |
           ./speedread hello.png | grep '"text": "Hello"' || exit 1
       - name: Debug Info
         if: always()
