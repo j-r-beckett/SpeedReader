@@ -1,5 +1,5 @@
-name: Release Build
-on: [push]
+name: Ubuntu Build (Reference)
+# on: [push]  # Disabled - kept as reference for glibc build
 jobs:
   build-onnx:
     name: Build the ONNX Runtime
