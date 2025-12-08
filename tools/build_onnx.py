@@ -91,8 +91,20 @@ def combine_static_libs(libs, output_path: Path):
 # @click.option(
 #     "--platform-dir", help="Platform directory in build output", required=True
 # )
-def build_onnx(onnx_version, platform_dir):
-    gcc_version = 11
+def apply_musl_patches(build_dir: Path):
+    """Apply patches needed for musl/Alpine build"""
+    patches_dir = Path(__file__).parent / "patches" / "alpine-onnx"
+
+    # no-execinfo.patch: musl lacks execinfo.h (used for stack traces)
+    no_execinfo_patch = patches_dir / "no-execinfo.patch"
+    if no_execinfo_patch.exists():
+        info("Applying no-execinfo.patch for musl compatibility")
+        # -N: skip already-applied patches (idempotent)
+        # || true: don't fail if patch was already applied
+        bash(f"patch -p1 -N < {no_execinfo_patch} || true", directory=build_dir)
+
+
+def build_onnx(onnx_version, platform_dir, musl=False):
     platform_dir = Path(platform_dir).resolve()
     build_dir = platform_dir / "build" / "onnxruntime"
     lib_dir = platform_dir / "lib" / "onnxruntime"
@@ -109,23 +121,51 @@ def build_onnx(onnx_version, platform_dir):
 
     info(f"Building Onnx {onnx_version}")
     checkout_onnx_sources(build_dir, onnx_version)
+
+    if musl:
+        apply_musl_patches(build_dir)
+
     venv_dir = create_onnx_venv(build_dir)
 
     start_time = time.time()
 
     parallelism = get_parallel_jobs()
     info(f"Compiling Onnx with {parallelism} threads")
+
+    if musl:
+        # On Alpine/musl, use native gcc (no version suffix)
+        compiler_env = "CC=gcc CXX=g++"
+        # Alpine edge has CMake 4.x which removed backward compatibility
+        # _LARGEFILE64_SOURCE: makes musl define off64_t (needed by abseil)
+        # -include cstdint: GCC 15 requires explicit cstdint includes
+        # onnxruntime_BUILD_UNIT_TESTS=OFF: don't build tests (they have GCC 15 issues)
+        cmake_extra = (
+            "CMAKE_POSITION_INDEPENDENT_CODE=ON "
+            "CMAKE_POLICY_VERSION_MINIMUM=3.5 "
+            "CMAKE_C_FLAGS=-D_LARGEFILE64_SOURCE "
+            'CMAKE_CXX_FLAGS="-D_LARGEFILE64_SOURCE -include cstdint" '
+            "onnxruntime_BUILD_UNIT_TESTS=OFF"
+        )
+        # GCC 15 has new warnings that ONNX 1.15.0 triggers
+        extra_flags = "--compile_no_warning_as_error "
+    else:
+        # On Ubuntu/glibc, use gcc-11
+        compiler_env = "CC=gcc-11 CXX=g++-11"
+        cmake_extra = "CMAKE_POSITION_INDEPENDENT_CODE=ON"
+        extra_flags = ""
+
     bash(
         (
             f"source {venv_dir}/bin/activate && "
-            f"CC=gcc-{gcc_version} CXX=g++-{gcc_version} "
+            f"{compiler_env} "
             f"{build_dir / 'build.sh'} "
             "--config Release "
             f"--parallel {parallelism} "
             "--skip_tests "
             "--allow_running_as_root "  # needed for building in docker
             "--build_shared_lib "  # always build shared library
-            "--cmake_extra_defines CMAKE_POSITION_INDEPENDENT_CODE=ON"
+            f"{extra_flags}"
+            f"--cmake_extra_defines {cmake_extra}"
         )
     )
     elapsed_time = time.time() - start_time

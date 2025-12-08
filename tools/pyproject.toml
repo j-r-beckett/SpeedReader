@@ -6,10 +6,16 @@ authors = [
     { name = "Jimmy Beckett", email = "jimmybeckett1+github@gmail.com" }
 ]
 requires-python = "~=3.11.0"
+# Core dependencies needed for all builds (musl-compatible)
 dependencies = [
     "click",
     "rich",
     "psutil",
+]
+
+[project.optional-dependencies]
+# Model conversion tools - only work on glibc
+models = [
     "onnx",
     "onnxruntime",
     "onnxsim",

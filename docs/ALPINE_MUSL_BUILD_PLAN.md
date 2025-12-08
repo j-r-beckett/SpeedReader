@@ -18,9 +18,16 @@ docker ps -a | grep act
 docker start <container-id> && docker exec -it <container-id> /bin/bash
 ```
 
-Only use a clean environment (`rm -rf /tmp/artifacts && act push --artifact-server-path /tmp/artifacts` without `-r`) if the build environment is corrupted.
+During ONNX builds, don't use `-r` - cmake state corruption is too easy and hard to diagnose. Use clean builds:
+```bash
+rm -rf /tmp/artifacts && act push --artifact-server-path /tmp/artifacts -j build-onnx-musl
+```
+
+Once ONNX is built successfully, use `-r` for speedreader_ort and .NET builds - container reuse is crucial there since those builds are iterative.
 
 ## Development Philosophy
+
+**Don't stop until done.** Continue working until either: (1) the build is hopelessly blocked and the plan is fundamentally unsound, or (2) a statically linked and functional speedreader binary has been successfully built and tested.
 
 **Minimal changes only.** We should only make changes when they're needed, and only make the minimal change needed to solve the problem.
 

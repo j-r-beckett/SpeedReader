@@ -8,7 +8,7 @@ from utils import ScriptError, bash, info, error, format_duration
 
 # @click.command()
 # @click.option("--platform-dir", help="Platform directory in build output", required=True)
-def build_speedreader_libs(platform_dir):
+def build_speedreader_libs(platform_dir, musl=False):
     platform_dir = Path(platform_dir).resolve()
     native_dir = Path(__file__).parent.parent / "native"
     lib_dir = platform_dir / "lib" / "speedreader_ort"

@@ -11,7 +11,9 @@ set -euo pipefail
 
 # Extract container ID from mountinfo
 # Looks for: /var/lib/docker/containers/<64-hex-chars>/
-CONTAINER_ID=$(cat /proc/self/mountinfo | grep -oP '/var/lib/docker/containers/\K[a-f0-9]{64}(?=/)' | head -n1)
+# Uses sed instead of grep -P for POSIX/BusyBox compatibility
+# The `|| true` handles SIGPIPE when head closes the pipe early
+CONTAINER_ID=$(sed -n 's|.*/var/lib/docker/containers/\([a-f0-9]\{64\}\)/.*|\1|p' /proc/self/mountinfo | head -n1 || true)
 
 if [ -z "$CONTAINER_ID" ]; then
     echo "ERROR: Could not extract container ID from /proc/self/mountinfo" >&2
