@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using System.Numerics.Tensors;
-using CommunityToolkit.HighPerformance;
 using Ocr.Geometry;
 
 namespace Ocr.Algorithms;

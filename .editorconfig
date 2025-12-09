@@ -136,12 +136,12 @@ csharp_space_between_square_brackets = false
 file_header_template = Copyright (c) 2025 j-r-beckett\nLicensed under the Apache License, Version 2.0
 dotnet_diagnostic.IDE0073.severity = warning
 
+# Remove unused using statements
+dotnet_diagnostic.IDE0005.severity = warning
+
 # Xml project files
 [*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,nativeproj,locproj}]
 indent_size = 2
-
-# Remove unused using statements
-dotnet_diagnostic.IDE0005.severity = warning
 
 # Require accessibility modifiers
 dotnet_style_require_accessibility_modifiers = always:warning

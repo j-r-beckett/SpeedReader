@@ -1,21 +1,12 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Net.WebSockets;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Channels;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Ocr;
 using Ocr.InferenceEngine;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.PixelFormats;
 using Model = Ocr.InferenceEngine.Model;
 
 namespace Frontend.Server;

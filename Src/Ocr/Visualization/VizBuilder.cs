@@ -10,7 +10,6 @@ using Resources.Viz;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using Point = Ocr.Geometry.Point;
 
 namespace Ocr.Visualization;
 

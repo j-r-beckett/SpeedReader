@@ -2,13 +2,10 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
-using Frontend;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Ocr;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
-using Ocr.InferenceEngine.Engines;
 using Ocr.Visualization;
 using Resources.Font;
 using SixLabors.Fonts;

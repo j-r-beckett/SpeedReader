@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Microsoft.Extensions.Logging;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 using TestUtils;

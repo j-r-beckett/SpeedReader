@@ -1,13 +1,8 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Frontend;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Ocr;
-using Ocr.Geometry;
 using Ocr.InferenceEngine;
-using Ocr.InferenceEngine.Engines;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using TestUtils;
