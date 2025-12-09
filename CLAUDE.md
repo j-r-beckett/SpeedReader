@@ -1,126 +1,62 @@
 # CLAUDE.md
 
-## Guidance
-- ...
-- 100% test pass rate is enforced by a pre-commit hook. The ONLY acceptable pass rate for tests is 100%
-- Changing test tuning or disabling tests to get to 100% pass rate is NEVER acceptable
-- Feature development is only complete once the build succeeds with zero warnings and all tests pass
-- When working on a feature, try to build and test while developing the feature instead of only once at the end
-- Avoid excessive or overly helpful commenting
-- Do not make any changes outside the scope of the current feature
-- If the user mentions a type you're not familiar with, learn how to use it by doing a quick search through the codebase
-- Always use synthetic data during testing. Use ImageSharp to generate images with text. See examples in existing tests for how to do this properly
-- If the user mentions any URLs, types, or files, always be sure to read them in their entirety even if they don't seem immediately relevant. Do this even if the user doesn't explicitly ask you to view the URL/type/file. You should, on your initiative, access and read EVERY reference mentioned by the user.
+# Introduction
 
-## Projects
+SpeedReader is a high-performance OCR engine implemented in C# and compiled to native code for distribution.
 
-### Frontend
-Application entrypoint. Builds a self-contained binary that can identify and recognize text in images and videos. Can be used either as a CLI tool or as an API server.
+# Codebase Map
 
-### Frontend.Test
-
-### Ocr
-OCR functionality. Uses a TPL Dataflow pipeline: text detection (DBNet) -> text recognition (SVTR) -> post-processing.
-
-The entire pipeline is wrapped by Src/Ocr/Blocks/OcrBlock.cs. When trying to understand how the pipeline works, start in OcrBlock and expand outward.
-
-All control flow blocks should have BoundedCapacity = 1. This ensures backpressure, and prevents the pipeline from having excessive internal capacity.
-
-All blocks should propagate completion. This can be done either by using `.LinkTo(new DataflowLinkOptions { PropagateCompletion = true })`, or with this idiom:
-
-```csharp
-block.Completion.ContinueWith(t =>
-{
-    if (t.IsFaulted)
-    {
-        ((IDataflowBlock)nextBlock).Fault(t.Exception);
-    }
-    else
-    {
-        nextBlock.Complete();
-    }
-});
-```
-
-When trying to understand how the parts of Dataflow pipeline fit together, focus on the input and output types of blocks and how blocks are linked together.
-
-Complex algorithms are implemented in static classes in Src/Ocr/Algorithms.
-
-### Ocr.Test
-
-### Resources
-Embeds application resources in the application binary and makes them available to other projects.
-
-Contains models, fonts, the SVG visualization template, and ffmpeg and ffprobe binaries. All embedded resources should be managed by this project.
-
-### Resources.Test
-
-### Video
-Decodes and encodes videos using ffmpeg.
-
-Starts an ffmpeg process using CliWrap, then interacts with it using pipes to provide backpressure (ffmpeg stops accepting input over stdin when its internal buffer is full).
-
-### Video.Test
-
-### TestUtils
-Contains utilities useful for testing.
-- Backpressure: utility for verifying that Dataflow blocks emit and respond to backpressure
-- CapturingLogger: saves logger output
-- TestLogger: log to console in a unit test
-- FileSystemUrlPublisher: saves images (and other data) to disk, and writes log messages containing URLs that point to written files
-
-## Development
-
-## Package Management
-- All package versions are managed in `Directory.Packages.props`. Project files reference packages without version attributes
-- Use `dotnet package add` to add new packages and `dotnet reference add` to add new project references. Do not edit project files manually
-- Never introduce a new dependency without consulting the user
-
-## Build and Test
-```bash
-# Build entire solution
-dotnet build
-
-# Run all tests with timeout protection (ALWAYS use timeout to prevent hanging)
-# IMPORTANT: Always build first to prevent stale tests when build fails
-timeout 60s bash -c "dotnet build && dotnet test --no-build"
-
-# Run specific test with detailed output
-timeout 60s bash -c "dotnet build && dotnet test --no-build --logger 'console;verbosity=detailed' --filter 'CanDecodeRedBlueFrames'"
-
-# Run a standalone C# file, useful for experimentation
-dotnet run MyFile.cs
-```
-
-## CLI
-```bash
-# Run the CLI application
-dotnet run --project Src/Frontend/ -- [arguments]
-
-# Start and wait for debugger to attach
-SPEEDREADER_DEBUG_WAIT=true dotnet run --project Src/Frontend/ -- [arguments]
-```
-
-```bash
-# CLI help
-$ dotnet run --project Src/Frontend/ -- -h
-Description:
-  SpeedReader - Blazing fast OCR
-
-Usage:
-  speedread [<inputs>...] [command] [options]
-
-Arguments:
-  <inputs>  Input image files
-
-Options:
-  --serve                        Run as HTTP server
-  --viz <Basic|Diagnostic|None>  Visualization mode [default: None]
-  --json                         Full JSON output with detailed metadata and confidence scores
-  --version                      Show version information
-  -?, -h, --help                 Show help and usage information
-
-
-Commands:
-  video <path> <frameRate>  Process video files with OCR
-```
+.
+|-- .github
+|   |-- workflows
+|       `-- build.yml  // Build a statically linked binary in a musl environment
+|-- models  // Model files in onnx format
+|-- native  // C code and header file for speedreader_ort
+|-- Src
+|   |-- Frontend  // SpeedReader binary
+|   |   |-- Cli
+|   |   |-- Server  // Webserver started by ./speedreader serve
+|   |   |-- Web  // Example telemetry stack for server mode, useful for local development
+|   |       |-- Monitoring  // Prometheus, grafana, otel-collector configuration
+|   |       |-- Dockerfile  // Dockerfile for speedreader
+|   |       |-- compose.yml  // Speedreader, monitoring infrastructure, Caddy
+|   |       `-- run.sh  // Builds speedreader, builds docker image, runs `docker compose down`, runs `docker compose up`
+|   |   |-- Program.cs  // Application entrypoint
+|   |-- Native  // C# interface to libonnxruntime. Use P/Invokes to call speedreader_ort, which in turn wraps the onnx runtime
+|   |-- Ocr  // Core library, contains all Ocr functionality
+|   |   |-- Algorithms  // Various algorithms used in detection or recognition
+|   |   |-- Geometry  // Geometry pipeline for turning collections of points into OCR bounding boxes
+|   |   |-- InferenceEngine  // Abstraction around onnx inference; parallelism, batching, monitoring, adaptive tuning
+|   |   |   |-- ServiceCollectionExtensions.cs  // DI for inference engine, used by OcrPipeline DI
+|   |   |-- SmartMetrics  // High-resolution OTEL gauges to track averages, throughputs
+|   |   |-- Telemetry  // Legacy, to be deleted
+|   |   |-- Visualization  // Visualize OCR results as interactive SVGs
+|   |   |-- OcrPipeline.cs  // Orchestrates TextDetector, TextRecognizer
+|   |   |-- ServiceCollectionExtensions.cs  // DI for OcrPipeline
+|   |   |-- TextDetector.cs  // Preprocess -> inference engine (DbNet) -> postprocess
+|       `-- TextRecognizer.cs  // Preprocess -> inference engine (SVTRv2) -> postprocess
+|   |-- Ocr.Test
+|   |   |-- Algorithms
+|   |   |-- E2E  // E2E tests exercise inference; debug detection failures by inspecting the generated visualizations (paths logged to console)
+|   |   |   |-- TextDetectorE2ETests.cs
+|   |   |   |-- OcrPipelineE2ETests.cs
+|   |   |   `-- TextRecognizerE2ETests.cs  // NEVER adjust expected confidence; lower than expected confidence ALWAYS indicates a bug
+|   |   |-- FlowControl
+|       `-- Geometry
+|   |-- Resources  // Non-code resources embedded in the TEXT section of the speedreader binary
+|   |   |-- CharDict  // Dictionary for text recognition model
+|   |   |-- Font  // Avoid dependence on system fonts
+|   |   |-- Viz  // SVG template for visualization
+|   |   `-- Weights  // Model weights (int8 DbNet, fp32 SVTRv2); symlinks to models/
+|   |-- Resources.Test
+|   |-- TestUtils
+|   |   |-- FileSystemUrlPublisher.cs  // Print filenames as clickable URLs
+|       `-- TestLogger.cs  // Log to the console during a unit test; `dotnet test ... --logger "console;verbosity=normal"`
+|-- tools
+|   |-- build.py  // Build onnx, build speedreader_ort
+|   |-- build_dbnet.py  // Convert externally sourced dbnet .pth to onnx, and quantize to int8
+|   |-- build_onnx.py  // Build the onnx runtime
+|   `-- build_speedreader_libs.py  // Build speedreader_ort
+|-- .editorconfig  // Formatting rules
+|-- Directory.Packages.props  // Package versions
+`-- hello.png  // A test image

@@ -15,11 +15,11 @@ using Xunit.Abstractions;
 
 namespace Ocr.Test.E2E;
 
-public class TextReaderE2ETests
+public class OcrPipelineE2ETests
 {
     private readonly TestLogger _logger;
 
-    public TextReaderE2ETests(ITestOutputHelper outputHelper) => _logger = new TestLogger(outputHelper);
+    public OcrPipelineE2ETests(ITestOutputHelper outputHelper) => _logger = new TestLogger(outputHelper);
 
     [Fact]
     public async Task ReadOne_ReturnsCorrectResult_WideImage()
