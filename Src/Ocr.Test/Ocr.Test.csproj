@@ -27,7 +27,6 @@
   <ItemGroup>
     <ProjectReference Include="../TestUtils/TestUtils.csproj" />
     <ProjectReference Include="../Resources/Resources.csproj" />
-    <ProjectReference Include="../Frontend/Frontend.csproj" />
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
