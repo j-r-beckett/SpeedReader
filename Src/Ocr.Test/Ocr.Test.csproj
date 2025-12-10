@@ -34,16 +34,6 @@
     <Folder Include="Algorithms\" />
   </ItemGroup>
 
-  <!-- Copy native shared libraries for testing -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == ''">
-    <Content Include="../../target/platforms/linux-x64/lib/speedreader_ort/shared/speedreader_ort.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>libspeedreader_ort.so</Link>
-    </Content>
-    <Content Include="../../target/platforms/linux-x64/lib/onnxruntime/shared/libonnxruntime.so.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>%(Filename)%(Extension)</Link>
-    </Content>
-  </ItemGroup>
+  <Import Project="../Native/Native.Managed.targets" />
 
 </Project>

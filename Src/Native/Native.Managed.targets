@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Managed build configuration: dynamically link both speedreader_ort and onnxruntime.
+    Copies shared libraries to output directory for P/Invoke at runtime.
+    Only applies to non-publish builds (dotnet build/run/test).
+  -->
+
+  <!-- Copy shared libraries for managed execution (dotnet build/run) -->
+  <ItemGroup Condition="'$(_IsPublishing)' != 'true' AND ('$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == '')">
+    <Content Include="$(MSBuildThisFileDirectory)../../target/platforms/linux-x64/lib/speedreader_ort/shared/speedreader_ort.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libspeedreader_ort.so</Link>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)../../target/platforms/linux-x64/lib/onnxruntime/shared/libonnxruntime.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
+</Project>

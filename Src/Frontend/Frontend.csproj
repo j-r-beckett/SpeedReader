@@ -34,65 +34,8 @@
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
-  <!-- Build Configuration -->
-  <PropertyGroup>
-    <!-- Default to static linking, can override with -p:OnnxLinkMode=Dynamic -->
-    <OnnxLinkMode Condition="'$(OnnxLinkMode)' == ''">Static</OnnxLinkMode>
-    <LibDir>$(MSBuildThisFileDirectory)../../target/platforms/$(RuntimeIdentifier)/lib</LibDir>
-  </PropertyGroup>
-
-  <!-- Always statically link speedreader_ort wrapper -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
-    <DirectPInvoke Include="speedreader_ort" />
-    <LinkerArg Include="$(LibDir)/speedreader_ort/static/speedreader_ort.a" />
-  </ItemGroup>
-
-  <!-- ONNX Runtime: Static linking mode -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' AND '$(OnnxLinkMode)' == 'Static'">
-    <LinkerArg Include="-Wl,--start-group" />
-    <LinkerArg Include="$(LibDir)/onnxruntime/static/onnxruntime.a" />
-    <LinkerArg Include="-Wl,--end-group" />
-    <LinkerArg Include="-lstdc++" />
-    <LinkerArg Include="-lpthread" />
-    <LinkerArg Include="-Wl,-z,noexecstack" />
-  </ItemGroup>
-
-  <!-- ONNX Runtime: Dynamic linking mode -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' AND '$(OnnxLinkMode)' == 'Dynamic'">
-    <LinkerArg Include="-L$(LibDir)/onnxruntime/shared" />
-    <LinkerArg Include="-lonnxruntime" />
-    <LinkerArg Include="-Wl,-rpath,'$ORIGIN'" />
-    <LinkerArg Include="-lstdc++" />
-    <LinkerArg Include="-lpthread" />
-  </ItemGroup>
-
-  <!-- Copy ONNX shared library to output for dynamic mode -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' AND '$(OnnxLinkMode)' == 'Dynamic'">
-    <None Include="$(LibDir)/onnxruntime/shared/libonnxruntime.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>%(Filename)%(Extension)</Link>
-    </None>
-  </ItemGroup>
-
-  <!-- linux-musl-x64: Produce fully static binary -->
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-musl-x64'">
-    <StaticExecutable>true</StaticExecutable>
-  </PropertyGroup>
-
-  <!-- linux-musl-x64: Always statically link speedreader_ort wrapper -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-musl-x64'">
-    <DirectPInvoke Include="speedreader_ort" />
-    <LinkerArg Include="$(LibDir)/speedreader_ort/static/speedreader_ort.a" />
-  </ItemGroup>
-
-  <!-- linux-musl-x64: ONNX Runtime static linking (musl only supports static) -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-musl-x64'">
-    <LinkerArg Include="-Wl,--start-group" />
-    <LinkerArg Include="$(LibDir)/onnxruntime/static/onnxruntime.a" />
-    <LinkerArg Include="-Wl,--end-group" />
-    <LinkerArg Include="-lstdc++" />
-    <LinkerArg Include="-lpthread" />
-    <LinkerArg Include="-Wl,-z,noexecstack" />
-  </ItemGroup>
+  <!-- Native libraries -->
+  <Import Project="..\Native\Native.Managed.targets" />
+  <Import Project="..\Native\Native.Aot.targets" />
 
 </Project>

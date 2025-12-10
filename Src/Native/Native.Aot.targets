@@ -1,0 +1,55 @@
+<Project>
+  <!--
+    AOT build configuration for native libraries.
+    Requires OnnxLinkMode to be set to 'Static' or 'Dynamic'.
+  -->
+
+  <!-- Validate OnnxLinkMode is explicitly set -->
+  <Target Name="ValidateOnnxLinkMode" BeforeTargets="IlcCompile">
+    <Error Condition="'$(OnnxLinkMode)' != 'Static' AND '$(OnnxLinkMode)' != 'Dynamic'"
+           Text="OnnxLinkMode must be set to 'Static' or 'Dynamic'. Use -p:OnnxLinkMode=Static or -p:OnnxLinkMode=Dynamic" />
+    <Error Condition="'$(OnnxLinkMode)' == 'Dynamic' AND '$(RuntimeIdentifier)' == 'linux-musl-x64'"
+           Text="Dynamic linking is not supported on musl. Use -p:OnnxLinkMode=Static" />
+  </Target>
+
+  <PropertyGroup>
+    <NativeLibDir Condition="'$(NativeLibDir)' == ''">$(MSBuildThisFileDirectory)../../target/platforms/$(RuntimeIdentifier)/lib</NativeLibDir>
+  </PropertyGroup>
+
+  <!-- linux-musl-x64: Fully static binary -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-musl-x64'">
+    <StaticExecutable>true</StaticExecutable>
+  </PropertyGroup>
+
+  <!-- Speedreader_ort is always statically linked -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-musl-x64'">
+    <DirectPInvoke Include="speedreader_ort" />
+    <LinkerArg Include="$(NativeLibDir)/speedreader_ort/static/speedreader_ort.a" />
+  </ItemGroup>
+
+  <!-- Statically link onnxruntime, linux-x64 and linux-musl-x64 -->
+  <ItemGroup Condition="'$(OnnxLinkMode)' == 'Static' AND ('$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-musl-x64')">
+    <LinkerArg Include="-Wl,--start-group" />
+    <LinkerArg Include="$(NativeLibDir)/onnxruntime/static/onnxruntime.a" />
+    <LinkerArg Include="-Wl,--end-group" />
+  </ItemGroup>
+
+  <!-- Dynamically link onnxruntime (linux-x64 only) -->
+  <ItemGroup Condition="'$(OnnxLinkMode)' == 'Dynamic' AND '$(RuntimeIdentifier)' == 'linux-x64'">
+    <LinkerArg Include="-L$(NativeLibDir)/onnxruntime/shared" />
+    <LinkerArg Include="-lonnxruntime" />
+    <LinkerArg Include="-Wl,-rpath,'$ORIGIN'" />
+    <None Include="$(NativeLibDir)/onnxruntime/shared/libonnxruntime.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
+  <!-- Common linker flags, used for both static and dynamic linking -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-musl-x64'">
+    <LinkerArg Include="-lstdc++" />
+    <LinkerArg Include="-lpthread" />
+    <LinkerArg Include="-Wl,-z,noexecstack" />
+  </ItemGroup>
+
+</Project>
