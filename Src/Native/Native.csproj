@@ -5,6 +5,21 @@
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NativeLibDir>$(MSBuildThisFileDirectory)../../target/platforms/linux-x64/lib</NativeLibDir>
   </PropertyGroup>
+
+  <!-- Copy shared libraries for managed execution (flows to dependent projects via ProjectReference) -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == ''">
+    <Content Include="$(NativeLibDir)/speedreader_ort/shared/speedreader_ort.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      <Link>libspeedreader_ort.so</Link>
+    </Content>
+    <Content Include="$(NativeLibDir)/onnxruntime/shared/libonnxruntime.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      <Link>libonnxruntime.so</Link>
+    </Content>
+  </ItemGroup>
 
 </Project>

@@ -34,6 +34,4 @@
     <Folder Include="Algorithms\" />
   </ItemGroup>
 
-  <Import Project="../Native/Native.Managed.targets" />
-
 </Project>

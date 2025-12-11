@@ -34,8 +34,7 @@
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
   </ItemGroup>
 
-  <!-- Native libraries -->
-  <Import Project="..\Native\Native.Managed.targets" />
+  <!-- Native libraries: AOT linker configuration -->
   <Import Project="..\Native\Native.Aot.targets" />
 
 </Project>
