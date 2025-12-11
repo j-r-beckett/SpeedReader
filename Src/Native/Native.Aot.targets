@@ -13,7 +13,8 @@
   </Target>
 
   <PropertyGroup>
-    <NativeLibDir Condition="'$(NativeLibDir)' == ''">$(MSBuildThisFileDirectory)../../target/platforms/$(RuntimeIdentifier)/lib</NativeLibDir>
+    <SpeedReaderOrtOutDir>$(MSBuildThisFileDirectory)speedreader_ort/out</SpeedReaderOrtOutDir>
+    <OnnxOutDir>$(MSBuildThisFileDirectory)onnx/out</OnnxOutDir>
   </PropertyGroup>
 
   <!-- linux-musl-x64: Fully static binary -->
@@ -24,22 +25,22 @@
   <!-- Speedreader_ort is always statically linked -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-musl-x64'">
     <DirectPInvoke Include="speedreader_ort" />
-    <LinkerArg Include="$(NativeLibDir)/speedreader_ort/static/speedreader_ort.a" />
+    <LinkerArg Include="$(SpeedReaderOrtOutDir)/static/speedreader_ort.a" />
   </ItemGroup>
 
   <!-- Statically link onnxruntime, linux-x64 and linux-musl-x64 -->
   <ItemGroup Condition="'$(OnnxLinkMode)' == 'Static' AND ('$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-musl-x64')">
     <LinkerArg Include="-Wl,--start-group" />
-    <LinkerArg Include="$(NativeLibDir)/onnxruntime/static/onnxruntime.a" />
+    <LinkerArg Include="$(OnnxOutDir)/static/onnxruntime.a" />
     <LinkerArg Include="-Wl,--end-group" />
   </ItemGroup>
 
   <!-- Dynamically link onnxruntime (linux-x64 only) -->
   <ItemGroup Condition="'$(OnnxLinkMode)' == 'Dynamic' AND '$(RuntimeIdentifier)' == 'linux-x64'">
-    <LinkerArg Include="-L$(NativeLibDir)/onnxruntime/shared" />
+    <LinkerArg Include="-L$(OnnxOutDir)/shared" />
     <LinkerArg Include="-lonnxruntime" />
     <LinkerArg Include="-Wl,-rpath,'$ORIGIN'" />
-    <None Include="$(NativeLibDir)/onnxruntime/shared/libonnxruntime.so">
+    <None Include="$(OnnxOutDir)/shared/libonnxruntime.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>%(Filename)%(Extension)</Link>
     </None>

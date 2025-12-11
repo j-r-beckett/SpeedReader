@@ -26,12 +26,12 @@ jobs:
           node --version
           ln -sf /usr/bin/node /usr/local/bin/node || true
       - uses: actions/checkout@v5
+        with:
+          submodules: recursive
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Sync uv
-        run: cd tools && ~/.local/bin/uv sync --link-mode=copy
       - name: Install zig
         run: |
           if [ ! -d /opt/zig ]; then
@@ -41,18 +41,20 @@ jobs:
             rm -f zig-linux-x86_64-0.13.0.tar.xz
           fi
           echo "/opt/zig" >> $GITHUB_PATH
-      - name: Build Libs
-        run: cd tools && ~/.local/bin/uv run build.py --onnx-version 1.15.0 --musl
+      - name: Build ONNX Runtime
+        run: Src/Native/onnx/build.py --version 1.15.0 --musl
+      - name: Build speedreader_ort
+        run: Src/Native/speedreader_ort/build.py
       - name: Upload onnxruntime.a (musl)
         uses: actions/upload-artifact@v4
         with:
           name: onnxruntime-musl.a
-          path: target/platforms/linux-musl-x64/lib/onnxruntime/static/onnxruntime.a
+          path: Src/Native/onnx/out/static/onnxruntime.a
       - name: Upload speedreader_ort.a (musl)
         uses: actions/upload-artifact@v4
         with:
           name: speedreader_ort-musl.a
-          path: target/platforms/linux-musl-x64/lib/speedreader_ort/static/speedreader_ort.a
+          path: Src/Native/speedreader_ort/out/static/speedreader_ort.a
       - name: Debug Info
         if: always()
         run: |
@@ -63,33 +65,34 @@ jobs:
     name: Build the ONNX Runtime
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
-      # - run: echo "$(pwd)/.github/workflows" >> $GITHUB_PATH
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Sync uv
-        run: cd tools && uv sync --link-mode=copy --extra models
       - name: Install zig
         uses: mlugg/setup-zig@v2
-      - name: Build Libs
-        run: cd tools && uv run build.py --onnx-version 1.15.0
+      - name: Build ONNX Runtime
+        run: Src/Native/onnx/build.py --version 1.15.0
+      - name: Build speedreader_ort
+        run: Src/Native/speedreader_ort/build.py
       - name: Upload libonnxruntime.so
         uses: actions/upload-artifact@v4
         with:
           name: libonnxruntime.so
-          path: target/platforms/linux-x64/lib/onnxruntime/shared/libonnxruntime.so
+          path: Src/Native/onnx/out/shared/libonnxruntime.so
       - name: Upload onnxruntime.a
         uses: actions/upload-artifact@v4
         with:
           name: onnxruntime.a
-          path: target/platforms/linux-x64/lib/onnxruntime/static/onnxruntime.a
+          path: Src/Native/onnx/out/static/onnxruntime.a
       - name: Upload speedreader_ort.a
         uses: actions/upload-artifact@v4
         with:
           name: speedreader_ort.a
-          path: target/platforms/linux-x64/lib/speedreader_ort/static/speedreader_ort.a
+          path: Src/Native/speedreader_ort/out/static/speedreader_ort.a
       - name: Debug Info
         if: always()
         run: |
@@ -101,19 +104,19 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build-onnx
     steps:
-      - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: libonnxruntime.so
-          path: target/platforms/linux-x64/lib/onnxruntime/shared
+          path: Src/Native/onnx/out/shared
       - uses: actions/download-artifact@v4
         with:
           name: onnxruntime.a
-          path: target/platforms/linux-x64/lib/onnxruntime/static
+          path: Src/Native/onnx/out/static
       - uses: actions/download-artifact@v4
         with:
           name: speedreader_ort.a
-          path: target/platforms/linux-x64/lib/speedreader_ort/static
+          path: Src/Native/speedreader_ort/out/static
       - name: Install Dotnet
         uses: actions/setup-dotnet@v5
         with:
@@ -191,11 +194,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: onnxruntime-musl.a
-          path: target/platforms/linux-musl-x64/lib/onnxruntime/static
+          path: Src/Native/onnx/out/static
       - uses: actions/download-artifact@v4
         with:
           name: speedreader_ort-musl.a
-          path: target/platforms/linux-musl-x64/lib/speedreader_ort/static
+          path: Src/Native/speedreader_ort/out/static
       - name: Build Statically Linked Binary
         run: dotnet publish -r linux-musl-x64 Src/Frontend --property OnnxLinkMode=Static
       - name: Upload Statically Linked Binary (musl)
@@ -237,4 +240,3 @@ jobs:
         run: |
           ID=$(./.github/workflows/get-container-id.sh --short)
           echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
-
