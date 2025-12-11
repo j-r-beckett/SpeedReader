@@ -284,26 +284,31 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "click" },
+    { name = "psutil" },
+    { name = "rich" },
+]
+
+[package.optional-dependencies]
+models = [
     { name = "numpy" },
     { name = "onnx" },
     { name = "onnxruntime" },
     { name = "onnxsim" },
     { name = "pillow" },
-    { name = "psutil" },
-    { name = "rich" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "click" },
-    { name = "numpy" },
-    { name = "onnx" },
-    { name = "onnxruntime" },
-    { name = "onnxsim" },
-    { name = "pillow" },
+    { name = "numpy", marker = "extra == 'models'" },
+    { name = "onnx", marker = "extra == 'models'" },
+    { name = "onnxruntime", marker = "extra == 'models'" },
+    { name = "onnxsim", marker = "extra == 'models'" },
+    { name = "pillow", marker = "extra == 'models'" },
     { name = "psutil" },
     { name = "rich" },
 ]
+provides-extras = ["models"]
 
 [[package]]
 name = "sympy"

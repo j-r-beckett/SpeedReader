@@ -1,10 +1,11 @@
 #!/usr/bin/env -S uv run
 
+import click
 import time
 import psutil
 import shutil
 from pathlib import Path
-from utils import ScriptError, bash, info, format_duration
+from utils import ScriptError, bash, info, error, format_duration
 
 
 def get_parallel_jobs() -> int:
@@ -215,3 +216,19 @@ def build_onnx(onnx_version, platform_dir, musl=False):
     lib_dir.mkdir(parents=True, exist_ok=True)
     version_file.write_text(onnx_version)
     info(f"Wrote version {onnx_version} to {version_file}")
+
+
+@click.command()
+@click.option("--version", "onnx_version", required=True, help="ONNX Runtime version (e.g. 1.15.0)")
+@click.option("--platform-dir", required=True, help="Platform output directory")
+@click.option("--musl", is_flag=True, help="Build for Alpine Linux (musl libc)")
+def main(onnx_version, platform_dir, musl):
+    """Build ONNX Runtime libraries."""
+    build_onnx(onnx_version, platform_dir, musl=musl)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except ScriptError as e:
+        error(f"Fatal: {e}")

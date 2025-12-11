@@ -1,8 +1,9 @@
 #!/usr/bin/env -S uv run
 
+import click
 import time
 from pathlib import Path
-from utils import ScriptError, bash, info, format_duration
+from utils import ScriptError, bash, info, error, format_duration
 
 
 def build_speedreader_libs(platform_dir, musl=False):
@@ -56,3 +57,18 @@ def build_speedreader_libs(platform_dir, musl=False):
 
     elapsed_time = time.time() - start_time
     info(f"Built {static_lib} and {shared_lib} in {format_duration(elapsed_time)}")
+
+
+@click.command()
+@click.option("--platform-dir", required=True, help="Platform output directory")
+@click.option("--musl", is_flag=True, help="Build for Alpine Linux (musl libc)")
+def main(platform_dir, musl):
+    """Build speedreader_ort libraries."""
+    build_speedreader_libs(platform_dir, musl=musl)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except ScriptError as e:
+        error(f"Fatal: {e}")

@@ -22,4 +22,28 @@
     </Content>
   </ItemGroup>
 
+  <!--
+    Native library build targets.
+    Use BuildOnnx=true and/or BuildSROrt=true to trigger builds.
+    Currently builds both .so and .a; later we'll optimize to build only what's needed.
+  -->
+
+  <PropertyGroup>
+    <ToolsDir>$(MSBuildThisFileDirectory)../../tools</ToolsDir>
+    <PlatformDir>$(MSBuildThisFileDirectory)../../target/platforms/linux-x64</PlatformDir>
+  </PropertyGroup>
+
+  <!-- ONNX Runtime (Outputs="" forces target to always run when condition is met) -->
+  <Target Name="BuildOnnx" BeforeTargets="Build" Condition="'$(BuildOnnx)' == 'true'" Outputs="">
+    <Error Condition="'$(OnnxVersion)' == ''" Text="OnnxVersion is required when BuildOnnx=true. Use -p:OnnxVersion=1.15.0" />
+    <Exec Command="cd $(ToolsDir) &amp;&amp; uv run build_onnx.py --version $(OnnxVersion) --platform-dir $(PlatformDir)"
+          StandardOutputImportance="high" StandardErrorImportance="high" />
+  </Target>
+
+  <!-- speedreader_ort (requires onnx to be built first) -->
+  <Target Name="BuildSROrt" BeforeTargets="Build" Condition="'$(BuildSROrt)' == 'true'" Outputs="">
+    <Exec Command="cd $(ToolsDir) &amp;&amp; uv run build_speedreader_libs.py --platform-dir $(PlatformDir)"
+          StandardOutputImportance="high" StandardErrorImportance="high" />
+  </Target>
+
 </Project>
