@@ -11,7 +11,6 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- workflows
 |       `-- build.yml  // Build a statically linked binary in a musl environment
 |-- models  // Model files in onnx format
-|-- native  // C code and header file for speedreader_ort
 |-- Src
 |   |-- Frontend  // SpeedReader binary
 |   |   |-- Cli
@@ -23,6 +22,13 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |       `-- run.sh  // Builds speedreader, builds docker image, runs `docker compose down`, runs `docker compose up`
 |   |   |-- Program.cs  // Application entrypoint
 |   |-- Native  // C# interface to libonnxruntime. Use P/Invokes to call speedreader_ort, which in turn wraps the onnx runtime
+|   |   |-- onnx  // ONNX runtime build infrastructure
+|   |   |   |-- build.py  // Build the onnx runtime
+|   |   |   `-- external/onnxruntime  // Git submodule
+|   |   |-- speedreader_ort  // C wrapper for ONNX runtime
+|   |   |   |-- build.py  // Build speedreader_ort
+|   |   |   |-- speedreader_ort.c
+|   |   |   `-- speedreader_ort.h
 |   |-- Ocr  // Core library, contains all Ocr functionality
 |   |   |-- Algorithms  // Various algorithms used in detection or recognition
 |   |   |-- Geometry  // Geometry pipeline for turning collections of points into OCR bounding boxes
@@ -53,10 +59,9 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |-- FileSystemUrlPublisher.cs  // Print filenames as clickable URLs
 |       `-- TestLogger.cs  // Log to the console during a unit test; `dotnet test ... --logger "console;verbosity=normal"`
 |-- tools
-|   |-- build.py  // Build onnx, build speedreader_ort
 |   |-- build_dbnet.py  // Convert externally sourced dbnet .pth to onnx, and quantize to int8
-|   |-- build_onnx.py  // Build the onnx runtime
-|   `-- build_speedreader_libs.py  // Build speedreader_ort
+|   |-- build_svtr.py  // Build SVTRv2 from source
+|   `-- utils.py  // Shared utilities for build scripts
 |-- .editorconfig  // Formatting rules
 |-- Directory.Packages.props  // Package versions
 `-- hello.png  // A test image
