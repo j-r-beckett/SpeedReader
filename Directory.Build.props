@@ -2,6 +2,5 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <NoWarn>$(NoWarn);SYSLIB5001</NoWarn>
-    <OnnxVersion>1.15.0</OnnxVersion>
   </PropertyGroup>
 </Project>

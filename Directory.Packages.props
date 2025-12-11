@@ -2,7 +2,12 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
+  <PropertyGroup>
+    <!-- Unmanaged Dependencies -->
+    <OnnxVersion>1.15.0</OnnxVersion>
+  </PropertyGroup>
   <ItemGroup>
+    <!-- Managed Dependencies -->
     <PackageVersion Include="Clipper2" Version="1.5.3" />
     <PackageVersion Include="CLIwrap" Version="3.8.2" />
     <PackageVersion Include="CommunityToolkit.HighPerformance" Version="8.4.0" />
