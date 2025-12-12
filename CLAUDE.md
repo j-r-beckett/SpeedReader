@@ -9,7 +9,8 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 .
 |-- .github
 |   |-- workflows
-|       `-- build.yml  // Build a statically linked binary in a musl environment
+|       |-- static.yml  // Build statically linked binary in musl/Alpine environment
+|       `-- dynamic.yml  // Build dynamically linked binary
 |-- models  // Model files in onnx format
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
 |   |-- build_svtr.py  // Build SVTRv2 from OpenOCR source
@@ -65,9 +66,26 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |-- FileSystemUrlPublisher.cs  // Print filenames as clickable URLs
 |       `-- TestLogger.cs  // Log to the console during a unit test; `dotnet test ... --logger "console;verbosity=normal"`
 |-- tools
+|   |-- act.py  // Run containerized CI builds locally with act; handles container reuse, cleanup, artifacts
 |   `-- utils  // Shared utilities package for build scripts
 |       |-- __init__.py  // Public API exports
 |       `-- utils.py  // bash(), info(), error(), checkout_submodule(), etc.
 |-- .editorconfig  // Formatting rules
 |-- Directory.Packages.props  // Package versions
 `-- hello.png  // A test image
+
+# Languages
+
+## C#
+
+- Always use `dotnet package` commands for adding, removing, updating packages. Avoid writing XML manually
+- There is an excellent set of unit tests only `dotnet test` away. Use it
+- Don't use XML style comments
+
+## Python
+
+- *Always* use uv: `uv run myscript.py`
+
+## C
+
+- Prefer to push complexity out of unsafe C and into managed C#
