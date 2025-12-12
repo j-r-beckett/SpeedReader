@@ -1,7 +1,10 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["click", "rich", "psutil"]
+# dependencies = ["click", "utils"]
+#
+# [tool.uv.sources]
+# utils = { path = "../../../tools/utils", editable = true }
 # ///
 
 """
@@ -12,77 +15,18 @@ Usage:
     ./build.py --version 1.15.0 --musl
 """
 
-import subprocess
 import shutil
 import time
 import psutil
 import click
 from pathlib import Path
-from rich.console import Console
-
-console = Console()
+from utils import ScriptError, bash, info, error, format_duration
 
 # Directories relative to this script
 SCRIPT_DIR = Path(__file__).parent.resolve()
 SUBMODULE_DIR = SCRIPT_DIR / "external" / "onnxruntime"
 PATCHES_DIR = SCRIPT_DIR / "patches"
 OUT_DIR = SCRIPT_DIR / "out"
-
-
-class BuildError(Exception):
-    pass
-
-
-def bash(command: str, directory: Path = None) -> str:
-    """Execute a bash command, streaming output in real-time."""
-    if directory is None:
-        directory = SCRIPT_DIR
-
-    console.print(f"$ {command}", style="yellow", highlight=False)
-
-    process = subprocess.Popen(
-        ["bash", "-c", command],
-        cwd=directory,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-
-    output_lines = []
-    for line in process.stdout:
-        output_lines.append(line)
-        console.print(line, style="bright_black", end="", highlight=False, markup=False)
-
-    return_code = process.wait()
-
-    if return_code == 127:
-        raise BuildError(f"Command {command.split()[0]} not found. Are you missing a dependency?")
-    if return_code != 0:
-        raise BuildError(f"Command failed with exit code {return_code}")
-
-    return "".join(output_lines)
-
-
-def info(msg: str):
-    console.print(msg, style="green", highlight=False, markup=False)
-
-
-def error(msg: str):
-    console.print(msg, style="red", highlight=False, markup=False)
-
-
-def format_duration(seconds: float) -> str:
-    if seconds < 60:
-        return f"{seconds:.1f}s"
-    elif seconds < 3600:
-        mins = int(seconds // 60)
-        secs = int(seconds % 60)
-        return f"{mins}m {secs}s"
-    else:
-        hours = int(seconds // 3600)
-        mins = int((seconds % 3600) // 60)
-        return f"{hours}h {mins}m"
 
 
 def get_parallel_jobs() -> int:
@@ -94,7 +38,7 @@ def get_parallel_jobs() -> int:
 def checkout_version(version: str):
     """Checkout the requested version tag from the submodule."""
     if not SUBMODULE_DIR.exists():
-        raise BuildError(f"Submodule not found at {SUBMODULE_DIR}. Run: git submodule update --init")
+        raise ScriptError(f"Submodule not found at {SUBMODULE_DIR}. Run: git submodule update --init")
 
     expected_tag = f"v{version}"
 
@@ -122,7 +66,7 @@ def create_venv() -> Path:
     requirements_file = SUBMODULE_DIR / "tools/ci_build/requirements.txt"
 
     if not requirements_file.exists():
-        raise BuildError(f"Requirements file not found: {requirements_file}")
+        raise ScriptError(f"Requirements file not found: {requirements_file}")
 
     if not venv_dir.exists():
         info("Creating ONNX Python environment")
@@ -154,7 +98,7 @@ def combine_static_libs(libs: list[Path], output_path: Path):
     mri_commands.extend(["SAVE", "END"])
 
     mri_script.write_text("\n".join(mri_commands))
-    bash(f"zig ar -M < {mri_script}")
+    bash(f"zig ar -M < {mri_script}", directory=SCRIPT_DIR)
     mri_script.unlink()
 
 
@@ -217,7 +161,8 @@ def build(onnx_version: str, musl: bool):
             "--build_shared_lib "
             f"{extra_flags}"
             f"--cmake_extra_defines {cmake_extra}"
-        )
+        ),
+        directory=SCRIPT_DIR,
     )
 
     elapsed_time = time.time() - start_time
@@ -247,7 +192,7 @@ def build(onnx_version: str, musl: bool):
             dest = shared_dir / "libonnxruntime.so"
             shutil.copy2(so, dest)
             info("Patching SONAME to libonnxruntime.so")
-            bash(f"patchelf --set-soname libonnxruntime.so {dest}")
+            bash(f"patchelf --set-soname libonnxruntime.so {dest}", directory=SCRIPT_DIR)
         info(f"Copied and patched shared library to {shared_dir}")
     else:
         info("Warning: No shared libraries found")
@@ -268,6 +213,6 @@ def build(onnx_version: str, musl: bool):
 if __name__ == "__main__":
     try:
         build()
-    except BuildError as e:
+    except ScriptError as e:
         error(f"Fatal: {e}")
         exit(1)

@@ -1,3 +1,12 @@
 [submodule "Src/Native/onnx/external/onnxruntime"]
 	path = Src/Native/onnx/external/onnxruntime
 	url = https://github.com/microsoft/onnxruntime.git
+[submodule "models/external/OpenOCR"]
+	path = models/external/OpenOCR
+	url = https://github.com/Topdu/OpenOCR.git
+[submodule "models/external/mmdeploy"]
+	path = models/external/mmdeploy
+	url = https://github.com/open-mmlab/mmdeploy
+[submodule "models/external/mmocr"]
+	path = models/external/mmocr
+	url = https://github.com/open-mmlab/mmocr
