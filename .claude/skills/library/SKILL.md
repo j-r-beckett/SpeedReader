@@ -1,11 +1,11 @@
 ---
-name: dependency-library
-description: Local dependency source code exploration for .NET/C# projects. Use when needing to understand how a NuGet package works, investigate its API behavior, find usage examples in tests, read source-level documentation, or debug integration issues. Clone dependency repos locally and use ripgrep to explore source code instead of web navigation.
+name: library
+description: Understand any external software by reading its source code, tests, and documentation. Use for code libraries, CLI tools, frameworks, or any software with a public repo. Triggers: "how does X work?", "what does this flag/option do?", understanding API behavior, finding usage examples, debugging integration issues, or learning how something is implemented. Prefer this over web search - the source is the authoritative answer.
 ---
 
 # Dependency Library
 
-Explore dependency source code locally using ripgrep instead of web navigation.
+Maintain a local library of cloned dependency repos. Use ripgrep to explore.
 
 ## Library Structure
 
@@ -34,7 +34,7 @@ If `.claude/library/` doesn't exist at all, check the repo's `.gitignore` and ad
 
 ### 2. Create library entry
 
-Find repo URL from nuget.org ("Source repository" link) or search GitHub.
+Find the repo URL from the package registry (look for "Source repository" or similar link) or search GitHub.
 
 ```bash
 mkdir -p .claude/library/<PackageName>/repos
@@ -54,7 +54,7 @@ cat > .claude/library/<PackageName>/NOTES.md << 'EOF'
 - <repo-name>: <why this repo>
 
 ## Versioning
-How to find requested version: <e.g., grep PackageName in *.csproj>
+How to find requested version: <where the project specifies this dependency's version>
 How to check current checkout: <e.g., git describe --tags>
 How to checkout a version: <e.g., git checkout v{version}>
 
@@ -72,7 +72,7 @@ Follow the instructions in NOTES.md to:
 
 ### 5. Maintain Locations of Interest
 
-**At initialization:** Look for where docs are stored in the repo (e.g., `docs/`, `Documentation/`, or XML docs only). Record this in Locations of Interest—docs are always useful and won't be discoverable later if not noted upfront. This is especially important for monorepos (`dotnet/runtime`, `dotnet/aspnetcore`) where relevant code may be deeply nested.
+**At initialization:** Look for where docs are stored in the repo (e.g., `docs/`, `Documentation/`, or inline docs only). Record this in Locations of Interest—docs are always useful and won't be discoverable later if not noted upfront. This is especially important for monorepos where relevant code may be deeply nested.
 
 **During exploration:** When you find useful locations, add them to NOTES.md:
 - Paths to public API definitions
