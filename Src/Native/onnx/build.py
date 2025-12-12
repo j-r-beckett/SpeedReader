@@ -20,7 +20,7 @@ import time
 import psutil
 import click
 from pathlib import Path
-from utils import ScriptError, bash, info, error, format_duration
+from utils import ScriptError, bash, info, error, format_duration, checkout_submodule
 
 # Directories relative to this script
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -33,31 +33,6 @@ def get_parallel_jobs() -> int:
     """Calculate safe number of parallel jobs based on available memory (1 job per 1.5GB)."""
     mem_gb = psutil.virtual_memory().total / (1024**3)
     return max(1, int(mem_gb / 1.5))
-
-
-def checkout_version(version: str):
-    """Checkout the requested version tag from the submodule."""
-    if not SUBMODULE_DIR.exists():
-        raise ScriptError(f"Submodule not found at {SUBMODULE_DIR}. Run: git submodule update --init")
-
-    expected_tag = f"v{version}"
-
-    # Check current tag
-    current_tag = bash(
-        "git describe --tags --exact-match 2>/dev/null || echo ''",
-        directory=SUBMODULE_DIR,
-    ).strip()
-
-    if current_tag == expected_tag:
-        info(f"ONNX Runtime already at {expected_tag}")
-        return
-
-    info(f"Checking out ONNX Runtime {expected_tag} (currently at {current_tag or 'unknown'})")
-
-    # Fetch the tag and checkout
-    bash(f"git fetch --depth 1 origin tag {expected_tag}", directory=SUBMODULE_DIR)
-    bash(f"git checkout {expected_tag}", directory=SUBMODULE_DIR)
-    bash("git submodule update --init --recursive --depth 1", directory=SUBMODULE_DIR)
 
 
 def create_venv() -> Path:
@@ -121,7 +96,7 @@ def build(onnx_version: str, musl: bool):
     info(f"Building ONNX Runtime {onnx_version}")
 
     # Checkout requested version
-    checkout_version(onnx_version)
+    checkout_submodule(SUBMODULE_DIR, f"v{onnx_version}", "ONNX Runtime")
 
     # Apply musl patches if needed
     if musl:

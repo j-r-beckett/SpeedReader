@@ -11,6 +11,12 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- workflows
 |       `-- build.yml  // Build a statically linked binary in a musl environment
 |-- models  // Model files in onnx format
+|   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
+|   |-- build_svtr.py  // Build SVTRv2 from OpenOCR source
+|   |-- external  // Git submodules for model building
+|   |   |-- OpenOCR  // SVTRv2 source
+|   |   |-- mmdeploy  // Model deployment toolkit
+|   |   `-- mmocr  // OpenMMLab OCR toolkit
 |-- Src
 |   |-- Frontend  // SpeedReader binary
 |   |   |-- Cli
@@ -59,9 +65,8 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |-- FileSystemUrlPublisher.cs  // Print filenames as clickable URLs
 |       `-- TestLogger.cs  // Log to the console during a unit test; `dotnet test ... --logger "console;verbosity=normal"`
 |-- tools
-|   |-- build_dbnet.py  // Convert externally sourced dbnet .pth to onnx, and quantize to int8
-|   |-- build_svtr.py  // Build SVTRv2 from source
-|   `-- utils.py  // Shared utilities for build scripts
+|   `-- utils  // Shared utilities package for build scripts
+|       `-- utils.py  // bash(), info(), error(), checkout_submodule(), etc.
 |-- .editorconfig  // Formatting rules
 |-- Directory.Packages.props  // Package versions
 `-- hello.png  // A test image

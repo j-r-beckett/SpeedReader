@@ -11,49 +11,36 @@ import shutil
 import time
 import urllib.request
 from pathlib import Path
-from utils import ScriptError, bash, info, error, format_duration
+from utils import ScriptError, bash, info, error, format_duration, checkout_submodule
 
 
-def checkout_repo(repo_dir: Path, repo_url: str, version: str, repo_name: str):
-    """Clone or checkout the correct version of a git repository"""
-    if not (repo_dir / "README.md").exists():
-        repo_dir.mkdir(parents=True, exist_ok=True)
-        info(f"Cloning {repo_name} {version} to {repo_dir}")
-        bash(
-            f"git clone --depth 1 --branch {version} {repo_url} {repo_dir}"
-        )
-        if not (repo_dir / "README.md").exists():
-            raise ScriptError(f"Failed to clone {repo_name}")
-        info(f"Successfully cloned {repo_name}")
-    else:
-        info(f"{repo_name} already cloned at {repo_dir}")
-
-
-def create_openocr_venv(build_dir: Path, openocr_dir: Path) -> Path:
+def create_openocr_venv(openocr_dir: Path) -> Path:
     """Create and configure Python environment for OpenOCR"""
-    venv_dir = build_dir / ".venv_openocr"
+    # Use build/ directory which is gitignored by OpenOCR
+    venv_dir = openocr_dir / "build" / ".venv"
 
     if not venv_dir.exists():
         info("Creating OpenOCR python environment")
-        bash(f"uv venv {venv_dir} --python 3.10", directory=build_dir)
+        venv_dir.parent.mkdir(parents=True, exist_ok=True)
+        bash(f"uv venv {venv_dir} --python 3.10", directory=openocr_dir)
 
     info("Installing OpenOCR dependencies")
     # Install CPU-only PyTorch
     bash(
         f"uv pip install --python {venv_dir}/bin/python "
         f"'numpy<2.0' torch==2.0.0 torchvision==0.15.0 --index-url https://download.pytorch.org/whl/cpu",
-        directory=build_dir,
+        directory=openocr_dir,
     )
     # Install OpenOCR requirements
     bash(
         f"uv pip install --python {venv_dir}/bin/python "
         f"-r {openocr_dir}/requirements.txt",
-        directory=build_dir,
+        directory=openocr_dir,
     )
     # Install onnx for export
     bash(
         f"uv pip install --python {venv_dir}/bin/python onnx",
-        directory=build_dir,
+        directory=openocr_dir,
     )
 
     return venv_dir
@@ -140,24 +127,17 @@ def build_svtr():
     start_time = time.time()
 
     # Setup directories
-    repo_root = Path(__file__).parent.parent.resolve()
-    build_dir = repo_root / "target" / "models" / "build"
-    models_dir = repo_root / "models"
+    models_dir = Path(__file__).parent.resolve()
+    openocr_dir = models_dir / "external" / "OpenOCR"
+    checkpoint_dir = models_dir / "checkpoints"
+    # Use output/ which is gitignored by OpenOCR
+    work_dir = openocr_dir / "output"
 
-    openocr_dir = build_dir / "OpenOCR"
-    checkpoint_dir = build_dir / "checkpoints"
-    work_dir = build_dir / "svtr_work"
-
-    # Clone OpenOCR repository
-    checkout_repo(
-        openocr_dir,
-        "https://github.com/Topdu/OpenOCR.git",
-        "develop0.0.1",
-        "OpenOCR"
-    )
+    # Checkout OpenOCR submodule
+    checkout_submodule(openocr_dir, "develop0.0.1", "OpenOCR")
 
     # Create Python environment
-    venv_dir = create_openocr_venv(build_dir, openocr_dir)
+    venv_dir = create_openocr_venv(openocr_dir)
 
     # Download checkpoint
     checkpoint_url = "https://github.com/Topdu/OpenOCR/releases/download/develop0.0.1/openocr_repsvtr_ch.pth"
@@ -168,7 +148,6 @@ def build_svtr():
     model_path = build_svtr_model(openocr_dir, venv_dir, checkpoint_path, work_dir)
 
     # Copy model to final location
-    models_dir.mkdir(parents=True, exist_ok=True)
     final_model_path = models_dir / "svtrv2_base_ctc_fp32.onnx"
     shutil.copy2(model_path, final_model_path)
 
