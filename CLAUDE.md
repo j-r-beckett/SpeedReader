@@ -8,9 +8,13 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 
 .
 |-- .github
-|   |-- workflows
-|       |-- static.yml  // Build statically linked binary in musl/Alpine environment
-|       `-- dynamic.yml  // Build dynamically linked binary
+|   |-- workflows  // Thin wrappers that trigger ci/ workflows on push
+|       |-- static.yml  // Triggers ci/static.yml
+|       `-- dynamic.yml  // Triggers ci/dynamic.yml
+|-- ci  // CI workflow definitions and local development tooling
+|   |-- static.yml  // Build statically linked binary in Alpine/musl environment
+|   |-- dynamic.yml  // Build dynamically linked binary on Ubuntu
+|   `-- act.py  // Run workflows locally with act; handles container reuse, cleanup, artifacts
 |-- .external  // External repos cloned on demand by build scripts (gitignored)
 |-- models  // Model files in onnx format
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
@@ -62,7 +66,6 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |-- FileSystemUrlPublisher.cs  // Print filenames as clickable URLs
 |       `-- TestLogger.cs  // Log to the console during a unit test; `dotnet test ... --logger "console;verbosity=normal"`
 |-- tools
-|   |-- act.py  // Run containerized CI builds locally with act; handles container reuse, cleanup, artifacts
 |   `-- utils  // Shared utilities package for build scripts
 |       |-- __init__.py  // Public API exports
 |       `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.

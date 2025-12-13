@@ -1,6 +1,14 @@
 ---
 name: library
-description: Understand any external software by reading its source code, tests, and documentation. Use for code libraries, CLI tools, frameworks, or any software with a public repo. Triggers: "how does X work?", "what does this flag/option do?", understanding API behavior, finding usage examples, debugging integration issues, or learning how something is implemented. Prefer this over web search - the source is the authoritative answer.
+description: >-
+  ALWAYS use this skill FIRST (before web search) when you need to answer
+  questions about external software: CLI tools (act, docker, git, gh),
+  libraries, frameworks, or any tool with a public repo. This includes:
+  "does X have...", "can X do...", "how does X work?", "what does this
+  flag/option do?", "does X support...", capability discovery, understanding
+  behavior, finding usage examples, debugging integration issues. The source
+  code is the authoritative answer - web search gives you secondhand
+  information.
 ---
 
 # Dependency Library

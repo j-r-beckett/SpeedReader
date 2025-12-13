@@ -4,7 +4,7 @@
 # dependencies = ["click", "utils"]
 #
 # [tool.uv.sources]
-# utils = { path = "./utils", editable = true }
+# utils = { path = "../tools/utils", editable = true }
 # ///
 
 """
