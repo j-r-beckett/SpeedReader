@@ -29,7 +29,7 @@ jobs:
           name: speedreader-dynamic
           path: Src/Frontend/bin/Release/net10.0/linux-x64/publish/speedread
       - name: Debug Info
-        if: always()
+        if: ${{ env.ACT }} && always()
         run: |
           ID=$(./.github/workflows/get-container-id.sh --short)
           echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
@@ -53,7 +53,7 @@ jobs:
           chmod +x speedread
           ./speedread hello.png | grep '"text": "Hello"' || exit 1
       - name: Debug Info
-        if: always()
+        if: ${{ env.ACT }} && always()
         run: |
           ID=$(./.github/workflows/get-container-id.sh --short)
           echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
