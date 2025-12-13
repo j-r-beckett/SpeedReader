@@ -84,6 +84,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 ## Python
 
 - *Always* use uv: `uv run myscript.py`
+- All automation should be written in Python instead of shell scripts
 
 ## C
 
