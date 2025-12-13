@@ -1,11 +1,3 @@
----
-name: python-script
-description: >-
-  Use when creating or modifying Python scripts (.py files) in this repo.
-  This includes build scripts, tooling, CI helpers, model conversion scripts,
-  or any new Python automation.
----
-
 # Python Script Pattern
 
 All Python scripts in this repo follow a standard pattern. Match it exactly.
@@ -75,7 +67,6 @@ if __name__ == "__main__":
 **Use bash() only for:**
 - Invoking external tools (git, docker, compilers, zig, etc.)
 - Commands with no Python equivalent
-- Complex pipelines where shell is genuinely clearer
 
 ## Available from utils
 

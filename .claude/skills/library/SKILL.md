@@ -1,14 +1,6 @@
 ---
 name: library
-description: >-
-  ALWAYS use this skill FIRST (before web search) when you need to answer
-  questions about external software: CLI tools (act, docker, git, gh),
-  libraries, frameworks, or any tool with a public repo. This includes:
-  "does X have...", "can X do...", "how does X work?", "what does this
-  flag/option do?", "does X support...", capability discovery, understanding
-  behavior, finding usage examples, debugging integration issues. The source
-  code is the authoritative answer - web search gives you secondhand
-  information.
+description: "ALWAYS use this skill FIRST (before web search) when you need to answer questions about external software: CLI tools (act, docker, git, gh), libraries, frameworks, or any tool with a public repo. This includes: does X have..., can X do..., how does X work?, what does this flag/option do?, does X support..., capability discovery, understanding behavior, finding usage examples, debugging integration issues. The source code is the authoritative answer - web search gives you secondhand information."
 ---
 
 # Dependency Library
