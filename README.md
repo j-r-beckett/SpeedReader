@@ -16,6 +16,8 @@ Build release binaries locally with [act](github.com/nektos/act).
 
 `rm -f /tmp/speedreader && act push --artifact-server-path /tmp/speedreader -r`
 
+Recommended when opening in Rider: open src/SpeedReader.slnx -> right click on slnx -> "Add" -> "Existing Folder" -> select repo root
+
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.

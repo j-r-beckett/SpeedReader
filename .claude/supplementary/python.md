@@ -81,5 +81,5 @@ if __name__ == "__main__":
 
 See existing scripts for real examples:
 - `ci/act.py` - CLI tool with multiple options
-- `Src/Native/onnx/build.py` - Build script with version checking
+- `src/Native/onnx/build.py` - Build script with version checking
 - `models/build_svtr.py` - Complex build with venv creation

@@ -18,20 +18,20 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Build Dynamically Linked Binary
-        run: dotnet publish -r linux-x64 Src/Frontend -p:OnnxLinkMode=Dynamic -p:BuildOnnx=true -p:BuildSROrt=true
+        run: dotnet publish -r linux-x64 src/Frontend -p:OnnxLinkMode=Dynamic -p:BuildOnnx=true -p:BuildSROrt=true
       - name: Smoke Test
         run: |
-          Src/Frontend/bin/Release/net10.0/linux-x64/publish/speedread hello.png | grep '"text": "Hello"' || exit 1
+          src/Frontend/bin/Release/net10.0/linux-x64/publish/speedreader hello.png | grep '"text": "Hello"' || exit 1
       - name: Upload libonnxruntime.so
         uses: actions/upload-artifact@v4
         with:
           name: libonnxruntime.so
-          path: Src/Native/onnx/out/shared/libonnxruntime.so
+          path: src/Native/onnx/out/shared/libonnxruntime.so
       - name: Upload Dynamically Linked Binary
         uses: actions/upload-artifact@v4
         with:
           name: speedreader-dynamic
-          path: Src/Frontend/bin/Release/net10.0/linux-x64/publish/speedread
+          path: src/Frontend/bin/Release/net10.0/linux-x64/publish/speedreader
       - name: Debug Info
         if: ${{ env.ACT }} && always()
         run: uv run ./ci/get-container-id.py

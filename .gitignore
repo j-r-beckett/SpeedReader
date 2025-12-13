@@ -6,11 +6,11 @@ obj/
 datasets/
 
 # Generated ffmpeg binaries
-Src/Resources/binaries/
+src/Resources/binaries/
 
 # Native library build outputs
-Src/Native/onnx/out/
-Src/Native/speedreader_ort/out/
+src/Native/onnx/out/
+src/Native/speedreader_ort/out/
 
 # Test coverage results
 **/*.Test/TestResults

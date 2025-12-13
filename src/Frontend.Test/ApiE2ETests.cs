@@ -318,10 +318,10 @@ public class ServerFixture : IDisposable
         _serverPort = GetAvailablePort();
 
         // Set up log file path
-        _logFilePath = Path.Combine("/tmp", $"speedread-server-logs-{Guid.NewGuid():N}.txt");
+        _logFilePath = Path.Combine("/tmp", $"speedreader-server-logs-{Guid.NewGuid():N}.txt");
 
         // Start server using CliWrap with the built DLL
-        var serverDll = Path.Combine(AppContext.BaseDirectory, "speedread.dll");
+        var serverDll = Path.Combine(AppContext.BaseDirectory, "speedreader.dll");
 
         var serverCommand = CliWrap.Cli.Wrap("dotnet")
             .WithArguments($"{serverDll} --serve")

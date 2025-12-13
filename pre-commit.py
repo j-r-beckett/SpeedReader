@@ -51,19 +51,19 @@ def get_modification_hash() -> str:
 @click.command()
 def main():
     info("Running formatter")
-    bash("dotnet format --no-restore", directory=SCRIPT_DIR)
+    bash("dotnet format src/SpeedReader.slnx --no-restore", directory=SCRIPT_DIR)
 
     before_tests_hash = get_modification_hash()
 
     info("Building")
     try:
-        bash("dotnet build /warnaserror -v q", directory=SCRIPT_DIR)
+        bash("dotnet build src/SpeedReader.slnx /warnaserror -v q", directory=SCRIPT_DIR)
     except ScriptError:
         raise ScriptError("Build failed. Commit aborted.")
 
     info("Running tests")
     try:
-        bash("dotnet test -v q --no-build", directory=SCRIPT_DIR)
+        bash("dotnet test src/SpeedReader.slnx -v q --no-build", directory=SCRIPT_DIR)
     except ScriptError:
         raise ScriptError("Tests failed. Commit aborted.")
 

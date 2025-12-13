@@ -1,4 +1,0 @@
-CompileFlags:
-  Add:
-    - -I/home/jimmy/repos/SpeedReader/Src/Native/speedreader_ort
-    - -I/home/jimmy/repos/SpeedReader/Src/Native/onnx/out/include

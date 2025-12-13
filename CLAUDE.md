@@ -7,19 +7,26 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 # Codebase Map
 
 .
+|-- .editorconfig  // Generic formatting rules (indent, newlines)
+|-- .external  // External repos cloned on demand by build scripts (gitignored)
 |-- .github
-|   |-- workflows  // Thin wrappers that trigger ci/ workflows on push
+|   `-- workflows  // Thin wrappers that trigger ci/ workflows on push
 |       |-- static.yml  // Triggers ci/static.yml
 |       `-- dynamic.yml  // Triggers ci/dynamic.yml
 |-- ci  // CI workflow definitions and local development tooling
 |   |-- static.yml  // Build statically linked binary in Alpine/musl environment
 |   |-- dynamic.yml  // Build dynamically linked binary on Ubuntu
 |   `-- act.py  // Run workflows locally with act; handles container reuse, cleanup, artifacts
-|-- .external  // External repos cloned on demand by build scripts (gitignored)
 |-- models  // Model files in onnx format
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
-|   |-- build_svtr.py  // Build SVTRv2 from OpenOCR source
-|-- Src
+|   `-- build_svtr.py  // Build SVTRv2 from OpenOCR source
+|-- src  // All C# source code and build configuration
+|   |-- .editorconfig  // C#-specific formatting and style rules
+|   |-- Directory.Build.props  // MSBuild properties
+|   |-- Directory.Build.rsp  // MSBuild response file
+|   |-- Directory.Packages.props  // Central package management
+|   |-- global.json  // .NET SDK version
+|   |-- SpeedReader.slnx  // Solution file
 |   |-- Frontend  // SpeedReader binary
 |   |   |-- Cli
 |   |   |-- Server  // Webserver started by ./speedreader serve
@@ -69,8 +76,6 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   `-- utils  // Shared utilities package for build scripts
 |       |-- __init__.py  // Public API exports
 |       `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
-|-- .editorconfig  // Formatting rules
-|-- Directory.Packages.props  // Package versions
 `-- hello.png  // A test image
 
 # Languages
