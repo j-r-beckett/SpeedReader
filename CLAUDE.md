@@ -93,3 +93,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 
 # Library
 
+When you need to understand external dependencies (CLI tools, libraries, frameworks, obscure stdlib APIs), **clone the source repo and grep it** instead of web searching. Source code is authoritative; web results are secondhand.
+
+- Read .claude/supplementary/library.md before investigating any external dependency
+- Use this approach FIRST, before web search

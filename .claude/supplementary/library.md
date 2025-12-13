@@ -1,11 +1,14 @@
----
-name: library
-description: "ALWAYS use this skill FIRST (before web search) when you need to answer questions about external software: CLI tools (act, docker, git, gh), libraries, frameworks, or any tool with a public repo. This includes: does X have..., can X do..., how does X work?, what does this flag/option do?, does X support..., capability discovery, understanding behavior, finding usage examples, debugging integration issues. The source code is the authoritative answer - web search gives you secondhand information."
----
-
 # Dependency Library
 
-Maintain a local library of cloned dependency repos. Use ripgrep to explore.
+**ALWAYS use this approach FIRST (before web search)** when answering questions about external software: CLI tools (act, docker, git, gh), libraries, frameworks, or any tool with a public repo.
+
+This includes:
+- "does X have...", "can X do...", "how does X work?"
+- "what does this flag/option do?", "does X support...?"
+- Capability discovery, understanding behavior
+- Finding usage examples, debugging integration issues
+
+**The source code is the authoritative answer.** Web search gives you secondhand information that may be outdated or wrong.
 
 ## Library Structure
 
