@@ -1,8 +1,8 @@
 name: Static Build
 on: [push]
 jobs:
-  build-onnx-musl:
-    name: Build ONNX Runtime (musl)
+  build:
+    name: Build SpeedReader (Static/musl)
     runs-on: ubuntu-22.04
     container:
       image: alpine:edge
@@ -14,16 +14,20 @@ jobs:
             build-base \
             cmake \
             python3 \
+            python3-dev \
             git \
             linux-headers \
             curl \
             bash \
             xz \
             patchelf \
-            nodejs
+            nodejs \
+            coreutils \
+            dotnet10-sdk-aot \
+            clang \
+            lld \
+            zlib-static
       - uses: actions/checkout@v5
-        with:
-          submodules: recursive
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -37,54 +41,9 @@ jobs:
             rm -f zig-linux-x86_64-0.13.0.tar.xz
           fi
           echo "/opt/zig" >> $GITHUB_PATH
-      - name: Build ONNX Runtime
-        run: Src/Native/onnx/build.py --version 1.15.0 --musl
-      - name: Build speedreader_ort
-        run: Src/Native/speedreader_ort/build.py
-      - name: Upload onnxruntime.a (musl)
-        uses: actions/upload-artifact@v4
-        with:
-          name: onnxruntime-musl.a
-          path: Src/Native/onnx/out/static/onnxruntime.a
-      - name: Upload speedreader_ort.a (musl)
-        uses: actions/upload-artifact@v4
-        with:
-          name: speedreader_ort-musl.a
-          path: Src/Native/speedreader_ort/out/static/speedreader_ort.a
-      - name: Debug Info
-        if: always()
-        run: |
-          ID=$(./.github/workflows/get-container-id.sh --short)
-          echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
-
-  build-speedreader-musl:
-    name: Build SpeedReader (musl)
-    runs-on: ubuntu-22.04
-    needs: build-onnx-musl
-    container:
-      image: alpine:edge
-    steps:
-      - name: Install Alpine packages
-        run: |
-          apk add --no-cache \
-            dotnet10-sdk-aot \
-            clang \
-            lld \
-            zlib-static \
-            bash \
-            nodejs
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          name: onnxruntime-musl.a
-          path: Src/Native/onnx/out/static
-      - uses: actions/download-artifact@v4
-        with:
-          name: speedreader_ort-musl.a
-          path: Src/Native/speedreader_ort/out/static
       - name: Build Statically Linked Binary
-        run: dotnet publish -r linux-musl-x64 Src/Frontend --property OnnxLinkMode=Static
-      - name: Upload Statically Linked Binary (musl)
+        run: dotnet publish -r linux-musl-x64 Src/Frontend -p:OnnxLinkMode=Static -p:BuildOnnx=true -p:BuildSROrt=true -p:BuildMusl=true
+      - name: Upload Statically Linked Binary
         uses: actions/upload-artifact@v4
         with:
           name: speedreader-musl-static
@@ -95,10 +54,10 @@ jobs:
           ID=$(./.github/workflows/get-container-id.sh --short)
           echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
 
-  validate-speedreader-musl:
-    name: Validate SpeedReader (musl)
+  validate:
+    name: Validate SpeedReader (Static/musl)
     runs-on: ubuntu-22.04
-    needs: build-speedreader-musl
+    needs: build
     container:
       image: alpine:edge
     steps:

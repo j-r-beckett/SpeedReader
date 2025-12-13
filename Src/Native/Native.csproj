@@ -38,7 +38,10 @@
 
   <!-- ONNX Runtime (Outputs="" forces target to always run when condition is met) -->
   <Target Name="BuildOnnx" BeforeTargets="PrepareForBuild" Condition="'$(BuildOnnx)' == 'true'" Outputs="">
-    <Exec Command="$(OnnxDir)/build.py --version $(OnnxVersion)" />
+    <PropertyGroup>
+      <_OnnxMuslFlag Condition="'$(BuildMusl)' == 'true'">--musl</_OnnxMuslFlag>
+    </PropertyGroup>
+    <Exec Command="$(OnnxDir)/build.py --version $(OnnxVersion) $(_OnnxMuslFlag)" />
   </Target>
 
   <!-- speedreader_ort (requires onnx to be built first) -->

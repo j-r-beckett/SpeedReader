@@ -1,68 +1,28 @@
 name: Dynamic Build
 on: [push]
 jobs:
-  build-onnx:
-    name: Build the ONNX Runtime
+  build:
+    name: Build SpeedReader (Dynamic)
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v5
-        with:
-          submodules: recursive
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Install zig
         uses: mlugg/setup-zig@v2
-      - name: Build ONNX Runtime
-        run: Src/Native/onnx/build.py --version 1.15.0
-      - name: Build speedreader_ort
-        run: Src/Native/speedreader_ort/build.py
-      - name: Upload libonnxruntime.so
-        uses: actions/upload-artifact@v4
-        with:
-          name: libonnxruntime.so
-          path: Src/Native/onnx/out/shared/libonnxruntime.so
-      - name: Upload onnxruntime.a
-        uses: actions/upload-artifact@v4
-        with:
-          name: onnxruntime.a
-          path: Src/Native/onnx/out/static/onnxruntime.a
-      - name: Upload speedreader_ort.a
-        uses: actions/upload-artifact@v4
-        with:
-          name: speedreader_ort.a
-          path: Src/Native/speedreader_ort/out/static/speedreader_ort.a
-      - name: Debug Info
-        if: always()
-        run: |
-          ID=$(./.github/workflows/get-container-id.sh --short)
-          echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
-
-  build-speedreader:
-    name: Build SpeedReader
-    runs-on: ubuntu-22.04
-    needs: build-onnx
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          name: libonnxruntime.so
-          path: Src/Native/onnx/out/shared
-      - uses: actions/download-artifact@v4
-        with:
-          name: onnxruntime.a
-          path: Src/Native/onnx/out/static
-      - uses: actions/download-artifact@v4
-        with:
-          name: speedreader_ort.a
-          path: Src/Native/speedreader_ort/out/static
       - name: Install Dotnet
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
       - name: Build Dynamically Linked Binary
-        run: dotnet publish -r linux-x64 Src/Frontend --property OnnxLinkMode=Dynamic
+        run: dotnet publish -r linux-x64 Src/Frontend -p:OnnxLinkMode=Dynamic -p:BuildOnnx=true -p:BuildSROrt=true
+      - name: Upload libonnxruntime.so
+        uses: actions/upload-artifact@v4
+        with:
+          name: libonnxruntime.so
+          path: Src/Native/onnx/out/shared/libonnxruntime.so
       - name: Upload Dynamically Linked Binary
         uses: actions/upload-artifact@v4
         with:
@@ -74,12 +34,12 @@ jobs:
           ID=$(./.github/workflows/get-container-id.sh --short)
           echo "Debug: docker start $ID && docker exec -it $ID /bin/bash"
 
-  validate-speedreader:
-    name: Validate SpeedReader Binaries
+  validate:
+    name: Validate SpeedReader (Dynamic)
     runs-on: ubuntu-22.04
-    needs: build-speedreader
+    needs: build
     steps:
-      - uses: actions/checkout@v5  # act does a `docker cp` instead of a `git checkout`
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: libonnxruntime.so

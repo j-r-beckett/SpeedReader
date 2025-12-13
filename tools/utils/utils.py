@@ -87,28 +87,63 @@ def format_duration(seconds: float) -> str:
         return f"{hours}h {mins}m"
 
 
-def checkout_submodule(submodule_dir: Path, tag: str, name: str = None):
+def ensure_repo(repo_dir: Path, url: str, tag: str, name: str = None):
     """
-    Checkout a specific tag of a git submodule, initializing it if necessary.
+    Ensure a git repository is cloned and checked out at a specific tag.
 
     Args:
-        submodule_dir: Path to the submodule directory
+        repo_dir: Path where the repo should be cloned
+        url: Git URL to clone from
         tag: Git tag to checkout
         name: Human-readable name for logging (defaults to directory name)
     """
-    if name is None:
-        name = submodule_dir.name
+    import shutil
 
-    # Initialize submodule if not already initialized (directory missing or empty)
-    if not submodule_dir.exists() or not any(submodule_dir.iterdir()):
-        info(f"Initializing {name} submodule")
-        repo_root = bash("git rev-parse --show-toplevel").strip()
-        bash(f"git submodule update --init {submodule_dir}", directory=repo_root)
+    if name is None:
+        name = repo_dir.name
+
+    def needs_clone():
+        """Check if repo needs to be cloned."""
+        if not repo_dir.exists():
+            return True
+        if not any(repo_dir.iterdir()):
+            return True
+
+        git_dir = repo_dir / ".git"
+
+        # No .git = not a git repo
+        if not git_dir.exists():
+            info(f"{name}: not a git repo, will clone fresh")
+            shutil.rmtree(repo_dir)
+            return True
+
+        # .git is a file (submodule reference) = broken state, clone fresh
+        if git_dir.is_file():
+            info(f"{name}: has submodule .git file, will clone fresh")
+            shutil.rmtree(repo_dir)
+            return True
+
+        return False
+
+    if needs_clone():
+        info(f"Cloning {name}")
+        repo_dir.parent.mkdir(parents=True, exist_ok=True)
+        bash(
+            f"GIT_TERMINAL_PROMPT=0 git clone --depth 1 --branch {tag} {url} {repo_dir}",
+            directory=repo_dir.parent,
+        )
+        # Initialize nested submodules
+        bash(
+            "GIT_TERMINAL_PROMPT=0 git submodule update --init --recursive --depth 1",
+            directory=repo_dir,
+        )
+        info(f"{name} cloned at {tag}")
+        return
 
     # Check current tag
     current_tag = bash(
         "git describe --tags --exact-match 2>/dev/null || echo ''",
-        directory=submodule_dir,
+        directory=repo_dir,
     ).strip()
 
     if current_tag == tag:
@@ -118,6 +153,6 @@ def checkout_submodule(submodule_dir: Path, tag: str, name: str = None):
     info(f"Checking out {name} {tag} (currently at {current_tag or 'unknown'})")
 
     # Fetch the tag and checkout
-    bash(f"git fetch --depth 1 origin tag {tag}", directory=submodule_dir)
-    bash(f"git checkout {tag}", directory=submodule_dir)
-    bash("git submodule update --init --recursive --depth 1", directory=submodule_dir)
+    bash(f"GIT_TERMINAL_PROMPT=0 git fetch --depth 1 origin tag {tag}", directory=repo_dir)
+    bash(f"git checkout {tag}", directory=repo_dir)
+    bash("GIT_TERMINAL_PROMPT=0 git submodule update --init --recursive --depth 1", directory=repo_dir)

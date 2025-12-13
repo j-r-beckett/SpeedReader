@@ -1,14 +1,14 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["click", "utils"]
+# dependencies = ["click", "psutil", "utils"]
 #
 # [tool.uv.sources]
 # utils = { path = "../../../tools/utils", editable = true }
 # ///
 
 """
-Build ONNX Runtime from the submodule.
+Build ONNX Runtime from source.
 
 Usage:
     ./build.py --version 1.15.0
@@ -20,11 +20,13 @@ import time
 import psutil
 import click
 from pathlib import Path
-from utils import ScriptError, bash, info, error, format_duration, checkout_submodule
+from utils import ScriptError, bash, info, error, format_duration, ensure_repo
 
-# Directories relative to this script
+# Directories
 SCRIPT_DIR = Path(__file__).parent.resolve()
-SUBMODULE_DIR = SCRIPT_DIR / "external" / "onnxruntime"
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent
+ONNXRUNTIME_DIR = REPO_ROOT / ".external" / "onnxruntime"
+ONNXRUNTIME_URL = "https://github.com/microsoft/onnxruntime.git"
 PATCHES_DIR = SCRIPT_DIR / "patches"
 OUT_DIR = SCRIPT_DIR / "out"
 
@@ -37,20 +39,20 @@ def get_parallel_jobs() -> int:
 
 def create_venv() -> Path:
     """Create Python virtual environment for ONNX build."""
-    venv_dir = SUBMODULE_DIR / ".venv"
-    requirements_file = SUBMODULE_DIR / "tools/ci_build/requirements.txt"
+    venv_dir = ONNXRUNTIME_DIR / ".venv"
+    requirements_file = ONNXRUNTIME_DIR / "tools/ci_build/requirements.txt"
 
     if not requirements_file.exists():
         raise ScriptError(f"Requirements file not found: {requirements_file}")
 
     if not venv_dir.exists():
         info("Creating ONNX Python environment")
-        bash(f"uv venv {venv_dir} --python 3.11", directory=SUBMODULE_DIR)
+        bash(f"uv venv {venv_dir} --python 3.11", directory=ONNXRUNTIME_DIR)
 
     info("Installing ONNX Python dependencies")
     bash(
         f"uv pip sync --python {venv_dir}/bin/python {requirements_file}",
-        directory=SUBMODULE_DIR,
+        directory=ONNXRUNTIME_DIR,
     )
 
     return venv_dir
@@ -61,7 +63,7 @@ def apply_musl_patches():
     no_execinfo_patch = PATCHES_DIR / "no-execinfo.patch"
     if no_execinfo_patch.exists():
         info("Applying no-execinfo.patch for musl compatibility")
-        bash(f"patch -p1 -N < {no_execinfo_patch} || true", directory=SUBMODULE_DIR)
+        bash(f"patch -p1 -N < {no_execinfo_patch} || true", directory=ONNXRUNTIME_DIR)
 
 
 def combine_static_libs(libs: list[Path], output_path: Path):
@@ -81,7 +83,7 @@ def combine_static_libs(libs: list[Path], output_path: Path):
 @click.option("--version", "onnx_version", required=True, help="ONNX Runtime version (e.g. 1.15.0)")
 @click.option("--musl", is_flag=True, help="Build for Alpine Linux (musl libc)")
 def build(onnx_version: str, musl: bool):
-    """Build ONNX Runtime from submodule."""
+    """Build ONNX Runtime from source."""
     version_file = OUT_DIR / "version.txt"
 
     # Check if already built
@@ -95,8 +97,8 @@ def build(onnx_version: str, musl: bool):
 
     info(f"Building ONNX Runtime {onnx_version}")
 
-    # Checkout requested version
-    checkout_submodule(SUBMODULE_DIR, f"v{onnx_version}", "ONNX Runtime")
+    # Ensure onnxruntime is cloned at the requested version
+    ensure_repo(ONNXRUNTIME_DIR, ONNXRUNTIME_URL, f"v{onnx_version}", "ONNX Runtime")
 
     # Apply musl patches if needed
     if musl:
@@ -128,7 +130,7 @@ def build(onnx_version: str, musl: bool):
         (
             f"source {venv_dir}/bin/activate && "
             f"{compiler_env} "
-            f"{SUBMODULE_DIR / 'build.sh'} "
+            f"{ONNXRUNTIME_DIR / 'build.sh'} "
             "--config Release "
             f"--parallel {parallelism} "
             "--skip_tests "
@@ -152,7 +154,7 @@ def build(onnx_version: str, musl: bool):
     include_dir.mkdir(parents=True, exist_ok=True)
 
     # Combine static libraries
-    static_libs = list(SUBMODULE_DIR.rglob("Release/**/*.a"))
+    static_libs = list(ONNXRUNTIME_DIR.rglob("Release/**/*.a"))
     info(f"Found {len(static_libs)} static libraries")
 
     combined_archive = static_dir / "onnxruntime.a"
@@ -161,7 +163,7 @@ def build(onnx_version: str, musl: bool):
     info(f"Created {combined_archive}")
 
     # Copy and patch shared library
-    shared_libs = list(SUBMODULE_DIR.rglob("Release/**/libonnxruntime.so"))
+    shared_libs = list(ONNXRUNTIME_DIR.rglob("Release/**/libonnxruntime.so"))
     if shared_libs:
         for so in shared_libs:
             dest = shared_dir / "libonnxruntime.so"
@@ -173,7 +175,7 @@ def build(onnx_version: str, musl: bool):
         info("Warning: No shared libraries found")
 
     # Copy headers
-    header_src = SUBMODULE_DIR / "include" / "onnxruntime" / "core" / "session"
+    header_src = ONNXRUNTIME_DIR / "include" / "onnxruntime" / "core" / "session"
     if header_src.exists():
         headers = list(header_src.glob("*.h"))
         for header in headers:

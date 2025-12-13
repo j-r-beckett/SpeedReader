@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 import onnxruntime
 from onnxruntime.quantization import quantize_static, CalibrationDataReader, QuantType
-from utils import ScriptError, bash, info, error, format_duration, checkout_submodule
+from utils import ScriptError, bash, info, error, format_duration, ensure_repo
 from download_dataset import download_dataset
 
 
@@ -194,14 +194,14 @@ def build_dbnet():
     datasets_dir = repo_root / "datasets"
     checkpoint_dir = models_dir / "checkpoints"
 
-    mmdeploy_dir = models_dir / "external" / "mmdeploy"
-    mmocr_dir = models_dir / "external" / "mmocr"
+    mmdeploy_dir = repo_root / ".external" / "mmdeploy"
+    mmocr_dir = repo_root / ".external" / "mmocr"
     # Use work_dirs/ which is gitignored by mmdeploy
     work_dir = mmdeploy_dir / "work_dirs" / "dbnet"
 
-    # Checkout submodules
-    checkout_submodule(mmdeploy_dir, "v1.3.1", "mmdeploy")
-    checkout_submodule(mmocr_dir, "v1.0.1", "mmocr")
+    # Ensure repos are cloned at the requested versions
+    ensure_repo(mmdeploy_dir, "https://github.com/open-mmlab/mmdeploy.git", "v1.3.1", "mmdeploy")
+    ensure_repo(mmocr_dir, "https://github.com/open-mmlab/mmocr.git", "v1.0.1", "mmocr")
 
     # Create Python environment
     venv_dir = create_mmdeploy_venv(mmdeploy_dir)

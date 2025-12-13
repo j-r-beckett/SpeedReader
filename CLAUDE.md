@@ -11,13 +11,10 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- workflows
 |       |-- static.yml  // Build statically linked binary in musl/Alpine environment
 |       `-- dynamic.yml  // Build dynamically linked binary
+|-- .external  // External repos cloned on demand by build scripts (gitignored)
 |-- models  // Model files in onnx format
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
 |   |-- build_svtr.py  // Build SVTRv2 from OpenOCR source
-|   |-- external  // Git submodules for model building
-|   |   |-- OpenOCR  // SVTRv2 source
-|   |   |-- mmdeploy  // Model deployment toolkit
-|   |   `-- mmocr  // OpenMMLab OCR toolkit
 |-- Src
 |   |-- Frontend  // SpeedReader binary
 |   |   |-- Cli
@@ -30,8 +27,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |-- Program.cs  // Application entrypoint
 |   |-- Native  // C# interface to libonnxruntime. Use P/Invokes to call speedreader_ort, which in turn wraps the onnx runtime
 |   |   |-- onnx  // ONNX runtime build infrastructure
-|   |   |   |-- build.py  // Build the onnx runtime
-|   |   |   `-- external/onnxruntime  // Git submodule
+|   |   |   `-- build.py  // Build the onnx runtime
 |   |   |-- speedreader_ort  // C wrapper for ONNX runtime
 |   |   |   |-- build.py  // Build speedreader_ort
 |   |   |   |-- speedreader_ort.c
@@ -69,7 +65,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- act.py  // Run containerized CI builds locally with act; handles container reuse, cleanup, artifacts
 |   `-- utils  // Shared utilities package for build scripts
 |       |-- __init__.py  // Public API exports
-|       `-- utils.py  // bash(), info(), error(), checkout_submodule(), etc.
+|       `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
 |-- .editorconfig  // Formatting rules
 |-- Directory.Packages.props  // Package versions
 `-- hello.png  // A test image

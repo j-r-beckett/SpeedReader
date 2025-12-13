@@ -11,7 +11,7 @@ import shutil
 import time
 import urllib.request
 from pathlib import Path
-from utils import ScriptError, bash, info, error, format_duration, checkout_submodule
+from utils import ScriptError, bash, info, error, format_duration, ensure_repo
 
 
 def create_openocr_venv(openocr_dir: Path) -> Path:
@@ -128,13 +128,14 @@ def build_svtr():
 
     # Setup directories
     models_dir = Path(__file__).parent.resolve()
-    openocr_dir = models_dir / "external" / "OpenOCR"
+    repo_root = models_dir.parent
+    openocr_dir = repo_root / ".external" / "OpenOCR"
     checkpoint_dir = models_dir / "checkpoints"
     # Use output/ which is gitignored by OpenOCR
     work_dir = openocr_dir / "output"
 
-    # Checkout OpenOCR submodule
-    checkout_submodule(openocr_dir, "develop0.0.1", "OpenOCR")
+    # Ensure OpenOCR is cloned at the requested version
+    ensure_repo(openocr_dir, "https://github.com/Topdu/OpenOCR.git", "develop0.0.1", "OpenOCR")
 
     # Create Python environment
     venv_dir = create_openocr_venv(openocr_dir)

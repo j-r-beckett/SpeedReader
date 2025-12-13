@@ -45,4 +45,12 @@ __pycache__/
 
 # Model checkpoints
 models/checkpoints/
+
+# External dependencies (cloned on demand by build scripts)
+.external/
+
+# Claude Code
 .claude/library
+
+# act output
+.act-artifacts/
