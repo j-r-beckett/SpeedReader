@@ -10,9 +10,9 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |-- .editorconfig  // Generic formatting rules (indent, newlines)
 |-- .external  // External repos cloned on demand by build scripts (gitignored)
 |-- .github
-|   `-- workflows  // Thin wrappers that trigger ci/ workflows on push
-|       |-- static.yml  // Triggers ci/static.yml
-|       `-- dynamic.yml  // Triggers ci/dynamic.yml
+|   `-- workflows  // Symlinks to ci/ workflows
+|       |-- static.yml -> ../../ci/static.yml
+|       `-- dynamic.yml -> ../../ci/dynamic.yml
 |-- ci  // CI workflow definitions and local development tooling
 |   |-- static.yml  // Build statically linked binary in Alpine/musl environment
 |   |-- dynamic.yml  // Build dynamically linked binary on Ubuntu

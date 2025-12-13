@@ -1,5 +1,1 @@
-name: Dynamic Build
-on: [push]
-jobs:
-  dynamic:
-    uses: ./.github/../ci/dynamic.yml
+../../ci/dynamic.yml

@@ -1,6 +1,5 @@
 name: Dynamic Build
-on:
-  workflow_call:
+on: [push]
 jobs:
   build:
     name: Build SpeedReader (Dynamic)

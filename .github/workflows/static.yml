@@ -1,5 +1,1 @@
-name: Static Build
-on: [push]
-jobs:
-  static:
-    uses: ./.github/../ci/static.yml
+../../ci/static.yml
