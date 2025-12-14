@@ -1,0 +1,19 @@
+name: Build
+on: [push]
+jobs:
+  static:
+    name: Build SpeedReader (Static/musl)
+    runs-on: ubuntu-22.04
+    container:
+      image: alpine:edge
+    steps:
+      - run: apk add --no-cache git bash
+      - uses: actions/checkout@v5
+      - uses: ./ci/actions/static-build
+
+  dynamic:
+    name: Build SpeedReader (Dynamic)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./ci/actions/dynamic-build

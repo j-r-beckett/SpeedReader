@@ -3,6 +3,34 @@ description: Build SpeedReader with static linking (musl)
 runs:
   using: composite
   steps:
+    - name: Install Alpine packages
+      shell: bash
+      run: |
+        apk upgrade --no-cache
+        apk add --no-cache \
+          build-base \
+          cmake \
+          python3 \
+          python3-dev \
+          git \
+          git-lfs \
+          linux-headers \
+          curl \
+          bash \
+          xz \
+          patchelf \
+          nodejs \
+          coreutils \
+          dotnet10-sdk-aot \
+          clang \
+          lld \
+          zlib-static \
+          file
+    - name: Configure git and pull LFS
+      shell: bash
+      run: |
+        git config --global --add safe.directory $GITHUB_WORKSPACE
+        git lfs pull
     - name: Install uv
       shell: bash
       run: |

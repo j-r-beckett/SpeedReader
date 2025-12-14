@@ -11,13 +11,11 @@
 Run GitHub Actions workflows locally using act.
 
 Usage:
-    ./act.py static              # Run static.yml workflow
+    ./act.py static              # Run static job
+    ./act.py dynamic             # Run dynamic job
     ./act.py static --clean      # Clean containers/volumes first, then run
-    ./act.py static -j build-onnx-musl  # Run specific job
-    ./act.py dynamic --clean -j build-onnx  # Clean and run specific job
 """
 
-import json
 import re
 import shutil
 from pathlib import Path
@@ -30,29 +28,6 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 DEFAULT_ARTIFACTS_PATH = REPO_ROOT / ".act-artifacts"
-
-
-def get_workflow_file(workflow: str) -> Path:
-    """Resolve workflow name to file path."""
-    # Try exact match first
-    workflow_file = WORKFLOWS_DIR / workflow
-    if workflow_file.exists():
-        return workflow_file
-
-    # Try with .yml extension
-    workflow_file = WORKFLOWS_DIR / f"{workflow}.yml"
-    if workflow_file.exists():
-        return workflow_file
-
-    # Try with .yaml extension
-    workflow_file = WORKFLOWS_DIR / f"{workflow}.yaml"
-    if workflow_file.exists():
-        return workflow_file
-
-    raise ScriptError(
-        f"Workflow '{workflow}' not found. "
-        f"Available workflows: {', '.join(f.stem for f in WORKFLOWS_DIR.glob('*.yml'))}"
-    )
 
 
 def get_workflow_name(workflow_file: Path) -> str:
@@ -76,9 +51,15 @@ def sanitize_for_container_name(name: str) -> str:
     return sanitized
 
 
-def find_act_containers(workflow_name: str) -> list[str]:
-    """Find Docker containers created by act for a given workflow."""
-    sanitized = sanitize_for_container_name(f"act-{workflow_name}")
+JOB_NAMES = {
+    "static": "Build SpeedReader (Static/musl)",
+    "dynamic": "Build SpeedReader (Dynamic)",
+}
+
+
+def find_act_containers(workflow_name: str, job_name: str) -> list[str]:
+    """Find Docker containers created by act for a given job."""
+    sanitized = sanitize_for_container_name(f"act-{workflow_name}-{job_name}")
     result = bash(
         f"docker ps -a --format '{{{{.Names}}}}' | grep -E '^{sanitized}' || true",
         directory=REPO_ROOT,
@@ -87,9 +68,9 @@ def find_act_containers(workflow_name: str) -> list[str]:
     return containers
 
 
-def find_act_volumes(workflow_name: str) -> list[str]:
-    """Find Docker volumes created by act for a given workflow."""
-    sanitized = sanitize_for_container_name(f"act-{workflow_name}")
+def find_act_volumes(workflow_name: str, job_name: str) -> list[str]:
+    """Find Docker volumes created by act for a given job."""
+    sanitized = sanitize_for_container_name(f"act-{workflow_name}-{job_name}")
     result = bash(
         f"docker volume ls --format '{{{{.Name}}}}' | grep -E '^{sanitized}' || true",
         directory=REPO_ROOT,
@@ -98,11 +79,11 @@ def find_act_volumes(workflow_name: str) -> list[str]:
     return volumes
 
 
-def clean_workflow(workflow_name: str):
-    """Remove all containers and volumes for a workflow."""
-    info(f"Cleaning containers and volumes for workflow: {workflow_name}")
+def clean_job(workflow_name: str, job_name: str):
+    """Remove all containers and volumes for a job."""
+    info(f"Cleaning containers and volumes for job: {job_name}")
 
-    containers = find_act_containers(workflow_name)
+    containers = find_act_containers(workflow_name, job_name)
     if containers:
         info(f"Removing {len(containers)} container(s)")
         for container in containers:
@@ -110,7 +91,7 @@ def clean_workflow(workflow_name: str):
     else:
         info("No containers to remove")
 
-    volumes = find_act_volumes(workflow_name)
+    volumes = find_act_volumes(workflow_name, job_name)
     if volumes:
         info(f"Removing {len(volumes)} volume(s)")
         for volume in volumes:
@@ -127,28 +108,25 @@ def clear_artifacts(artifacts_path: Path):
     artifacts_path.mkdir(parents=True, exist_ok=True)
 
 
+WORKFLOW_FILE = WORKFLOWS_DIR / "build.yml"
+
+
 @click.command()
-@click.argument("workflow")
+@click.argument("job", type=click.Choice(["static", "dynamic"]))
 @click.option("--clean", is_flag=True, help="Clean containers/volumes before running")
-@click.option("-j", "--job", "job_id", help="Run a specific job ID")
-@click.option(
-    "--artifacts-path",
-    type=click.Path(path_type=Path),
-    default=DEFAULT_ARTIFACTS_PATH,
-    help="Path for artifact storage",
-)
-def main(workflow: str, clean: bool, job_id: str | None, artifacts_path: Path):
-    """Run a GitHub Actions workflow locally using act.
+def main(job: str, clean: bool):
+    """Run a GitHub Actions job locally using act.
 
-    WORKFLOW is the name of the workflow file (e.g., 'static' or 'static.yml').
+    JOB is the job to run (static or dynamic).
     """
-    workflow_file = get_workflow_file(workflow)
-    workflow_name = get_workflow_name(workflow_file)
+    workflow_name = get_workflow_name(WORKFLOW_FILE)
+    artifacts_path = DEFAULT_ARTIFACTS_PATH / job
 
-    info(f"Workflow: {workflow_name} ({workflow_file.name})")
+    job_name = JOB_NAMES[job]
+    info(f"Workflow: {workflow_name}, Job: {job_name}")
 
     if clean:
-        clean_workflow(workflow_name)
+        clean_job(workflow_name, job_name)
 
     # Always clear and recreate artifacts directory
     clear_artifacts(artifacts_path)
@@ -157,12 +135,10 @@ def main(workflow: str, clean: bool, job_id: str | None, artifacts_path: Path):
     cmd_parts = [
         "act",
         "-r",  # Always reuse containers
-        f"-W {workflow_file}",
+        f"-W {WORKFLOW_FILE}",
         f"--artifact-server-path {artifacts_path}",
+        f"-j {job}",
     ]
-
-    if job_id:
-        cmd_parts.append(f"-j {job_id}")
 
     cmd = " ".join(cmd_parts)
 
