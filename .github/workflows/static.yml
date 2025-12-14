@@ -29,4 +29,6 @@ jobs:
             zlib-static \
             file
       - uses: actions/checkout@v5
+        with:
+          lfs: true
       - uses: ./ci/actions/static-build

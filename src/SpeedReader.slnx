@@ -13,4 +13,5 @@
     <Project Path="Resources/Resources.csproj" />
     <Project Path="TestUtils/TestUtils.csproj" />
   </Folder>
+  <Project Path="Native.Test/Native.Test.csproj" />
 </Solution>
