@@ -84,17 +84,6 @@ def combine_static_libs(libs: list[Path], output_path: Path):
 @click.option("--musl", is_flag=True, help="Build for Alpine Linux (musl libc)")
 def build(onnx_version: str, musl: bool):
     """Build ONNX Runtime from source."""
-    version_file = OUT_DIR / "version.txt"
-
-    # Check if already built
-    if version_file.exists():
-        built_version = version_file.read_text().strip()
-        if built_version == onnx_version:
-            info(f"ONNX Runtime {onnx_version} already built, skipping")
-            return
-        else:
-            info(f"Version mismatch: have {built_version}, need {onnx_version}")
-
     info(f"Building ONNX Runtime {onnx_version}")
 
     # Ensure onnxruntime is cloned at the requested version
@@ -181,10 +170,6 @@ def build(onnx_version: str, musl: bool):
         for header in headers:
             shutil.copy2(header, include_dir / header.name)
         info(f"Copied {len(headers)} headers to {include_dir}")
-
-    # Write version file
-    version_file.write_text(onnx_version)
-    info(f"Wrote version {onnx_version} to {version_file}")
 
 
 if __name__ == "__main__":
