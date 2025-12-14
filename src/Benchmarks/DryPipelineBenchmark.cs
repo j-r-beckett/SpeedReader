@@ -18,7 +18,7 @@ namespace Benchmarks;
 [SimpleJob(RuntimeMoniker.Net10_0)]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
 [MemoryDiagnoser]
-public class OcrPipelineBenchmark
+public class DryPipelineBenchmark
 {
     private Image<Rgb24> _image = null!;
     private TextDetector _detector = null!;

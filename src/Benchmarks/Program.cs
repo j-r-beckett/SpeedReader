@@ -4,4 +4,4 @@
 using BenchmarkDotNet.Running;
 using Benchmarks;
 
-BenchmarkRunner.Run<OcrPipelineBenchmark>();
+BenchmarkRunner.Run<DryPipelineBenchmark>();
