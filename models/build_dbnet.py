@@ -1,10 +1,10 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["click", "onnx", "onnxruntime", "onnxsim", "pillow", "numpy", "utils"]
+# dependencies = ["click", "onnx", "onnxruntime", "onnxsim", "pillow", "numpy", "build_utils"]
 #
 # [tool.uv.sources]
-# utils = { path = "../tools/utils", editable = true }
+# build_utils = { path = "../build_utils", editable = true }
 # ///
 
 import os
@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 import onnxruntime
 from onnxruntime.quantization import quantize_static, CalibrationDataReader, QuantType
-from utils import ScriptError, bash, info, error, format_duration, ensure_repo
+from build_utils import ScriptError, bash, info, error, format_duration, ensure_repo
 from download_dataset import download_dataset
 
 

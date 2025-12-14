@@ -72,10 +72,9 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   `-- TestUtils
 |       |-- FileSystemUrlPublisher.cs  // Print filenames as clickable URLs
 |       `-- TestLogger.cs  // Log to the console during a unit test; `dotnet test ... --logger "console;verbosity=normal"`
-|-- tools
-|   `-- utils  // Shared utilities package for build scripts
-|       |-- __init__.py  // Public API exports
-|       `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
+|-- build_utils  // Shared utilities package for build scripts
+|   |-- __init__.py  // Public API exports
+|   `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
 `-- hello.png  // A test image
 
 # Languages

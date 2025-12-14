@@ -1,16 +1,16 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["click", "utils"]
+# dependencies = ["click", "build_utils"]
 #
 # [tool.uv.sources]
-# utils = { path = "../tools/utils", editable = true }
+# build_utils = { path = "../build_utils", editable = true }
 # ///
 
 import tarfile
 import urllib.request
 from pathlib import Path
-from utils import ScriptError, info, error
+from build_utils import ScriptError, info, error
 
 BASE_URL = "https://jimmybeckett.com/speedreader/datasets"
 

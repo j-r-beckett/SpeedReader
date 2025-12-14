@@ -1,17 +1,17 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["utils"]
+# dependencies = ["build_utils"]
 #
 # [tool.uv.sources]
-# utils = { path = "../tools/utils", editable = true }
+# build_utils = { path = "../build_utils", editable = true }
 # ///
 
 import shutil
 import time
 import urllib.request
 from pathlib import Path
-from utils import ScriptError, bash, info, error, format_duration, ensure_repo
+from build_utils import ScriptError, bash, info, error, format_duration, ensure_repo
 
 
 def create_openocr_venv(openocr_dir: Path) -> Path:

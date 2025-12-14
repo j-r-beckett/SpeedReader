@@ -1,10 +1,10 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["click", "utils"]
+# dependencies = ["click", "build_utils"]
 #
 # [tool.uv.sources]
-# utils = { path = "../tools/utils", editable = true }
+# build_utils = { path = "../build_utils", editable = true }
 # ///
 
 """
@@ -24,7 +24,7 @@ from pathlib import Path
 
 import click
 
-from utils import ScriptError, bash, error, info
+from build_utils import ScriptError, bash, error, info
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent

@@ -8,10 +8,10 @@ All Python scripts in this repo follow a standard pattern. Match it exactly.
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["click", "utils"]
+# dependencies = ["click", "build_utils"]
 #
 # [tool.uv.sources]
-# utils = { path = "RELATIVE_PATH/tools/utils", editable = true }
+# build_utils = { path = "RELATIVE_PATH/build_utils", editable = true }
 # ///
 
 """
@@ -23,7 +23,7 @@ Usage:
 
 from pathlib import Path
 import click
-from utils import bash, info, error, ScriptError
+from build_utils import bash, info, error, ScriptError
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
@@ -44,8 +44,8 @@ if __name__ == "__main__":
 ## Key Elements
 
 - **Shebang**: `#!/usr/bin/env -S uv run --script` - makes script directly executable
-- **PEP 723 metadata**: Inline dependencies, always include `utils`
-- **utils path**: Adjust `RELATIVE_PATH` based on script location (e.g., `../tools/utils` from `ci/`)
+- **PEP 723 metadata**: Inline dependencies, always include `build_utils`
+- **build_utils path**: Adjust `RELATIVE_PATH` based on script location (e.g., `../build_utils` from `ci/`)
 - **SCRIPT_DIR**: Anchors all path operations
 - **Click**: Use for CLI arguments/options
 - **Error handling**: Wrap main() in try/except for ScriptError
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 - Invoking external tools (git, docker, compilers, zig, etc.)
 - Commands with no Python equivalent
 
-## Available from utils
+## Available from build_utils
 
 - `bash(cmd, directory=)` - Run shell command with streaming output
 - `info(msg)` - Green status message
