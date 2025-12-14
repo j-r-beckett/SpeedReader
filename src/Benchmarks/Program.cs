@@ -5,3 +5,4 @@ using BenchmarkDotNet.Running;
 using Benchmarks;
 
 BenchmarkRunner.Run<DryPipelineBenchmark>();
+BenchmarkRunner.Run<StartupBenchmark>();
