@@ -1,1 +1,32 @@
-../../ci/static.yml
+name: Static Build
+on: [push]
+jobs:
+  build:
+    name: Build SpeedReader (Static/musl)
+    runs-on: ubuntu-22.04
+    container:
+      image: alpine:edge
+    steps:
+      - name: Install Alpine packages
+        run: |
+          apk upgrade --no-cache
+          apk add --no-cache \
+            build-base \
+            cmake \
+            python3 \
+            python3-dev \
+            git \
+            linux-headers \
+            curl \
+            bash \
+            xz \
+            patchelf \
+            nodejs \
+            coreutils \
+            dotnet10-sdk-aot \
+            clang \
+            lld \
+            zlib-static \
+            file
+      - uses: actions/checkout@v5
+      - uses: ./ci/actions/static-build

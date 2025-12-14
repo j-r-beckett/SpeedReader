@@ -1,1 +1,9 @@
-../../ci/dynamic.yml
+name: Dynamic Build
+on: [push]
+jobs:
+  build:
+    name: Build SpeedReader (Dynamic)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./ci/actions/dynamic-build

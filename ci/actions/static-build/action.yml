@@ -1,0 +1,40 @@
+name: Static Build Steps
+description: Build SpeedReader with static linking (musl)
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      shell: bash
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    - name: Install zig
+      shell: bash
+      run: |
+        if [ ! -d /opt/zig ]; then
+          wget -q https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar xf zig-linux-x86_64-0.13.0.tar.xz
+          mv zig-linux-x86_64-0.13.0 /opt/zig
+          rm -f zig-linux-x86_64-0.13.0.tar.xz
+        fi
+        echo "/opt/zig" >> $GITHUB_PATH
+    - name: Build Statically Linked Binary
+      shell: bash
+      run: dotnet publish -r linux-musl-x64 src/Frontend -p:OnnxLinkMode=Static -p:BuildOnnx=true -p:BuildSROrt=true -p:BuildMusl=true
+    - name: Verify Static Binary
+      shell: bash
+      run: |
+        file src/Frontend/bin/Release/net10.0/linux-musl-x64/publish/speedreader | grep -q "static-pie linked\|statically linked" || { echo "ERROR: Binary is not statically linked"; file src/Frontend/bin/Release/net10.0/linux-musl-x64/publish/speedreader; exit 1; }
+    - name: Smoke Test
+      shell: bash
+      run: |
+        src/Frontend/bin/Release/net10.0/linux-musl-x64/publish/speedreader hello.png | grep '"text": "Hello"' || exit 1
+    - name: Upload Statically Linked Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: speedreader-musl-static
+        path: src/Frontend/bin/Release/net10.0/linux-musl-x64/publish/speedreader
+    - name: Debug Info
+      if: ${{ env.ACT }} && always()
+      shell: bash
+      run: uv run ./ci/get-container-id.py

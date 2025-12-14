@@ -10,12 +10,15 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |-- .editorconfig  // Generic formatting rules (indent, newlines)
 |-- .external  // External repos cloned on demand by build scripts (gitignored)
 |-- .github
-|   `-- workflows  // Symlinks to ci/ workflows
-|       |-- static.yml -> ../../ci/static.yml
-|       `-- dynamic.yml -> ../../ci/dynamic.yml
-|-- ci  // CI workflow definitions and local development tooling
-|   |-- static.yml  // Build statically linked binary in Alpine/musl environment
-|   |-- dynamic.yml  // Build dynamically linked binary on Ubuntu
+|   `-- workflows  // Workflow stubs that call composite actions in ci/actions/
+|       |-- static.yml  // Stub for static build
+|       `-- dynamic.yml  // Stub for dynamic build
+|-- ci  // CI composite actions and local development tooling
+|   |-- actions
+|   |   |-- static-build  // Build statically linked binary in Alpine/musl environment
+|   |   |   `-- action.yml
+|   |   `-- dynamic-build  // Build dynamically linked binary on Ubuntu
+|   |       `-- action.yml
 |   `-- act.py  // Run workflows locally with act; handles container reuse, cleanup, artifacts
 |-- models  // Model files in onnx format
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
