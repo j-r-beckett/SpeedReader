@@ -30,5 +30,7 @@ jobs:
             zlib-static \
             file
       - uses: actions/checkout@v5
-      - run: git lfs pull
+      - run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          git lfs pull
       - uses: ./ci/actions/static-build
