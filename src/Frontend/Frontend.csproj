@@ -13,9 +13,9 @@
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <SelfContained>true</SelfContained>
-  </PropertyGroup>
+<!--  <PropertyGroup Condition="'$(Configuration)' == 'Release'">-->
+<!--    <SelfContained>true</SelfContained>-->
+<!--  </PropertyGroup>-->
 
   <ItemGroup>
     <PackageReference Include="Npgsql" />

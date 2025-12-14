@@ -30,6 +30,8 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- Directory.Packages.props  // Central package management
 |   |-- global.json  // .NET SDK version
 |   |-- SpeedReader.slnx  // Solution file
+|   |-- Benchmarks  // BenchmarkDotNet performance benchmarks
+|   |   `-- DryPipelineBenchmark.cs  // Pipeline benchmarks (preprocess, postprocess)
 |   |-- Frontend  // SpeedReader binary
 |   |   |-- Cli
 |   |   |-- Server  // Webserver started by ./speedreader serve
@@ -39,6 +41,9 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |   |-- compose.yml  // Speedreader, monitoring infrastructure, Caddy
 |   |   |   `-- run.sh  // Builds speedreader, builds docker image, runs `docker compose down`, runs `docker compose up`
 |   |   `-- Program.cs  // Application entrypoint
+|   |-- Frontend.Test  // Frontend integration tests
+|   |   |-- ApiE2ETests.cs
+|   |   `-- WebSocketTests.cs
 |   |-- Native  // C# interface to libonnxruntime. Use P/Invokes to call speedreader_ort, which in turn wraps the onnx runtime
 |   |   |-- onnx  // ONNX runtime build infrastructure
 |   |   |   `-- build.py  // Build the onnx runtime
@@ -46,6 +51,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |       |-- build.py  // Build speedreader_ort
 |   |       |-- speedreader_ort.c
 |   |       `-- speedreader_ort.h
+|   |-- Native.Test  // Native library tests
 |   |-- Ocr  // Core library, contains all Ocr functionality
 |   |   |-- Algorithms  // Various algorithms used in detection or recognition
 |   |   |-- Geometry  // Geometry pipeline for turning collections of points into OCR bounding boxes
@@ -78,6 +84,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |-- build_utils  // Shared utilities package for build scripts
 |   |-- __init__.py  // Public API exports
 |   `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
+|-- pre-commit.py  // Git pre-commit hook script
 `-- hello.png  // A test image
 
 # Languages

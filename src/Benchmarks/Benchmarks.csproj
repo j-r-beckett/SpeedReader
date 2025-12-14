@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Ocr\Ocr.csproj" />
     <ProjectReference Include="..\Resources\Resources.csproj" />
+    <ProjectReference Include="..\Frontend\Frontend.csproj" />
   </ItemGroup>
 
   <ItemGroup>
