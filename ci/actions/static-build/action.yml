@@ -35,6 +35,6 @@ runs:
         name: speedreader-musl-static
         path: src/Frontend/bin/Release/net10.0/linux-musl-x64/publish/speedreader
     - name: Debug Info
-      if: ${{ env.ACT }} && always()
+      if: ${{ env.ACT && always() }}
       shell: bash
       run: uv run ./ci/get-container-id.py
