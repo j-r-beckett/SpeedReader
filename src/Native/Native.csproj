@@ -44,8 +44,12 @@
     <Exec Command="$(OnnxDir)/build.py --version $(OnnxVersion) $(_OnnxMuslFlag)" />
   </Target>
 
-  <!-- speedreader_ort (requires onnx to be built first) -->
-  <Target Name="BuildSROrt" BeforeTargets="PrepareForBuild" Condition="'$(BuildSROrt)' == 'true'" Outputs="">
+  <!--
+    speedreader_ort: must run after BuildOnnx.
+    - Needs onnx headers for compilation (build.py clones onnxruntime repo to get them)
+    - Needs libonnxruntime.so for linking speedreader_ort.so
+  -->
+  <Target Name="BuildSROrt" BeforeTargets="PrepareForBuild" DependsOnTargets="BuildOnnx" Condition="'$(BuildSROrt)' == 'true'" Outputs="">
     <Exec Command="$(SpeedReaderOrtDir)/build.py" />
   </Target>
 
