@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Numerics.Tensors;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using Ocr.Algorithms;
 using Ocr.Geometry;
@@ -40,6 +41,7 @@ public class TextRecognizer
         _inputHeight = options.RecognitionInputHeight;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public List<(float[], int[])> Preprocess(List<BoundingBox> regions, Image<Rgb24> image)
     {
         var result = new List<(float[], int[])>();
@@ -68,6 +70,7 @@ public class TextRecognizer
         }
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public List<(string Text, double Confidence)> Postprocess((float[], int[])[] inferenceOutput)
     {
 #if DEBUG

@@ -54,3 +54,6 @@ models/checkpoints/
 
 # act output
 .act-artifacts/
+
+# BenchmarkDotnet
+*.Artifacts/

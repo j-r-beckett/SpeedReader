@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using CommunityToolkit.HighPerformance;
 using Microsoft.Extensions.DependencyInjection;
 using Ocr.Algorithms;
@@ -39,6 +40,7 @@ public class TextDetector
 
     private const double OverlapMultiplier = 0.05;
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public List<(float[] Data, int[] Shape)> Preprocess(Image<Rgb24> image, Tiling tiling, VizBuilder vizBuilder)
     {
         vizBuilder.AddBaseImage(image);
@@ -73,6 +75,7 @@ public class TextDetector
         }
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public List<BoundingBox> Postprocess((float[] Data, int[] Shape)[] inferenceOutputs, Tiling tiling, Image<Rgb24> originalImage, VizBuilder vizBuilder)
     {
         var tileRects = tiling.Tiles;
