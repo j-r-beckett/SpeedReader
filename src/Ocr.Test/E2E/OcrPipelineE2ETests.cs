@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ocr.InferenceEngine;
 using SixLabors.ImageSharp;
@@ -10,11 +11,20 @@ using Xunit.Abstractions;
 
 namespace Ocr.Test.E2E;
 
-public class OcrPipelineE2ETests
+public class OcrPipelineE2ETests : IAsyncLifetime
 {
     private readonly TestLogger _logger;
+    private ServiceProvider? _provider;
 
     public OcrPipelineE2ETests(ITestOutputHelper outputHelper) => _logger = new TestLogger(outputHelper);
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync()
+    {
+        if (_provider is not null)
+            await _provider.DisposeAsync();
+    }
 
     [Fact]
     public async Task ReadOne_ReturnsCorrectResult_WideImage()
@@ -204,6 +214,9 @@ public class OcrPipelineE2ETests
             }
         };
 
-        return ServiceCollectionExtensions.CreateOcrPipeline(options);
+        var services = new ServiceCollection();
+        services.AddOcrPipeline(options);
+        _provider = services.BuildServiceProvider();
+        return _provider.GetRequiredService<OcrPipeline>();
     }
 }

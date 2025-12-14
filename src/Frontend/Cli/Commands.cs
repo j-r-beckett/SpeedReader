@@ -4,6 +4,7 @@
 using System.CommandLine;
 using System.Text.Json;
 using Frontend.Server;
+using Microsoft.Extensions.DependencyInjection;
 using Ocr;
 using Ocr.InferenceEngine;
 
@@ -91,7 +92,11 @@ public class Commands
             }
         };
 
-        var speedReader = ServiceCollectionExtensions.CreateOcrPipeline(options);
+        var services = new ServiceCollection();
+        services.AddOcrPipeline(options);
+        await using var provider = services.BuildServiceProvider();
+
+        var speedReader = provider.GetRequiredService<OcrPipeline>();
         var paths = inputs.Select(f => f.FullName).ToList();
         await EmitOutput(speedReader.ReadMany(paths.ToAsyncEnumerable()), paths, viz);
     }

@@ -28,12 +28,4 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
-
-    public static OcrPipeline CreateOcrPipeline(OcrPipelineOptions options)
-    {
-        var services = new ServiceCollection();
-        services.AddOcrPipeline(options);
-        var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<OcrPipeline>();
-    }
 }
