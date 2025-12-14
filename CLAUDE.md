@@ -98,8 +98,50 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 ## Python
 
 - *Always* use uv: `uv run myscript.py`
-- All automation should be written in Python instead of shell scripts
-- Read .claude/supplementary/python.md before doing any python work
+- All automation should be written in Python instead of shell scripts. This is to ensure cross-platform portability
+- An annotated python example is below. All python code should use these patterns:
+
+```python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["click", "build_utils"]
+#
+# [tool.uv.sources]
+# build_utils = { path = "RELATIVE_PATH/build_utils", editable = true }
+# ///
+
+# Always use uv inline dependencies and a uv shebang
+
+from pathlib import Path
+import click
+from build_utils import bash, info, error, ScriptError, ensure_repo
+
+SCRIPT_DIR = Path(__file__).parent.resolve()
+
+
+@click.command()  # Always use Click. Always make --help informative
+def main():
+    # Use ensure_repo() to clone/checkout git repos. Takes a destination path, git url, and tag
+    ensure_repo("out_dir/my_dependency", "https://github.com/my/dependency", "v0.1.0")
+
+    # Use bash() to run shell commands. *Always* shift complexity out of bash and into python.
+    # bash() should be used for invoking external tools or commands with no python equivalent.
+    # Everything else (including interpreting the results of shell commands) should be done in python
+    bash("gcc ...", directory=SCRIPT_DIR)
+
+    # Use info() for status messages. Don't go overboard, only emit status message for significant milestones in the script
+    info("successfully build my_dependency")
+
+
+if __name__ == "__main__":
+    # Always use this pattern for calling main()
+    try:
+        main()
+    except ScriptError as e:  # Raise a ScriptError anywhere in the script to crash if something goes wrong. Fail fast!
+        error(f"Fatal: {e}")
+        exit(1)
+```
 
 ## C
 
