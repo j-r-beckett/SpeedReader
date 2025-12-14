@@ -94,6 +94,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 - Always use `dotnet package` commands for adding, removing, updating packages. Avoid writing XML manually
 - There is an excellent set of unit tests only `dotnet test` away. Use it
 - Don't use XML style comments
+- *Always* build and test in two separate commands. `dotnet` will run tests even if the build fails, which can cover up errors. Always `dotnet build && dotnet test ...`
 
 ## Python
 
@@ -146,6 +147,42 @@ if __name__ == "__main__":
 ## C
 
 - Prefer to push complexity out of unsafe C and into managed C#
+
+# Build
+
+SpeedReader can be built as either a managed (CLR) or unmanaged (Native AOT) executable. The managed build is for development, the unmanaged build is for distribution. The native executable can be statically or dynamically linked, for a total of three build 'flavors': managed, static, dynamic.
+
+| Flavor  | speedreader_ort Link | Onnx Runtime Link | Commands                                    |
+| ------- | -------------------- | ----------------- | ------------------------------------------- |
+| managed | Dynamic              | Dynamic           | `dotnet build`, `dotnet run`, `dotnet test` |
+| dynamic | Static               | Dynamic           | `dotnet publish -p:OnnxLinkMode=Dynamic`    |
+| static  | Static               | Static            | `dotnet publish -p:OnnxLinkMode=Static`     |
+
+- The dynamic flavor **statically** links speedreader_ort
+- The dynamic flavor is for users who want to use an onnx runtime build with hwaccel support
+- The static flavor also statically links system libs. To achieve this, it must be built on a musl system. `uv run ci/act.py static` will do this
+
+
+The build is orchestrated by msbuild. All integrations with native libraries are handled by the Native project. Native, and by extension any project that references Native, exposes these options:
+
+| Option       | Values | Description                              |
+| ------------ | ------ | ---------------------------------------- |
+| BuildOnnx    | 'true' | Triggers a new onnx build if 'true'      |
+| BuildSROrt   | 'true' | Triggers a new speedreader_ort if 'true' |
+
+The Frontend project (SpeedReader executable, the Native AOT target) exposes these options when publishing:
+
+| Options      | Values              | Description                           |
+| ------------ | ------------------- | ------------------------------------- |
+| OnnxLinkMode | 'Static', 'Dynamic' | Onnx runtime link mode                |
+| BuildMusl    | 'true'              | Statically link system libs if `true` |
+
+Examples:
+
+```bash
+dotnet publish src/Frontend -r linux-x64  -p:OnnxLinkMode=Dynamic  # build unamanaged dynamically linked executable using cached onnx runtime and speedreader_ort artifacts
+dotnet build src -p:BuildSROrt=true  # a managed build with a fresh build of speedreader_ort and cached onnx runtime artifacts
+```
 
 # Library
 
