@@ -20,10 +20,9 @@ runs:
     - name: Build Dynamically Linked Binary
       shell: bash
       run: dotnet publish -r linux-x64 src/Frontend -p:OnnxLinkMode=Dynamic -p:BuildOnnx=true -p:BuildSROrt=true
-    - name: Smoke Test
+    - name: Validate Binary
       shell: bash
-      run: |
-        src/Frontend/bin/Release/net10.0/linux-x64/publish/speedreader hello.png | grep '"text": "Hello"' || exit 1
+      run: uv run ./ci/validate-binary.py dynamic
     - name: Upload libonnxruntime.so
       uses: actions/upload-artifact@v4
       with:
