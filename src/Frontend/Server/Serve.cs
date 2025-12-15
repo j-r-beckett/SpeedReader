@@ -2,11 +2,13 @@
 // Licensed under the Apache License, Version 2.0
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Ocr;
 using Ocr.InferenceEngine;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using Resources.Web;
 using Model = Ocr.InferenceEngine.Model;
 
 namespace Frontend.Server;
@@ -65,6 +67,11 @@ public static class Serve
         app.MapGet("/api/health", () => "Healthy");
         app.MapPost("/api/ocr", Rest.PostOcr);
         app.Map("/api/ws/ocr", Websockets.HandleOcrWebSocket);
+
+        // Serve embedded demo page
+        var embeddedWeb = new EmbeddedWeb();
+        app.MapGet("/", () => Results.Content(embeddedWeb.DemoHtml, "text/html"));
+        app.MapGet("/demo", () => Results.Content(embeddedWeb.DemoHtml, "text/html"));
 #pragma warning restore IL2026, IL3050
 
         Console.WriteLine("Starting SpeedReader server...");

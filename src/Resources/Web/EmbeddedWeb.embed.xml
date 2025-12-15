@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)demo.html" />
+  </ItemGroup>
+</Project>
