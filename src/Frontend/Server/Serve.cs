@@ -48,6 +48,9 @@ public static class Serve
             .ConfigureResource(resource => resource.AddService(serviceName: "SpeedReader"))
             .WithMetrics(metrics => metrics
                 .AddMeter("speedreader.inference.cpu")
+                .AddAspNetCoreInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddProcessInstrumentation()
                 .AddOtlpExporter((exporterOptions, readerOptions) =>
                 {
                     exporterOptions.Endpoint = new Uri("http://otel-collector:4317");

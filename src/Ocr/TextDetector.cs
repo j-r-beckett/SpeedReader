@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Ocr.Algorithms;
 using Ocr.Geometry;
 using Ocr.InferenceEngine;
-using Ocr.Telemetry;
 using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -158,19 +157,9 @@ public class TextDetector
     public virtual async Task<List<BoundingBox>> Detect(Image<Rgb24> image, VizBuilder vizBuilder)
     {
         var tiling = Tile(image);
-        MetricRecorder.RecordMetric("speedreader.detection.num_tiles", tiling.NumTilesHorizontal * tiling.NumTilesVertical);
-
-        var startTimestamp = Stopwatch.GetTimestamp();
         var modelInput = Preprocess(image, tiling, vizBuilder);
-        var preprocessEndTimestamp = Stopwatch.GetTimestamp();
-        MetricRecorder.RecordMetric("speedreader.detection.preprocess_duration", Stopwatch.GetElapsedTime(startTimestamp, preprocessEndTimestamp).TotalMilliseconds);
         var modelOutput = await RunInference(modelInput);
-        var inferenceEndTimestamp = Stopwatch.GetTimestamp();
-        MetricRecorder.RecordMetric("speedreader.detection.inference_duration", Stopwatch.GetElapsedTime(preprocessEndTimestamp, inferenceEndTimestamp).TotalMilliseconds);
-        var result = Postprocess(modelOutput, tiling, image, vizBuilder);
-        var postprocessEndTimestamp = Stopwatch.GetTimestamp();
-        MetricRecorder.RecordMetric("speedreader.detection.postprocess_duration", Stopwatch.GetElapsedTime(inferenceEndTimestamp, postprocessEndTimestamp).TotalMilliseconds);
-        return result;
+        return Postprocess(modelOutput, tiling, image, vizBuilder);
     }
 
     public async Task<(float[], int[])[]> RunInference(List<(float[], int[])> tiles)

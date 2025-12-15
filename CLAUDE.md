@@ -63,7 +63,6 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |-- InferenceEngine  // Abstraction around onnx inference; parallelism, batching, monitoring, adaptive tuning
 |   |   |   `-- ServiceCollectionExtensions.cs  // DI for inference engine, used by OcrPipeline DI
 |   |   |-- SmartMetrics  // High-resolution OTEL gauges to track averages, throughputs
-|   |   |-- Telemetry  // Legacy, to be deleted
 |   |   |-- Visualization  // Visualize OCR results as interactive SVGs
 |   |   |-- OcrPipeline.cs  // Orchestrates TextDetector, TextRecognizer
 |   |   |-- ServiceCollectionExtensions.cs  // DI for OcrPipeline

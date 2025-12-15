@@ -16,7 +16,6 @@
     <PackageReference Include="Clipper2" />
     <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Npgsql" />
     <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="System.Numerics.Tensors" />
   </ItemGroup>
