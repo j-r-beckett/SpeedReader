@@ -53,4 +53,9 @@
     <Exec Command="$(SpeedReaderOrtDir)/build.py" />
   </Target>
 
+  <!-- Deep clean: removes native build artifacts (onnx/out, speedreader_ort/out, .external/onnxruntime/build, .venv) -->
+  <Target Name="DeepClean" AfterTargets="Clean" Condition="'$(DeepClean)' == 'true'">
+    <Exec Command="$(MSBuildThisFileDirectory)clean.py" />
+  </Target>
+
 </Project>

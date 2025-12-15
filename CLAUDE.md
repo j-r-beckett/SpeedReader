@@ -174,6 +174,7 @@ The build is orchestrated by msbuild. All integrations with native libraries are
 | ------------ | ------ | ---------------------------------------- |
 | BuildOnnx    | 'true' | Triggers a new onnx build if 'true'      |
 | BuildSROrt   | 'true' | Triggers a new speedreader_ort if 'true' |
+| DeepClean    | 'true' | Clean onnx and speedreader_ort builds    |
 
 The Frontend project (SpeedReader executable, the Native AOT target) exposes these options when publishing:
 
