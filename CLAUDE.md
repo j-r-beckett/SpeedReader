@@ -24,7 +24,10 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |-- models  // Model files in onnx format
 |   |-- analyze_onnx.py  // Get info about an onnx model
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
-|   `-- build_svtr.py  // Build SVTRv2 from OpenOCR source
+|   |-- build_svtr.py  // Build SVTRv2 from OpenOCR source
+|   |-- dbnet_resnet18_fpnc_1200e_icdar2015_fp32.onnx  // All model files (.onnx) are stored in git lfs
+|   |-- dbnet_resnet18_fpnc_1200e_icdar2015_int8.onnx
+|   `-- svtrv2_base_ctc_fp32.onnx
 |-- src  // All C# source code and build configuration
 |   |-- .editorconfig  // C#-specific formatting and style rules
 |   |-- Directory.Build.props  // MSBuild properties; managed *and unmanaged* dependency versions
