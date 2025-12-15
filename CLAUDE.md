@@ -21,6 +21,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |       `-- action.yml
 |   `-- act.py  // Run workflows locally with act; handles container reuse, cleanup, artifacts
 |-- models  // Model files in onnx format
+|   |-- analyze_onnx.py  // Analyze onnx model: metadata, tensors, parameters, operators; --netron to visualize
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
 |   `-- build_svtr.py  // Build SVTRv2 from OpenOCR source
 |-- src  // All C# source code and build configuration
@@ -183,6 +184,16 @@ Examples:
 dotnet publish src/Frontend -r linux-x64  -p:OnnxLinkMode=Dynamic  # build unamanaged dynamically linked executable using cached onnx runtime and speedreader_ort artifacts
 dotnet build src -p:BuildSROrt=true  # a managed build with a fresh build of speedreader_ort and cached onnx runtime artifacts
 ```
+
+SpeedReader uses vertical builds. That means we run the entire build from scratch on each supported platform, without trying to reuse or cache dependencies across platforms.
+
+The entire build is automated using python. Having python as an intermediate layer between msbuild and the shell lets us write complex, flexible, cross-platform build logic.
+
+We use `act` to run our ci pipelines locally. Useful for when you want to build in a clean, containerized environment. Only way to build a fully static executable (uses an Alpine container). See `ci/act.py`.
+
+# Models
+
+
 
 # Library
 
