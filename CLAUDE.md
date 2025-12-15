@@ -21,7 +21,7 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |       `-- action.yml
 |   `-- act.py  // Run workflows locally with act; handles container reuse, cleanup, artifacts
 |-- models  // Model files in onnx format
-|   |-- analyze_onnx.py  // Analyze onnx model: metadata, tensors, parameters, operators; --netron to visualize
+|   |-- analyze_onnx.py  // Get info about an onnx model
 |   |-- build_dbnet.py  // Convert dbnet .pth to onnx via mmdeploy, quantize to int8
 |   `-- build_svtr.py  // Build SVTRv2 from OpenOCR source
 |-- src  // All C# source code and build configuration
@@ -182,7 +182,7 @@ Examples:
 
 ```bash
 dotnet publish src/Frontend -r linux-x64  -p:OnnxLinkMode=Dynamic  # build unamanaged dynamically linked executable using cached onnx runtime and speedreader_ort artifacts
-dotnet build src -p:BuildSROrt=true  # a managed build with a fresh build of speedreader_ort and cached onnx runtime artifacts
+dotnet build src -p:BuildSROrt=true  # managed build with a fresh build of speedreader_ort and cached onnx runtime artifacts
 ```
 
 SpeedReader uses vertical builds. That means we run the entire build from scratch on each supported platform, without trying to reuse or cache dependencies across platforms.
@@ -193,6 +193,38 @@ We use `act` to run our ci pipelines locally. Useful for when you want to build 
 
 # Models
 
+SpeedReader uses open-source pre-trained models.
+
+`models/analyze_onnx.py` can get info about a model (parameter count, input/output tensors, operators, etc) or visualize it for the user using netron.
+
+We currently use models with dynamic dimensions, but in code we use fixed dimensions of 640x640 for detection and 160x48 for recognition. 
+
+When running SpeedReader with the CPU inference provider performance is overwhelmingly dominated by DbNet inference, which in turn is bottlenecked by memory bandwidth. SVTRv2 inference by contrast is extremely fast. The difference is to differences in the sizes of the inputs causing cache <-> RAM thrashing--large inputs increase the amount of memory needed by each stage of the model, and once stages get large enough to not fit into cache you get thrashing, which kills performance. DbNet input tensors are (batch_size == 1) is 640x640x3 = 1228800 values, while SVTRv2 input tensors are 160x48x3 = 23040, so DbNet inference thrashes like crazy while SVTRv2 inferences fits comfortably in cache.
+
+Model: DbNet
+Quantizations: fp32, int8
+Input Tensor:
+    - float32 [batch, 3, height, width]
+    - A batch of images in CHW format
+Output Tensor:
+    - float32 [batch, width, height]
+    - A batch of probability maps (1 => 'text near this pixel')
+    - DbNet identifies individual words, each word (also known as a fragment) is a connected component in the probability map
+    - The probability maps do not directly represent bounding boxes. Generally speaking, DbNet draws a narrow rectangle in the center of each detected word
+    - Use the `--viz` flag to generate a visualization of the probability maps and bounding boxes
+Author: https://github.com/open-mmlab/mmocr/blob/main/configs/textdet/dbnet/README.md
+
+Model: SVTRv2
+Quantizations: fp32
+Input Tensor: 
+    - float32 [batch, 3, 48, width]
+    - A batch of images of individual words in CHW format
+    - If you run analyze_onnx.py, you'll see 'int_height' in the width position. This is just poor naming, int_height represents width
+Output Tensor:
+    - float32 [batch, seq_len, dict_size]
+    - CTC
+    - For our model, seq_len = width/8 and dict_size = 6625
+Author: https://github.com/Topdu/OpenOCR/blob/main/configs/rec/svtrv2/readme.md
 
 
 # Library

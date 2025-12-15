@@ -5,15 +5,12 @@ obj/
 # Downloaded datasets
 datasets/
 
-# Generated ffmpeg binaries
-src/Resources/binaries/
-
 # Native library build outputs
 src/Native/onnx/out/
 src/Native/speedreader_ort/out/
 
 # Test coverage results
-**/*.Test/TestResults
+src/TestResults/
 
 # Rider
 .idea/
