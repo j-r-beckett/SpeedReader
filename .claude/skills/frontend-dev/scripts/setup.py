@@ -3,7 +3,7 @@
 # dependencies = []
 # ///
 """
-Setup the speedreader-web skill.
+Setup the frontend-dev skill.
 Configures the PreToolUse hook for action expansion.
 """
 
@@ -20,7 +20,7 @@ REQUIRED_HOOK = {
     "hooks": [
         {
             "type": "command",
-            "command": "bash -c 'uv run \"$(git rev-parse --show-toplevel)/.claude/skills/speedreader-web/scripts/resolve_action.py\"'"
+            "command": "bash -c 'uv run \"$(git rev-parse --show-toplevel)/.claude/skills/frontend-dev/scripts/resolve_action.py\"'"
         }
     ]
 }

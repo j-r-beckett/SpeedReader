@@ -3,7 +3,7 @@
 # dependencies = ["click", "psutil"]
 # ///
 """
-Boot SpeedReader server for web development/testing.
+Reload SpeedReader server for web development/testing.
 Handles build, process management, and auto-shutdown.
 """
 
@@ -23,10 +23,10 @@ FRONTEND_DIR = SRC_DIR / "Frontend"
 OUTPUT_DIR = SCRIPT_DIR.parent / "output"
 PIDFILE_DIR = OUTPUT_DIR
 
-DEFAULT_PORT = 5000
+PORT = 5050  # Fixed port to avoid conflicts with regular development on 5000
 HEALTH_POLL_INTERVAL_MS = 100
 HEALTH_TIMEOUT_S = 5
-DEFAULT_SHUTDOWN_S = 900  # 15 minutes
+SHUTDOWN_S = 900  # 15 minutes
 
 
 def info(msg: str):
@@ -123,11 +123,9 @@ def kill_from_pidfile(name: str) -> bool:
 
 
 @click.command()
-@click.option("--port", default=DEFAULT_PORT, type=int, help="Port to run server on")
-@click.option("--shutdown", default=DEFAULT_SHUTDOWN_S, type=int, help="Auto-shutdown after N seconds (0 to disable)")
-def main(port: int, shutdown: int):
+def main():
     """
-    Build and boot SpeedReader server.
+    Build and reload SpeedReader server.
 
     Handles the full lifecycle: build, kill previous instances, start server,
     set up auto-shutdown watchdog. Use Playwright MCP for browser interaction.
@@ -137,7 +135,7 @@ def main(port: int, shutdown: int):
     # Kill any previous processes
     kill_from_pidfile("watchdog")
     kill_from_pidfile("speedreader")
-    kill_process_on_port(port)
+    kill_process_on_port(PORT)
 
     # Build
     info("Building SpeedReader...")
@@ -153,7 +151,7 @@ def main(port: int, shutdown: int):
     # Start server
     info("Starting SpeedReader server...")
     env = os.environ.copy()
-    env["ASPNETCORE_URLS"] = f"http://localhost:{port}"
+    env["ASPNETCORE_URLS"] = f"http://localhost:{PORT}"
 
     server_proc = subprocess.Popen(
         ["dotnet", "run", "--no-build", "--project", str(FRONTEND_DIR), "--", "--serve"],
@@ -167,7 +165,7 @@ def main(port: int, shutdown: int):
     try:
         # Wait for health
         info("Waiting for server health...")
-        if not wait_for_health(port, HEALTH_TIMEOUT_S, server_proc):
+        if not wait_for_health(PORT, HEALTH_TIMEOUT_S, server_proc):
             if server_proc.poll() is not None:
                 output = server_proc.stdout.read().decode() if server_proc.stdout else ""
                 raise ScriptError(f"Server process died. Output:\n{output}")
@@ -179,20 +177,18 @@ def main(port: int, shutdown: int):
         write_pidfile("speedreader", server_proc.pid)
 
         # Spawn watchdog for auto-shutdown
-        if shutdown > 0:
-            watchdog_script = SCRIPT_DIR / "watchdog.py"
-            watchdog_proc = subprocess.Popen(
-                ["uv", "run", str(watchdog_script), str(shutdown), str(server_proc.pid)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-            write_pidfile("watchdog", watchdog_proc.pid)
+        watchdog_script = SCRIPT_DIR / "watchdog.py"
+        watchdog_proc = subprocess.Popen(
+            ["uv", "run", str(watchdog_script), str(SHUTDOWN_S), str(server_proc.pid)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        write_pidfile("watchdog", watchdog_proc.pid)
 
         # Output
-        shutdown_info = f", auto-shutdown in {shutdown}s" if shutdown > 0 else ""
-        print(f"\nSpeedReader running at http://localhost:{port} (PID {server_proc.pid}{shutdown_info})")
-        print("\nUse Playwright MCP to interact with the page.")
+        print(f"\nSpeedReader running at http://localhost:{PORT}")
+        print(f"Auto-shutdown in {SHUTDOWN_S // 60} minutes")
 
         # Detach
         server_proc = None
