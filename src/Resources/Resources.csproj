@@ -11,5 +11,6 @@
   </ItemGroup>
 
   <Import Project="**/*.embed.xml" />
+  <Import Project="Web/Web.Build.targets" />
 
 </Project>

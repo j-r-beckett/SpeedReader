@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Build the Svelte web UI before the Resources project compiles.
+    The output is embedded via EmbeddedWeb.embed.xml.
+  -->
+
+  <PropertyGroup>
+    <WebSourceDir>$(MSBuildThisFileDirectory)../../Frontend/Web</WebSourceDir>
+    <WebDistDir>$(WebSourceDir)/dist</WebDistDir>
+  </PropertyGroup>
+
+  <Target Name="BuildWebUI" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="Building web UI..." />
+    <Exec Command="npm ci" WorkingDirectory="$(WebSourceDir)" />
+    <Exec Command="npm run build" WorkingDirectory="$(WebSourceDir)" />
+  </Target>
+
+</Project>
