@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__playwright__browser_run_code",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'uv run \"$(git rev-parse --show-toplevel)/.claude/skills/speedreader-web/scripts/resolve_action.py\"'"
+          }
+        ]
+      }
+    ]
+  }
+}
