@@ -106,11 +106,17 @@ public class Commands
         var idx = 0;
         await foreach (var resultWrapper in results)
         {
+            var filename = filenames[idx];
+            if (!resultWrapper.HasValue())
+            {
+                throw new InvalidOperationException($"Failed to process '{filename}'", resultWrapper.Exception());
+            }
+
             var result = resultWrapper.Value();
             try
             {
                 var jsonResult = new OcrJsonResult(
-                    Filename: filenames[idx],
+                    Filename: filename,
                     Results: result.Results.Select(r => new OcrTextResult(
                         BoundingBox: r.BBox,
                         Text: r.Text,
@@ -123,7 +129,6 @@ public class Commands
 
                 if (viz)
                 {
-                    var filename = filenames[idx];
                     var inputDir = Path.GetDirectoryName(filename) ?? ".";
                     var inputName = Path.GetFileNameWithoutExtension(filename);
                     var vizFilePath = Path.Combine(inputDir, $"{inputName}_viz.svg");

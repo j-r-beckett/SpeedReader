@@ -74,10 +74,13 @@ public class TextRecognizer
     public List<(string Text, double Confidence)> Postprocess((float[], int[])[] inferenceOutput)
     {
 #if DEBUG
-        var shape = inferenceOutput[0].Item2;
-        Debug.Assert(inferenceOutput.Select(item => item.Item2).All(item => item.SequenceEqual(shape)));
-        Debug.Assert(shape.Length == 2);
-        Debug.Assert(shape[1] == _embeddedCharDict.Count);
+        if (inferenceOutput.Length > 0)
+        {
+            var shape = inferenceOutput[0].Item2;
+            Debug.Assert(inferenceOutput.Select(item => item.Item2).All(item => item.SequenceEqual(shape)));
+            Debug.Assert(shape.Length == 2);
+            Debug.Assert(shape[1] == _embeddedCharDict.Count);
+        }
 #endif
 
         return inferenceOutput
