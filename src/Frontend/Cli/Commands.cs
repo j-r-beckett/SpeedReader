@@ -118,12 +118,8 @@ public class Commands
                     )).ToList()
                 );
 
-                var json = JsonSerializer.Serialize(jsonResult, JsonContext.Default.OcrJsonResult);
-                var indentedJson = string.Join('\n', json.Split('\n').Select(line => "  " + line));
-
-                Console.WriteLine(idx == 0 ? "[" : ",");
-
-                Console.Write(indentedJson);
+                var json = JsonSerializer.Serialize(jsonResult, JsonLinesContext.Default.OcrJsonResult);
+                Console.WriteLine(json);
 
                 if (viz)
                 {
@@ -142,7 +138,5 @@ public class Commands
                 idx++;
             }
         }
-
-        Console.WriteLine("\n]");
     }
 }

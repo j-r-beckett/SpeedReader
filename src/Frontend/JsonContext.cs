@@ -20,6 +20,14 @@ internal partial class JsonContext : JsonSerializerContext
 {
 }
 
+[JsonSerializable(typeof(OcrJsonResult))]
+[JsonSourceGenerationOptions(
+    WriteIndented = false,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+internal partial class JsonLinesContext : JsonSerializerContext
+{
+}
+
 public record OcrJsonResult(
     string? Filename,
     List<OcrTextResult> Results);

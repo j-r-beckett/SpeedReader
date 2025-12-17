@@ -1,0 +1,26 @@
+ICDAR 2015 Evaluation Scripts
+==============================
+
+The files `evaluation.py` and `rrc_evaluation_funcs.py` are derived from the
+official ICDAR 2015 Robust Reading Competition evaluation scripts, originally
+distributed by the Computer Vision Center (CVC) at Universitat Autonoma de
+Barcelona.
+
+Original source: https://rrc.cvc.uab.es/?ch=4
+Downloaded: 2020-01-02
+
+These scripts are provided for research and benchmarking purposes. The ICDAR
+2015 dataset and evaluation methodology are described in:
+
+  D. Karatzas, L. Gomez-Bigorda, A. Nicolaou, S. Ghosh, A. Bagdanov,
+  M. Iwamura, J. Matas, L. Neumann, V.R. Chandrasekhar, S. Lu, F. Shafait,
+  S. Uchida, E. Valveny. "ICDAR 2015 Competition on Robust Reading".
+  13th International Conference on Document Analysis and Recognition
+  (ICDAR), 2015.
+
+Test Images
+===========
+
+The test images in the `test/` directory are from the ICDAR 2015 Incidental
+Scene Text dataset (Challenge 4). These images are provided for research
+purposes only.
