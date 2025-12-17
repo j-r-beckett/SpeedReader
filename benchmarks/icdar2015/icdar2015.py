@@ -76,7 +76,8 @@ def run_speedreader(image_paths: list[Path], output_file: Path) -> None:
         # Read stdout line by line, write JSON Lines
         buffer = ""
         results_written = 0
-        pbar = tqdm(total=len(image_paths), desc="Running OCR", unit="img")
+        pbar = tqdm(total=len(image_paths), desc="Running OCR", unit="img",
+                    dynamic_ncols=False, ncols=80, mininterval=1.0)
 
         for line in process.stdout:
             line = line.strip()
@@ -143,10 +144,13 @@ def parse_results(jsonl_file: Path) -> dict[int, list[dict]]:
     return results
 
 
-def create_submission_zip(results: dict[int, list[dict]], output_path: Path) -> None:
+def create_submission_zip(results: dict[int, list[dict]], output_path: Path, image_numbers: list[int] | None = None) -> None:
     """Create ICDAR submission zip file."""
+    if image_numbers is None:
+        image_numbers = list(range(1, 501))
+
     with zipfile.ZipFile(output_path, "w") as zf:
-        for img_num in range(1, 501):
+        for img_num in image_numbers:
             detections = results.get(img_num, [])
             lines = []
             for det in detections:
@@ -155,6 +159,17 @@ def create_submission_zip(results: dict[int, list[dict]], output_path: Path) -> 
 
             content = "\n".join(lines)
             zf.writestr(f"res_img_{img_num}.txt", content)
+
+
+def create_filtered_gt_zip(original_gt: Path, output_path: Path, image_numbers: list[int]) -> None:
+    """Create a filtered GT zip containing only specified image numbers."""
+    with zipfile.ZipFile(original_gt, "r") as src_zf:
+        with zipfile.ZipFile(output_path, "w") as dst_zf:
+            for img_num in image_numbers:
+                filename = f"gt_img_{img_num}.txt"
+                if filename in src_zf.namelist():
+                    content = src_zf.read(filename)
+                    dst_zf.writestr(filename, content)
 
 
 def run_evaluation(gt_path: Path, submission_path: Path) -> dict:
@@ -180,7 +195,8 @@ def run_evaluation(gt_path: Path, submission_path: Path) -> dict:
 @click.option("--output", type=click.Path(path_type=Path), default=None,
               help="Output directory for results (default: temp dir)")
 @click.option("--keep-output", is_flag=True, help="Keep output files after evaluation")
-def main(test_dir: Path, gt: Path, output: Path | None, keep_output: bool):
+@click.option("--limit", type=int, default=None, help="Limit to first N images (for testing)")
+def main(test_dir: Path, gt: Path, output: Path | None, keep_output: bool, limit: int | None):
     """Run ICDAR 2015 text detection benchmark on SpeedReader."""
 
     # Find test images
@@ -188,7 +204,11 @@ def main(test_dir: Path, gt: Path, output: Path | None, keep_output: bool):
     if not image_paths:
         raise click.ClickException(f"No test images found in {test_dir}")
 
-    click.echo(f"Found {len(image_paths)} test images")
+    if limit is not None:
+        image_paths = image_paths[:limit]
+        click.echo(f"Running on {len(image_paths)} images (limited from 500)")
+    else:
+        click.echo(f"Found {len(image_paths)} test images")
 
     # Set up output directory
     if output is None:
@@ -210,11 +230,18 @@ def main(test_dir: Path, gt: Path, output: Path | None, keep_output: bool):
 
         # Create submission
         click.echo("Creating submission zip...")
-        create_submission_zip(results, submission_zip)
+        image_numbers = [extract_image_number(p.name) for p in image_paths]
+        create_submission_zip(results, submission_zip, image_numbers)
 
         # Run evaluation
         click.echo("Running evaluation...")
-        eval_results = run_evaluation(gt, submission_zip)
+        if limit is not None:
+            # Create filtered GT for partial evaluation
+            filtered_gt = output / "gt_filtered.zip"
+            create_filtered_gt_zip(gt, filtered_gt, image_numbers)
+            eval_results = run_evaluation(filtered_gt, submission_zip)
+        else:
+            eval_results = run_evaluation(gt, submission_zip)
 
         # Print results
         method = eval_results.get("method", {})
