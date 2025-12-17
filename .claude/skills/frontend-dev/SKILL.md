@@ -43,7 +43,12 @@ This builds SpeedReader, starts the server, and waits for health. The server run
 
 ### 3. Interact with Playwright MCP
 
-Use Playwright MCP tools to interact with the page at http://localhost:5000/demo.
+Use Playwright MCP tools to interact with the page at http://localhost:5050/demo.
+
+For visual regression testing, use `?hideProcessingTime=true` to hide dynamic content:
+```
+http://localhost:5050/demo?hideProcessingTime=true
+```
 
 **Snapshot vs Screenshot:**
 - Use `browser_snapshot` for interaction (getting element refs) and existence checks

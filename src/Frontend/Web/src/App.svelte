@@ -4,6 +4,9 @@
     import StatsBar from './components/StatsBar.svelte';
     import { runOcr, loadImageData } from './lib/api.js';
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const hideProcessingTime = urlParams.get('hideProcessingTime') === 'true';
+
     let ocrData = $state(null);
     let imageData = $state(null);
     let isProcessing = $state(false);
@@ -75,7 +78,7 @@
         <StatsBar
             width={imageData?.width}
             height={imageData?.height}
-            time={processingTime}
+            time={hideProcessingTime ? null : processingTime}
         />
     {/if}
 </div>
