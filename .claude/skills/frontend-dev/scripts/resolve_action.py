@@ -4,9 +4,9 @@
 # ///
 """
 Resolve an action name to its JavaScript code.
-Called by the PreToolUse hook to expand ACTION:name patterns.
+Called by the PreToolUse hook to expand @action patterns.
 
-Syntax: ACTION:name or ACTION:name:key=value,key2=value2
+Syntax: @action or @action?key=value;key2=value2
 
 Input (stdin): JSON with tool_name, tool_input
 Output (stdout): JSON with hookSpecificOutput containing updatedInput
@@ -21,16 +21,16 @@ ACTIONS_DIR = SCRIPT_DIR / "actions"
 
 
 def parse_action_string(action_str: str) -> tuple[str, dict]:
-    """Parse 'name:key=value,key2=value2' into (name, {key: value, ...})."""
-    if ':' not in action_str:
+    """Parse 'name?key=value;key2=value2' into (name, {key: value, ...})."""
+    if '?' not in action_str:
         return action_str, {}
 
-    parts = action_str.split(':', 1)
+    parts = action_str.split('?', 1)
     name = parts[0]
     args = {}
 
     if parts[1]:
-        for arg in parts[1].split(','):
+        for arg in parts[1].split(';'):
             if '=' in arg:
                 key, value = arg.split('=', 1)
                 args[key.strip()] = value.strip()
@@ -56,11 +56,11 @@ def main():
 
     code = tool_input.get("code", "")
 
-    # Check for ACTION:name pattern
-    if not code.startswith("ACTION:"):
+    # Check for @action pattern
+    if not code.startswith("@"):
         sys.exit(0)
 
-    action_str = code[7:].strip()  # Remove "ACTION:" prefix
+    action_str = code[1:].strip()  # Remove "@" prefix
     action_name, args = parse_action_string(action_str)
     action_file = ACTIONS_DIR / f"{action_name}.js"
 

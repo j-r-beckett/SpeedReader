@@ -67,16 +67,16 @@ Edit code -> reload -> verify with Playwright -> repeat until done.
 Actions are reusable JS scripts. Call them via `browser_run_code`:
 
 ```
-browser_run_code: code="ACTION:demo_upload"
-browser_run_code: code="ACTION:demo_upload:file=test.png"
-browser_run_code: code="ACTION:toggle_layer:layer=text"
+browser_run_code: code="@demo_upload"
+browser_run_code: code="@demo_upload?file=test.png"
+browser_run_code: code="@toggle_layers?a_rect=true;r_rect=false;polygon=false;text=true"
 ```
 
-Syntax: `ACTION:name` or `ACTION:name:key=value,key2=value2`
+Syntax: `@action` or `@action?key=value;key2=value2`
 
 Available actions:
 - `demo_upload` - Upload image and wait for OCR. Args: `file`
-- `toggle_layer` - Toggle a visualization layer. Args: `layer`
+- `toggle_layers` - Set visualization layer visibility. Args: `a_rect`, `r_rect`, `polygon`, `text` (all optional, true/false)
 
 ### Writing Actions
 
