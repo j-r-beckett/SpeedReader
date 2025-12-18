@@ -57,8 +57,8 @@ def check_dynamic_linking(binary: Path):
 def smoke_test(binary: Path):
     """Run binary on test image and verify output."""
     output = bash(f"{binary} {TEST_IMAGE}", directory=REPO_ROOT)
-    if '"text": "Hello"' not in output:
-        raise ScriptError(f"Smoke test failed, expected '\"text\": \"Hello\"' in output: {output}")
+    if '"text":"Hello"' not in output:
+        raise ScriptError(f"Smoke test failed, expected '\"text\":\"Hello\"' in output: {output}")
     info("Smoke test passed")
 
 

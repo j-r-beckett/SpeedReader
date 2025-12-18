@@ -20,6 +20,7 @@ runs:
           xz \
           patchelf \
           nodejs \
+          npm \
           coreutils \
           dotnet10-sdk-aot \
           clang \
@@ -48,7 +49,7 @@ runs:
         echo "/opt/zig" >> $GITHUB_PATH
     - name: Build Statically Linked Binary
       shell: bash
-      run: dotnet publish -r linux-musl-x64 src/Frontend -p:OnnxLinkMode=Static -p:BuildOnnx=true -p:BuildSROrt=true -p:BuildMusl=true
+      run: dotnet publish -r linux-musl-x64 src/Frontend -p:OnnxLinkMode=Static -p:BuildOnnx=true -p:BuildSROrt=true -p:BuildMusl=true -v detailed
     - name: Validate Binary
       shell: bash
       run: uv run ./ci/validate-binary.py static
