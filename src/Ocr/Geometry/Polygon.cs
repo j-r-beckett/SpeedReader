@@ -89,166 +89,21 @@ public record Polygon
         };
     }
 
-    public Polygon Simplify(double aggressiveness = 1)
+    public Polygon Simplify(double epsilon = 1)
     {
-        // Visvalingam-Whyatt polygon simplification
-        // Iteratively removes points that cause the smallest area change
-
         if (Points.Count <= 3)
             return this;
 
-        // Create a list of vertices with their effective areas
-        var vertices = new List<Vertex>();
-        for (int i = 0; i < Points.Count; i++)
-        {
-            vertices.Add(new Vertex
-            {
-                Point = Points[i],
-                Index = i
-            });
-        }
+        var path = new PathD(Points.Count);
+        foreach (var point in Points)
+            path.Add(new PointD(point.X, point.Y));
 
-        // Calculate initial effective areas for all points
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            vertices[i].EffectiveArea = CalculateTriangleArea(
-                GetPrevVertex(vertices, i).Point,
-                vertices[i].Point,
-                GetNextVertex(vertices, i).Point
-            );
-        }
+        PathD simplified = Clipper.SimplifyPath(path, epsilon, false);
 
-        // Use a priority queue to efficiently find minimum area point
-        var heap = new PriorityQueue<int, double>();
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            heap.Enqueue(i, vertices[i].EffectiveArea);
-        }
+        var result = new List<PointF>(simplified.Count);
+        foreach (var point in simplified)
+            result.Add(((float)point.x, (float)point.y));
 
-        // Remove points until we reach tolerance or minimum point count
-        while (heap.Count > 0)
-        {
-            var minIndex = heap.Dequeue();
-
-            // Skip if already removed
-            if (vertices[minIndex].Removed)
-                continue;
-
-            // Count remaining points
-            var remainingCount = vertices.Count(v => !v.Removed);
-            if (remainingCount <= 3)
-                break;
-
-            // Stop if minimum area exceeds tolerance
-            if (vertices[minIndex].EffectiveArea > aggressiveness)
-                break;
-
-            // Mark as removed
-            vertices[minIndex].Removed = true;
-
-            // Recalculate areas for neighboring vertices
-            var prevIdx = GetPrevVertexIndex(vertices, minIndex);
-            var nextIdx = GetNextVertexIndex(vertices, minIndex);
-
-            if (prevIdx != -1)
-            {
-                vertices[prevIdx].EffectiveArea = CalculateTriangleArea(
-                    GetPrevVertex(vertices, prevIdx).Point,
-                    vertices[prevIdx].Point,
-                    GetNextVertex(vertices, prevIdx).Point
-                );
-                heap.Enqueue(prevIdx, vertices[prevIdx].EffectiveArea);
-            }
-
-            if (nextIdx != -1)
-            {
-                vertices[nextIdx].EffectiveArea = CalculateTriangleArea(
-                    GetPrevVertex(vertices, nextIdx).Point,
-                    vertices[nextIdx].Point,
-                    GetNextVertex(vertices, nextIdx).Point
-                );
-                heap.Enqueue(nextIdx, vertices[nextIdx].EffectiveArea);
-            }
-        }
-
-        // Collect remaining points
-        var simplified = vertices.Where(v => !v.Removed).Select(v => v.Point).ToList();
-        return new Polygon(simplified);
-
-        static double CalculateTriangleArea(PointF p1, PointF p2, PointF p3) =>
-            // Use cross product formula: |((p2-p1) × (p3-p1))| / 2
-            Math.Abs((p2.X - p1.X) * (p3.Y - p1.Y) - (p3.X - p1.X) * (p2.Y - p1.Y)) / 2;
-
-        static Vertex GetPrevVertex(List<Vertex> vertices, int index)
-        {
-            for (int i = index - 1; i >= 0; i--)
-            {
-                if (!vertices[i].Removed)
-                    return vertices[i];
-            }
-            // Wrap around for closed polygon
-            for (int i = vertices.Count - 1; i > index; i--)
-            {
-                if (!vertices[i].Removed)
-                    return vertices[i];
-            }
-            return vertices[index]; // Shouldn't happen if count > 3
-        }
-
-        static Vertex GetNextVertex(List<Vertex> vertices, int index)
-        {
-            for (int i = index + 1; i < vertices.Count; i++)
-            {
-                if (!vertices[i].Removed)
-                    return vertices[i];
-            }
-            // Wrap around for closed polygon
-            for (int i = 0; i < index; i++)
-            {
-                if (!vertices[i].Removed)
-                    return vertices[i];
-            }
-            return vertices[index]; // Shouldn't happen if count > 3
-        }
-
-        static int GetPrevVertexIndex(List<Vertex> vertices, int index)
-        {
-            for (int i = index - 1; i >= 0; i--)
-            {
-                if (!vertices[i].Removed)
-                    return i;
-            }
-            // Wrap around for closed polygon
-            for (int i = vertices.Count - 1; i > index; i--)
-            {
-                if (!vertices[i].Removed)
-                    return i;
-            }
-            return -1;
-        }
-
-        static int GetNextVertexIndex(List<Vertex> vertices, int index)
-        {
-            for (int i = index + 1; i < vertices.Count; i++)
-            {
-                if (!vertices[i].Removed)
-                    return i;
-            }
-            // Wrap around for closed polygon
-            for (int i = 0; i < index; i++)
-            {
-                if (!vertices[i].Removed)
-                    return i;
-            }
-            return -1;
-        }
-    }
-
-    private class Vertex
-    {
-        public required PointF Point { get; init; }
-        public required int Index { get; init; }
-        public double EffectiveArea { get; set; }
-        public bool Removed { get; set; }
+        return new Polygon(result);
     }
 }
