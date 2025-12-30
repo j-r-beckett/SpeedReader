@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using SixLabors.Fonts;
 using SixLaborsFont = SixLabors.Fonts.Font;
 
-namespace Resources.Font;
+namespace SpeedReader.Resources.Font;
 
 public class EmbeddedFont
 {

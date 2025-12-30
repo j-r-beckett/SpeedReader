@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace Resources.Web;
+namespace SpeedReader.Resources.Web;
 
 public class EmbeddedWeb
 {

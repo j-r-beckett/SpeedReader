@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Geometry;
+namespace SpeedReader.Ocr.Geometry;
 
 public record RotatedRectangle
 {

@@ -3,9 +3,9 @@
 
 using System.CommandLine;
 using System.Diagnostics;
-using Frontend.Cli;
+using SpeedReader.Frontend.Cli;
 
-namespace Frontend;
+namespace SpeedReader.Frontend;
 
 public static class Program
 {

@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace Resources.Viz;
+namespace SpeedReader.Resources.Viz;
 
 public class EmbeddedViz
 {

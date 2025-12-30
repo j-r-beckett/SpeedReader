@@ -1,5 +1,6 @@
 <Project>
   <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)dict.txt" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)dict.txt"
+                      LogicalName="SpeedReader.Resources.CharDict.dict.txt" />
   </ItemGroup>
 </Project>

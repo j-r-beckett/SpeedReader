@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-namespace Ocr.SmartMetrics;
+namespace SpeedReader.Ocr.SmartMetrics;
 
 public class ThroughputGauge
 {

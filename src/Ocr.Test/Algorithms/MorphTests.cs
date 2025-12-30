@@ -1,9 +1,9 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Ocr.Algorithms;
+using SpeedReader.Ocr.Algorithms;
 
-namespace Ocr.Test;
+namespace SpeedReader.Ocr.Test;
 
 public class MorphTests
 {

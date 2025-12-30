@@ -5,13 +5,13 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using CommunityToolkit.HighPerformance;
-using Ocr.Geometry;
-using Resources.Viz;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Resources.Viz;
 
-namespace Ocr.Visualization;
+namespace SpeedReader.Ocr.Visualization;
 
 public class VizBuilder
 {
@@ -361,7 +361,7 @@ public class VizBuilder
 [JsonSerializable(typeof(VizBuilder.TemplateData))]
 [JsonSerializable(typeof(VizBuilder.TextItem))]
 [JsonSerializable(typeof(Polygon))]
-[JsonSerializable(typeof(Ocr.Geometry.PointF))]
+[JsonSerializable(typeof(SpeedReader.Ocr.Geometry.PointF))]
 [JsonSerializable(typeof(Dictionary<string, bool>))]
 internal partial class VizJsonContext : JsonSerializerContext
 {

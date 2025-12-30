@@ -4,14 +4,14 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Ocr;
-using Ocr.InferenceEngine;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
-using Resources.Web;
-using Model = Ocr.InferenceEngine.Model;
+using SpeedReader.Ocr;
+using SpeedReader.Ocr.InferenceEngine;
+using SpeedReader.Resources.Web;
+using Model = SpeedReader.Ocr.InferenceEngine.Model;
 
-namespace Frontend.Server;
+namespace SpeedReader.Frontend.Server;
 
 public static class Serve
 {

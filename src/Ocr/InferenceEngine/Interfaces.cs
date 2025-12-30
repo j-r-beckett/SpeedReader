@@ -1,7 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-namespace Ocr.InferenceEngine;
+namespace SpeedReader.Ocr.InferenceEngine;
 
 public interface IInferenceEngine : IAsyncDisposable
 {

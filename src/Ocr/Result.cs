@@ -3,7 +3,7 @@
 
 using System.Runtime.ExceptionServices;
 
-namespace Ocr;
+namespace SpeedReader.Ocr;
 
 public class Result<T>
 {

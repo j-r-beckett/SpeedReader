@@ -4,7 +4,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-namespace Ocr.InferenceEngine.Engines;
+namespace SpeedReader.Ocr.InferenceEngine.Engines;
 
 public class Sensor
 {

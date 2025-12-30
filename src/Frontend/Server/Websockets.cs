@@ -6,12 +6,12 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.Http;
-using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
+using SpeedReader.Ocr;
 
-namespace Frontend.Server;
+namespace SpeedReader.Frontend.Server;
 
 public static class Websockets
 {

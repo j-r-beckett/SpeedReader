@@ -2,15 +2,15 @@
 // Licensed under the Apache License, Version 2.0
 
 using Microsoft.Extensions.Logging;
-using Ocr.Geometry;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using TestUtils;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.TestUtils;
 using Xunit.Abstractions;
 using ImageSharpPointF = SixLabors.ImageSharp.PointF;
-using PointF = Ocr.Geometry.PointF;
+using PointF = SpeedReader.Ocr.Geometry.PointF;
 
-namespace Ocr.Test.Geometry;
+namespace SpeedReader.Ocr.Test.Geometry;
 
 public class RotatedRectangleCropTests
 {

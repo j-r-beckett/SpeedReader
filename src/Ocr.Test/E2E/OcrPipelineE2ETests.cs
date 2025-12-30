@@ -3,13 +3,13 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Ocr.InferenceEngine;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using TestUtils;
+using SpeedReader.Ocr.InferenceEngine;
+using SpeedReader.TestUtils;
 using Xunit.Abstractions;
 
-namespace Ocr.Test.E2E;
+namespace SpeedReader.Ocr.Test.E2E;
 
 public class OcrPipelineE2ETests : IAsyncLifetime
 {

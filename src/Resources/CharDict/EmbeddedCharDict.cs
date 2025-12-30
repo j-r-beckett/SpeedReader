@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace Resources.CharDict;
+namespace SpeedReader.Resources.CharDict;
 
 public class EmbeddedCharDict
 {

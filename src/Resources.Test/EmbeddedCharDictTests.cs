@@ -1,9 +1,9 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Resources.CharDict;
+using SpeedReader.Resources.CharDict;
 
-namespace Resources.Test;
+namespace SpeedReader.Resources.Test;
 
 public class EmbeddedCharDictTests
 {

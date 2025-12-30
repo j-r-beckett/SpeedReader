@@ -3,12 +3,12 @@
 
 using System.CommandLine;
 using System.Text.Json;
-using Frontend.Server;
 using Microsoft.Extensions.DependencyInjection;
-using Ocr;
-using Ocr.InferenceEngine;
+using SpeedReader.Frontend.Server;
+using SpeedReader.Ocr;
+using SpeedReader.Ocr.InferenceEngine;
 
-namespace Frontend.Cli;
+namespace SpeedReader.Frontend.Cli;
 
 public class Commands
 {

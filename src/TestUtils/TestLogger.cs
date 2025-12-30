@@ -4,7 +4,7 @@
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace TestUtils;
+namespace SpeedReader.TestUtils;
 
 public class TestLogger : ILogger
 {

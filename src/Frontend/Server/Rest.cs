@@ -4,12 +4,12 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
-using Ocr;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
+using SpeedReader.Ocr;
 
-namespace Frontend.Server;
+namespace SpeedReader.Frontend.Server;
 
 public static class Rest
 {

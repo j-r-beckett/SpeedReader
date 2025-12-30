@@ -9,10 +9,10 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using TestUtils;
+using SpeedReader.TestUtils;
 using Xunit.Abstractions;
 
-namespace Frontend.Test;
+namespace SpeedReader.Frontend.Test;
 
 public class ApiE2ETests : IClassFixture<ServerFixture>
 {
@@ -25,7 +25,7 @@ public class ApiE2ETests : IClassFixture<ServerFixture>
     {
         _server = server;
         _httpClient = _server.HttpClient;
-        _font = Resources.Font.EmbeddedFont.Default.Get(fontSize: 18f);
+        _font = SpeedReader.Resources.Font.EmbeddedFont.Default.Get(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<ApiE2ETests>("/tmp", new TestLogger<ApiE2ETests>(outputHelper));
     }
 

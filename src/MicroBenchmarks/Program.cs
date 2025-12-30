@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using BenchmarkDotNet.Running;
-using MicroBenchmarks;
+using SpeedReader.MicroBenchmarks;
 
 BenchmarkRunner.Run<DryPipelineBenchmark>();
 BenchmarkRunner.Run<StartupBenchmark>();

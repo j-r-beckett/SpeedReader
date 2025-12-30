@@ -3,7 +3,7 @@
 
 using Microsoft.Win32.SafeHandles;
 
-namespace Native.Internal;
+namespace SpeedReader.Native.Internal;
 
 internal sealed class SafeEnvironmentHandle : SafeHandleZeroOrMinusOneIsInvalid
 {

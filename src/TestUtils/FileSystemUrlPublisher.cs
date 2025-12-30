@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 
-namespace TestUtils;
+namespace SpeedReader.TestUtils;
 
 public class FileSystemUrlPublisher<T>
 {

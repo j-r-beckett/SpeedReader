@@ -1,10 +1,10 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Ocr.Algorithms;
-using Resources.CharDict;
+using SpeedReader.Ocr.Algorithms;
+using SpeedReader.Resources.CharDict;
 
-namespace Ocr.Test.Algorithms;
+namespace SpeedReader.Ocr.Test.Algorithms;
 
 public class GreedyCTCTests
 {

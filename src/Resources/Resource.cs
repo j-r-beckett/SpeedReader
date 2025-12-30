@@ -3,7 +3,7 @@
 
 using System.Reflection;
 
-namespace Resources;
+namespace SpeedReader.Resources;
 
 public record Resource
 {
@@ -28,7 +28,7 @@ public record Resource
 
     private static Stream GetResourceStream(string resourceName)
     {
-        var fullName = $"Resources.{resourceName}";
+        var fullName = $"SpeedReader.Resources.{resourceName}";
         var assembly = Assembly.GetExecutingAssembly();
 
         // The Stream returned by GetManifestResourceStream is implemented as a pointer to the embedded resource

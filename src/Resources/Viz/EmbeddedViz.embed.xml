@@ -1,5 +1,6 @@
 <Project>
   <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)template.svg" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)template.svg"
+                      LogicalName="SpeedReader.Resources.Viz.template.svg" />
   </ItemGroup>
 </Project>

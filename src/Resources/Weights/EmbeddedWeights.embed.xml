@@ -1,6 +1,9 @@
 <Project>
   <ItemGroup>
     <!-- Models files are symlinked to actual .onnx files in /models -->
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)*.onnx" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)dbnet_resnet18_fpnc_1200e_icdar2015_int8.onnx"
+                      LogicalName="SpeedReader.Resources.Weights.dbnet_resnet18_fpnc_1200e_icdar2015_int8.onnx" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)svtrv2_base_ctc_fp32.onnx"
+                      LogicalName="SpeedReader.Resources.Weights.svtrv2_base_ctc_fp32.onnx" />
   </ItemGroup>
 </Project>

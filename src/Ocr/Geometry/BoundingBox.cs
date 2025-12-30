@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Ocr.Geometry;
+namespace SpeedReader.Ocr.Geometry;
 
 public record BoundingBox
 {

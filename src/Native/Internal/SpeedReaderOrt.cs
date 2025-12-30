@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Native.Internal;
+namespace SpeedReader.Native.Internal;
 
 internal static partial class SpeedReaderOrt
 {

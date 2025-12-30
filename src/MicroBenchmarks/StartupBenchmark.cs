@@ -7,7 +7,7 @@ using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
 using SixLabors.ImageSharp;
 
-namespace MicroBenchmarks;
+namespace SpeedReader.MicroBenchmarks;
 
 [SimpleJob(RuntimeMoniker.Net10_0)]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
@@ -27,5 +27,5 @@ public class StartupBenchmark
 
     [Benchmark]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public async Task<int> ColdStart() => await Frontend.Program.Main([_imagePath]);
+    public async Task<int> ColdStart() => await SpeedReader.Frontend.Program.Main([_imagePath]);
 }

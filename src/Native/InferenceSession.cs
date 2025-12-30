@@ -2,9 +2,9 @@
 // Licensed under the Apache License, Version 2.0
 
 using System.Runtime.InteropServices;
-using Native.Internal;
+using SpeedReader.Native.Internal;
 
-namespace Native;
+namespace SpeedReader.Native;
 
 public sealed class InferenceSession : IDisposable
 {

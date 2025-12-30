@@ -4,7 +4,7 @@
 using System.Text.Json.Serialization;
 using Clipper2Lib;
 
-namespace Ocr.Geometry;
+namespace SpeedReader.Ocr.Geometry;
 
 public record Polygon
 {

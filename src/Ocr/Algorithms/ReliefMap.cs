@@ -3,9 +3,9 @@
 
 using System.Diagnostics;
 using System.Numerics.Tensors;
-using Ocr.Geometry;
+using SpeedReader.Ocr.Geometry;
 
-namespace Ocr.Algorithms;
+namespace SpeedReader.Ocr.Algorithms;
 
 public record ReliefMap
 {

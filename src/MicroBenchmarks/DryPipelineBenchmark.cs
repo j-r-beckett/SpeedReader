@@ -6,14 +6,14 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
 using Microsoft.Extensions.DependencyInjection;
-using Ocr;
-using Ocr.Geometry;
-using Ocr.InferenceEngine;
-using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SpeedReader.Ocr;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Ocr.InferenceEngine;
+using SpeedReader.Ocr.Visualization;
 
-namespace MicroBenchmarks;
+namespace SpeedReader.MicroBenchmarks;
 
 [SimpleJob(RuntimeMoniker.Net10_0)]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]

@@ -5,15 +5,15 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using CommunityToolkit.HighPerformance;
 using Microsoft.Extensions.DependencyInjection;
-using Ocr.Algorithms;
-using Ocr.Geometry;
-using Ocr.InferenceEngine;
-using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SpeedReader.Ocr.Algorithms;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Ocr.InferenceEngine;
+using SpeedReader.Ocr.Visualization;
 
-namespace Ocr;
+namespace SpeedReader.Ocr;
 
 public class TextDetector
 {

@@ -4,9 +4,9 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
-using Ocr.SmartMetrics;
+using SpeedReader.Ocr.SmartMetrics;
 
-namespace Ocr.InferenceEngine.Engines;
+namespace SpeedReader.Ocr.InferenceEngine.Engines;
 
 public class CpuEngine : IInferenceEngine
 {

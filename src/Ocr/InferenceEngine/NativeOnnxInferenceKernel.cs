@@ -2,11 +2,11 @@
 // Licensed under the Apache License, Version 2.0
 
 using Microsoft.Extensions.DependencyInjection;
-using Native;
-using Resources.CharDict;
-using Resources.Weights;
+using SpeedReader.Native;
+using SpeedReader.Resources.CharDict;
+using SpeedReader.Resources.Weights;
 
-namespace Ocr.InferenceEngine;
+namespace SpeedReader.Ocr.InferenceEngine;
 
 public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
 {

@@ -3,11 +3,11 @@
 
 using System.Diagnostics;
 using System.Threading.Channels;
-using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SpeedReader.Ocr.Visualization;
 
-namespace Ocr;
+namespace SpeedReader.Ocr;
 
 public class OcrPipeline
 {

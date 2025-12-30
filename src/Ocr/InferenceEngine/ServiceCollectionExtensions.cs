@@ -3,11 +3,11 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Ocr.InferenceEngine.Engines;
-using Resources;
-using Resources.Weights;
+using SpeedReader.Ocr.InferenceEngine.Engines;
+using SpeedReader.Resources;
+using SpeedReader.Resources.Weights;
 
-namespace Ocr.InferenceEngine;
+namespace SpeedReader.Ocr.InferenceEngine;
 
 public static class Factories
 {

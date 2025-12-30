@@ -4,7 +4,7 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Test.FlowControl;
+namespace SpeedReader.Ocr.Test.FlowControl;
 
 public class TextReaderBackpressureTests
 {

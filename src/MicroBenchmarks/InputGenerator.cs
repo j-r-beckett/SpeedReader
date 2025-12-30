@@ -1,14 +1,14 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Resources.Font;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SpeedReader.Resources.Font;
 
-namespace MicroBenchmarks;
+namespace SpeedReader.MicroBenchmarks;
 
 public enum Density
 {

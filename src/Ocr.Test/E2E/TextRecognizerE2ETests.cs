@@ -4,17 +4,17 @@
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Ocr.Geometry;
-using Ocr.InferenceEngine;
-using Ocr.Visualization;
-using Resources.Font;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using TestUtils;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Ocr.InferenceEngine;
+using SpeedReader.Ocr.Visualization;
+using SpeedReader.Resources.Font;
+using SpeedReader.TestUtils;
 using Xunit.Abstractions;
 
-namespace Ocr.Test.E2E;
+namespace SpeedReader.Ocr.Test.E2E;
 
 public class TextRecognizerE2ETests
 {

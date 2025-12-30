@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace TestUtils;
+namespace SpeedReader.TestUtils;
 
 /// <summary>
 /// Utilities for creating test images with oriented rectangles and gradients

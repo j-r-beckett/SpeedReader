@@ -1,12 +1,12 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Ocr.Algorithms;
-using Ocr.Geometry;
-using TestUtils;
+using SpeedReader.Ocr.Algorithms;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.TestUtils;
 using Xunit.Abstractions;
 
-namespace Ocr.Test.Algorithms;
+namespace SpeedReader.Ocr.Test.Algorithms;
 
 public class FloodFillTests
 {

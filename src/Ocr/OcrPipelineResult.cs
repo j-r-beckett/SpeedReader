@@ -1,12 +1,12 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Ocr.Geometry;
-using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Ocr.Visualization;
 
-namespace Ocr;
+namespace SpeedReader.Ocr;
 
 public record OcrPipelineResult
 {

@@ -3,7 +3,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Ocr.InferenceEngine.Engines;
+namespace SpeedReader.Ocr.InferenceEngine.Engines;
 
 public class GpuEngine : IInferenceEngine
 {

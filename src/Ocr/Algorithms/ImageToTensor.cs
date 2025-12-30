@@ -4,7 +4,7 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ocr.Algorithms;
+namespace SpeedReader.Ocr.Algorithms;
 
 public static class PixelsToFloatsExtensions
 {

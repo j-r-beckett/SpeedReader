@@ -1,5 +1,6 @@
 <Project>
   <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)arial.ttf" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)arial.ttf"
+                      LogicalName="SpeedReader.Resources.Font.arial.ttf" />
   </ItemGroup>
 </Project>

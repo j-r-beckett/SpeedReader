@@ -1,10 +1,10 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Resources.Font;
 using SixLabors.Fonts;
+using SpeedReader.Resources.Font;
 
-namespace Resources.Test;
+namespace SpeedReader.Resources.Test;
 
 public class FontsTests
 {

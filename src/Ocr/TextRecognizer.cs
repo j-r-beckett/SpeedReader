@@ -5,16 +5,16 @@ using System.Diagnostics;
 using System.Numerics.Tensors;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
-using Ocr.Algorithms;
-using Ocr.Geometry;
-using Ocr.InferenceEngine;
-using Ocr.Visualization;
-using Resources.CharDict;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SpeedReader.Ocr.Algorithms;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Ocr.InferenceEngine;
+using SpeedReader.Ocr.Visualization;
+using SpeedReader.Resources.CharDict;
 
-namespace Ocr;
+namespace SpeedReader.Ocr;
 
 public class TextRecognizer
 {

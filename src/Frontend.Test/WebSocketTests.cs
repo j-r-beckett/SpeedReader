@@ -11,10 +11,10 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using TestUtils;
+using SpeedReader.TestUtils;
 using Xunit.Abstractions;
 
-namespace Frontend.Test;
+namespace SpeedReader.Frontend.Test;
 
 public class WebSocketTests : IClassFixture<ServerFixture>
 {
@@ -26,7 +26,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
     public WebSocketTests(ServerFixture server, ITestOutputHelper outputHelper)
     {
         _server = server;
-        _font = Resources.Font.EmbeddedFont.Default.Get(fontSize: 18f);
+        _font = SpeedReader.Resources.Font.EmbeddedFont.Default.Get(fontSize: 18f);
         _imageSaver = new FileSystemUrlPublisher<WebSocketTests>("/tmp", new TestLogger<WebSocketTests>(outputHelper));
         _logger = new TestLogger(outputHelper);
     }

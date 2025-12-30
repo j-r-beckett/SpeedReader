@@ -2,5 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <NoWarn>$(NoWarn);SYSLIB5001</NoWarn>
+    <RootNamespace>SpeedReader.$(MSBuildProjectName)</RootNamespace>
   </PropertyGroup>
 </Project>

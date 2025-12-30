@@ -3,15 +3,15 @@
 
 using System.Diagnostics;
 using Clipper2Lib;
-using Ocr.Geometry;
-using Resources.Font;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Resources.Font;
 
-namespace Ocr.Test.E2E;
+namespace SpeedReader.Ocr.Test.E2E;
 
 public static class Utils
 {

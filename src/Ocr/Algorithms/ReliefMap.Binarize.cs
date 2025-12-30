@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Numerics;
 
-namespace Ocr.Algorithms;
+namespace SpeedReader.Ocr.Algorithms;
 
 public static partial class ReliefMapExtensions
 {

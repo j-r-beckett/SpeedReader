@@ -2,6 +2,6 @@
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)../../Frontend/Web/dist/index.html"
                       Link="Web/demo.html"
-                      LogicalName="Resources.Web.demo.html" />
+                      LogicalName="SpeedReader.Resources.Web.demo.html" />
   </ItemGroup>
 </Project>

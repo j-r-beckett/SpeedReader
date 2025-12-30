@@ -4,9 +4,9 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Text;
-using Resources.CharDict;
+using SpeedReader.Resources.CharDict;
 
-namespace Ocr.Algorithms;
+namespace SpeedReader.Ocr.Algorithms;
 
 public static class GreedyCTC
 {

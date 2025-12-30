@@ -1,9 +1,9 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Ocr.Geometry;
+using SpeedReader.Ocr.Geometry;
 
-namespace Ocr.Algorithms;
+namespace SpeedReader.Ocr.Algorithms;
 
 public static partial class ReliefMapExtensions
 {

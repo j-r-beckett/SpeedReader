@@ -1,15 +1,15 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using Ocr.Geometry;
-using Ocr.InferenceEngine;
-using Ocr.Visualization;
-using Resources.CharDict;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Point = Ocr.Geometry.Point;
+using SpeedReader.Ocr.Geometry;
+using SpeedReader.Ocr.InferenceEngine;
+using SpeedReader.Ocr.Visualization;
+using SpeedReader.Resources.CharDict;
+using Point = SpeedReader.Ocr.Geometry.Point;
 
-namespace Ocr.Test.FlowControl;
+namespace SpeedReader.Ocr.Test.FlowControl;
 
 public class MockInferenceEngine : IInferenceEngine
 {
