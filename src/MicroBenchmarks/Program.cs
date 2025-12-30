@@ -1,8 +1,8 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using BenchmarkDotNet.Running;
-using SpeedReader.MicroBenchmarks;
+using System.CommandLine;
+using SpeedReader.MicroBenchmarks.Cli;
 
-BenchmarkRunner.Run<DryPipelineBenchmark>();
-BenchmarkRunner.Run<StartupBenchmark>();
+var rootCommand = Commands.CreateRootCommand();
+return await rootCommand.InvokeAsync(args);
