@@ -4,6 +4,8 @@ SpeedReader is an OCR pipeline for images and video. It handles threading, batch
 
 **Status**: Early development (v0.x). Breaking changes expected before 1.0.
 
+The static build is fully self-contained, and runs in a `FROM scratch` Docker container.
+
 ## Development
 
 Set up pre-commit hook:
