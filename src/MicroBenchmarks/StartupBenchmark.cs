@@ -7,7 +7,7 @@ using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
 using SixLabors.ImageSharp;
 
-namespace Benchmarks;
+namespace MicroBenchmarks;
 
 [SimpleJob(RuntimeMoniker.Net10_0)]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]

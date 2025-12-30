@@ -13,7 +13,7 @@ using Ocr.Visualization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Benchmarks;
+namespace MicroBenchmarks;
 
 [SimpleJob(RuntimeMoniker.Net10_0)]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
