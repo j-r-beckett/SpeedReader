@@ -29,8 +29,8 @@ def _(build_result):
     _ = build_result
     sweep_results = run_benchmark_sweep(
         model="svtr",
+        duration_seconds=5.0,
         batch_size=[1, 2, 4, 8, 16, 32],
-        iterations=100,
         warmup=10,
     )
     return (sweep_results,)
@@ -42,13 +42,14 @@ def _(sweep_results):
         rows = []
         for cfg, measurements in sweep_results:
             batch_size = cfg["batch_size"]
-            avg_ms = sum(measurements) / len(measurements)
+            durations = [d for _, d in measurements]
+            avg_ms = sum(durations) / len(durations)
             per_image_ms = avg_ms / batch_size
             rows.append({
                 "batch_size": batch_size,
                 "avg_total_ms": avg_ms,
                 "per_image_ms": per_image_ms,
-                "measurements": measurements,
+                "samples": len(measurements),
             })
         return pd.DataFrame(rows)
 
@@ -83,7 +84,7 @@ Smaller inputs fit in cache, so batching might amortize model weight loading ove
         """),
         fig,
         mo.md("### Raw Data"),
-        mo.ui.table(df[["batch_size", "avg_total_ms", "per_image_ms"]]),
+        mo.ui.table(df[["batch_size", "avg_total_ms", "per_image_ms", "samples"]]),
     ])
     return
 

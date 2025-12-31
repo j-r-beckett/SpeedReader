@@ -43,10 +43,10 @@ public static class Commands
             IsRequired = true
         };
 
-        var warmupOption = new Option<int>(
+        var warmupOption = new Option<double>(
             aliases: ["-w", "--warmup"],
-            getDefaultValue: () => 10,
-            description: "Number of warmup iterations");
+            getDefaultValue: () => 2.0,
+            description: "Warmup duration in seconds");
 
         var intraThreadsOption = new Option<int>(
             name: "--intra-threads",
@@ -63,10 +63,10 @@ public static class Commands
             getDefaultValue: () => 1,
             description: "Application parallelism (concurrent tasks calling inference)");
 
-        var iterationsOption = new Option<int>(
-            aliases: ["-n", "--iterations"],
-            getDefaultValue: () => 100,
-            description: "Number of benchmark iterations");
+        var durationOption = new Option<double>(
+            aliases: ["-d", "--duration"],
+            getDefaultValue: () => 10.0,
+            description: "Benchmark duration in seconds");
 
         var batchSizeOption = new Option<int>(
             aliases: ["-b", "--batch-size"],
@@ -77,19 +77,14 @@ public static class Commands
             name: "--profile",
             description: "Enable ONNX profiling (writes to current directory)");
 
-        var timestampedOption = new Option<bool>(
-            name: "--timestamped",
-            description: "Output ISO 8601 timestamp with each measurement (timestamp,duration_ms)");
-
         command.AddOption(modelOption);
         command.AddOption(warmupOption);
         command.AddOption(intraThreadsOption);
         command.AddOption(interThreadsOption);
         command.AddOption(parallelismOption);
-        command.AddOption(iterationsOption);
+        command.AddOption(durationOption);
         command.AddOption(batchSizeOption);
         command.AddOption(profileOption);
-        command.AddOption(timestampedOption);
 
         command.SetHandler(context =>
         {
@@ -98,10 +93,9 @@ public static class Commands
             var intraThreads = context.ParseResult.GetValueForOption(intraThreadsOption);
             var interThreads = context.ParseResult.GetValueForOption(interThreadsOption);
             var parallelism = context.ParseResult.GetValueForOption(parallelismOption);
-            var iterations = context.ParseResult.GetValueForOption(iterationsOption);
+            var duration = context.ParseResult.GetValueForOption(durationOption);
             var batchSize = context.ParseResult.GetValueForOption(batchSizeOption);
             var profile = context.ParseResult.GetValueForOption(profileOption);
-            var timestamped = context.ParseResult.GetValueForOption(timestampedOption);
 
             var model = modelName.ToLowerInvariant() switch
             {
@@ -110,7 +104,7 @@ public static class Commands
                 _ => throw new ArgumentException($"Unknown model: {modelName}. Use 'dbnet' or 'svtr'.")
             };
 
-            InferenceBenchmark.Run(model, warmup, intraThreads, interThreads, parallelism, iterations, batchSize, profile, timestamped);
+            InferenceBenchmark.Run(model, warmup, intraThreads, interThreads, parallelism, duration, batchSize, profile);
         });
 
         return command;

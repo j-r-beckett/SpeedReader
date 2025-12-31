@@ -1,7 +1,6 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using SpeedReader.Native;
 using SpeedReader.Ocr.InferenceEngine;
@@ -11,17 +10,17 @@ namespace SpeedReader.MicroBenchmarks.Cli;
 
 public static class InferenceBenchmark
 {
-    public static void Run(Model model, int warmup, int intraThreads, int interThreads,
-        int parallelism, int iterations, int batchSize, bool profile, bool timestamped)
+    public static void Run(Model model, double warmup, int intraThreads, int interThreads,
+        int parallelism, double duration, int batchSize, bool profile)
     {
         if (parallelism == 1)
-            RunSingleThreaded(model, warmup, intraThreads, interThreads, iterations, batchSize, profile, timestamped);
+            RunSingleThreaded(model, warmup, intraThreads, interThreads, duration, batchSize, profile);
         else
-            RunParallel(model, warmup, intraThreads, interThreads, parallelism, iterations, batchSize, profile, timestamped);
+            RunParallel(model, warmup, intraThreads, interThreads, parallelism, duration, batchSize, profile);
     }
 
-    private static void RunSingleThreaded(Model model, int warmup, int intraThreads, int interThreads,
-        int iterations, int batchSize, bool profile, bool timestamped)
+    private static void RunSingleThreaded(Model model, double warmup, int intraThreads, int interThreads,
+        double duration, int batchSize, bool profile)
     {
         var (inputShape, outputShape) = GetShapes(model, batchSize);
 
@@ -46,36 +45,28 @@ public static class InferenceBenchmark
         var output = OrtValue.Create(outputData, outputShape);
 
         // Warmup
-        for (var i = 0; i < warmup; i++)
+        var warmupSw = Stopwatch.StartNew();
+        while (warmupSw.Elapsed.TotalSeconds < warmup)
             session.Run(input, output);
 
         // Benchmark
         var baseTime = DateTimeOffset.UtcNow;
         var globalSw = Stopwatch.StartNew();
         var sw = new Stopwatch();
-        for (var i = 0; i < iterations; i++)
+        while (globalSw.Elapsed.TotalSeconds < duration)
         {
             sw.Restart();
             session.Run(input, output);
             sw.Stop();
-            var duration = sw.Elapsed.TotalMilliseconds;
-            if (timestamped)
-            {
-                var timestamp = baseTime.Add(globalSw.Elapsed);
-                Console.WriteLine($"{timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ},{duration:F4}");
-            }
-            else
-            {
-                Console.WriteLine($"{duration:F4}");
-            }
+            var timestamp = baseTime.Add(globalSw.Elapsed);
+            Console.WriteLine($"{timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ},{sw.Elapsed.TotalMilliseconds:F4}");
         }
     }
 
-    private static void RunParallel(Model model, int warmup, int intraThreads, int interThreads,
-        int parallelism, int iterations, int batchSize, bool profile, bool timestamped)
+    private static void RunParallel(Model model, double warmup, int intraThreads, int interThreads,
+        int parallelism, double duration, int batchSize, bool profile)
     {
         var (inputShape, outputShape) = GetShapes(model, batchSize);
-        var iterationsPerTask = iterations / parallelism;
 
         var weights = model == Model.DbNet ? EmbeddedWeights.Dbnet_Int8 : EmbeddedWeights.Svtr_Fp32;
         var sessionOptions = new SessionOptions()
@@ -108,7 +99,8 @@ public static class InferenceBenchmark
         // Warmup (each session)
         for (var t = 0; t < parallelism; t++)
         {
-            for (var i = 0; i < warmup; i++)
+            var warmupSw = Stopwatch.StartNew();
+            while (warmupSw.Elapsed.TotalSeconds < warmup)
                 sessions[t].Run(inputs[t], outputs[t]);
         }
 
@@ -128,25 +120,16 @@ public static class InferenceBenchmark
                 var output = outputs[taskIndex];
                 var sw = new Stopwatch();
 
-                for (var i = 0; i < iterationsPerTask; i++)
+                while (globalSw.Elapsed.TotalSeconds < duration)
                 {
                     sw.Restart();
                     session.Run(input, output);
                     sw.Stop();
-                    var duration = sw.Elapsed.TotalMilliseconds;
 
-                    // Print immediately for live progress updates
                     lock (outputLock)
                     {
-                        if (timestamped)
-                        {
-                            var timestamp = baseTime.Add(globalSw.Elapsed);
-                            Console.WriteLine($"{timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ},{duration:F4}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"{duration:F4}");
-                        }
+                        var timestamp = baseTime.Add(globalSw.Elapsed);
+                        Console.WriteLine($"{timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ},{sw.Elapsed.TotalMilliseconds:F4}");
                     }
                 }
             });

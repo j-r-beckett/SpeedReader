@@ -10,10 +10,10 @@ app = marimo.App()
 
 with app.setup:
     import marimo as mo
+    import numpy as np
     import pandas as pd
     import seaborn as sns
     import matplotlib.pyplot as plt
-    from datetime import datetime
     from helpers import build_inference_benchmark, run_benchmark_sweep
 
     sns.set_theme()
@@ -21,130 +21,140 @@ with app.setup:
 
 @app.cell
 def _():
-    build_result = build_inference_benchmark()
-    return (build_result,)
+    binary_path = build_inference_benchmark()
+    return (binary_path,)
 
 
 @app.cell
-def _(build_result):
-    _ = build_result
-    sweep_results = run_benchmark_sweep(
+def _(binary_path):
+    df = run_benchmark_sweep(
+        binary_path=binary_path,
         model="dbnet",
-        parallelism=[1, 2, 4],
-        iterations=120,
-        warmup=5,
-        timestamped=True,
+        duration_seconds=8.0,
+        warmup=2.0,
+        parallelism=[1, 2, 3, 4, 5, 6, 7, 8],
     )
-    return (sweep_results,)
-
-
-@app.cell
-def _(sweep_results):
-    def _():
-        rows = []
-        for cfg, measurements in sweep_results:
-            parallelism = cfg["parallelism"]
-            for ts_str, duration_ms in measurements:
-                ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                rows.append({
-                    "parallelism": parallelism,
-                    "timestamp": ts,
-                    "duration_ms": duration_ms,
-                })
-        return pd.DataFrame(rows)
-
-    df = _()
     return (df,)
 
 
 @app.cell
 def _(df):
     def _():
+        slot_ms = 1000
+        slot_s = slot_ms / 1000.0
         result_rows = []
+
         for parallelism, group in df.groupby("parallelism"):
             group = group.sort_values("timestamp")
             t0 = group["timestamp"].min()
             group = group.copy()
-            group["elapsed_s"] = (group["timestamp"] - t0).dt.total_seconds()
 
-            # Bucket into 1-second windows
-            group["window"] = group["elapsed_s"].astype(int)
-            throughput = group.groupby("window").size().reset_index(name="inferences_per_sec")
-            throughput["parallelism"] = parallelism
-            result_rows.append(throughput)
-        return pd.concat(result_rows, ignore_index=True)
+            # Compute event intervals in seconds relative to t0
+            group["end_s"] = (group["timestamp"] - t0).dt.total_seconds()
+            group["start_s"] = group["end_s"] - group["duration_ms"] / 1000.0
+            group["duration_s"] = group["duration_ms"] / 1000.0
+            group["speed"] = 1000.0 / group["duration_ms"]  # inferences per second
+
+            # Create slots
+            max_time = group["end_s"].max()
+            num_slots = int(np.ceil(max_time / slot_s))
+
+            for slot_idx in range(num_slots):
+                slot_start = slot_idx * slot_s
+                slot_end = slot_start + slot_s
+
+                # Find events where >= 50% of duration overlaps this slot
+                def overlap_fraction(row):
+                    overlap_start = max(row["start_s"], slot_start)
+                    overlap_end = min(row["end_s"], slot_end)
+                    overlap = max(0, overlap_end - overlap_start)
+                    return overlap / row["duration_s"] if row["duration_s"] > 0 else 0
+
+                overlaps = group.apply(overlap_fraction, axis=1)
+                assigned = group[overlaps >= 0.5]
+
+                # Count observations in slot, divide by slot duration for inferences/sec
+                throughput = len(assigned) / slot_s
+                result_rows.append({
+                    "time_s": slot_start,
+                    "inferences_per_sec": throughput,
+                    "parallelism": parallelism,
+                })
+        return pd.DataFrame(result_rows)
 
     throughput_df = _()
     return (throughput_df,)
 
 
 @app.cell
-def _(df, throughput_df):
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+def _(df):
+    def _():
+        stats_rows = []
+        for parallelism, group in df.groupby("parallelism"):
+            t0 = group["timestamp"].min()
+            t1 = group["timestamp"].max()
+            total_time_s = (t1 - t0).total_seconds()
+            total_inferences = len(group)
+            avg_throughput_val = total_inferences / total_time_s if total_time_s > 0 else 0
+            avg_duration = group["duration_ms"].mean()
+            std_duration = group["duration_ms"].std()
+            stats_rows.append({
+                "parallelism": parallelism,
+                "avg_throughput": round(avg_throughput_val, 2),
+                "avg_duration_ms": round(avg_duration, 2),
+                "std_duration_ms": round(std_duration, 2),
+            })
+        result = pd.DataFrame(stats_rows).sort_values("parallelism")
+        result["scaling_factor"] = (result["avg_throughput"] / result["avg_throughput"].shift(1)).round(2)
+        return result
+
+    stats_df = _()
+    return (stats_df,)
+
+
+@app.cell
+def _(throughput_df):
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
 
     # Throughput over time
     sns.lineplot(
         data=throughput_df,
-        x="window",
+        x="time_s",
         y="inferences_per_sec",
         hue="parallelism",
-        marker="o",
         ax=axes[0],
-        palette="viridis",
+        palette="tab10",
     )
-    axes[0].set_xlabel("Time (seconds)")
+    axes[0].set_xlabel("Time (s)")
     axes[0].set_ylabel("Inferences / second")
     axes[0].set_title("Throughput Over Time by Parallelism")
-    axes[0].legend(title="Parallelism")
+    axes[0].set_ylim(bottom=0)
+    handles, labels = axes[0].get_legend_handles_labels()
+    axes[0].legend(handles[::-1], labels[::-1], title="Parallelism", loc="upper left", bbox_to_anchor=(1, 1))
 
     # Summary: average throughput per parallelism
     avg_throughput = throughput_df.groupby("parallelism")["inferences_per_sec"].mean().reset_index()
-    sns.barplot(
+    sns.lineplot(
         data=avg_throughput,
         x="parallelism",
         y="inferences_per_sec",
         ax=axes[1],
+        marker="o",
         color="#1a1a2e",
     )
     axes[1].set_xlabel("Parallelism")
     axes[1].set_ylabel("Avg Inferences / second")
     axes[1].set_title("Average Throughput by Parallelism")
+    axes[1].set_ylim(bottom=0)
 
     plt.tight_layout()
+    fig
+    return
 
-    # Compute stats
-    stats_rows = []
-    for parallelism, group in df.groupby("parallelism"):
-        t0 = group["timestamp"].min()
-        t1 = group["timestamp"].max()
-        total_time_s = (t1 - t0).total_seconds()
-        total_inferences = len(group)
-        avg_throughput_val = total_inferences / total_time_s if total_time_s > 0 else 0
-        avg_duration = group["duration_ms"].mean()
-        stats_rows.append({
-            "parallelism": parallelism,
-            "total_inferences": total_inferences,
-            "total_time_s": round(total_time_s, 2),
-            "avg_throughput": round(avg_throughput_val, 2),
-            "avg_duration_ms": round(avg_duration, 2),
-        })
-    stats_df = pd.DataFrame(stats_rows)
 
-    mo.vstack([
-        mo.md("""
-## Throughput Analysis
-
-This notebook analyzes inference throughput across different parallelism levels.
-
-**Key questions:**
-- Does parallelism improve throughput?
-- Is throughput stable over time, or does it degrade (thermal throttling, memory pressure)?
-- What's the efficiency gain per additional thread?
-        """),
-        fig,
-        mo.md("### Summary Statistics"),
-        mo.ui.table(stats_df),
-    ])
+@app.cell
+def _(stats_df):
+    mo.ui.table(stats_df)
     return
 
 

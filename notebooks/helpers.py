@@ -13,66 +13,84 @@ app = marimo.App()
 
 with app.setup:
     import marimo as mo
+    import os
+    import select
     import subprocess
+    import time
+    from datetime import datetime
     from itertools import product
     from pathlib import Path
 
+    import pandas as pd
+
 
 @app.function
-def build_inference_benchmark() -> None:
-    """Build the MicroBenchmarks project."""
+def build_inference_benchmark() -> Path:
+    """Build the MicroBenchmarks project and return the binary path."""
     project_path = Path(__file__).parent.parent / "src" / "MicroBenchmarks"
 
     with mo.status.spinner(title="Building MicroBenchmarks..."):
         build_result = subprocess.run(
-            ["dotnet", "build", str(project_path), "--verbosity", "quiet"],
+            ["dotnet", "build", str(project_path), "-c", "Release", "--verbosity", "quiet"],
             capture_output=True,
             text=True,
         )
     if build_result.returncode != 0:
-        raise RuntimeError(f"Build failed:\n{build_result.stderr}")
+        raise RuntimeError(f"Build failed:\n{build_result.stdout}\n{build_result.stderr}")
 
-    return True
+    # Find the built binary
+    bin_dir = project_path / "bin" / "Release" / "net10.0"
+    binary_path = bin_dir / "MicroBenchmarks"
+    if not binary_path.exists():
+        # Try with .dll extension and use dotnet to run
+        dll_path = bin_dir / "MicroBenchmarks.dll"
+        if dll_path.exists():
+            return dll_path
+        raise RuntimeError(f"Binary not found at {binary_path} or {dll_path}")
+
+    return binary_path
 
 
-@app.function
-def run_inference_benchmark(
+def _run_inference_benchmark(
+    binary_path: Path,
     model: str,
-    batch_size: int = 1,
-    intra_threads: int = 1,
-    inter_threads: int = 1,
-    parallelism: int = 1,
-    iterations: int = 100,
-    warmup: int = 10,
-    timestamped: bool = False,
-) -> list[float] | list[tuple[str, float]]:
+    duration_seconds: float,
+    batch_size: int,
+    intra_threads: int,
+    inter_threads: int,
+    parallelism: int,
+    warmup: float,
+    on_tick,
+) -> list[tuple[str, float]]:
     """
-    Run inference benchmark and return timing data.
+    Internal function to run inference benchmark.
 
-    Assumes project is already built (call build_inference_benchmark first).
-    Shows progress bar during execution.
-
-    Returns:
-        If timestamped=False: list of durations in milliseconds
-        If timestamped=True: list of (ISO 8601 timestamp, duration_ms) tuples
+    on_tick() is called periodically (~10Hz) during execution for progress updates.
     """
-    project_path = Path(__file__).parent.parent / "src" / "MicroBenchmarks"
-
-    cmd = [
-        "dotnet", "run",
-        "--project", str(project_path),
-        "--no-build",
-        "--", "inference",
-        "-m", model,
-        "-b", str(batch_size),
-        "--intra-threads", str(intra_threads),
-        "--inter-threads", str(inter_threads),
-        "-p", str(parallelism),
-        "-n", str(iterations),
-        "-w", str(warmup),
-    ]
-    if timestamped:
-        cmd.append("--timestamped")
+    if str(binary_path).endswith(".dll"):
+        cmd = [
+            "dotnet", str(binary_path),
+            "inference",
+            "-m", model,
+            "-d", str(duration_seconds),
+            "-b", str(batch_size),
+            "--intra-threads", str(intra_threads),
+            "--inter-threads", str(inter_threads),
+            "-p", str(parallelism),
+            "-w", str(warmup),
+        ]
+    else:
+        cmd = [
+            str(binary_path),
+            "inference",
+            "-m", model,
+            "-d", str(duration_seconds),
+            "-b", str(batch_size),
+            "--intra-threads", str(intra_threads),
+            "--inter-threads", str(inter_threads),
+            "-p", str(parallelism),
+            "-w", str(warmup),
+        ]
 
     proc = subprocess.Popen(
         cmd,
@@ -81,18 +99,39 @@ def run_inference_benchmark(
         text=True,
     )
 
-    results = []
-    with mo.status.progress_bar(total=iterations, title="Running benchmark") as bar:
-        for line in proc.stdout:
-            line = line.strip()
-            if timestamped:
-                ts, duration = line.split(",")
-                results.append((ts, float(duration)))
-            else:
-                results.append(float(line))
-            bar.update()
+    # Make stdout non-blocking
+    fd = proc.stdout.fileno()
+    os.set_blocking(fd, False)
 
-    proc.wait()
+    results = []
+    buffer = ""
+
+    while proc.poll() is None:
+        # Wait for data with timeout for periodic progress updates
+        ready, _, _ = select.select([proc.stdout], [], [], 0.1)
+        on_tick()
+
+        if ready:
+            chunk = proc.stdout.read()
+            if chunk:
+                buffer += chunk
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if line:
+                        ts, duration = line.split(",")
+                        results.append((ts, float(duration)))
+
+    # Read any remaining output
+    remaining = proc.stdout.read()
+    if remaining:
+        buffer += remaining
+    for line in buffer.strip().split("\n"):
+        line = line.strip()
+        if line:
+            ts, duration = line.split(",")
+            results.append((ts, float(duration)))
+
     if proc.returncode != 0:
         raise RuntimeError(f"Benchmark failed:\n{proc.stderr.read()}")
 
@@ -101,25 +140,23 @@ def run_inference_benchmark(
 
 @app.function
 def run_benchmark_sweep(
+    binary_path: Path,
     model: str | list[str],
+    duration_seconds: float = 10.0,
     batch_size: int | list[int] = 1,
     intra_threads: int | list[int] = 1,
     inter_threads: int | list[int] = 1,
     parallelism: int | list[int] = 1,
-    iterations: int = 100,
-    warmup: int = 10,
-    timestamped: bool = False,
-) -> list[tuple[dict, list]]:
+    warmup: float = 2.0,
+) -> pd.DataFrame:
     """
     Run inference benchmark over all combinations of parameters.
 
     Parameters that accept lists will be swept over (cartesian product).
-    Returns a list of (config_dict, measurements) tuples.
+    Returns a DataFrame with columns for each config parameter plus timestamp and duration_ms.
 
     The config dict contains the "what" (model, batch_size, threads, parallelism).
-    iterations/warmup/timestamped control "how" we measure and are not included in configs.
-
-    If timestamped=True, measurements are (timestamp, duration_ms) tuples.
+    duration_seconds/warmup control "how" we measure and are not included in configs.
     """
 
     def to_list(x):
@@ -144,21 +181,54 @@ def run_benchmark_sweep(
         )
     ]
 
-    results = []
-    for cfg in configs:
-        measurements = run_inference_benchmark(
-            model=cfg["model"],
-            batch_size=cfg["batch_size"],
-            intra_threads=cfg["intra_threads"],
-            inter_threads=cfg["inter_threads"],
-            parallelism=cfg["parallelism"],
-            iterations=iterations,
-            warmup=warmup,
-            timestamped=timestamped,
-        )
-        results.append((cfg, measurements))
+    num_configs = len(configs)
+    config_duration = warmup + duration_seconds
+    rows = []
 
-    return results
+    with mo.status.progress_bar(total=100, show_rate=False, show_eta=False) as bar:
+        last_progress = 0
+
+        for config_idx, cfg in enumerate(configs):
+            slice_start = (config_idx / num_configs) * 100
+            slice_end = ((config_idx + 1) / num_configs) * 100
+            config_start_time = time.time()
+
+            def on_tick():
+                nonlocal last_progress
+                elapsed = time.time() - config_start_time
+                fraction = min(1.0, elapsed / config_duration)
+                progress = int(slice_start + fraction * (slice_end - slice_start))
+                progress = min(progress, int(slice_end) - 1)
+                if progress > last_progress:
+                    bar.update(progress - last_progress)
+                    last_progress = progress
+
+            measurements = _run_inference_benchmark(
+                binary_path=binary_path,
+                model=cfg["model"],
+                duration_seconds=duration_seconds,
+                batch_size=cfg["batch_size"],
+                intra_threads=cfg["intra_threads"],
+                inter_threads=cfg["inter_threads"],
+                parallelism=cfg["parallelism"],
+                warmup=warmup,
+                on_tick=on_tick,
+            )
+
+            for ts_str, duration_ms in measurements:
+                ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                rows.append({
+                    **cfg,
+                    "timestamp": ts,
+                    "duration_ms": duration_ms,
+                })
+
+            # Snap to slice_end
+            if last_progress < int(slice_end):
+                bar.update(int(slice_end) - last_progress)
+                last_progress = int(slice_end)
+
+    return pd.DataFrame(rows)
 
 
 if __name__ == "__main__":
