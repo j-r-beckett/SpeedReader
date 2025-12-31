@@ -14,6 +14,7 @@ app = marimo.App()
 with app.setup:
     import marimo as mo
     import subprocess
+    from itertools import product
     from pathlib import Path
 
 
@@ -80,6 +81,64 @@ def run_inference_benchmark(
     proc.wait()
     if proc.returncode != 0:
         raise RuntimeError(f"Benchmark failed:\n{proc.stderr.read()}")
+
+    return results
+
+
+@app.function
+def run_benchmark_sweep(
+    model: str | list[str],
+    batch_size: int | list[int] = 1,
+    intra_threads: int | list[int] = 1,
+    inter_threads: int | list[int] = 1,
+    parallelism: int | list[int] = 1,
+    iterations: int = 100,
+    warmup: int = 10,
+) -> list[tuple[dict, list[float]]]:
+    """
+    Run inference benchmark over all combinations of parameters.
+
+    Parameters that accept lists will be swept over (cartesian product).
+    Returns a list of (config_dict, measurements) tuples.
+
+    The config dict contains the "what" (model, batch_size, threads, parallelism).
+    iterations/warmup control "how" we measure and are not included in configs.
+    """
+
+    def to_list(x):
+        return x if isinstance(x, list) else [x]
+
+    models = to_list(model)
+    batch_sizes = to_list(batch_size)
+    intra_threads_list = to_list(intra_threads)
+    inter_threads_list = to_list(inter_threads)
+    parallelisms = to_list(parallelism)
+
+    configs = [
+        {
+            "model": m,
+            "batch_size": b,
+            "intra_threads": intra,
+            "inter_threads": inter,
+            "parallelism": p,
+        }
+        for m, b, intra, inter, p in product(
+            models, batch_sizes, intra_threads_list, inter_threads_list, parallelisms
+        )
+    ]
+
+    results = []
+    for cfg in configs:
+        measurements = run_inference_benchmark(
+            model=cfg["model"],
+            batch_size=cfg["batch_size"],
+            intra_threads=cfg["intra_threads"],
+            inter_threads=cfg["inter_threads"],
+            parallelism=cfg["parallelism"],
+            iterations=iterations,
+            warmup=warmup,
+        )
+        results.append((cfg, measurements))
 
     return results
 

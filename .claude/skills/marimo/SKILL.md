@@ -304,3 +304,36 @@ The `--watch` flag auto-reloads when you edit the file, enabling a workflow wher
 **Watch mode limitation**: `--watch` only watches the notebook file itself, not imported modules. If Claude edits `helpers.py` while you have `analysis.py` open in marimo, you must restart marimo to pick up the changes. This is acceptable since `helpers.py` changes infrequently.
 
 **If MCP tools fail with "fetch failed"**: Marimo isn't running. Start it with the command above.
+
+## Headless Analysis with Playwright
+
+To analyze notebook results without user interaction, export to HTML and use Playwright to extract data.
+
+### Export to HTML
+
+Use `--sandbox` to automatically use the notebook's inline dependencies:
+
+```bash
+uvx marimo export html --sandbox notebooks/my_notebook.py -o /tmp/output.html
+```
+
+### Extract Data with Playwright
+
+1. Navigate to the exported HTML:
+```
+browser_navigate: url="file:///tmp/output.html"
+```
+
+2. Wait for JS to render, then snapshot:
+```
+browser_wait_for: time=1
+browser_snapshot
+```
+
+3. The snapshot contains the full page accessibility tree, including data tables. Extract values from table cells in the YAML output.
+
+### Limitations
+
+- **Visualizations are impractical to capture** - charts require scrolling and screenshots, which is fragile
+- **Data tables work well** - the accessibility tree includes all cell values
+- Use this for automated analysis of tabular results, not visual verification
