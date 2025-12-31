@@ -35,8 +35,10 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- Directory.Packages.props  // Central package management
 |   |-- global.json  // .NET SDK version
 |   |-- SpeedReader.slnx  // Solution file
-|   |-- Benchmarks  // BenchmarkDotNet performance benchmarks
-|   |   `-- DryPipelineBenchmark.cs  // Pipeline benchmarks (preprocess, postprocess)
+|   |-- MicroBenchmarks  // BenchmarkDotNet performance benchmarks
+|   |   |-- DryPipelineBenchmark.cs  // Pipeline benchmarks (preprocess, postprocess)
+|   |   `-- Cli
+|   |       `-- InferenceBenchmark.cs  // CLI tool for raw inference benchmarks; outputs to stdout for notebook analysis
 |   |-- Frontend  // SpeedReader binary
 |   |   |-- Cli
 |   |   |-- Server  // Webserver started by ./speedreader serve
@@ -88,6 +90,9 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |-- build_utils  // Shared utilities package for build scripts
 |   |-- __init__.py  // Public API exports
 |   `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
+|-- notebooks  // Marimo notebooks for data analysis and visualization
+|   |-- helpers.py  // Shared utilities for notebooks
+|   `-- dbnet_duration.py  // Analyze DbNet inference duration across threading configs
 |-- pre-commit.py  // Git pre-commit hook script
 `-- hello.png  // A test image
 
