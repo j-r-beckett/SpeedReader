@@ -40,6 +40,9 @@ Thumbs.db
 __pycache__/
 *.egg-info/
 
+# Marimo
+__marimo__/
+
 # Model checkpoints
 models/checkpoints/
 
