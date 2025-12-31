@@ -24,12 +24,26 @@ with app.setup:
     import pandas as pd
 
 
+def format_duration(seconds: float) -> str:
+    """Format duration in human-readable form"""
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    elif seconds < 3600:
+        mins = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{mins}m {secs}s"
+    else:
+        hours = int(seconds // 3600)
+        mins = int((seconds % 3600) // 60)
+        return f"{hours}h {mins}m"
+
+
 @app.function
 def build_inference_benchmark() -> Path:
-    """Build the MicroBenchmarks project and return the binary path."""
+    """Build the MicroBenchmarks project and return the project path."""
     project_path = Path(__file__).parent.parent / "src" / "MicroBenchmarks"
 
-    with mo.status.spinner(title="Building MicroBenchmarks..."):
+    with mo.status.spinner(title="Building benchmark..."):
         build_result = subprocess.run(
             ["dotnet", "build", str(project_path), "-c", "Release", "--verbosity", "quiet"],
             capture_output=True,
@@ -38,21 +52,11 @@ def build_inference_benchmark() -> Path:
     if build_result.returncode != 0:
         raise RuntimeError(f"Build failed:\n{build_result.stdout}\n{build_result.stderr}")
 
-    # Find the built binary
-    bin_dir = project_path / "bin" / "Release" / "net10.0"
-    binary_path = bin_dir / "MicroBenchmarks"
-    if not binary_path.exists():
-        # Try with .dll extension and use dotnet to run
-        dll_path = bin_dir / "MicroBenchmarks.dll"
-        if dll_path.exists():
-            return dll_path
-        raise RuntimeError(f"Binary not found at {binary_path} or {dll_path}")
-
-    return binary_path
+    return project_path
 
 
 def _run_inference_benchmark(
-    binary_path: Path,
+    project_path: Path,
     model: str,
     duration_seconds: float,
     batch_size: int,
@@ -67,30 +71,20 @@ def _run_inference_benchmark(
 
     on_tick() is called periodically (~10Hz) during execution for progress updates.
     """
-    if str(binary_path).endswith(".dll"):
-        cmd = [
-            "dotnet", str(binary_path),
-            "inference",
-            "-m", model,
-            "-d", str(duration_seconds),
-            "-b", str(batch_size),
-            "--intra-threads", str(intra_threads),
-            "--inter-threads", str(inter_threads),
-            "-p", str(parallelism),
-            "-w", str(warmup),
-        ]
-    else:
-        cmd = [
-            str(binary_path),
-            "inference",
-            "-m", model,
-            "-d", str(duration_seconds),
-            "-b", str(batch_size),
-            "--intra-threads", str(intra_threads),
-            "--inter-threads", str(inter_threads),
-            "-p", str(parallelism),
-            "-w", str(warmup),
-        ]
+    cmd = [
+        "dotnet", "run",
+        "--project", str(project_path),
+        "--no-build", "-c", "Release",
+        "--",
+        "inference",
+        "-m", model,
+        "-d", str(duration_seconds),
+        "-b", str(batch_size),
+        "--intra-threads", str(intra_threads),
+        "--inter-threads", str(inter_threads),
+        "-p", str(parallelism),
+        "-w", str(warmup),
+    ]
 
     proc = subprocess.Popen(
         cmd,
@@ -140,7 +134,7 @@ def _run_inference_benchmark(
 
 @app.function
 def run_benchmark_sweep(
-    binary_path: Path,
+    project_path: Path,
     model: str | list[str],
     duration_seconds: float = 10.0,
     batch_size: int | list[int] = 1,
@@ -181,30 +175,22 @@ def run_benchmark_sweep(
         )
     ]
 
-    num_configs = len(configs)
-    config_duration = warmup + duration_seconds
     rows = []
+    config_duration = warmup + duration_seconds + 1  # +1s overhead per config
+    total_duration = len(configs) * config_duration
 
-    with mo.status.progress_bar(total=100, show_rate=False, show_eta=False) as bar:
-        last_progress = 0
-
-        for config_idx, cfg in enumerate(configs):
-            slice_start = (config_idx / num_configs) * 100
-            slice_end = ((config_idx + 1) / num_configs) * 100
-            config_start_time = time.time()
+    start_time = time.time()
+    with mo.status.spinner(title="Running benchmark... 0%", remove_on_exit=True) as spinner:
+        mo.output.append(mo.md(f"Estimated: {format_duration(total_duration)}"))
+        for cfg in configs:
 
             def on_tick():
-                nonlocal last_progress
-                elapsed = time.time() - config_start_time
-                fraction = min(1.0, elapsed / config_duration)
-                progress = int(slice_start + fraction * (slice_end - slice_start))
-                progress = min(progress, int(slice_end) - 1)
-                if progress > last_progress:
-                    bar.update(progress - last_progress)
-                    last_progress = progress
+                elapsed = time.time() - start_time
+                pct = min(99, int((elapsed / total_duration) * 100))
+                spinner.update(title=f"Running benchmark... {pct}%")
 
             measurements = _run_inference_benchmark(
-                binary_path=binary_path,
+                project_path=project_path,
                 model=cfg["model"],
                 duration_seconds=duration_seconds,
                 batch_size=cfg["batch_size"],
@@ -223,10 +209,8 @@ def run_benchmark_sweep(
                     "duration_ms": duration_ms,
                 })
 
-            # Snap to slice_end
-            if last_progress < int(slice_end):
-                bar.update(int(slice_end) - last_progress)
-                last_progress = int(slice_end)
+    actual_time = time.time() - start_time
+    mo.output.append(mo.md(f"Actual: {format_duration(actual_time)}"))
 
     return pd.DataFrame(rows)
 

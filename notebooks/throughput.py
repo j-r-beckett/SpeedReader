@@ -21,14 +21,14 @@ with app.setup:
 
 @app.cell
 def _():
-    binary_path = build_inference_benchmark()
-    return (binary_path,)
+    project_path = build_inference_benchmark()
+    return (project_path,)
 
 
 @app.cell
-def _(binary_path):
+def _(project_path):
     df = run_benchmark_sweep(
-        binary_path=binary_path,
+        project_path=project_path,
         model="dbnet",
         duration_seconds=8.0,
         warmup=2.0,
@@ -55,9 +55,9 @@ def _(df):
             group["duration_s"] = group["duration_ms"] / 1000.0
             group["speed"] = 1000.0 / group["duration_ms"]  # inferences per second
 
-            # Create slots
+            # Create slots (floor to exclude partial final slot)
             max_time = group["end_s"].max()
-            num_slots = int(np.ceil(max_time / slot_s))
+            num_slots = int(max_time / slot_s)
 
             for slot_idx in range(num_slots):
                 slot_start = slot_idx * slot_s
@@ -105,7 +105,8 @@ def _(df):
                 "std_duration_ms": round(std_duration, 2),
             })
         result = pd.DataFrame(stats_rows).sort_values("parallelism")
-        result["scaling_factor"] = (result["avg_throughput"] / result["avg_throughput"].shift(1)).round(2)
+        baseline = result.loc[result["parallelism"] == 1, "avg_throughput"].iloc[0]
+        result["marginal_efficiency"] = (result["avg_throughput"].diff() / baseline).round(3)
         return result
 
     stats_df = _()
