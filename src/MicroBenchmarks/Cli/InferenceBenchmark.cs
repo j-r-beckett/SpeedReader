@@ -12,16 +12,16 @@ namespace SpeedReader.MicroBenchmarks.Cli;
 public static class InferenceBenchmark
 {
     public static void Run(Model model, int warmup, int intraThreads, int interThreads,
-        int parallelism, int iterations, int batchSize, bool profile)
+        int parallelism, int iterations, int batchSize, bool profile, bool timestamped)
     {
         if (parallelism == 1)
-            RunSingleThreaded(model, warmup, intraThreads, interThreads, iterations, batchSize, profile);
+            RunSingleThreaded(model, warmup, intraThreads, interThreads, iterations, batchSize, profile, timestamped);
         else
-            RunParallel(model, warmup, intraThreads, interThreads, parallelism, iterations, batchSize, profile);
+            RunParallel(model, warmup, intraThreads, interThreads, parallelism, iterations, batchSize, profile, timestamped);
     }
 
     private static void RunSingleThreaded(Model model, int warmup, int intraThreads, int interThreads,
-        int iterations, int batchSize, bool profile)
+        int iterations, int batchSize, bool profile, bool timestamped)
     {
         var (inputShape, outputShape) = GetShapes(model, batchSize);
 
@@ -50,18 +50,29 @@ public static class InferenceBenchmark
             session.Run(input, output);
 
         // Benchmark
+        var baseTime = DateTimeOffset.UtcNow;
+        var globalSw = Stopwatch.StartNew();
         var sw = new Stopwatch();
         for (var i = 0; i < iterations; i++)
         {
             sw.Restart();
             session.Run(input, output);
             sw.Stop();
-            Console.WriteLine($"{sw.Elapsed.TotalMilliseconds:F4}");
+            var duration = sw.Elapsed.TotalMilliseconds;
+            if (timestamped)
+            {
+                var timestamp = baseTime.Add(globalSw.Elapsed);
+                Console.WriteLine($"{timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ},{duration:F4}");
+            }
+            else
+            {
+                Console.WriteLine($"{duration:F4}");
+            }
         }
     }
 
     private static void RunParallel(Model model, int warmup, int intraThreads, int interThreads,
-        int parallelism, int iterations, int batchSize, bool profile)
+        int parallelism, int iterations, int batchSize, bool profile, bool timestamped)
     {
         var (inputShape, outputShape) = GetShapes(model, batchSize);
         var iterationsPerTask = iterations / parallelism;
@@ -101,8 +112,10 @@ public static class InferenceBenchmark
                 sessions[t].Run(inputs[t], outputs[t]);
         }
 
-        // Benchmark
-        var allDurations = new ConcurrentBag<double>();
+        // Benchmark - shared timing reference for all tasks
+        var baseTime = DateTimeOffset.UtcNow;
+        var globalSw = Stopwatch.StartNew();
+        var outputLock = new object();
 
         var tasks = new Task[parallelism];
         for (var t = 0; t < parallelism; t++)
@@ -120,7 +133,21 @@ public static class InferenceBenchmark
                     sw.Restart();
                     session.Run(input, output);
                     sw.Stop();
-                    allDurations.Add(sw.Elapsed.TotalMilliseconds);
+                    var duration = sw.Elapsed.TotalMilliseconds;
+
+                    // Print immediately for live progress updates
+                    lock (outputLock)
+                    {
+                        if (timestamped)
+                        {
+                            var timestamp = baseTime.Add(globalSw.Elapsed);
+                            Console.WriteLine($"{timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ},{duration:F4}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{duration:F4}");
+                        }
+                    }
                 }
             });
         }
@@ -129,10 +156,6 @@ public static class InferenceBenchmark
         // Cleanup
         foreach (var session in sessions)
             session.Dispose();
-
-        // Output all durations
-        foreach (var d in allDurations)
-            Console.WriteLine($"{d:F4}");
     }
 
     private static (int[] Input, int[] Output) GetShapes(Model model, int batchSize) => model switch

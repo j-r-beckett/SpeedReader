@@ -77,6 +77,10 @@ public static class Commands
             name: "--profile",
             description: "Enable ONNX profiling (writes to current directory)");
 
+        var timestampedOption = new Option<bool>(
+            name: "--timestamped",
+            description: "Output ISO 8601 timestamp with each measurement (timestamp,duration_ms)");
+
         command.AddOption(modelOption);
         command.AddOption(warmupOption);
         command.AddOption(intraThreadsOption);
@@ -85,9 +89,20 @@ public static class Commands
         command.AddOption(iterationsOption);
         command.AddOption(batchSizeOption);
         command.AddOption(profileOption);
+        command.AddOption(timestampedOption);
 
-        command.SetHandler((modelName, warmup, intraThreads, interThreads, parallelism, iterations, batchSize, profile) =>
+        command.SetHandler(context =>
         {
+            var modelName = context.ParseResult.GetValueForOption(modelOption)!;
+            var warmup = context.ParseResult.GetValueForOption(warmupOption);
+            var intraThreads = context.ParseResult.GetValueForOption(intraThreadsOption);
+            var interThreads = context.ParseResult.GetValueForOption(interThreadsOption);
+            var parallelism = context.ParseResult.GetValueForOption(parallelismOption);
+            var iterations = context.ParseResult.GetValueForOption(iterationsOption);
+            var batchSize = context.ParseResult.GetValueForOption(batchSizeOption);
+            var profile = context.ParseResult.GetValueForOption(profileOption);
+            var timestamped = context.ParseResult.GetValueForOption(timestampedOption);
+
             var model = modelName.ToLowerInvariant() switch
             {
                 "dbnet" => Model.DbNet,
@@ -95,8 +110,8 @@ public static class Commands
                 _ => throw new ArgumentException($"Unknown model: {modelName}. Use 'dbnet' or 'svtr'.")
             };
 
-            InferenceBenchmark.Run(model, warmup, intraThreads, interThreads, parallelism, iterations, batchSize, profile);
-        }, modelOption, warmupOption, intraThreadsOption, interThreadsOption, parallelismOption, iterationsOption, batchSizeOption, profileOption);
+            InferenceBenchmark.Run(model, warmup, intraThreads, interThreads, parallelism, iterations, batchSize, profile, timestamped);
+        });
 
         return command;
     }

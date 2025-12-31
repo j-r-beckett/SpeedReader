@@ -44,29 +44,38 @@ def run_inference_benchmark(
     parallelism: int = 1,
     iterations: int = 100,
     warmup: int = 10,
-) -> list[float]:
+    timestamped: bool = False,
+) -> list[float] | list[tuple[str, float]]:
     """
-    Run inference benchmark and return timing data (milliseconds).
+    Run inference benchmark and return timing data.
 
     Assumes project is already built (call build_inference_benchmark first).
     Shows progress bar during execution.
+
+    Returns:
+        If timestamped=False: list of durations in milliseconds
+        If timestamped=True: list of (ISO 8601 timestamp, duration_ms) tuples
     """
     project_path = Path(__file__).parent.parent / "src" / "MicroBenchmarks"
 
+    cmd = [
+        "dotnet", "run",
+        "--project", str(project_path),
+        "--no-build",
+        "--", "inference",
+        "-m", model,
+        "-b", str(batch_size),
+        "--intra-threads", str(intra_threads),
+        "--inter-threads", str(inter_threads),
+        "-p", str(parallelism),
+        "-n", str(iterations),
+        "-w", str(warmup),
+    ]
+    if timestamped:
+        cmd.append("--timestamped")
+
     proc = subprocess.Popen(
-        [
-            "dotnet", "run",
-            "--project", str(project_path),
-            "--no-build",
-            "--", "inference",
-            "-m", model,
-            "-b", str(batch_size),
-            "--intra-threads", str(intra_threads),
-            "--inter-threads", str(inter_threads),
-            "-p", str(parallelism),
-            "-n", str(iterations),
-            "-w", str(warmup),
-        ],
+        cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -75,7 +84,12 @@ def run_inference_benchmark(
     results = []
     with mo.status.progress_bar(total=iterations, title="Running benchmark") as bar:
         for line in proc.stdout:
-            results.append(float(line.strip()))
+            line = line.strip()
+            if timestamped:
+                ts, duration = line.split(",")
+                results.append((ts, float(duration)))
+            else:
+                results.append(float(line))
             bar.update()
 
     proc.wait()
@@ -94,7 +108,8 @@ def run_benchmark_sweep(
     parallelism: int | list[int] = 1,
     iterations: int = 100,
     warmup: int = 10,
-) -> list[tuple[dict, list[float]]]:
+    timestamped: bool = False,
+) -> list[tuple[dict, list]]:
     """
     Run inference benchmark over all combinations of parameters.
 
@@ -102,7 +117,9 @@ def run_benchmark_sweep(
     Returns a list of (config_dict, measurements) tuples.
 
     The config dict contains the "what" (model, batch_size, threads, parallelism).
-    iterations/warmup control "how" we measure and are not included in configs.
+    iterations/warmup/timestamped control "how" we measure and are not included in configs.
+
+    If timestamped=True, measurements are (timestamp, duration_ms) tuples.
     """
 
     def to_list(x):
@@ -137,6 +154,7 @@ def run_benchmark_sweep(
             parallelism=cfg["parallelism"],
             iterations=iterations,
             warmup=warmup,
+            timestamped=timestamped,
         )
         results.append((cfg, measurements))
 
