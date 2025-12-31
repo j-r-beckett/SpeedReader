@@ -63,12 +63,13 @@ def _run_inference_benchmark(
     intra_threads: int,
     inter_threads: int,
     parallelism: int,
-    warmup: float,
+    warmup_seconds: float,
     on_tick,
-) -> list[tuple[str, float]]:
+) -> list[tuple[str, str]]:
     """
     Internal function to run inference benchmark.
 
+    Returns list of (start_time, end_time) ISO timestamp pairs.
     on_tick() is called periodically (~10Hz) during execution for progress updates.
     """
     cmd = [
@@ -83,7 +84,7 @@ def _run_inference_benchmark(
         "--intra-threads", str(intra_threads),
         "--inter-threads", str(inter_threads),
         "-p", str(parallelism),
-        "-w", str(warmup),
+        "-w", str(warmup_seconds),
     ]
 
     proc = subprocess.Popen(
@@ -113,8 +114,8 @@ def _run_inference_benchmark(
                     line, buffer = buffer.split("\n", 1)
                     line = line.strip()
                     if line:
-                        ts, duration = line.split(",")
-                        results.append((ts, float(duration)))
+                        start_ts, end_ts = line.split(",")
+                        results.append((start_ts, end_ts))
 
     # Read any remaining output
     remaining = proc.stdout.read()
@@ -123,8 +124,8 @@ def _run_inference_benchmark(
     for line in buffer.strip().split("\n"):
         line = line.strip()
         if line:
-            ts, duration = line.split(",")
-            results.append((ts, float(duration)))
+            start_ts, end_ts = line.split(",")
+            results.append((start_ts, end_ts))
 
     if proc.returncode != 0:
         raise RuntimeError(f"Benchmark failed:\n{proc.stderr.read()}")
@@ -141,55 +142,41 @@ def run_benchmark_sweep(
     intra_threads: int | list[int] = 1,
     inter_threads: int | list[int] = 1,
     parallelism: int | list[int] = 1,
-    warmup: float = 2.0,
+    warmup_seconds: float = 2.0,
 ) -> pd.DataFrame:
     """
     Run inference benchmark over all combinations of parameters.
 
     Parameters that accept lists will be swept over (cartesian product).
-    Returns a DataFrame with columns for each config parameter plus timestamp and duration_ms.
-
-    The config dict contains the "what" (model, batch_size, threads, parallelism).
-    duration_seconds/warmup control "how" we measure and are not included in configs.
+    Returns a DataFrame with columns for each config parameter plus start_time and end_time.
     """
-
     def to_list(x):
         return x if isinstance(x, list) else [x]
 
-    models = to_list(model)
-    batch_sizes = to_list(batch_size)
-    intra_threads_list = to_list(intra_threads)
-    inter_threads_list = to_list(inter_threads)
-    parallelisms = to_list(parallelism)
-
     configs = [
-        {
-            "model": m,
-            "batch_size": b,
-            "intra_threads": intra,
-            "inter_threads": inter,
-            "parallelism": p,
-        }
+        {"model": m, "batch_size": b, "intra_threads": intra, "inter_threads": inter, "parallelism": p}
         for m, b, intra, inter, p in product(
-            models, batch_sizes, intra_threads_list, inter_threads_list, parallelisms
+            to_list(model), to_list(batch_size), to_list(intra_threads),
+            to_list(inter_threads), to_list(parallelism)
         )
     ]
 
     rows = []
-    config_duration = warmup + duration_seconds + 1  # +1s overhead per config
-    total_duration = len(configs) * config_duration
-
+    estimated_total = len(configs) * (warmup_seconds + duration_seconds + 1)
     start_time = time.time()
-    with mo.status.spinner(title="Running benchmark... 0%", remove_on_exit=True) as spinner:
-        mo.output.append(mo.md(f"Estimated: {format_duration(total_duration)}"))
-        for cfg in configs:
 
+    with mo.status.spinner(title="Running benchmark...", remove_on_exit=True) as spinner:
+        for cfg in configs:
             def on_tick():
                 elapsed = time.time() - start_time
-                pct = min(99, int((elapsed / total_duration) * 100))
-                spinner.update(title=f"Running benchmark... {pct}%")
+                remaining = max(0, estimated_total - elapsed)
+                pct = min(99, int((elapsed / estimated_total) * 100))
+                spinner.update(
+                    title=f"Running benchmark... {pct}%",
+                    subtitle=f"{format_duration(remaining)} remaining",
+                )
 
-            measurements = _run_inference_benchmark(
+            for start_str, end_str in _run_inference_benchmark(
                 project_path=project_path,
                 model=cfg["model"],
                 duration_seconds=duration_seconds,
@@ -197,20 +184,14 @@ def run_benchmark_sweep(
                 intra_threads=cfg["intra_threads"],
                 inter_threads=cfg["inter_threads"],
                 parallelism=cfg["parallelism"],
-                warmup=warmup,
+                warmup_seconds=warmup_seconds,
                 on_tick=on_tick,
-            )
-
-            for ts_str, duration_ms in measurements:
-                ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+            ):
                 rows.append({
                     **cfg,
-                    "timestamp": ts,
-                    "duration_ms": duration_ms,
+                    "start_time": datetime.fromisoformat(start_str.replace("Z", "+00:00")),
+                    "end_time": datetime.fromisoformat(end_str.replace("Z", "+00:00")),
                 })
-
-    actual_time = time.time() - start_time
-    mo.output.append(mo.md(f"Actual: {format_duration(actual_time)}"))
 
     return pd.DataFrame(rows)
 

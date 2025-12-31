@@ -70,8 +70,9 @@ public static class InferenceBenchmark
                     {
                         lock (outputLock)
                         {
-                            var timestamp = baseTime.Add(elapsed);
-                            Console.WriteLine($"{timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ},{sw.Elapsed.TotalMilliseconds:F4}");
+                            var endTime = baseTime.Add(elapsed);
+                            var startTime = endTime - sw.Elapsed;
+                            Console.WriteLine($"{startTime:yyyy-MM-ddTHH:mm:ss.ffffffZ},{endTime:yyyy-MM-ddTHH:mm:ss.ffffffZ}");
                         }
                     }
                 }
