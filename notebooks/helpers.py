@@ -40,6 +40,40 @@ def format_duration(seconds: float) -> str:
         return f"{hours}h {mins}m"
 
 
+def get_physical_p_cores() -> int | None:
+    """
+    Get the number of physical performance cores.
+
+    Returns None if detection fails or platform doesn't have hybrid architecture.
+    """
+    # Intel hybrid CPUs expose P-cores via sysfs
+    try:
+        cpus = Path("/sys/devices/cpu_core/cpus").read_text().strip()
+        # Parse range like "0-15" to count
+        if "-" in cpus:
+            start, end = cpus.split("-")
+            # These are logical CPUs, divide by 2 for physical cores (hyperthreading)
+            return (int(end) - int(start) + 1) // 2
+        return len(cpus.split(",")) // 2
+    except FileNotFoundError:
+        return None
+
+
+def get_hardware_summary() -> str:
+    """Get hardware summary using inxi."""
+    import shutil
+
+    if shutil.which("inxi"):
+        result = subprocess.run(
+            ["inxi", "-C", "-M", "-c0"],  # -c0 disables color codes
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+
+    return "inxi not available"
+
+
 class PerfBandwidthMeasurement:
     """
     Measures memory bandwidth using perf stat.

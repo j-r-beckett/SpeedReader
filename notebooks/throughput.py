@@ -13,7 +13,7 @@ with app.setup:
     import pandas as pd
     import seaborn as sns
     import matplotlib.pyplot as plt
-    from helpers import build_inference_benchmark, run_benchmark_sweep, start_perf_bandwidth
+    from helpers import build_inference_benchmark, run_benchmark_sweep, start_perf_bandwidth, get_hardware_summary, get_physical_p_cores
 
     sns.set_theme()
 
@@ -22,6 +22,22 @@ with app.setup:
 def _():
     project_path = build_inference_benchmark()
     return (project_path,)
+
+
+@app.cell
+def _():
+    p_cores = get_physical_p_cores()
+    p_cores_info = f"**Physical P-cores:** {p_cores}" if p_cores else ""
+    mo.md(f"""
+    ## Hardware
+
+    ```
+    {get_hardware_summary()}
+    ```
+
+    {p_cores_info}
+    """)
+    return
 
 
 @app.cell
@@ -41,9 +57,9 @@ def _(model_input, project_path):
     def _():
         if model_input.value == "dbnet":
             duration = 8
-            max_threads = 8
+            max_threads = 12
         elif model_input.value == "svtr":
-            duration = 4
+            duration = 8
             max_threads = 12
         else:
             raise ValueError(f"unknown model {model_input.value}")
@@ -55,6 +71,7 @@ def _(model_input, project_path):
             duration_seconds=duration,
             warmup_seconds=2,
             parallelism=list(range(1, max_threads + 1)),
+            # parallelism=[0]
         )
         perf_df = perf.stop()
         return df, perf_df
@@ -199,6 +216,31 @@ def _(stats_df, throughput_df):
 
         plt.tight_layout()
 
+        return fig
+
+    _()
+    return
+
+
+@app.cell
+def _(stats_df):
+    def _():
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(
+            stats_df["parallelism"],
+            stats_df["marginal_efficiency"],
+            marker="o",
+            color="#1a1a2e",
+            linewidth=2,
+        )
+        ax.axvline(x=8, color="#e63946", linestyle="--", linewidth=2, label="P-core boundary")
+        ax.set_xlabel("Parallelism")
+        ax.set_ylabel("Marginal Efficiency")
+        ax.set_title("Marginal Efficiency by Parallelism")
+        ax.set_ylim(top=1.1)
+        ax.legend()
+
+        plt.tight_layout()
         return fig
 
     _()
