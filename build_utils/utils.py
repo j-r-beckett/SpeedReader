@@ -87,20 +87,27 @@ def format_duration(seconds: float) -> str:
         return f"{hours}h {mins}m"
 
 
-def ensure_repo(repo_dir: Path, url: str, tag: str, name: str = None):
+def _is_commit_sha(ref: str) -> bool:
+    """Check if ref looks like a commit SHA (7-40 hex characters)."""
+    return len(ref) >= 7 and len(ref) <= 40 and all(c in "0123456789abcdef" for c in ref.lower())
+
+
+def ensure_repo(repo_dir: Path, url: str, ref: str, name: str = None):
     """
-    Ensure a git repository is cloned and checked out at a specific tag.
+    Ensure a git repository is cloned and checked out at a specific ref.
 
     Args:
         repo_dir: Path where the repo should be cloned
         url: Git URL to clone from
-        tag: Git tag to checkout
+        ref: Git ref to checkout (tag like "v1.0.0" or commit SHA)
         name: Human-readable name for logging (defaults to directory name)
     """
     import shutil
 
     if name is None:
         name = repo_dir.name
+
+    is_sha = _is_commit_sha(ref)
 
     def needs_clone():
         """Check if repo needs to be cloned."""
@@ -128,31 +135,55 @@ def ensure_repo(repo_dir: Path, url: str, tag: str, name: str = None):
     if needs_clone():
         info(f"Cloning {name}")
         repo_dir.parent.mkdir(parents=True, exist_ok=True)
-        bash(
-            f"GIT_TERMINAL_PROMPT=0 git clone --depth 1 --branch {tag} {url} {repo_dir}",
-            directory=repo_dir.parent,
-        )
+
+        if is_sha:
+            # For commit SHAs: clone without depth limit, then checkout
+            bash(
+                f"GIT_TERMINAL_PROMPT=0 git clone {url} {repo_dir}",
+                directory=repo_dir.parent,
+            )
+            bash(f"git checkout {ref}", directory=repo_dir)
+        else:
+            # For tags: shallow clone at the tag
+            bash(
+                f"GIT_TERMINAL_PROMPT=0 git clone --depth 1 --branch {ref} {url} {repo_dir}",
+                directory=repo_dir.parent,
+            )
+
         # Initialize nested submodules
         bash(
             "GIT_TERMINAL_PROMPT=0 git submodule update --init --recursive --depth 1",
             directory=repo_dir,
         )
-        info(f"{name} cloned at {tag}")
+        info(f"{name} cloned at {ref}")
         return
 
-    # Check current tag
+    # Check current ref
+    current_commit = bash("git rev-parse HEAD", directory=repo_dir).strip()
     current_tag = bash(
         "git describe --tags --exact-match 2>/dev/null || echo ''",
         directory=repo_dir,
     ).strip()
 
-    if current_tag == tag:
-        info(f"{name} already at {tag}")
-        return
+    # Check if already at the right ref
+    if is_sha:
+        if current_commit.startswith(ref) or ref.startswith(current_commit[:len(ref)]):
+            info(f"{name} already at {ref[:12]}")
+            return
+    else:
+        if current_tag == ref:
+            info(f"{name} already at {ref}")
+            return
 
-    info(f"Checking out {name} {tag} (currently at {current_tag or 'unknown'})")
+    info(f"Checking out {name} {ref} (currently at {current_tag or current_commit[:12]})")
 
-    # Fetch the tag and checkout
-    bash(f"GIT_TERMINAL_PROMPT=0 git fetch --depth 1 origin tag {tag}", directory=repo_dir)
-    bash(f"git checkout {tag}", directory=repo_dir)
+    if is_sha:
+        # For commit SHAs: fetch and checkout
+        bash(f"GIT_TERMINAL_PROMPT=0 git fetch origin", directory=repo_dir)
+        bash(f"git checkout {ref}", directory=repo_dir)
+    else:
+        # For tags: fetch the tag and checkout
+        bash(f"GIT_TERMINAL_PROMPT=0 git fetch --depth 1 origin tag {ref}", directory=repo_dir)
+        bash(f"git checkout {ref}", directory=repo_dir)
+
     bash("GIT_TERMINAL_PROMPT=0 git submodule update --init --recursive --depth 1", directory=repo_dir)

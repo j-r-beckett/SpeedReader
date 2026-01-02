@@ -14,6 +14,7 @@
 
   <PropertyGroup>
     <SpeedReaderOrtOutDir>$(MSBuildThisFileDirectory)speedreader_ort/out</SpeedReaderOrtOutDir>
+    <SpeedReaderCpuInfoOutDir>$(MSBuildThisFileDirectory)speedreader_cpuinfo/out</SpeedReaderCpuInfoOutDir>
     <OnnxOutDir>$(MSBuildThisFileDirectory)onnx/out</OnnxOutDir>
   </PropertyGroup>
 
@@ -26,6 +27,12 @@
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-musl-x64'">
     <DirectPInvoke Include="speedreader_ort" />
     <LinkerArg Include="$(SpeedReaderOrtOutDir)/static/speedreader_ort.a" />
+  </ItemGroup>
+
+  <!-- Speedreader_cpuinfo is always statically linked -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' OR '$(RuntimeIdentifier)' == 'linux-musl-x64'">
+    <DirectPInvoke Include="speedreader_cpuinfo" />
+    <LinkerArg Include="$(SpeedReaderCpuInfoOutDir)/static/speedreader_cpuinfo.a" />
   </ItemGroup>
 
   <!-- Statically link onnxruntime, linux-x64 and linux-musl-x64 -->

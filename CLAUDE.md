@@ -51,13 +51,17 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- Frontend.Test  // Frontend integration tests
 |   |   |-- ApiE2ETests.cs
 |   |   `-- WebSocketTests.cs
-|   |-- Native  // C# interface to libonnxruntime. Use P/Invokes to call speedreader_ort, which in turn wraps the onnx runtime
+|   |-- Native  // C# interface to native libraries. Use P/Invokes to call C wrappers
 |   |   |-- onnx  // ONNX runtime build infrastructure
 |   |   |   `-- build.py  // Build the onnx runtime
-|   |   `-- speedreader_ort  // C wrapper for ONNX runtime
-|   |       |-- build.py  // Build speedreader_ort
-|   |       |-- speedreader_ort.c
-|   |       `-- speedreader_ort.h
+|   |   |-- speedreader_ort  // C wrapper for ONNX runtime
+|   |   |   |-- build.py  // Build speedreader_ort
+|   |   |   |-- speedreader_ort.c
+|   |   |   `-- speedreader_ort.h
+|   |   `-- speedreader_cpuinfo  // C wrapper for cpuinfo (CPU topology detection)
+|   |       |-- build.py  // Build speedreader_cpuinfo
+|   |       |-- speedreader_cpuinfo.c
+|   |       `-- speedreader_cpuinfo.h
 |   |-- Native.Test  // Native library tests
 |   |-- Ocr  // Core library, contains all Ocr functionality
 |   |   |-- Algorithms  // Various algorithms used in detection or recognition
@@ -174,11 +178,12 @@ SpeedReader can be built as either a managed (CLR) or unmanaged (Native AOT) exe
 
 The build is orchestrated by msbuild. All integrations with native libraries are handled by the Native project. Native, and by extension any project that references Native, exposes these options:
 
-| Option       | Values | Description                              |
-| ------------ | ------ | ---------------------------------------- |
-| BuildOnnx    | 'true' | Triggers a new onnx build if 'true'      |
-| BuildSROrt   | 'true' | Triggers a new speedreader_ort if 'true' |
-| DeepClean    | 'true' | Clean onnx and speedreader_ort builds    |
+| Option         | Values | Description                                  |
+| -------------- | ------ | -------------------------------------------- |
+| BuildOnnx      | 'true' | Triggers a new onnx build if 'true'          |
+| BuildSROrt     | 'true' | Triggers a new speedreader_ort if 'true'     |
+| BuildSRCpuInfo | 'true' | Triggers a new speedreader_cpuinfo if 'true' |
+| DeepClean      | 'true' | Clean all native build artifacts             |
 
 The Frontend project (SpeedReader executable, the Native AOT target) exposes these options when publishing:
 

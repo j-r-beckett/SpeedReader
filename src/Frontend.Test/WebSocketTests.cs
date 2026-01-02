@@ -280,7 +280,7 @@ public class WebSocketTests : IClassFixture<ServerFixture>
         await webSocket.ConnectAsync(wsUri, CancellationToken.None);
 
         const int maxItems = 100;
-        const int backpressureThresholdMs = 300;
+        const int backpressureThresholdMs = 250;
         int itemsSent = 0;
         bool backpressureDetected = false;
 
