@@ -57,4 +57,16 @@ public class InferenceSessionConstructionTests
         var session = new InferenceSession(modelData, options);
         Assert.NotNull(session);
     }
+
+    [Fact]
+    public void CreateSession_WithZeroThreads_Succeeds()
+    {
+        // Zero threads tells ONNX Runtime to use its own discretion
+        var modelData = EmbeddedWeights.Dbnet_Int8.Bytes;
+        var options = new SessionOptions()
+            .WithIntraOpThreads(0)
+            .WithInterOpThreads(0);
+        using var session = new InferenceSession(modelData, options);
+        Assert.NotNull(session);
+    }
 }

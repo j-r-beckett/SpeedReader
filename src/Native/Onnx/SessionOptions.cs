@@ -7,16 +7,18 @@ public sealed class SessionOptions
 {
     public int IntraOpNumThreads { get; private set; } = 1;
     public int InterOpNumThreads { get; private set; } = 1;
-    public bool EnableProfiling { get; private set; }  // Default is false
+    public bool EnableProfiling { get; private set; }
 
     public SessionOptions WithIntraOpThreads(int count)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
         IntraOpNumThreads = count;
         return this;
     }
 
     public SessionOptions WithInterOpThreads(int count)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
         InterOpNumThreads = count;
         return this;
     }

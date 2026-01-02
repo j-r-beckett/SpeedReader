@@ -18,13 +18,16 @@ public class OrtValue
     {
         ArgumentNullException.ThrowIfNull(shape);
 
-        var expectedSize = shape.Aggregate(1, (a, b) => a * b);
+        var expectedSize = shape.Length == 0 ? 0 : shape.Aggregate(1L, (a, b) => a * b);
 
         if (data.Length != expectedSize)
         {
             throw new ArgumentException(
                 $"Data length {data.Length} does not match shape [{string.Join(", ", shape)}] (expected {expectedSize} elements)");
         }
+
+        if (data.Length == 0)
+            throw new ArgumentException("Data length must be non-zero");
 
         // Defensive copy of shape
         return new OrtValue(data, [.. shape]);

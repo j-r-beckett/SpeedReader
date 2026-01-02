@@ -71,14 +71,36 @@ public class OrtValueTests
     }
 
     [Fact]
-    public void Create_WithZeroDimension_Succeeds()
+    public void Create_WithZeroDimension_ThrowsArgumentException()
     {
         float[] data = [];
         int[] shape = [0, 3];
 
-        var ortValue = OrtValue.Create(data, shape);
+        var exception = Assert.Throws<ArgumentException>(() => OrtValue.Create(data, shape));
 
-        Assert.Equal(0, ortValue.Data.Length);
+        Assert.Contains("Data length must be non-zero", exception.Message);
+    }
+
+    [Fact]
+    public void Create_WithEmptyShape_ThrowsArgumentException()
+    {
+        float[] data = [1.0f];
+        int[] shape = [];
+
+        var exception = Assert.Throws<ArgumentException>(() => OrtValue.Create(data, shape));
+
+        Assert.Contains("does not match shape", exception.Message);
+    }
+
+    [Fact]
+    public void Create_WithEmptyData_ThrowsArgumentException()
+    {
+        float[] data = [];
+        int[] shape = [1];
+
+        var exception = Assert.Throws<ArgumentException>(() => OrtValue.Create(data, shape));
+
+        Assert.Contains("does not match shape", exception.Message);
     }
 
     [Fact]
