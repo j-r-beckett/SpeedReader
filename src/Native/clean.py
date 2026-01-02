@@ -11,9 +11,9 @@
 Deep clean native build artifacts.
 
 Deletes:
-- src/Native/onnx/out/
-- src/Native/speedreader_ort/out/
-- src/Native/speedreader_cpuinfo/out/
+- src/Native/Onnx/onnx/out/
+- src/Native/Onnx/speedreader_ort/out/
+- src/Native/CpuInfo/speedreader_cpuinfo/out/
 - .external/onnxruntime/build/
 - .external/onnxruntime/.venv/
 - .external/cpuinfo/build/
@@ -33,9 +33,9 @@ ONNXRUNTIME_DIR = REPO_ROOT / ".external" / "onnxruntime"
 CPUINFO_DIR = REPO_ROOT / ".external" / "cpuinfo"
 
 DIRS_TO_DELETE = [
-    SCRIPT_DIR / "onnx" / "out",
-    SCRIPT_DIR / "speedreader_ort" / "out",
-    SCRIPT_DIR / "speedreader_cpuinfo" / "out",
+    SCRIPT_DIR / "Onnx" / "onnx" / "out",
+    SCRIPT_DIR / "Onnx" / "speedreader_ort" / "out",
+    SCRIPT_DIR / "CpuInfo" / "speedreader_cpuinfo" / "out",
     ONNXRUNTIME_DIR / "build",
     ONNXRUNTIME_DIR / ".venv",
     CPUINFO_DIR / "build",

@@ -5,17 +5,17 @@
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <SpeedReaderOrtDir>$(MSBuildThisFileDirectory)speedreader_ort</SpeedReaderOrtDir>
-    <SpeedReaderCpuInfoDir>$(MSBuildThisFileDirectory)speedreader_cpuinfo</SpeedReaderCpuInfoDir>
-    <OnnxDir>$(MSBuildThisFileDirectory)onnx</OnnxDir>
+    <SpeedReaderOrtDir>$(MSBuildThisFileDirectory)Onnx/speedreader_ort</SpeedReaderOrtDir>
+    <SpeedReaderCpuInfoDir>$(MSBuildThisFileDirectory)CpuInfo/speedreader_cpuinfo</SpeedReaderCpuInfoDir>
+    <OnnxDir>$(MSBuildThisFileDirectory)Onnx/onnx</OnnxDir>
   </PropertyGroup>
 
   <!-- Exclude native code directories from MSBuild tracking -->
   <ItemGroup>
-    <Compile Remove="onnx/**/*.cs" />
-    <None Remove="onnx/**/*" />
-    <None Remove="speedreader_ort/**/*" />
-    <None Remove="speedreader_cpuinfo/**/*" />
+    <Compile Remove="Onnx/onnx/**/*.cs" />
+    <None Remove="Onnx/onnx/**/*" />
+    <None Remove="Onnx/speedreader_ort/**/*" />
+    <None Remove="CpuInfo/speedreader_cpuinfo/**/*" />
   </ItemGroup>
 
   <!-- Copy shared libraries for managed execution (flows to dependent projects via ProjectReference) -->

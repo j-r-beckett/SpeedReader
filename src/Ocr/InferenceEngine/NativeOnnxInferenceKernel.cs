@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 using Microsoft.Extensions.DependencyInjection;
-using SpeedReader.Native;
+using SpeedReader.Native.Onnx;
 using SpeedReader.Resources.CharDict;
 using SpeedReader.Resources.Weights;
 

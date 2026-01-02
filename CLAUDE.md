@@ -52,17 +52,23 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |-- ApiE2ETests.cs
 |   |   `-- WebSocketTests.cs
 |   |-- Native  // C# interface to native libraries. Use P/Invokes to call C wrappers
-|   |   |-- onnx  // ONNX runtime build infrastructure
-|   |   |   `-- build.py  // Build the onnx runtime
-|   |   |-- speedreader_ort  // C wrapper for ONNX runtime
-|   |   |   |-- build.py  // Build speedreader_ort
-|   |   |   |-- speedreader_ort.c
-|   |   |   `-- speedreader_ort.h
-|   |   `-- speedreader_cpuinfo  // C wrapper for cpuinfo (CPU topology detection)
-|   |       |-- build.py  // Build speedreader_cpuinfo
-|   |       |-- speedreader_cpuinfo.c
-|   |       `-- speedreader_cpuinfo.h
+|   |   |-- Onnx  // ONNX runtime inference (InferenceSession, OrtValue, SessionOptions)
+|   |   |   |-- Internal  // P/Invoke bindings (SpeedReaderOrt, SafeHandles, Environment)
+|   |   |   |-- onnx  // ONNX runtime build infrastructure
+|   |   |   |   `-- build.py  // Build the onnx runtime
+|   |   |   `-- speedreader_ort  // C wrapper for ONNX runtime
+|   |   |       |-- build.py  // Build speedreader_ort
+|   |   |       |-- speedreader_ort.c
+|   |   |       `-- speedreader_ort.h
+|   |   `-- CpuInfo  // CPU topology detection (CpuTopology, CpuInfoException)
+|   |       |-- Internal  // P/Invoke bindings (SpeedReaderCpuInfo)
+|   |       `-- speedreader_cpuinfo  // C wrapper for cpuinfo
+|   |           |-- build.py  // Build speedreader_cpuinfo
+|   |           |-- speedreader_cpuinfo.c
+|   |           `-- speedreader_cpuinfo.h
 |   |-- Native.Test  // Native library tests
+|   |   |-- Onnx  // InferenceSession, OrtValue tests
+|   |   `-- CpuInfo  // CpuTopology tests
 |   |-- Ocr  // Core library, contains all Ocr functionality
 |   |   |-- Algorithms  // Various algorithms used in detection or recognition
 |   |   |-- Geometry  // Geometry pipeline for turning collections of points into OCR bounding boxes
