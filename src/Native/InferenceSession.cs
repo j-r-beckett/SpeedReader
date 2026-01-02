@@ -74,7 +74,7 @@ public sealed class InferenceSession : IDisposable
             return;
         }
 
-    THROW:
+        THROW:
         Span<long> actual = stackalloc long[actualNdim];
         for (int i = 0; i < actualNdim; i++)
             actual[i] = actualShape[i];
