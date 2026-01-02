@@ -102,7 +102,7 @@ public class TextRecognizerE2ETests
                     model: Model.DbNet,
                     quantization: Quantization.Int8,
                     numIntraOpThreads: 1),
-                Parallelism = 1
+                MaxParallelism = 1
             },
             RecognitionEngine = new CpuEngineConfig
             {
@@ -110,7 +110,7 @@ public class TextRecognizerE2ETests
                     model: Model.Svtr,
                     quantization: Quantization.Fp32,
                     numIntraOpThreads: 4),
-                Parallelism = 1
+                MaxParallelism = 1
             }
         };
 

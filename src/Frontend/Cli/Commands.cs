@@ -78,8 +78,7 @@ public class Commands
                     model: Model.DbNet,
                     quantization: Quantization.Int8,
                     numIntraOpThreads: 4),
-                Parallelism = 4,
-                AdaptiveTuning = new CpuTuningParameters()
+                MaxParallelism = 4,
             },
             RecognitionEngine = new CpuEngineConfig
             {
@@ -87,8 +86,7 @@ public class Commands
                     model: Model.Svtr,
                     quantization: Quantization.Fp32,
                     numIntraOpThreads: 4),
-                Parallelism = 4,
-                AdaptiveTuning = new CpuTuningParameters()
+                MaxParallelism = 4,
             }
         };
 

@@ -45,18 +45,10 @@ public record OnnxInferenceKernelOptions
 
 #region CPU Engine
 
-public record CpuTuningParameters
-{
-    public double ThroughputThreshold { get; init; } = 0.05;
-    public int MeasurementWindowMultiplier { get; init; } = 8;
-    public int MinParallelism { get; init; } = 1;
-}
-
 public record CpuEngineConfig
 {
     public required OnnxInferenceKernelOptions Kernel { get; init; }
-    public int Parallelism { get; init; } = 4;
-    public CpuTuningParameters? AdaptiveTuning { get; init; }
+    public int MaxParallelism { get; init; } = 4;
 }
 
 #endregion

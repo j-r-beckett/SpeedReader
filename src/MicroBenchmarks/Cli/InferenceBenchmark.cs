@@ -20,7 +20,7 @@ public static class InferenceBenchmark
 
         var quantization = model == Model.DbNet ? Quantization.Int8 : Quantization.Fp32;
         var kernelOptions = new OnnxInferenceKernelOptions(model, quantization, intraThreads, interThreads, profile);
-        var engineConfig = new CpuEngineConfig { Kernel = kernelOptions, Parallelism = parallelism };
+        var engineConfig = new CpuEngineConfig { Kernel = kernelOptions, MaxParallelism = parallelism };
         var weights = model == Model.DbNet ? EmbeddedWeights.Dbnet_Int8 : EmbeddedWeights.Svtr_Fp32;
 
         var services = new ServiceCollection();

@@ -132,4 +132,64 @@ public class CpuEngine : IInferenceEngine
             GC.SuppressFinalize(this);
         }
     }
+
+    private List<LogicalCore> Prioritize(IEnumerable<LogicalCore> cores)
+    {
+        var numaNodes = cores
+            .Where(core => core.IsPowerCore)
+            .GroupBy(core => core.NumaNodeId)
+            .OrderBy(numaGroup => numaGroup.Key)
+            .Select(numaGroup => numaGroup
+                .GroupBy(core => core.PhysicalCoreId)
+                .OrderBy(physicalGroup => physicalGroup.Key)
+                .Select(physicalGroup => physicalGroup
+                    .OrderBy(core => core.ThreadInCoreId)
+                    .ToList())
+                .ToList())
+            .ToList();
+
+        List<LogicalCore> prioritized = [];
+
+        // Round-robin across NUMA nodes
+        var i = 0;
+        while (numaNodes.Count > 0)
+        {
+            var numaNode = numaNodes[i % numaNodes.Count];
+            var threads = numaNode[0];  // Pick a physical core
+            numaNode.RemoveAt(0);
+            if (numaNode.Count == 0)
+            {
+                numaNodes.RemoveAt(i % numaNodes.Count);  // Remove NUMA node if there are no more physical cores
+            }
+            else
+            {
+                i++;  // Only increment when we don't remove the node
+            }
+            prioritized.Add(threads[0] with { Priority = prioritized.Count });  // Pick a thread, assign priority
+        }
+
+        return prioritized;
+    }
+
+    private record LogicalCore
+    {
+        // Metadata
+        public int Priority { get; set; } // Settable!
+
+        // Characteristics
+        public int PhysicalCoreId { get; init; }
+        public int ThreadInCoreId { get; init; }
+        public int NumaNodeId { get; init; }
+        public bool IsPowerCore { get; init; } = true;
+
+        // Cache ids
+        public int L1CacheId { get; init; }
+        public int L2CacheId { get; init; }
+        public int L3CacheId { get; init; }
+
+        // Cache sizes in bytes
+        public long L1CacheSize { get; init; }  // Size of data cache only, we don't care about the instruction cache
+        public long L2CacheSize { get; init; }
+        public long L3CacheSize { get; init; }
+    }
 }

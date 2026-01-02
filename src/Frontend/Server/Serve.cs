@@ -31,7 +31,7 @@ public static class Serve
                     model: Model.DbNet,
                     quantization: Quantization.Int8,
                     numIntraOpThreads: 1),
-                Parallelism = 1
+                MaxParallelism = 1
             },
             RecognitionEngine = new CpuEngineConfig
             {
@@ -39,7 +39,7 @@ public static class Serve
                     model: Model.Svtr,
                     quantization: Quantization.Fp32,
                     numIntraOpThreads: 1),
-                Parallelism = 1
+                MaxParallelism = 1
             }
         };
         builder.Services.AddOcrPipeline(ocrPipelineOptions);
