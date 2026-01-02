@@ -13,9 +13,9 @@
   </Target>
 
   <PropertyGroup>
-    <SpeedReaderOrtOutDir>$(MSBuildThisFileDirectory)speedreader_ort/out</SpeedReaderOrtOutDir>
-    <SpeedReaderCpuInfoOutDir>$(MSBuildThisFileDirectory)speedreader_cpuinfo/out</SpeedReaderCpuInfoOutDir>
-    <OnnxOutDir>$(MSBuildThisFileDirectory)onnx/out</OnnxOutDir>
+    <SpeedReaderOrtOutDir>$(MSBuildThisFileDirectory)Onnx/speedreader_ort/out</SpeedReaderOrtOutDir>
+    <SpeedReaderCpuInfoOutDir>$(MSBuildThisFileDirectory)CpuInfo/speedreader_cpuinfo/out</SpeedReaderCpuInfoOutDir>
+    <OnnxOutDir>$(MSBuildThisFileDirectory)Onnx/onnx/out</OnnxOutDir>
   </PropertyGroup>
 
   <!-- linux-musl-x64: Fully static binary -->
