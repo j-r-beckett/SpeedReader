@@ -17,7 +17,7 @@ public class GpuEngine : IInferenceEngine
 
     public int CurrentMaxCapacity() => throw new NotImplementedException();
 
-    public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape) => throw new NotImplementedException();
+    public Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape) => throw new NotImplementedException();
 
     public ValueTask DisposeAsync()
     {

@@ -5,7 +5,7 @@ namespace SpeedReader.Ocr.InferenceEngine;
 
 public interface IInferenceEngine : IAsyncDisposable
 {
-    Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape);
+    Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape);
     int CurrentMaxCapacity();
 }
 

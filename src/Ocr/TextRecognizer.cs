@@ -115,7 +115,7 @@ public class TextRecognizer
         List<Task<(float[], int[])>> inferenceTasks = [];
         foreach (var (data, shape) in inputs)
         {
-            inferenceTasks.Add(await _inferenceEngine.Run(data, shape));
+            inferenceTasks.Add(_inferenceEngine.Run(data, shape));
         }
         return await Task.WhenAll(inferenceTasks);
     }

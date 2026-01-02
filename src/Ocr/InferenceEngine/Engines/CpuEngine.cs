@@ -49,15 +49,14 @@ public class CpuEngine : IInferenceEngine
             var thread = _threads.Take(_activatorCts.Token);
             thread.Input = job.Input;
             thread.Output = job.Output;
-            thread.Activate.Set();
+            thread.Activator.Set();
         }
     }
 
     public int CurrentMaxCapacity() => _threads.Count;
 
-    public async Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape)
+    public Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape)
     {
-        // return Task.FromResult(_inferenceKernel.Execute(inputData, inputShape));
         var job = new Job { Input = (inputData, inputShape), Output = new TaskCompletionSource<(float[], int[])>() };
         _jobs.Add(job);
         return job.Output.Task;
@@ -65,7 +64,6 @@ public class CpuEngine : IInferenceEngine
 
     public async ValueTask DisposeAsync()
     {
-        // TODO: shut down threads
         _activatorCts.Cancel();
         try
         {
@@ -73,27 +71,27 @@ public class CpuEngine : IInferenceEngine
         }
         catch (OperationCanceledException) { }
 
-        foreach (var thread in _threads)
-            thread.Cts.Cancel();
+        // Dispose threads in parallel
+        await Task.WhenAll(_threads.Select(thread => Task.Run(thread.Dispose)));
 
         GC.SuppressFinalize(this);
     }
 
-    private class InferenceThread
+    private class InferenceThread : IDisposable
     {
-        public (float[] Data, int[] Shape)? Input { get; set; }
-        public TaskCompletionSource<(float[], int[])>? Output { get; set; }
-        public ManualResetEventSlim Activate { get; } = new(false);
+        public (float[] Data, int[] Shape)? Input { get; set; }  // Set by caller before setting Activate
+        public TaskCompletionSource<(float[], int[])>? Output { get; set; }  // Set by caller before setting Activate
+        public ManualResetEventSlim Activator { get; } = new(false);
 
-        public CancellationTokenSource Cts { get; } = new();
-
-        private readonly Action<InferenceThread> _requeue;
+        private readonly CancellationTokenSource _cts = new();
+        private readonly Action<InferenceThread> _requeueThread;
         private readonly IInferenceKernel _inferenceKernel;
         private readonly Thread _thread;
+        private bool _disposed;
 
-        public InferenceThread(IInferenceKernel inferenceKernel, Action<InferenceThread> requeue)
+        public InferenceThread(IInferenceKernel inferenceKernel, Action<InferenceThread> requeueThread)
         {
-            _requeue = requeue;
+            _requeueThread = requeueThread;
             _inferenceKernel = inferenceKernel;
             _thread = new Thread(Run) { IsBackground = true };
             _thread.Start();
@@ -101,26 +99,37 @@ public class CpuEngine : IInferenceEngine
 
         private void Run()
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
             try
             {
                 while (true)
                 {
-                    Cts.Token.ThrowIfCancellationRequested();
-                    Activate.Wait(Cts.Token);
+                    _cts.Token.ThrowIfCancellationRequested();
+                    Activator.Wait(_cts.Token);  // Wait for input
                     if (Input is null)
                         throw new InvalidOperationException("Must set Input before activating thread");
                     if (Output is null)
                         throw new InvalidOperationException("Must set Output before activating thread");
                     var (data, shape) = Input.Value;
-                    var batchedInputShape = new[] { 1 }.Concat(shape).ToArray();
+                    var batchedInputShape = new[] { 1 }.Concat(shape).ToArray();  // Add batch dimension
                     var (resultData, batchedResultShape) = _inferenceKernel.Execute(data, batchedInputShape);
-                    var resultShape = batchedResultShape[1..];
-                    Output.SetResult((resultData, resultShape));
-                    Activate.Reset();
-                    _requeue(this);
+                    var resultShape = batchedResultShape[1..];  // Remove batch dimension
+                    Output.SetResult((resultData, resultShape));  // Pass output back to caller
+                    Activator.Reset();
+                    _requeueThread(this);
                 }
             }
             catch (OperationCanceledException) { }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            _cts.Cancel();
+            _thread.Join();
+            GC.SuppressFinalize(this);
         }
     }
 }

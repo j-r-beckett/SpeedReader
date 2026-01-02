@@ -17,10 +17,10 @@ public class MockInferenceEngine : IInferenceEngine
 
     public MockInferenceEngine(int capacity = 1) => _capacity = capacity;
 
-    public Task<Task<(float[] OutputData, int[] OutputShape)>> Run(float[] inputData, int[] inputShape)
+    public Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape)
     {
         var size = inputShape.Aggregate(1, (a, b) => a * b);
-        return Task.FromResult(Task.FromResult((new float[size], inputShape)));
+        return Task.FromResult((new float[size], inputShape));
     }
 
     public int CurrentMaxCapacity() => _capacity;

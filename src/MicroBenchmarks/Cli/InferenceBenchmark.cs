@@ -64,8 +64,7 @@ public static class InferenceBenchmark
                 while (globalSw.Elapsed.TotalSeconds < totalDuration)
                 {
                     sw.Restart();
-                    var innerTask = await engine.Run(inputData, inputShape);
-                    await innerTask;
+                    await engine.Run(inputData, inputShape);
                     sw.Stop();
 
                     var elapsed = globalSw.Elapsed;

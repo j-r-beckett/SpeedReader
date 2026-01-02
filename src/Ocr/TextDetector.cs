@@ -167,7 +167,7 @@ public class TextDetector
         List<Task<(float[], int[])>> inferenceTasks = [];
         foreach (var (data, shape) in tiles)
         {
-            inferenceTasks.Add(await _inferenceEngine.Run(data, shape));
+            inferenceTasks.Add(_inferenceEngine.Run(data, shape));
         }
         return await Task.WhenAll(inferenceTasks);
     }
