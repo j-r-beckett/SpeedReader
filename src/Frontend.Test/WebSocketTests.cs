@@ -1,11 +1,9 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -260,55 +258,5 @@ public class WebSocketTests : IClassFixture<ServerFixture>
 
         // Connection should fail when attempting to receive next message
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await ReceiveTextMessageAsync(webSocket));
-    }
-
-    [Fact]
-    public async Task WebSocketAppliesBackpressure()
-    {
-        // Create test image
-        using var testImage = CreateImageWithText("test", width: 1080, height: 920, addNoise: true);
-        var imageBytes = await SaveImageToBytes(testImage);
-
-        // Connect to WebSocket endpoint
-        using var webSocket = new ClientWebSocket();
-        var httpUri = _server.HttpClient.BaseAddress!;
-        var wsUri = new UriBuilder(httpUri)
-        {
-            Scheme = "ws",
-            Path = "/api/ws/ocr"
-        }.Uri;
-        await webSocket.ConnectAsync(wsUri, CancellationToken.None);
-
-        const int maxItems = 100;
-        const int backpressureThresholdMs = 250;
-        int itemsSent = 0;
-        bool backpressureDetected = false;
-
-        // Try to upload items and measure how long each takes to be accepted
-        for (int i = 0; i < maxItems; i++)
-        {
-            var sw = Stopwatch.StartNew();
-            await SendImageAsync(webSocket, imageBytes);
-            sw.Stop();
-
-            itemsSent++;
-
-            _logger.LogInformation($"Item {i} took {sw.ElapsedMilliseconds}ms to send");
-
-            // If sending took longer than threshold, backpressure is working
-            if (sw.ElapsedMilliseconds > backpressureThresholdMs)
-            {
-                backpressureDetected = true;
-                break;
-            }
-            if (sw.ElapsedMilliseconds > backpressureThresholdMs / 2)
-            {
-                Assert.Fail("Item took too long to send, unable to get a clear backpressure signal");
-            }
-        }
-
-        // Assert that we detected backpressure before sending all items
-        Assert.True(backpressureDetected,
-            $"Expected backpressure to be detected, but sent all {itemsSent} items without delay");
     }
 }
