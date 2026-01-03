@@ -6,9 +6,9 @@ obj/
 datasets/
 
 # Native library build outputs
-src/Native/onnx/out/
-src/Native/speedreader_ort/out/
-src/Native/speedreader_cpuinfo/out/
+src/Native/Onnx/onnx/out/
+src/Native/Onnx/speedreader_ort/out/
+src/Native/CpuInfo/speedreader_cpuinfo/out/
 
 # Test coverage results
 src/TestResults/
