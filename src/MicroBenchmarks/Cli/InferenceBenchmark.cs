@@ -13,14 +13,14 @@ namespace SpeedReader.MicroBenchmarks.Cli;
 public static class InferenceBenchmark
 {
     public static void Run(Model model, double warmup, int intraThreads, int interThreads,
-        int parallelism, double duration, int batchSize, bool profile)
+        int[] cores, double duration, int batchSize, bool profile)
     {
         // CpuEngine adds batch dimension internally, so input shape excludes it
         var inputShape = GetInputShape(model);
 
         var quantization = model == Model.DbNet ? Quantization.Int8 : Quantization.Fp32;
         var kernelOptions = new OnnxInferenceKernelOptions(model, quantization, intraThreads, interThreads, profile);
-        var engineConfig = new CpuEngineConfig { Kernel = kernelOptions, MaxParallelism = parallelism };
+        var engineConfig = new CpuEngineConfig { Kernel = kernelOptions, Cores = [.. cores] };
         var weights = model == Model.DbNet ? EmbeddedWeights.Dbnet_Int8 : EmbeddedWeights.Svtr_Fp32;
 
         var services = new ServiceCollection();
@@ -37,8 +37,8 @@ public static class InferenceBenchmark
         var inputSize = inputShape.Aggregate(1, (a, b) => a * b);
 
         // Create input data per task
-        var inputDataArrays = new float[parallelism][];
-        for (var t = 0; t < parallelism; t++)
+        var inputDataArrays = new float[cores.Length][];
+        for (var t = 0; t < cores.Length; t++)
         {
             var inputData = new float[inputSize];
             var rng = new Random(42 + t);
@@ -52,8 +52,8 @@ public static class InferenceBenchmark
         var globalSw = Stopwatch.StartNew();
         var outputLock = new object();
 
-        var tasks = new Task[parallelism];
-        for (var t = 0; t < parallelism; t++)
+        var tasks = new Task[cores.Length];
+        for (var t = 0; t < cores.Length; t++)
         {
             var taskIndex = t;
             tasks[t] = Task.Run(async () =>

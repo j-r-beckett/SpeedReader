@@ -58,10 +58,13 @@ public static class Commands
             getDefaultValue: () => 1,
             description: "Inter-op threads (parallelism between operators)");
 
-        var parallelismOption = new Option<int>(
-            aliases: ["-p", "--parallelism"],
-            getDefaultValue: () => 1,
-            description: "Application parallelism (concurrent tasks calling inference)");
+        var coresOption = new Option<int[]>(
+            aliases: ["-c", "--cores"],
+            description: "CPU cores to use for inference (e.g., -c 0 2 4 6)")
+        {
+            IsRequired = true,
+            AllowMultipleArgumentsPerToken = true
+        };
 
         var durationOption = new Option<double>(
             aliases: ["-d", "--duration"],
@@ -81,7 +84,7 @@ public static class Commands
         command.AddOption(warmupOption);
         command.AddOption(intraThreadsOption);
         command.AddOption(interThreadsOption);
-        command.AddOption(parallelismOption);
+        command.AddOption(coresOption);
         command.AddOption(durationOption);
         command.AddOption(batchSizeOption);
         command.AddOption(profileOption);
@@ -92,7 +95,7 @@ public static class Commands
             var warmup = context.ParseResult.GetValueForOption(warmupOption);
             var intraThreads = context.ParseResult.GetValueForOption(intraThreadsOption);
             var interThreads = context.ParseResult.GetValueForOption(interThreadsOption);
-            var parallelism = context.ParseResult.GetValueForOption(parallelismOption);
+            var cores = context.ParseResult.GetValueForOption(coresOption)!;
             var duration = context.ParseResult.GetValueForOption(durationOption);
             var batchSize = context.ParseResult.GetValueForOption(batchSizeOption);
             var profile = context.ParseResult.GetValueForOption(profileOption);
@@ -104,7 +107,7 @@ public static class Commands
                 _ => throw new ArgumentException($"Unknown model: {modelName}. Use 'dbnet' or 'svtr'.")
             };
 
-            InferenceBenchmark.Run(model, warmup, intraThreads, interThreads, parallelism, duration, batchSize, profile);
+            InferenceBenchmark.Run(model, warmup, intraThreads, interThreads, cores, duration, batchSize, profile);
         });
 
         return command;

@@ -57,12 +57,16 @@ def _(model_input, project_path):
     def _():
         if model_input.value == "dbnet":
             duration = 8
-            max_threads = 12
+            max_cores = 12
         elif model_input.value == "svtr":
             duration = 8
-            max_threads = 12
+            max_cores = 12
         else:
             raise ValueError(f"unknown model {model_input.value}")
+
+        # Generate core configurations: [[0], [0,1], [0,1,2], ...]
+        core_configs = [list(range(0, n * 2, 2)) for n in range(1, 8)]
+        # core_configs = [[0], [0, 2], [0, 2, 4], [0, 2, 4, 6]]
 
         perf = start_perf_bandwidth()
         df = run_benchmark_sweep(
@@ -70,10 +74,13 @@ def _(model_input, project_path):
             model=model_input.value,
             duration_seconds=duration,
             warmup_seconds=2,
-            parallelism=list(range(1, max_threads + 1)),
-            # parallelism=[0]
+            cores=core_configs,
         )
         perf_df = perf.stop()
+
+        # Add parallelism column for grouping (len of cores list)
+        df["parallelism"] = df["cores"].apply(len)
+
         return df, perf_df
 
     df, perf_df = _()

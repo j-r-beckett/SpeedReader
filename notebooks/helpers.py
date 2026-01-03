@@ -155,7 +155,7 @@ def _run_inference_benchmark(
     batch_size: int,
     intra_threads: int,
     inter_threads: int,
-    parallelism: int,
+    cores: list[int],
     warmup_seconds: float,
     on_tick,
 ) -> list[tuple[str, str]]:
@@ -176,7 +176,7 @@ def _run_inference_benchmark(
         "-b", str(batch_size),
         "--intra-threads", str(intra_threads),
         "--inter-threads", str(inter_threads),
-        "-p", str(parallelism),
+        "-c", *[str(c) for c in cores],
         "-w", str(warmup_seconds),
     ]
 
@@ -234,23 +234,24 @@ def run_benchmark_sweep(
     batch_size: int | list[int] = 1,
     intra_threads: int | list[int] = 1,
     inter_threads: int | list[int] = 1,
-    parallelism: int | list[int] = 1,
+    cores: list[list[int]] = [[0]],
     warmup_seconds: float = 2.0,
 ) -> pd.DataFrame:
     """
     Run inference benchmark over all combinations of parameters.
 
     Parameters that accept lists will be swept over (cartesian product).
+    cores is a list of core configurations to sweep over (e.g., [[0], [0,1], [0,1,2]]).
     Returns a DataFrame with columns for each config parameter plus start_time and end_time.
     """
     def to_list(x):
         return x if isinstance(x, list) else [x]
 
     configs = [
-        {"model": m, "batch_size": b, "intra_threads": intra, "inter_threads": inter, "parallelism": p}
-        for m, b, intra, inter, p in product(
+        {"model": m, "batch_size": b, "intra_threads": intra, "inter_threads": inter, "cores": c}
+        for m, b, intra, inter, c in product(
             to_list(model), to_list(batch_size), to_list(intra_threads),
-            to_list(inter_threads), to_list(parallelism)
+            to_list(inter_threads), cores
         )
     ]
 
@@ -276,7 +277,7 @@ def run_benchmark_sweep(
                 batch_size=cfg["batch_size"],
                 intra_threads=cfg["intra_threads"],
                 inter_threads=cfg["inter_threads"],
-                parallelism=cfg["parallelism"],
+                cores=cfg["cores"],
                 warmup_seconds=warmup_seconds,
                 on_tick=on_tick,
             ):
