@@ -33,7 +33,7 @@ internal static partial class LinuxAffinity
         if (sched_setaffinity(0, (nuint)count * sizeof(ulong), ref mask[0]) != 0)
         {
             // GetLastWin32Error is cross-platform, despite the name
-            throw new AffinityException($"{nameof(sched_setaffinity)} failed, errno: {Marshal.GetLastWin32Error()}");
+            throw new AffinityException($"{nameof(sched_setaffinity)} failed attempting to pin to core {core}, errno: {Marshal.GetLastWin32Error()}");
         }
     }
 

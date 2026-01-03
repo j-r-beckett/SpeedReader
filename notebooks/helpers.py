@@ -158,11 +158,11 @@ def _run_inference_benchmark(
     cores: list[int],
     warmup_seconds: float,
     on_tick,
-) -> list[tuple[str, str]]:
+) -> tuple[list[tuple[str, str]], str]:
     """
     Internal function to run inference benchmark.
 
-    Returns list of (start_time, end_time) ISO timestamp pairs.
+    Returns (results, stderr) where results is list of (start_time, end_time) ISO timestamp pairs.
     on_tick() is called periodically (~10Hz) during execution for progress updates.
     """
     cmd = [
@@ -220,10 +220,12 @@ def _run_inference_benchmark(
             start_ts, end_ts = line.split(",")
             results.append((start_ts, end_ts))
 
-    if proc.returncode != 0:
-        raise RuntimeError(f"Benchmark failed:\n{proc.stderr.read()}")
+    stderr_output = proc.stderr.read()
 
-    return results
+    if proc.returncode != 0:
+        raise RuntimeError(f"Benchmark failed:\n{stderr_output}")
+
+    return results, stderr_output
 
 
 @app.function
@@ -243,6 +245,7 @@ def run_benchmark_sweep(
     Parameters that accept lists will be swept over (cartesian product).
     cores is a list of core configurations to sweep over (e.g., [[0], [0,1], [0,1,2]]).
     Returns a DataFrame with columns for each config parameter plus start_time and end_time.
+    Writes diagnostic logs to a timestamped file in /tmp.
     """
     def to_list(x):
         return x if isinstance(x, list) else [x]
@@ -256,6 +259,7 @@ def run_benchmark_sweep(
     ]
 
     rows = []
+    all_stderr = []
     estimated_total = len(configs) * (warmup_seconds + duration_seconds + 1)
     start_time = time.time()
 
@@ -270,7 +274,7 @@ def run_benchmark_sweep(
                     subtitle=f"{format_duration(remaining)} remaining",
                 )
 
-            for start_str, end_str in _run_inference_benchmark(
+            results, stderr = _run_inference_benchmark(
                 project_path=project_path,
                 model=cfg["model"],
                 duration_seconds=duration_seconds,
@@ -280,12 +284,21 @@ def run_benchmark_sweep(
                 cores=cfg["cores"],
                 warmup_seconds=warmup_seconds,
                 on_tick=on_tick,
-            ):
+            )
+
+            all_stderr.append(f"=== Config: cores={cfg['cores']} ===\n{stderr}\n")
+
+            for start_str, end_str in results:
                 rows.append({
                     **cfg,
                     "start_time": datetime.fromisoformat(start_str.replace("Z", "+00:00")),
                     "end_time": datetime.fromisoformat(end_str.replace("Z", "+00:00")),
                 })
+
+    # Write stderr to log file
+    log_path = Path(f"/tmp/benchmark_log_{int(time.time())}.txt")
+    log_path.write_text("".join(all_stderr))
+    print(f"Diagnostic log: {log_path}", file=__import__('sys').stderr)
 
     return pd.DataFrame(rows)
 

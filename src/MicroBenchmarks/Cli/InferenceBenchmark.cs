@@ -84,6 +84,7 @@ public static class InferenceBenchmark
 
         // Cleanup
         engine.DisposeAsync().AsTask().Wait();
+        serviceProvider.Dispose();
     }
 
     // CpuEngine adds batch dimension, so these exclude it

@@ -65,9 +65,9 @@ def _(model_input, project_path):
             raise ValueError(f"unknown model {model_input.value}")
 
         # Generate core configurations: [[0], [0,1], [0,1,2], ...]
-        core_configs = [list(range(0, n * 2, 2)) for n in range(1, 8)]
-        # core_configs = [[0], [0, 2], [0, 2, 4], [0, 2, 4, 6]]
-
+        # core_configs = [list(range(0, n * 2, 2)) for n in range(1, 8)]
+        core_configs = [list(range(0, n)) for n in range(1, 8)]
+    
         perf = start_perf_bandwidth()
         df = run_benchmark_sweep(
             project_path=project_path,
