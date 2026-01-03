@@ -49,6 +49,7 @@ public record CpuEngineConfig
 {
     public required OnnxInferenceKernelOptions Kernel { get; init; }
     public int MaxParallelism { get; init; } = 4;
+    public List<int> Cores { get; init; } = [];
 }
 
 #endregion

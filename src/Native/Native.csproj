@@ -10,6 +10,10 @@
     <OnnxDir>$(MSBuildThisFileDirectory)Onnx/onnx</OnnxDir>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Native.Test" />
+  </ItemGroup>
+
   <!-- Exclude native code directories from MSBuild tracking -->
   <ItemGroup>
     <Compile Remove="Onnx/onnx/**/*.cs" />
