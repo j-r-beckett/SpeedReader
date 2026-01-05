@@ -1,6 +1,11 @@
+#!/usr/bin/env -S uvx marimo edit --sandbox --no-token --no-skew-protection --watch --port 3005
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["marimo[mcp]", "pandas", "seaborn"]
+# dependencies = ["marimo", "pandas", "seaborn"]
+#
+# [tool.marimo.runtime]
+# auto_reload = "lazy"
+# auto_instantiate = false
 # ///
 
 import marimo
@@ -19,8 +24,9 @@ with app.setup:
 
 
 @app.cell
-def _():
+def build():
     project_path = build_inference_benchmark()
+    x = 1
     return (project_path,)
 
 
@@ -64,10 +70,28 @@ def _(model_input, project_path):
         else:
             raise ValueError(f"unknown model {model_input.value}")
 
+        def prioritized_cores(max_cores):
+            # i7-14700K topology:
+            # P-cores (8, with SMT): physical threads 0,2,4,6,8,10,12,14; SMT threads 1,3,5,7,9,11,13,15
+            # E-cores (12, no SMT): threads 16-27
+            # Priority: P-core physical -> E-cores -> P-core SMT
+            p_physical = [0, 2, 4, 6, 8, 10, 12, 14]
+            e_cores = list(range(16, 28))
+            p_smt = [1, 3, 5, 7, 9, 11, 13, 15]
+            priority_order = p_physical + e_cores + p_smt
+
+            result = []
+            for n in range(1, min(max_cores, len(priority_order)) + 1):
+                result.append(priority_order[:n])
+            return result
+
         # Generate core configurations: [[0], [0,1], [0,1,2], ...]
-        # core_configs = [list(range(0, n * 2, 2)) for n in range(1, 8)]
-        core_configs = [list(range(0, n)) for n in range(1, 8)]
-    
+        # core_configs = [list(range(0, n * 2, 2)) for n in range(1, 14)]
+        # core_configs = [list(range(0, n)) for n in range(1, 8)]
+        # print(prioritized_cores(24))
+        core_configs = prioritized_cores(12)
+        # core_configs = [[0], [4], [14], [18], [25]]
+
         perf = start_perf_bandwidth()
         df = run_benchmark_sweep(
             project_path=project_path,
@@ -78,8 +102,17 @@ def _(model_input, project_path):
         )
         perf_df = perf.stop()
 
-        # Add parallelism column for grouping (len of cores list)
+        # Create unique config_label for each core configuration
+        # This allows configs of the same length to be distinguished
+        def cores_to_label(cores_list):
+            return ",".join(str(c) for c in cores_list)
+
+        df["config_label"] = df["cores"].apply(cores_to_label)
         df["parallelism"] = df["cores"].apply(len)
+
+        # Create ordered categorical to preserve original config order in plots
+        config_order = [cores_to_label(c) for c in core_configs]
+        df["config_label"] = pd.Categorical(df["config_label"], categories=config_order, ordered=True)
 
         return df, perf_df
 
@@ -93,13 +126,15 @@ def _(df):
         # Compute midpoint for each inference
         df["midpoint"] = df["start_time"] + (df["end_time"] - df["start_time"]) / 2
 
-        # Resample to 1-second bins per parallelism
+        # Resample to 1-second bins per config
         rows = []
-        for parallelism, g in df.groupby("parallelism"):
+        for config_label, g in df.groupby("config_label", observed=True):
+            parallelism = g["parallelism"].iloc[0]
             counts = g.set_index("midpoint").resample("1s").size()
             t0 = counts.index.min()
             for ts, count in counts.iloc[1:-1].items():  # Drop incomplete first/last bins
                 rows.append({
+                    "config_label": config_label,
                     "parallelism": parallelism,
                     "time_s": (ts - t0).total_seconds(),
                     "inferences_per_sec": count,
@@ -108,7 +143,7 @@ def _(df):
         throughput_df = pd.DataFrame(rows)
 
         # Filter to common time range (all groups have same extent)
-        max_common_time = throughput_df.groupby("parallelism")["time_s"].max().min()
+        max_common_time = throughput_df.groupby("config_label", observed=True)["time_s"].max().min()
         return throughput_df[throughput_df["time_s"] <= max_common_time]
 
     throughput_df = _()
@@ -118,13 +153,14 @@ def _(df):
 @app.cell
 def _(df, perf_df):
     def _():
-        # For each parallelism run, extract bandwidth samples and bucket to 1-second bins
+        # For each config run, extract bandwidth samples and bucket to 1-second bins
         rows = []
-        for parallelism, g in df.groupby("parallelism"):
+        for config_label, g in df.groupby("config_label", observed=True):
+            parallelism = g["parallelism"].iloc[0]
             t_start = g["start_time"].min()
             t_end = g["end_time"].max()
 
-            # Filter perf samples to this parallelism run's time range
+            # Filter perf samples to this config run's time range
             mask = (perf_df["timestamp"] >= t_start) & (perf_df["timestamp"] <= t_end)
             run_perf = perf_df[mask].copy()
 
@@ -138,6 +174,7 @@ def _(df, perf_df):
 
             for ts, bw in binned.iloc[1:-1].items():  # Drop incomplete first/last bins
                 rows.append({
+                    "config_label": config_label,
                     "parallelism": parallelism,
                     "time_s": (ts - t0).total_seconds(),
                     "bandwidth_gbps": bw,
@@ -147,7 +184,7 @@ def _(df, perf_df):
 
         # Filter to common time range (match throughput_df)
         if not bandwidth_df.empty:
-            max_common_time = bandwidth_df.groupby("parallelism")["time_s"].max().min()
+            max_common_time = bandwidth_df.groupby("config_label", observed=True)["time_s"].max().min()
             bandwidth_df = bandwidth_df[bandwidth_df["time_s"] <= max_common_time]
 
         return bandwidth_df
@@ -159,8 +196,9 @@ def _(df, perf_df):
 @app.cell
 def _(bandwidth_df, df):
     def _():
-        stats_df = df.groupby("parallelism").apply(
+        stats_df = df.groupby("config_label", observed=True).apply(
             lambda g: pd.Series({
+                "parallelism": g["parallelism"].iloc[0],
                 "avg_throughput": round(len(g) / (g["end_time"].max() - g["start_time"].min()).total_seconds(), 2),
                 "avg_duration_ms": round(((g["end_time"] - g["start_time"]).dt.total_seconds() * 1000).mean(), 2),
                 "std_duration_ms": round(((g["end_time"] - g["start_time"]).dt.total_seconds() * 1000).std(), 2),
@@ -168,18 +206,25 @@ def _(bandwidth_df, df):
             include_groups=False,
         ).reset_index()
 
-        # Add average bandwidth per parallelism
+        # Add average bandwidth per config
         if not bandwidth_df.empty:
-            bw_avg = bandwidth_df.groupby("parallelism")["bandwidth_gbps"].mean().round(2)
+            bw_avg = bandwidth_df.groupby("config_label", observed=True)["bandwidth_gbps"].mean().round(2)
             stats_df = stats_df.merge(
                 bw_avg.rename("avg_bandwidth_gbps").reset_index(),
-                on="parallelism",
+                on="config_label",
                 how="left",
             )
 
-        stats_df = stats_df.sort_values("parallelism")
-        baseline = stats_df.loc[stats_df["parallelism"] == 1, "avg_throughput"].iloc[0]
-        stats_df["marginal_efficiency"] = (stats_df["avg_throughput"].diff() / baseline).round(3)
+        # Sort by original config order (preserved in categorical)
+        stats_df = stats_df.sort_values("config_label")
+
+        # Only compute marginal efficiency if parallelism varies across configs
+        if stats_df["parallelism"].nunique() > 1:
+            baseline = stats_df["avg_throughput"].iloc[0]
+            stats_df["marginal_efficiency"] = (stats_df["avg_throughput"].diff() / baseline).round(3)
+        else:
+            stats_df["marginal_efficiency"] = None
+
         return stats_df
 
     stats_df = _()
@@ -196,30 +241,25 @@ def _(stats_df, throughput_df):
             data=throughput_df,
             x="time_s",
             y="inferences_per_sec",
-            hue="parallelism",
+            hue="config_label",
             ax=axes[0],
             palette="tab10",
         )
         axes[0].set_xlabel("Time (s)")
         axes[0].set_ylabel("Inferences / second")
-        axes[0].set_title("Throughput Over Time by Parallelism")
+        axes[0].set_title("Throughput Over Time by Config")
         axes[0].set_ylim(bottom=0)
         handles, labels = axes[0].get_legend_handles_labels()
-        axes[0].legend(handles[::-1], labels[::-1], title="Parallelism", loc="upper left", bbox_to_anchor=(1, 1))
+        axes[0].legend(handles[::-1], labels[::-1], title="Cores", loc="upper left", bbox_to_anchor=(1, 1))
 
-        # Summary: average throughput per parallelism
-        sns.lineplot(
-            data=stats_df,
-            x="parallelism",
-            y="avg_throughput",
-            ax=axes[1],
-            marker="o",
-            color="#1a1a2e",
-        )
-        axes[1].set_xlabel("Parallelism")
-        axes[1].set_ylabel("Avg Inferences / second")
-        axes[1].set_title("Average Throughput by Parallelism")
-        axes[1].set_ylim(bottom=0)
+        # Summary: average throughput per config
+        ax = axes[1]
+        x_labels = stats_df["config_label"].astype(str).tolist()
+        ax.plot(x_labels, stats_df["avg_throughput"], marker="o", color="#1a1a2e")
+        ax.set_xlabel("Cores")
+        ax.set_ylabel("Avg Inferences / second")
+        ax.set_title("Average Throughput by Config")
+        ax.set_ylim(bottom=0)
 
         plt.tight_layout()
 
@@ -232,20 +272,27 @@ def _(stats_df, throughput_df):
 @app.cell
 def _(stats_df):
     def _():
+        # Skip this plot if marginal efficiency wasn't computed (same parallelism across configs)
+        if stats_df["marginal_efficiency"].isna().all():
+            return None
+
         fig, ax = plt.subplots(figsize=(10, 5))
+        x_labels = stats_df["config_label"].astype(str).tolist()
         ax.plot(
-            stats_df["parallelism"],
+            x_labels,
             stats_df["marginal_efficiency"],
             marker="o",
             color="#1a1a2e",
             linewidth=2,
         )
-        ax.axvline(x=8, color="#e63946", linestyle="--", linewidth=2, label="P-core boundary")
-        ax.set_xlabel("Parallelism")
+        # Only show P-core boundary if parallelism varies and goes past 8
+        if stats_df["parallelism"].max() > 8:
+            ax.axvline(x=8, color="#e63946", linestyle="--", linewidth=2, label="P-core boundary")
+            ax.legend()
+        ax.set_xlabel("Cores")
         ax.set_ylabel("Marginal Efficiency")
-        ax.set_title("Marginal Efficiency by Parallelism")
+        ax.set_title("Marginal Efficiency by Config")
         ax.set_ylim(top=1.1)
-        ax.legend()
 
         plt.tight_layout()
         return fig
@@ -267,31 +314,26 @@ def _(bandwidth_df):
             data=bandwidth_df,
             x="time_s",
             y="bandwidth_gbps",
-            hue="parallelism",
+            hue="config_label",
             ax=axes[0],
             palette="tab10",
         )
         axes[0].set_xlabel("Time (s)")
         axes[0].set_ylabel("DRAM Bandwidth (GB/s)")
-        axes[0].set_title("Memory Bandwidth Over Time by Parallelism")
+        axes[0].set_title("Memory Bandwidth Over Time by Config")
         axes[0].set_ylim(bottom=0)
         handles, labels = axes[0].get_legend_handles_labels()
-        axes[0].legend(handles[::-1], labels[::-1], title="Parallelism", loc="upper left", bbox_to_anchor=(1, 1))
+        axes[0].legend(handles[::-1], labels[::-1], title="Cores", loc="upper left", bbox_to_anchor=(1, 1))
 
-        # Average bandwidth per parallelism
-        bw_stats = bandwidth_df.groupby("parallelism")["bandwidth_gbps"].mean().reset_index()
-        sns.lineplot(
-            data=bw_stats,
-            x="parallelism",
-            y="bandwidth_gbps",
-            ax=axes[1],
-            marker="o",
-            color="#1a1a2e",
-        )
-        axes[1].set_xlabel("Parallelism")
-        axes[1].set_ylabel("Avg DRAM Bandwidth (GB/s)")
-        axes[1].set_title("Average Memory Bandwidth by Parallelism")
-        axes[1].set_ylim(bottom=0)
+        # Average bandwidth per config
+        bw_stats = bandwidth_df.groupby("config_label", observed=True)["bandwidth_gbps"].mean().reset_index()
+        ax = axes[1]
+        x_labels = bw_stats["config_label"].astype(str).tolist()
+        ax.plot(x_labels, bw_stats["bandwidth_gbps"], marker="o", color="#1a1a2e")
+        ax.set_xlabel("Cores")
+        ax.set_ylabel("Avg DRAM Bandwidth (GB/s)")
+        ax.set_title("Average Memory Bandwidth by Config")
+        ax.set_ylim(bottom=0)
 
         plt.tight_layout()
         return fig
@@ -310,14 +352,15 @@ def _(bandwidth_df, stats_df):
 
         # Left y-axis: throughput
         color1 = "#1a1a2e"
+        x_labels = stats_df["config_label"].astype(str).tolist()
         ax1.plot(
-            stats_df["parallelism"],
+            x_labels,
             stats_df["avg_throughput"],
             marker="o",
             color=color1,
             label="Throughput",
         )
-        ax1.set_xlabel("Parallelism")
+        ax1.set_xlabel("Cores")
         ax1.set_ylabel("Avg Inferences / second", color=color1)
         ax1.tick_params(axis="y", labelcolor=color1)
         ax1.set_ylim(bottom=0)
@@ -325,9 +368,10 @@ def _(bandwidth_df, stats_df):
         # Right y-axis: bandwidth
         ax2 = ax1.twinx()
         color2 = "#e63946"
-        bw_stats = bandwidth_df.groupby("parallelism")["bandwidth_gbps"].mean().reset_index()
+        bw_stats = bandwidth_df.groupby("config_label", observed=True)["bandwidth_gbps"].mean().reset_index()
+        bw_x_labels = bw_stats["config_label"].astype(str).tolist()
         ax2.plot(
-            bw_stats["parallelism"],
+            bw_x_labels,
             bw_stats["bandwidth_gbps"],
             marker="s",
             color=color2,
@@ -337,7 +381,7 @@ def _(bandwidth_df, stats_df):
         ax2.tick_params(axis="y", labelcolor=color2)
         ax2.set_ylim(bottom=0)
 
-        ax1.set_title("Throughput and Memory Bandwidth by Parallelism")
+        ax1.set_title("Throughput and Memory Bandwidth by Config")
 
         # Combined legend
         lines1, labels1 = ax1.get_legend_handles_labels()
@@ -357,9 +401,9 @@ def _(bandwidth_df, stats_df):
         if bandwidth_df.empty:
             return None
 
-        # Merge throughput and bandwidth by parallelism
-        bw_stats = bandwidth_df.groupby("parallelism")["bandwidth_gbps"].mean().reset_index()
-        merged = stats_df.merge(bw_stats, on="parallelism")
+        # Merge throughput and bandwidth by config
+        bw_stats = bandwidth_df.groupby("config_label", observed=True)["bandwidth_gbps"].mean().reset_index()
+        merged = stats_df.merge(bw_stats, on="config_label")
 
         # Compute R² (square of Pearson correlation)
         r = merged["avg_throughput"].corr(merged["bandwidth_gbps"])
@@ -399,8 +443,8 @@ def _(bandwidth_df, stats_df):
             return None
 
         # Get bandwidth stats
-        bw_stats = bandwidth_df.groupby("parallelism")["bandwidth_gbps"].mean().reset_index()
-        merged = stats_df.merge(bw_stats, on="parallelism")
+        bw_stats = bandwidth_df.groupby("config_label", observed=True)["bandwidth_gbps"].mean().reset_index()
+        merged = stats_df.merge(bw_stats, on="config_label")
 
         # Compute linear fit: bandwidth = slope * throughput + intercept
         x = merged["avg_throughput"]
