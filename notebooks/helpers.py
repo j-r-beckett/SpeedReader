@@ -11,7 +11,6 @@ import subprocess
 import tempfile
 import time
 from datetime import datetime, timedelta, timezone
-from itertools import product
 from pathlib import Path
 
 import pandas as pd
@@ -48,6 +47,29 @@ def get_physical_p_cores() -> int | None:
         return len(cpus.split(",")) // 2
     except FileNotFoundError:
         return None
+
+
+def prioritized_cores(max_cores: int) -> list[list[int]]:
+    """
+    Generate core configurations prioritized for i7-14700K topology.
+
+    i7-14700K topology:
+    - P-cores (8, with SMT): physical threads 0,2,4,6,8,10,12,14; SMT threads 1,3,5,7,9,11,13,15
+    - E-cores (12, no SMT): threads 16-27
+
+    Priority order: P-core physical -> E-cores -> P-core SMT
+
+    Returns list of core configs: [[0], [0,2], [0,2,4], ...]
+    """
+    p_physical = [0, 2, 4, 6, 8, 10, 12, 14]
+    e_cores = list(range(16, 28))
+    p_smt = [1, 3, 5, 7, 9, 11, 13, 15]
+    priority_order = p_physical + e_cores + p_smt
+
+    result = []
+    for n in range(1, min(max_cores, len(priority_order)) + 1):
+        result.append(priority_order[:n])
+    return result
 
 
 def get_hardware_summary() -> str:
@@ -92,7 +114,7 @@ class PerfBandwidthMeasurement:
         time.sleep(0.1)  # Let perf initialize
 
     def stop(self) -> pd.DataFrame:
-        """Stop measurement and return DataFrame with timestamp + bandwidth_pct."""
+        """Stop measurement and return DataFrame with timestamp + bandwidth_gbps."""
         self._proc.send_signal(signal.SIGINT)
         self._proc.wait(timeout=5)
         time.sleep(0.2)  # Let perf flush output
@@ -122,56 +144,31 @@ def start_perf_bandwidth() -> PerfBandwidthMeasurement:
     return PerfBandwidthMeasurement()
 
 
-def build_inference_benchmark() -> Path:
-    """Build the MicroBenchmarks project and return the project path."""
-    project_path = Path(__file__).parent.parent / "src" / "MicroBenchmarks"
-
-    with mo.status.spinner(title="Building benchmark..."):
-        build_result = subprocess.run(
-            ["dotnet", "build", str(project_path), "-c", "Release", "--verbosity", "quiet"],
-            capture_output=True,
-            text=True,
-        )
-    if build_result.returncode != 0:
-        raise RuntimeError(f"Build failed:\n{build_result.stdout}\n{build_result.stderr}")
-
-    return project_path
-
-
-def _run_inference_benchmark(
-    project_path: Path,
-    model: str,
-    duration_seconds: float,
-    batch_size: int,
-    intra_threads: int,
-    inter_threads: int,
-    cores: list[int],
-    warmup_seconds: float,
-    on_tick,
-) -> tuple[list[tuple[str, str]], str]:
+def run_benchmark(
+    cmd: list[str],
+    duration: float,
+    warmup: float,
+) -> list[tuple[datetime, datetime]]:
     """
-    Internal function to run inference benchmark.
+    Run a benchmark command and parse standardized output.
 
-    Returns (results, stderr) where results is list of (start_time, end_time) ISO timestamp pairs.
-    on_tick() is called periodically (~10Hz) during execution for progress updates.
+    The command must output lines in format: start_timestamp,end_timestamp
+    where timestamps are ISO format (e.g., 2024-01-01T12:00:00.000000Z).
+
+    Args:
+        cmd: Command to run (e.g., ["dotnet", "run", "script.cs", "--", "-m", "dbnet"])
+        duration: Benchmark duration in seconds (passed as -d)
+        warmup: Warmup duration in seconds (passed as -w)
+
+    Returns:
+        List of (start_time, end_time) datetime pairs.
     """
-    cmd = [
-        "dotnet", "run",
-        "--project", str(project_path),
-        "--no-build", "-c", "Release",
-        "--",
-        "inference",
-        "-m", model,
-        "-d", str(duration_seconds),
-        "-b", str(batch_size),
-        "--intra-threads", str(intra_threads),
-        "--inter-threads", str(inter_threads),
-        "-c", *[str(c) for c in cores],
-        "-w", str(warmup_seconds),
-    ]
+    full_cmd = [*cmd, "-d", str(duration), "-w", str(warmup)]
+    estimated_total = warmup + duration + 1
+    bench_start = time.time()
 
     proc = subprocess.Popen(
-        cmd,
+        full_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -184,101 +181,48 @@ def _run_inference_benchmark(
     results = []
     buffer = ""
 
-    while proc.poll() is None:
-        # Wait for data with timeout for periodic progress updates
-        ready, _, _ = select.select([proc.stdout], [], [], 0.1)
-        on_tick()
+    with mo.status.spinner(title="Running benchmark...", remove_on_exit=True) as spinner:
+        while proc.poll() is None:
+            ready, _, _ = select.select([proc.stdout], [], [], 0.1)
 
-        if ready:
-            chunk = proc.stdout.read()
-            if chunk:
-                buffer += chunk
-                while "\n" in buffer:
-                    line, buffer = buffer.split("\n", 1)
-                    line = line.strip()
-                    if line:
-                        start_ts, end_ts = line.split(",")
-                        results.append((start_ts, end_ts))
+            elapsed = time.time() - bench_start
+            remaining = max(0, estimated_total - elapsed)
+            pct = min(99, int((elapsed / estimated_total) * 100))
+            spinner.update(
+                title=f"Running benchmark... {pct}%",
+                subtitle=f"{format_duration(remaining)} remaining",
+            )
+
+            if ready:
+                chunk = proc.stdout.read()
+                if chunk:
+                    buffer += chunk
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        line = line.strip()
+                        if line:
+                            start_ts, end_ts = line.split(",")
+                            results.append((
+                                datetime.fromisoformat(start_ts.replace("Z", "+00:00")),
+                                datetime.fromisoformat(end_ts.replace("Z", "+00:00")),
+                            ))
 
     # Read any remaining output
-    remaining = proc.stdout.read()
-    if remaining:
-        buffer += remaining
+    leftover = proc.stdout.read()
+    if leftover:
+        buffer += leftover
     for line in buffer.strip().split("\n"):
         line = line.strip()
         if line:
             start_ts, end_ts = line.split(",")
-            results.append((start_ts, end_ts))
+            results.append((
+                datetime.fromisoformat(start_ts.replace("Z", "+00:00")),
+                datetime.fromisoformat(end_ts.replace("Z", "+00:00")),
+            ))
 
     stderr_output = proc.stderr.read()
 
     if proc.returncode != 0:
         raise RuntimeError(f"Benchmark failed:\n{stderr_output}")
 
-    return results, stderr_output
-
-
-def run_benchmark_sweep(
-    project_path: Path,
-    model: str | list[str],
-    duration_seconds: float = 10.0,
-    batch_size: int | list[int] = 1,
-    intra_threads: int | list[int] = 1,
-    inter_threads: int | list[int] = 1,
-    cores: list[list[int]] = [[0]],
-    warmup_seconds: float = 2.0,
-) -> pd.DataFrame:
-    """
-    Run inference benchmark over all combinations of parameters.
-
-    Parameters that accept lists will be swept over (cartesian product).
-    cores is a list of core configurations to sweep over (e.g., [[0], [0,1], [0,1,2]]).
-    Returns a DataFrame with columns for each config parameter plus start_time and end_time.
-    Writes diagnostic logs to a timestamped file in /tmp.
-    """
-    def to_list(x):
-        return x if isinstance(x, list) else [x]
-
-    configs = [
-        {"model": m, "batch_size": b, "intra_threads": intra, "inter_threads": inter, "cores": c}
-        for m, b, intra, inter, c in product(
-            to_list(model), to_list(batch_size), to_list(intra_threads),
-            to_list(inter_threads), cores
-        )
-    ]
-
-    rows = []
-    estimated_total = len(configs) * (warmup_seconds + duration_seconds + 1)
-    start_time = time.time()
-
-    with mo.status.spinner(title="Running benchmark...", remove_on_exit=True) as spinner:
-        for cfg in configs:
-            def on_tick():
-                elapsed = time.time() - start_time
-                remaining = max(0, estimated_total - elapsed)
-                pct = min(99, int((elapsed / estimated_total) * 100))
-                spinner.update(
-                    title=f"Running benchmark... {pct}%",
-                    subtitle=f"{format_duration(remaining)} remaining",
-                )
-
-            results, _ = _run_inference_benchmark(
-                project_path=project_path,
-                model=cfg["model"],
-                duration_seconds=duration_seconds,
-                batch_size=cfg["batch_size"],
-                intra_threads=cfg["intra_threads"],
-                inter_threads=cfg["inter_threads"],
-                cores=cfg["cores"],
-                warmup_seconds=warmup_seconds,
-                on_tick=on_tick,
-            )
-
-            for start_str, end_str in results:
-                rows.append({
-                    **cfg,
-                    "start_time": datetime.fromisoformat(start_str.replace("Z", "+00:00")),
-                    "end_time": datetime.fromisoformat(end_str.replace("Z", "+00:00")),
-                })
-
-    return pd.DataFrame(rows)
+    return results

@@ -18,15 +18,10 @@ with app.setup:
     import pandas as pd
     import seaborn as sns
     import matplotlib.pyplot as plt
-    from helpers import build_inference_benchmark, run_benchmark_sweep, start_perf_bandwidth
+    from pathlib import Path
+    from helpers import prioritized_cores, run_benchmark, start_perf_bandwidth
 
     sns.set_theme()
-
-
-@app.cell
-def build():
-    project_path = build_inference_benchmark()
-    return (project_path,)
 
 
 @app.cell
@@ -42,7 +37,7 @@ def _():
 
 
 @app.cell
-def _(model_input, project_path):
+def _(model_input):
     def _():
         if model_input.value == "dbnet":
             duration = 8
@@ -53,38 +48,29 @@ def _(model_input, project_path):
         else:
             raise ValueError(f"unknown model {model_input.value}")
 
-        def prioritized_cores(max_cores):
-            # i7-14700K topology:
-            # P-cores (8, with SMT): physical threads 0,2,4,6,8,10,12,14; SMT threads 1,3,5,7,9,11,13,15
-            # E-cores (12, no SMT): threads 16-27
-            # Priority: P-core physical -> E-cores -> P-core SMT
-            p_physical = [0, 2, 4, 6, 8, 10, 12, 14]
-            e_cores = list(range(16, 28))
-            p_smt = [1, 3, 5, 7, 9, 11, 13, 15]
-            priority_order = p_physical + e_cores + p_smt
+        script = Path(__file__).parent / "throughput_inference.cs"
+        warmup = 2
+        core_configs = prioritized_cores(2)
 
-            result = []
-            for n in range(1, min(max_cores, len(priority_order)) + 1):
-                result.append(priority_order[:n])
-            return result
+        def make_cmd(cores: list[int]) -> list[str]:
+            return [
+                "dotnet", "run", str(script), "--",
+                "-m", model_input.value,
+                "-c", *[str(c) for c in cores],
+            ]
 
-        # Generate core configurations: [[0], [0,1], [0,1,2], ...]
-        # core_configs = [list(range(0, n * 2, 2)) for n in range(1, 14)]
-        # core_configs = [list(range(0, n)) for n in range(1, 8)]
-        # print(prioritized_cores(24))
-        core_configs = prioritized_cores(12)
-        # core_configs = [[0], [4], [14], [18], [25]]
-
+        rows = []
         perf = start_perf_bandwidth()
-        df = run_benchmark_sweep(
-            project_path=project_path,
-            model=model_input.value,
-            duration_seconds=duration,
-            warmup_seconds=2,
-            cores=core_configs,
-        )
+        for cores in core_configs:
+            for start_time, end_time in run_benchmark(make_cmd(cores), duration, warmup):
+                rows.append({
+                    "cores": cores,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                })
         perf_df = perf.stop()
 
+        df = pd.DataFrame(rows)
         df["parallelism"] = df["cores"].apply(len)
 
         return df, perf_df
@@ -235,8 +221,7 @@ def _(bandwidth_df, throughput_df):
 
         return fig1, fig2
 
-    fig1, fig2 = _()
-    mo.vstack([fig1, fig2])
+    mo.vstack(_())
     return
 
 
