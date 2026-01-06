@@ -3,3 +3,9 @@ name = "notebook_utils"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = ["pandas"]
+
+[tool.setuptools]
+packages = ["notebook_utils"]
+
+[tool.setuptools.package-dir]
+notebook_utils = ""
