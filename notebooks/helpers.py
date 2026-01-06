@@ -248,7 +248,6 @@ def run_benchmark_sweep(
     ]
 
     rows = []
-    all_stderr = []
     estimated_total = len(configs) * (warmup_seconds + duration_seconds + 1)
     start_time = time.time()
 
@@ -263,7 +262,7 @@ def run_benchmark_sweep(
                     subtitle=f"{format_duration(remaining)} remaining",
                 )
 
-            results, stderr = _run_inference_benchmark(
+            results, _ = _run_inference_benchmark(
                 project_path=project_path,
                 model=cfg["model"],
                 duration_seconds=duration_seconds,
@@ -275,18 +274,11 @@ def run_benchmark_sweep(
                 on_tick=on_tick,
             )
 
-            all_stderr.append(f"=== Config: cores={cfg['cores']} ===\n{stderr}\n")
-
             for start_str, end_str in results:
                 rows.append({
                     **cfg,
                     "start_time": datetime.fromisoformat(start_str.replace("Z", "+00:00")),
                     "end_time": datetime.fromisoformat(end_str.replace("Z", "+00:00")),
                 })
-
-    # Write stderr to log file
-    log_path = Path(f"/tmp/benchmark_log_{int(time.time())}.txt")
-    log_path.write_text("".join(all_stderr))
-    print(f"Diagnostic log: {log_path}", file=__import__('sys').stderr)
 
     return pd.DataFrame(rows)
