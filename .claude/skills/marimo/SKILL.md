@@ -1,6 +1,6 @@
 ---
 name: marimo
-description: Essential guidance for working with marimo notebooks — reading, viewing, editing, refactoring, running, and capturing outputs. Covers marimo's reactive model, namespace management patterns, cell execution via run_cell.py, and output capture. Use this skill for ANY task involving marimo notebooks, including just reading or viewing them. Trigger on: user mentions "notebook" or "marimo", you see marimo.App() in a file, or the task involves a .py file that is a notebook.
+description: Essential guidance for working with marimo notebooks — reading, viewing, editing, refactoring, running, and capturing outputs. Covers marimo's reactive model, namespace management patterns, cell execution via run_cell.py, and output capture. Use this skill for ANY task involving marimo notebooks, including just reading or viewing them. Trigger on: user mentions "notebook" or "marimo", you see marimo.App() in a file, the task involves a .py file that is a notebook, or you need to invoke marimo from the command line.
 ---
 
 # Required: Fetch Official Recipes
