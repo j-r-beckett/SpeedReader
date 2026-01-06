@@ -1,7 +1,10 @@
 #!/usr/bin/env -S uvx marimo edit --sandbox --no-token --no-skew-protection --watch --port 3005
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["marimo", "pandas", "seaborn"]
+# dependencies = ["marimo", "pandas", "seaborn", "notebook_utils"]
+#
+# [tool.uv.sources]
+# notebook_utils = { path = "notebook_utils", editable = true }
 #
 # [tool.marimo.runtime]
 # auto_reload = "lazy"
@@ -19,7 +22,8 @@ with app.setup:
     import seaborn as sns
     import matplotlib.pyplot as plt
     from pathlib import Path
-    from helpers import prioritized_cores, run_benchmark, start_perf_bandwidth
+    import time
+    from notebook_utils import prioritized_cores, run_benchmark, start_perf_bandwidth
 
     sns.set_theme()
 
@@ -48,7 +52,7 @@ def _(model_input):
         else:
             raise ValueError(f"unknown model {model_input.value}")
 
-        script = Path(__file__).parent / "throughput_inference.cs"
+        script = Path(__file__).parent / "bandwidth.script.cs"
         warmup = 2
         core_configs = prioritized_cores(2)
 
@@ -59,16 +63,23 @@ def _(model_input):
                 "-c", *[str(c) for c in cores],
             ]
 
+        estimated_total = len(core_configs) * (warmup + duration + 1)
+        start_time_estimate = time.time()
+
         rows = []
-        perf = start_perf_bandwidth()
-        for cores in core_configs:
-            for start_time, end_time in run_benchmark(make_cmd(cores), duration, warmup):
-                rows.append({
-                    "cores": cores,
-                    "start_time": start_time,
-                    "end_time": end_time,
-                })
-        perf_df = perf.stop()
+        with mo.status.spinner(title="Running benchmark...", remove_on_exit=True) as spinner:
+            spinner.update(subtitle=f"0s / {int(estimated_total)}s")
+            perf = start_perf_bandwidth()
+            for cores in core_configs:
+                for start_time, end_time in run_benchmark(make_cmd(cores), duration, warmup):
+                    elapsed = int(time.time() - start_time_estimate)
+                    spinner.update(subtitle=f"{elapsed}s / {int(estimated_total)}s")
+                    rows.append({
+                        "cores": cores,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                    })
+            perf_df = perf.stop()
 
         df = pd.DataFrame(rows)
         df["parallelism"] = df["cores"].apply(len)

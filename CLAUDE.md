@@ -101,8 +101,13 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |-- __init__.py  // Public API exports
 |   `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
 |-- notebooks  // Marimo notebooks for data analysis and visualization
-|   |-- helpers.py  // Shared utilities for notebooks
-|   `-- dbnet_duration.py  // Analyze DbNet inference duration across threading configs
+|   |-- notebook_utils  // Shared utilities package for notebooks
+|   |   |-- __init__.py  // Re-exports public API
+|   |   |-- helpers.py  // format_duration, prioritized_cores
+|   |   |-- perf.py  // PerfBandwidthMeasurement for memory bandwidth measurement via perf stat
+|   |   `-- benchmark.py  // run_benchmark generator for streaming benchmark results
+|   |-- bandwidth.py  // Analyze inference throughput vs memory bandwidth
+|   `-- bandwidth.script.cs  // Single-file C# script for inference benchmarks
 |-- pre-commit.py  // Git pre-commit hook script
 `-- hello.png  // A test image
 
