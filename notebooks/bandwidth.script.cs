@@ -2,9 +2,11 @@
 #:property EnablePreviewFeatures=true
 #:project ../src/Ocr
 #:project ../src/Resources
+#:project ../src/Native
 
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using SpeedReader.Native.Threading;
 using SpeedReader.Ocr.InferenceEngine;
 using SpeedReader.Ocr.InferenceEngine.Engines;
 using SpeedReader.Resources.CharDict;
@@ -56,78 +58,69 @@ for (var i = 0; i < args.Length; i++)
 if (cores.Count == 0)
     cores.Add(0);
 
-// Setup inference engine
+// Setup inference kernel and thread pool directly
 var inputShape = model switch
 {
     Model.DbNet => new[] { 3, 640, 640 },
     Model.Svtr => new[] { 3, 48, 160 },
     _ => throw new ArgumentOutOfRangeException()
 };
+var batchedInputShape = new[] { 1 }.Concat(inputShape).ToArray();
 
 var quantization = model == Model.DbNet ? Quantization.Int8 : Quantization.Fp32;
 var kernelOptions = new OnnxInferenceKernelOptions(model, quantization, intraThreads, interThreads, profile);
-var engineConfig = new CpuEngineConfig { Kernel = kernelOptions, Cores = [.. cores] };
 var weights = model == Model.DbNet ? EmbeddedWeights.Dbnet_Int8 : EmbeddedWeights.Svtr_Fp32;
 
 var services = new ServiceCollection();
-services.AddKeyedSingleton(model, engineConfig);
 services.AddKeyedSingleton(model, kernelOptions);
 services.AddKeyedSingleton(model, weights);
-services.AddKeyedSingleton<IInferenceKernel>(model, NativeOnnxInferenceKernel.Factory);
 if (model == Model.Svtr)
     services.AddSingleton(new EmbeddedCharDict());
 var serviceProvider = services.BuildServiceProvider();
 
-var engine = CpuEngine.Factory(serviceProvider, model);
+var kernel = NativeOnnxInferenceKernel.Factory(serviceProvider, model);
+var threadPool = new AffinitizedThreadPool(cores);
 
 var inputSize = inputShape.Aggregate(1, (a, b) => a * b);
-
-// Create input data per task
-var inputDataArrays = new float[cores.Count][];
-for (var t = 0; t < cores.Count; t++)
-{
-    var inputData = new float[inputSize];
-    var rng = new Random(42 + t);
-    for (var j = 0; j < inputData.Length; j++)
-        inputData[j] = rng.NextSingle();
-    inputDataArrays[t] = inputData;
-}
+var inputData = new float[inputSize];
+var rng = new Random(42);
+for (var j = 0; j < inputData.Length; j++)
+    inputData[j] = rng.NextSingle();
 
 var totalDuration = warmup + duration;
 var baseTime = DateTimeOffset.UtcNow;
 var globalSw = Stopwatch.StartNew();
-var outputLock = new object();
 
-var tasks = new Task[cores.Count];
-for (var t = 0; t < cores.Count; t++)
+// Submit work continuously; threadPool handles parallelism
+var pending = new List<Task<(int, DateTimeOffset, DateTimeOffset)>>();
+while (globalSw.Elapsed.TotalSeconds < totalDuration)
 {
-    var taskIndex = t;
-    tasks[t] = Task.Run(async () =>
+    // Keep the pool saturated
+    while (pending.Count < cores.Count)
     {
-        var inputData = inputDataArrays[taskIndex];
-        var sw = new Stopwatch();
-
-        while (globalSw.Elapsed.TotalSeconds < totalDuration)
+        pending.Add(threadPool.Run(() =>
         {
-            sw.Restart();
-            await engine.Run(inputData, inputShape);
+            var coreId = Affinitizer.GetCurrentCpu();
+            var sw = Stopwatch.StartNew();
+            kernel.Execute(inputData, batchedInputShape);
             sw.Stop();
+            var end = baseTime.Add(globalSw.Elapsed);
+            var start = end - sw.Elapsed;
+            return (coreId, start, end);
+        }));
+    }
 
-            var elapsed = globalSw.Elapsed;
-            if (elapsed.TotalSeconds >= warmup && elapsed.TotalSeconds < totalDuration)
-            {
-                lock (outputLock)
-                {
-                    var endTime = baseTime.Add(elapsed);
-                    var startTime = endTime - sw.Elapsed;
-                    Console.WriteLine($"{startTime:yyyy-MM-ddTHH:mm:ss.ffffffZ},{endTime:yyyy-MM-ddTHH:mm:ss.ffffffZ}");
-                }
-            }
-        }
-    });
+    // Wait for any to complete
+    var completed = await Task.WhenAny(pending);
+    pending.Remove(completed);
+
+    var (coreId, inferenceStart, inferenceEnd) = await completed;
+    var elapsed = globalSw.Elapsed;
+    if (elapsed.TotalSeconds >= warmup && elapsed.TotalSeconds < totalDuration)
+        Console.WriteLine($"{coreId},{inferenceStart:yyyy-MM-ddTHH:mm:ss.ffffffZ},{inferenceEnd:yyyy-MM-ddTHH:mm:ss.ffffffZ}");
 }
-Task.WaitAll(tasks);
 
 // Cleanup
-engine.DisposeAsync().AsTask().Wait();
+threadPool.Dispose();
+((IDisposable)kernel).Dispose();
 serviceProvider.Dispose();

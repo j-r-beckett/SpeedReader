@@ -12,7 +12,7 @@ def run_benchmark(
     """
     Run a benchmark command and yield results as they stream in.
 
-    The command must output lines in format: start_timestamp,end_timestamp
+    The command must output lines in format: core_id,start_timestamp,end_timestamp
     where timestamps are ISO format (e.g., 2024-01-01T12:00:00.000000Z).
 
     Args:
@@ -21,7 +21,7 @@ def run_benchmark(
         warmup: Warmup duration in seconds (passed as -w)
 
     Yields:
-        (start_time, end_time) datetime pairs as they arrive.
+        (core_id, start_time, end_time) tuples as they arrive.
     """
     full_cmd = [*cmd, "-d", str(duration), "-w", str(warmup)]
 
@@ -38,6 +38,14 @@ def run_benchmark(
 
     buffer = ""
 
+    def parse_line(line: str):
+        core_id, start_ts, end_ts = line.split(",")
+        return (
+            int(core_id),
+            datetime.fromisoformat(start_ts.replace("Z", "+00:00")),
+            datetime.fromisoformat(end_ts.replace("Z", "+00:00")),
+        )
+
     while proc.poll() is None:
         ready, _, _ = select.select([proc.stdout], [], [], 0.1)
 
@@ -49,11 +57,7 @@ def run_benchmark(
                     line, buffer = buffer.split("\n", 1)
                     line = line.strip()
                     if line:
-                        start_ts, end_ts = line.split(",")
-                        yield (
-                            datetime.fromisoformat(start_ts.replace("Z", "+00:00")),
-                            datetime.fromisoformat(end_ts.replace("Z", "+00:00")),
-                        )
+                        yield parse_line(line)
 
     # Read any remaining output
     leftover = proc.stdout.read()
@@ -62,11 +66,7 @@ def run_benchmark(
     for line in buffer.strip().split("\n"):
         line = line.strip()
         if line:
-            start_ts, end_ts = line.split(",")
-            yield (
-                datetime.fromisoformat(start_ts.replace("Z", "+00:00")),
-                datetime.fromisoformat(end_ts.replace("Z", "+00:00")),
-            )
+            yield parse_line(line)
 
     stderr_output = proc.stderr.read()
 
