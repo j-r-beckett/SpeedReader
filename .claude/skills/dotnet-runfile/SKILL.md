@@ -17,7 +17,7 @@ dotnet run hello.cs
 #!/usr/bin/env dotnet run           // shebang (unix)
 #:sdk Microsoft.NET.Sdk             // sdk (default; also .Web, .Worker)
 #:package Humanizer@2.14.1          // nuget package (version required, wildcards ok)
-#:property LangVersion preview      // msbuild property
+#:property LangVersion=preview      // msbuild property
 #:project ../src/MyLibrary          // project reference
 
 Console.WriteLine("Hello, World!");
