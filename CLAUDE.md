@@ -184,22 +184,22 @@ The build is orchestrated by msbuild. All integrations with native libraries are
 
 | Option     | Values | Description                              |
 | ---------- | ------ | ---------------------------------------- |
-| BuildOnnx  | 'true' | Triggers a new onnx build if 'true'      |
-| BuildSROrt | 'true' | Triggers a new speedreader_ort if 'true' |
-| DeepClean  | 'true' | Clean all native build artifacts         |
+| BuildOnnx  | '1' | Triggers a new onnx build if '1'      |
+| BuildSROrt | '1' | Triggers a new speedreader_ort if '1' |
+| DeepClean  | '1' | Clean all native build artifacts      |
 
 The Frontend project (SpeedReader executable, the Native AOT target) exposes these options when publishing:
 
 | Options      | Values              | Description                           |
 | ------------ | ------------------- | ------------------------------------- |
 | OnnxLinkMode | 'Static', 'Dynamic' | Onnx runtime link mode                |
-| BuildMusl    | 'true'              | Statically link system libs if `true` |
+| BuildMusl    | '1'                 | Statically link system libs if `1`    |
 
 Examples:
 
 ```bash
 dotnet publish src/Frontend -r linux-x64  -p:OnnxLinkMode=Dynamic  # build unamanaged dynamically linked executable using cached onnx runtime and speedreader_ort artifacts
-dotnet build src -p:BuildSROrt=true  # managed build with a fresh build of speedreader_ort and cached onnx runtime artifacts
+dotnet build src -p:BuildSROrt=1  # managed build with a fresh build of speedreader_ort and cached onnx runtime artifacts
 ```
 
 SpeedReader uses vertical builds. That means we run the entire build from scratch on each supported platform, without trying to reuse or cache dependencies across platforms.
