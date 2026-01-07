@@ -9,33 +9,46 @@ namespace SpeedReader.Ocr.InferenceEngine.Engines;
 
 public class AffinitizedThreadPool : IDisposable
 {
-    private readonly ConcurrentQueue<Action> _queuedActions = new();
-    private readonly ConcurrentQueue<ManagedThread> _availableThreads = new();
+    private readonly ConcurrentQueue<Action> _dbnetActions = new();
+    private readonly ConcurrentQueue<Action> _svtrActions = new();
+    private readonly ConcurrentQueue<ManagedThread> _dbnetThreads = new();
+    private readonly ConcurrentQueue<ManagedThread> _svtrThreads = new();
 
-    // Dispatcher runs actions from _queuedActions on threads from _availableThreads
     private readonly Thread _dispatcherThread;
     private readonly CancellationTokenSource _dispatcherCts = new();
     private readonly SemaphoreSlim _semaphore = new(0);
 
     private readonly List<ManagedThread> _allThreads = [];
 
-    public AffinitizedThreadPool(IEnumerable<int> cores)
+    public AffinitizedThreadPool(Span<int> dbnetCores, Span<int> svtrCores)
     {
-        foreach (var core in cores)
-        {
-            var thread = new ManagedThread(thread =>
-            {
-                _availableThreads.Enqueue(thread);
-                _semaphore.Release();
-            }, core);
-            _availableThreads.Enqueue(thread);
-            _allThreads.Add(thread);
-        }
-        if (_allThreads.Count == 0)
-            throw new ArgumentException("No cores specified", nameof(cores));
+        if (dbnetCores.IsEmpty)
+            throw new ArgumentException("No dbnet cores specified", nameof(dbnetCores));
+
+        if (svtrCores.IsEmpty)
+            throw new ArgumentException("No svtr cores specified", nameof(svtrCores));
+
+        foreach (var core in dbnetCores)
+            AddThread(_dbnetThreads, core);
+
+        foreach (var core in svtrCores)
+            AddThread(_svtrThreads, core);
 
         _dispatcherThread = new Thread(DispatcherThreadProc) { IsBackground = true };
         _dispatcherThread.Start();
+
+        return;
+
+        void AddThread(ConcurrentQueue<ManagedThread> threadQueue, int core)
+        {
+            var thread = new ManagedThread(thread =>
+            {
+                threadQueue.Enqueue(thread);
+                _semaphore.Release();
+            }, core);
+            threadQueue.Enqueue(thread);
+            _allThreads.Add(thread);
+        }
     }
 
     private void DispatcherThreadProc()
@@ -44,25 +57,46 @@ public class AffinitizedThreadPool : IDisposable
         {
             while (true)
             {
+                // Preferentially:
+                //   SVTR job -> SVTR core
+                //   DBNet job -> DBNet core
+                //   SVTR job -> DBNet core
+                // Where SVTR cores are E-cores and unused P-cores, while DBNet cores are a subset of P-cores
+
                 _semaphore.Wait(_dispatcherCts.Token);
-                if (_availableThreads.Count > 0 && _queuedActions.Count > 0)
-                {
-                    _availableThreads.TryDequeue(out var thread);
-                    Debug.Assert(thread != null);
-                    _queuedActions.TryDequeue(out var action);
-                    Debug.Assert(action != null);
-                    thread.Run(action);
-                }
+                if (!_svtrActions.IsEmpty && !_svtrThreads.IsEmpty)
+                    Dispatch(_svtrActions, _svtrThreads);
+                else if (!_dbnetActions.IsEmpty && !_dbnetThreads.IsEmpty)
+                    Dispatch(_dbnetActions, _dbnetThreads);
+                else if (!_svtrActions.IsEmpty && !_dbnetThreads.IsEmpty)
+                    Dispatch(_svtrActions, _dbnetThreads);
             }
         }
         catch (OperationCanceledException) { }
+
+        return;
+
+        static void Dispatch(ConcurrentQueue<Action> actions, ConcurrentQueue<ManagedThread> threads)
+        {
+            threads.TryDequeue(out var thread);
+            Debug.Assert(thread != null);
+            actions.TryDequeue(out var action);
+            Debug.Assert(action != null);
+            thread.Run(action);
+        }
     }
 
-    public Task<T> Run<T>(Func<T> func)
+    public Task<T> Run<T>(Func<T> func, Model model)
     {
         ObjectDisposedException.ThrowIf(_dispatcherCts.IsCancellationRequested, this);
         var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _queuedActions.Enqueue(() =>
+        var channel = model switch
+        {
+            Model.DbNet => _dbnetActions,
+            Model.Svtr => _svtrActions,
+            _ => throw new ArgumentOutOfRangeException(nameof(model))
+        };
+        channel.Enqueue(() =>
         {
             try
             {

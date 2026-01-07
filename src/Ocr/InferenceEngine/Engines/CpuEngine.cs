@@ -10,19 +10,21 @@ public class CpuEngine : IInferenceEngine
 {
     private readonly IInferenceKernel _inferenceKernel;
     private readonly AffinitizedThreadPool _threadPool;
+    private readonly Model _model;
 
     public static CpuEngine Factory(IServiceProvider serviceProvider, object? key)
     {
         var config = serviceProvider.GetRequiredKeyedService<CpuEngineConfig>(key);
         var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
         var meterFactory = serviceProvider.GetService<IMeterFactory>();
-        return new CpuEngine(config, kernel, meterFactory);
+        return new CpuEngine(config, kernel, (Model)key!, meterFactory);
     }
 
-    private CpuEngine(CpuEngineConfig config, IInferenceKernel inferenceKernel, IMeterFactory? meterFactory)
+    private CpuEngine(CpuEngineConfig config, IInferenceKernel inferenceKernel, Model model, IMeterFactory? meterFactory)
     {
         _inferenceKernel = inferenceKernel;
-        _threadPool = new AffinitizedThreadPool(config.Cores.Count == 0 ? [0] : config.Cores);
+        _threadPool = new AffinitizedThreadPool([0], [1]);
+        _model = model;
     }
 
     public int CurrentMaxCapacity() => _threadPool.Size;
@@ -34,7 +36,7 @@ public class CpuEngine : IInferenceEngine
             var (resultData, batchedResultShape) = _inferenceKernel.Execute(inputData, batchedInputShape);
             var resultShape = batchedResultShape[1..]; // Remove batch dimension
             return (resultData, resultShape);
-        });
+        }, _model);
 
     public async ValueTask DisposeAsync()
     {
