@@ -127,7 +127,7 @@ public class AffinitizedThreadPool : IDisposable
         }
     }
 
-    // Cannot be called concurrent with Dispose
+    // Must not be called concurrently with Dispose
     public Task<T> Run<T>(Func<T> func, Model model)
     {
         ObjectDisposedException.ThrowIf(_dispatcherCts.IsCancellationRequested, this);
