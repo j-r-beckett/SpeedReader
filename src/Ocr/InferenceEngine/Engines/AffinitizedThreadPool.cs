@@ -9,12 +9,13 @@ namespace SpeedReader.Ocr.InferenceEngine.Engines;
 
 public class AffinitizedThreadPool : IDisposable
 {
-    private readonly BlockingCollection<Action> _queuedActions = new();
-    private readonly BlockingCollection<ManagedThread> _availableThreads = new();
+    private readonly ConcurrentQueue<Action> _queuedActions = new();
+    private readonly ConcurrentQueue<ManagedThread> _availableThreads = new();
 
-    // Orchestrator runs actions from _queuedActions on threads from _availableThreads
-    private readonly Thread _orchestratorThread;
-    private readonly CancellationTokenSource _orchestratorCts = new();
+    // Dispatcher runs actions from _queuedActions on threads from _availableThreads
+    private readonly Thread _dispatcherThread;
+    private readonly CancellationTokenSource _dispatcherCts = new();
+    private readonly SemaphoreSlim _semaphore = new(0);
 
     private readonly List<ManagedThread> _allThreads = [];
 
@@ -22,26 +23,36 @@ public class AffinitizedThreadPool : IDisposable
     {
         foreach (var core in cores)
         {
-            var thread = new ManagedThread(thread => _availableThreads.Add(thread), core);
-            _availableThreads.Add(thread);
+            var thread = new ManagedThread(thread =>
+            {
+                _availableThreads.Enqueue(thread);
+                _semaphore.Release();
+            }, core);
+            _availableThreads.Enqueue(thread);
             _allThreads.Add(thread);
         }
         if (_allThreads.Count == 0)
             throw new ArgumentException("No cores specified", nameof(cores));
 
-        _orchestratorThread = new Thread(OrchestratorThreadProc) { IsBackground = true };
-        _orchestratorThread.Start();
+        _dispatcherThread = new Thread(DispatcherThreadProc) { IsBackground = true };
+        _dispatcherThread.Start();
     }
 
-    private void OrchestratorThreadProc()
+    private void DispatcherThreadProc()
     {
         try
         {
             while (true)
             {
-                var action = _queuedActions.Take(_orchestratorCts.Token);
-                var thread = _availableThreads.Take(_orchestratorCts.Token);
-                thread.Run(action);
+                _semaphore.Wait(_dispatcherCts.Token);
+                if (_availableThreads.Count > 0 && _queuedActions.Count > 0)
+                {
+                    _availableThreads.TryDequeue(out var thread);
+                    Debug.Assert(thread != null);
+                    _queuedActions.TryDequeue(out var action);
+                    Debug.Assert(action != null);
+                    thread.Run(action);
+                }
             }
         }
         catch (OperationCanceledException) { }
@@ -49,9 +60,9 @@ public class AffinitizedThreadPool : IDisposable
 
     public Task<T> Run<T>(Func<T> func)
     {
-        ObjectDisposedException.ThrowIf(_queuedActions.IsAddingCompleted, this);
+        ObjectDisposedException.ThrowIf(_dispatcherCts.IsCancellationRequested, this);
         var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _queuedActions.Add(() =>
+        _queuedActions.Enqueue(() =>
         {
             try
             {
@@ -63,6 +74,7 @@ public class AffinitizedThreadPool : IDisposable
                 tcs.SetException(ex);
             }
         });
+        _semaphore.Release();
         return tcs.Task;
     }
 
@@ -70,16 +82,13 @@ public class AffinitizedThreadPool : IDisposable
 
     public void Dispose()
     {
-        _queuedActions.CompleteAdding();
-        _orchestratorCts.Cancel();
-        _orchestratorThread.Join();
-        _orchestratorCts.Dispose();
-        _queuedActions.Dispose();
+        _dispatcherCts.Cancel();
+        _dispatcherThread.Join();
+        _dispatcherCts.Dispose();
 
         foreach (var thread in _allThreads)
             thread.Dispose();
-        _availableThreads.CompleteAdding();
-        _availableThreads.Dispose();
+        _semaphore.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -114,8 +123,6 @@ public class AffinitizedThreadPool : IDisposable
 
         private void ThreadProc()
         {
-            Thread.BeginThreadAffinity();
-
             Affinitizer.PinToCore(_core);
 
             try
@@ -132,10 +139,6 @@ public class AffinitizedThreadPool : IDisposable
                 }
             }
             catch (OperationCanceledException) { }
-            finally
-            {
-                Thread.EndThreadAffinity();
-            }
         }
 
         public void Dispose()
