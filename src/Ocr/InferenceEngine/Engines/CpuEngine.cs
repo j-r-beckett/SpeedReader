@@ -23,7 +23,10 @@ public class CpuEngine : IInferenceEngine
     private CpuEngine(CpuEngineConfig config, IInferenceKernel inferenceKernel, Model model, IMeterFactory? meterFactory)
     {
         _inferenceKernel = inferenceKernel;
-        _threadPool = new AffinitizedThreadPool([0], [1]);
+        _threadPool = new AffinitizedThreadPool(
+            config.ReservedPCores.ToArray(),
+            config.UnreservedPCores.ToArray(),
+            config.ECores.ToArray());
         _model = model;
     }
 

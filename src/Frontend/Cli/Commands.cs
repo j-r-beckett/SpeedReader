@@ -79,6 +79,7 @@ public class Commands
                     quantization: Quantization.Int8,
                     numIntraOpThreads: 4),
                 MaxParallelism = 4,
+                ReservedPCores = [0, 2, 4, 6]
             },
             RecognitionEngine = new CpuEngineConfig
             {
@@ -87,6 +88,7 @@ public class Commands
                     quantization: Quantization.Fp32,
                     numIntraOpThreads: 4),
                 MaxParallelism = 4,
+                ReservedPCores = [0, 2, 4, 6]
             }
         };
 

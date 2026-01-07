@@ -24,19 +24,16 @@ public class AffinitizedThreadPool : IDisposable
     private readonly List<ManagedThread> _allThreads = [];
     private readonly Dictionary<ManagedThread, Queue<ManagedThread>> _threadTargetQueues = new();
 
-    public AffinitizedThreadPool(Span<int> pCores, Span<int> eCores)
+    public AffinitizedThreadPool(Span<int> reservedPCores, Span<int> unreservedPCores, Span<int> eCores)
     {
-        if (pCores.IsEmpty && eCores.IsEmpty)
-            throw new ArgumentException("At least one core must be specified");
+        if (reservedPCores.IsEmpty)
+            throw new ArgumentException("At least one reserved P-core core must be specified");
 
-        if (pCores.IsEmpty)
-        {
-            pCores = eCores;
-            eCores = [];
-        }
-
-        foreach (var core in pCores)
+        foreach (var core in reservedPCores)
             AddThread(_reservedPThreads, core);
+
+        foreach (var core in unreservedPCores)
+            AddThread(_unreservedPThreads, core);
 
         foreach (var core in eCores)
             AddThread(_eThreads, core);
@@ -71,7 +68,7 @@ public class AffinitizedThreadPool : IDisposable
                 // Goal: maximize combined DBNet and SVTR throughput while keeping DBNet latency manageable.
                 //       Backpressure is NOT in scope (that's managed by an external system).
 
-                // Basic facts:
+                // Facts:
                 //   - DBNet is DRAM bandwidth bound
                 //   - SVTR is CPU bound, but it still consumes some DRAM bandwidth
                 //   - SVTR jobs are downstream of DBNet jobs--a successfully completed DBNet job spawns SVTR jobs
