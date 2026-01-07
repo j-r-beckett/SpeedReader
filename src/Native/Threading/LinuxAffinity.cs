@@ -27,7 +27,6 @@ internal static partial class LinuxAffinity
         var count = index + 1;  // Number of longs in buffer
 
         Span<ulong> mask = stackalloc ulong[count];
-        mask.Clear();
         mask[index] = 1UL << bit;
 
         if (sched_setaffinity(0, (nuint)count * sizeof(ulong), ref mask[0]) != 0)
