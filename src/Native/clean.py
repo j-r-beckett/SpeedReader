@@ -13,10 +13,8 @@ Deep clean native build artifacts.
 Deletes:
 - src/Native/Onnx/onnx/out/
 - src/Native/Onnx/speedreader_ort/out/
-- src/Native/CpuInfo/speedreader_cpuinfo/out/
 - .external/onnxruntime/build/
 - .external/onnxruntime/.venv/
-- .external/cpuinfo/build/
 
 Resets:
 - .external/onnxruntime/ to its checked-out tag (discards local changes like musl patches)
@@ -30,15 +28,12 @@ from build_utils import info, error, ScriptError
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent.parent
 ONNXRUNTIME_DIR = REPO_ROOT / ".external" / "onnxruntime"
-CPUINFO_DIR = REPO_ROOT / ".external" / "cpuinfo"
 
 DIRS_TO_DELETE = [
     SCRIPT_DIR / "Onnx" / "onnx" / "out",
     SCRIPT_DIR / "Onnx" / "speedreader_ort" / "out",
-    SCRIPT_DIR / "CpuInfo" / "speedreader_cpuinfo" / "out",
     ONNXRUNTIME_DIR / "build",
     ONNXRUNTIME_DIR / ".venv",
-    CPUINFO_DIR / "build",
 ]
 
 

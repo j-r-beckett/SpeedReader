@@ -6,7 +6,6 @@
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SpeedReaderOrtDir>$(MSBuildThisFileDirectory)Onnx/speedreader_ort</SpeedReaderOrtDir>
-    <SpeedReaderCpuInfoDir>$(MSBuildThisFileDirectory)CpuInfo/speedreader_cpuinfo</SpeedReaderCpuInfoDir>
     <OnnxDir>$(MSBuildThisFileDirectory)Onnx/onnx</OnnxDir>
   </PropertyGroup>
 
@@ -19,7 +18,6 @@
     <Compile Remove="Onnx/onnx/**/*.cs" />
     <None Remove="Onnx/onnx/**/*" />
     <None Remove="Onnx/speedreader_ort/**/*" />
-    <None Remove="CpuInfo/speedreader_cpuinfo/**/*" />
   </ItemGroup>
 
   <!-- Copy shared libraries for managed execution (flows to dependent projects via ProjectReference) -->
@@ -34,16 +32,11 @@
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
       <Link>libonnxruntime.so</Link>
     </Content>
-    <Content Include="$(SpeedReaderCpuInfoDir)/out/shared/speedreader_cpuinfo.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-      <Link>libspeedreader_cpuinfo.so</Link>
-    </Content>
   </ItemGroup>
 
   <!--
     Native library build targets.
-    Use BuildOnnx=true, BuildSROrt=true, or BuildSRCpuInfo=true to trigger builds.
+    Use BuildOnnx=true or BuildSROrt=true to trigger builds.
     OnnxVersion is defined in Directory.Build.props.
   -->
 
@@ -64,12 +57,7 @@
     <Exec Command="$(SpeedReaderOrtDir)/build.py" />
   </Target>
 
-  <!-- speedreader_cpuinfo: standalone, no dependencies on onnx -->
-  <Target Name="BuildSRCpuInfo" BeforeTargets="PrepareForBuild" Condition="'$(BuildSRCpuInfo)' == 'true'" Outputs="">
-    <Exec Command="$(SpeedReaderCpuInfoDir)/build.py" />
-  </Target>
-
-  <!-- Deep clean: removes native build artifacts (onnx/out, speedreader_ort/out, speedreader_cpuinfo/out, .external) -->
+  <!-- Deep clean: removes native build artifacts (onnx/out, speedreader_ort/out, .external) -->
   <Target Name="DeepClean" AfterTargets="Clean" Condition="'$(DeepClean)' == 'true'">
     <Exec Command="$(MSBuildThisFileDirectory)clean.py" />
   </Target>

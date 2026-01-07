@@ -60,15 +60,8 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 |   |   |       |-- build.py  // Build speedreader_ort
 |   |   |       |-- speedreader_ort.c
 |   |   |       `-- speedreader_ort.h
-|   |   `-- CpuInfo  // CPU topology detection (CpuTopology, CpuInfoException)
-|   |       |-- Internal  // P/Invoke bindings (SpeedReaderCpuInfo)
-|   |       `-- speedreader_cpuinfo  // C wrapper for cpuinfo
-|   |           |-- build.py  // Build speedreader_cpuinfo
-|   |           |-- speedreader_cpuinfo.c
-|   |           `-- speedreader_cpuinfo.h
 |   |-- Native.Test  // Native library tests
-|   |   |-- Onnx  // InferenceSession, OrtValue tests
-|   |   `-- CpuInfo  // CpuTopology tests
+|   |   `-- Onnx  // InferenceSession, OrtValue tests
 |   |-- Ocr  // Core library, contains all Ocr functionality
 |   |   |-- Algorithms  // Various algorithms used in detection or recognition
 |   |   |-- Geometry  // Geometry pipeline for turning collections of points into OCR bounding boxes
@@ -189,12 +182,11 @@ SpeedReader can be built as either a managed (CLR) or unmanaged (Native AOT) exe
 
 The build is orchestrated by msbuild. All integrations with native libraries are handled by the Native project. Native, and by extension any project that references Native, exposes these options:
 
-| Option         | Values | Description                                  |
-| -------------- | ------ | -------------------------------------------- |
-| BuildOnnx      | 'true' | Triggers a new onnx build if 'true'          |
-| BuildSROrt     | 'true' | Triggers a new speedreader_ort if 'true'     |
-| BuildSRCpuInfo | 'true' | Triggers a new speedreader_cpuinfo if 'true' |
-| DeepClean      | 'true' | Clean all native build artifacts             |
+| Option     | Values | Description                              |
+| ---------- | ------ | ---------------------------------------- |
+| BuildOnnx  | 'true' | Triggers a new onnx build if 'true'      |
+| BuildSROrt | 'true' | Triggers a new speedreader_ort if 'true' |
+| DeepClean  | 'true' | Clean all native build artifacts         |
 
 The Frontend project (SpeedReader executable, the Native AOT target) exposes these options when publishing:
 
