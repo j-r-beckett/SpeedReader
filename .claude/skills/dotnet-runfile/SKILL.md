@@ -49,3 +49,18 @@ Share settings across multiple single-file apps by placing a `Directory.Build.pr
 ```
 
 All `.cs` files in that directory tree inherit these settings.
+
+## Cache Location & Clearing
+
+Scripts are cached at `~/.local/share/dotnet/runfile/<script>-<hash>/`. The cache includes compiled binaries and all dependencies.
+
+To clear a script's cache (useful when dependencies change but the script doesn't detect it):
+
+```bash
+dotnet clean hello.cs           # clears cache for hello.cs and rebuilds dependencies
+```
+
+This is especially important when:
+- A referenced project (`#:project`) has been modified
+- You're debugging stale binary issues
+- The script uses the wrong version of a dependency
