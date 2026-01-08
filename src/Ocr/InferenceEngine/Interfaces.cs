@@ -11,6 +11,6 @@ public interface IInferenceEngine : IAsyncDisposable
 
 public interface IInferenceKernel
 {
-    (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape);
+    (float[] OutputData, int[] OutputShape) Execute(Memory<float> data, int[] shape);
 }
 

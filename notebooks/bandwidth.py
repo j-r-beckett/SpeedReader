@@ -46,7 +46,7 @@ def _(model_input):
     def _():
         if model_input.value == "dbnet":
             duration = 8
-            max_cores = 12
+            max_cores = 2
         elif model_input.value == "svtr":
             duration = 8
             max_cores = 28

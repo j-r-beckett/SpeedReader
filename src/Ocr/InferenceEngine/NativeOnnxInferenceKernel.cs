@@ -42,7 +42,7 @@ public class NativeOnnxInferenceKernel : IInferenceKernel, IDisposable
         _session = new InferenceSession(weights.Bytes, sessionOptions);
     }
 
-    public virtual (float[] OutputData, int[] OutputShape) Execute(float[] data, int[] shape)
+    public virtual (float[] OutputData, int[] OutputShape) Execute(Memory<float> data, int[] shape)
     {
         var input = OrtValue.Create(data, shape);
         var outputShape = CalculateOutputShape(shape);

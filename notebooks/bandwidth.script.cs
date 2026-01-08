@@ -7,12 +7,9 @@
 
 using System.Diagnostics;
 using BenchmarkUtils;
-using Microsoft.Extensions.DependencyInjection;
 using SpeedReader.Native.Threading;
 using SpeedReader.Ocr.InferenceEngine;
 using SpeedReader.Ocr.InferenceEngine.Engines;
-using SpeedReader.Resources.CharDict;
-using SpeedReader.Resources.Weights;
 
 // Parse CLI args: -m <model> -d <duration> -w <warmup> -c <cores...> [--intra-threads N] [--inter-threads N] [--profile]
 var model = Model.DbNet;
@@ -60,34 +57,9 @@ for (var i = 0; i < args.Length; i++)
 if (cores.Count == 0)
     cores.Add(0);
 
-// Setup inference kernel and thread pool directly
-var inputShape = model switch
-{
-    Model.DbNet => new[] { 3, 640, 640 },
-    Model.Svtr => new[] { 3, 48, 160 },
-    _ => throw new ArgumentOutOfRangeException()
-};
-var batchedInputShape = new[] { 1 }.Concat(inputShape).ToArray();
-
-var quantization = model == Model.DbNet ? Quantization.Int8 : Quantization.Fp32;
-var kernelOptions = new OnnxInferenceKernelOptions(model, quantization, intraThreads, interThreads, profile);
-var weights = model == Model.DbNet ? EmbeddedWeights.Dbnet_Int8 : EmbeddedWeights.Svtr_Fp32;
-
-var services = new ServiceCollection();
-services.AddKeyedSingleton(model, kernelOptions);
-services.AddKeyedSingleton(model, weights);
-if (model == Model.Svtr)
-    services.AddSingleton(new EmbeddedCharDict());
-var serviceProvider = services.BuildServiceProvider();
-
-var kernel = NativeOnnxInferenceKernel.Factory(serviceProvider, model);
+// Setup inference kernel and thread pool
+using var ctx = InferenceKernelFactory.Create(model, intraThreads, interThreads, profile);
 var threadPool = new AffinitizedThreadPool(cores);
-
-var inputSize = inputShape.Aggregate(1, (a, b) => a * b);
-var inputData = new float[inputSize];
-var rng = new Random(42);
-for (var j = 0; j < inputData.Length; j++)
-    inputData[j] = rng.NextSingle();
 
 var totalDuration = warmup + duration;
 var globalSw = Stopwatch.StartNew();
@@ -104,7 +76,7 @@ while (globalSw.Elapsed.TotalSeconds < totalDuration)
             var coreId = Affinitizer.GetCurrentCpu();
             var token = IntegratedTimer.Start();
             token.Tags["core_id"] = coreId.ToString();
-            kernel.Execute(inputData, batchedInputShape);
+            ctx.Infer();
             if (globalSw.Elapsed.TotalSeconds >= warmup)
                 IntegratedTimer.Stop(token);
         }));
@@ -118,5 +90,3 @@ while (globalSw.Elapsed.TotalSeconds < totalDuration)
 
 // Cleanup
 threadPool.Dispose();
-((IDisposable)kernel).Dispose();
-serviceProvider.Dispose();

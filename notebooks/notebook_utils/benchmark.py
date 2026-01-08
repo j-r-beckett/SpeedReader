@@ -38,10 +38,12 @@ def run_benchmark(
     os.set_blocking(fd, False)
 
     buffer = ""
+    non_json_output = []
 
     def parse_line(line: str):
         if not line.startswith("{"):
-            return None  # Skip non-JSON lines (build output, etc.)
+            non_json_output.append(line)
+            return None
         obj = json.loads(line)
         return (
             datetime.fromisoformat(obj["start"].replace("Z", "+00:00")),
@@ -78,6 +80,9 @@ def run_benchmark(
     stderr_output = proc.stderr.read()
 
     if proc.returncode != 0:
-        # Collect any remaining stdout (may contain build errors)
-        all_output = buffer + (proc.stdout.read() or "")
-        raise RuntimeError(f"Benchmark failed (exit code {proc.returncode}):\n{stderr_output}\n{all_output}")
+        stdout_output = "\n".join(non_json_output)
+        raise RuntimeError(
+            f"Benchmark failed (exit code {proc.returncode}):\n"
+            f"stdout:\n{stdout_output}\n"
+            f"stderr:\n{stderr_output}"
+        )

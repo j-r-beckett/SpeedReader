@@ -4,6 +4,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Ocr/Ocr.csproj" />
+    <ProjectReference Include="../../src/Resources/Resources.csproj" />
+    <ProjectReference Include="../../src/Native/Native.csproj" />
+  </ItemGroup>
 
 </Project>
