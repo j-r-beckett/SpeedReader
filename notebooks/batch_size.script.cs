@@ -9,36 +9,11 @@ using System.Diagnostics;
 using BenchmarkUtils;
 using SpeedReader.Ocr.InferenceEngine;
 
-
-// Parse CLI args: -m <model> -d <duration> -w <warmup> -b <batch_size>
-var model = Model.DbNet;
-var duration = 10.0;
-var warmup = 2.0;
-var batchSize = 1;
-
-for (var i = 0; i < args.Length; i++)
-{
-    switch (args[i])
-    {
-        case "-m" or "--model":
-            model = args[++i].ToLowerInvariant() switch
-            {
-                "dbnet" => Model.DbNet,
-                "svtr" => Model.Svtr,
-                _ => throw new ArgumentException($"Unknown model: {args[i]}")
-            };
-            break;
-        case "-d" or "--duration":
-            duration = double.Parse(args[++i]);
-            break;
-        case "-w" or "--warmup":
-            warmup = double.Parse(args[++i]);
-            break;
-        case "-b" or "--batch-size":
-            batchSize = int.Parse(args[++i]);
-            break;
-    }
-}
+var opts = BenchmarkArgs.Parse(args);
+var model = opts.GetFlag("model", Model.DbNet);
+var duration = opts.GetFlag("duration", 10.0);
+var warmup = opts.GetFlag("warmup", 2.0);
+var batchSize = opts.GetFlag("batch-size", 1);
 
 // Setup inference kernel
 using var ctx = InferenceKernelFactory.Create(model);

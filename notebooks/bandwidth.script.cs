@@ -11,51 +11,14 @@ using SpeedReader.Native.Threading;
 using SpeedReader.Ocr.InferenceEngine;
 using SpeedReader.Ocr.InferenceEngine.Engines;
 
-// Parse CLI args: -m <model> -d <duration> -w <warmup> -c <cores...> [--intra-threads N] [--inter-threads N] [--profile]
-var model = Model.DbNet;
-var duration = 10.0;
-var warmup = 2.0;
-var cores = new List<int>();
-var intraThreads = 1;
-var interThreads = 1;
-var profile = false;
-
-for (var i = 0; i < args.Length; i++)
-{
-    switch (args[i])
-    {
-        case "-m" or "--model":
-            model = args[++i].ToLowerInvariant() switch
-            {
-                "dbnet" => Model.DbNet,
-                "svtr" => Model.Svtr,
-                _ => throw new ArgumentException($"Unknown model: {args[i]}")
-            };
-            break;
-        case "-d" or "--duration":
-            duration = double.Parse(args[++i]);
-            break;
-        case "-w" or "--warmup":
-            warmup = double.Parse(args[++i]);
-            break;
-        case "-c" or "--cores":
-            while (i + 1 < args.Length && !args[i + 1].StartsWith('-'))
-                cores.Add(int.Parse(args[++i]));
-            break;
-        case "--intra-threads":
-            intraThreads = int.Parse(args[++i]);
-            break;
-        case "--inter-threads":
-            interThreads = int.Parse(args[++i]);
-            break;
-        case "--profile":
-            profile = true;
-            break;
-    }
-}
-
-if (cores.Count == 0)
-    cores.Add(0);
+var opts = BenchmarkArgs.Parse(args);
+var model = opts.GetFlag("model", Model.DbNet);
+var duration = opts.GetFlag("duration", 10.0);
+var warmup = opts.GetFlag("warmup", 2.0);
+var cores = opts.GetFlag("cores", new[] { 0 });
+var intraThreads = opts.GetFlag("intra-threads", 1);
+var interThreads = opts.GetFlag("inter-threads", 1);
+var profile = opts.GetFlag("profile", false);
 
 // Setup inference kernel and thread pool
 using var ctx = InferenceKernelFactory.Create(model, intraThreads, interThreads, profile);
@@ -69,7 +32,7 @@ var pending = new List<Task>();
 while (globalSw.Elapsed.TotalSeconds < totalDuration)
 {
     // Keep the pool saturated
-    while (pending.Count < cores.Count)
+    while (pending.Count < cores.Length)
     {
         pending.Add(threadPool.Run(() =>
         {
