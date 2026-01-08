@@ -38,11 +38,11 @@ def _():
         label="Model",
     )
     model_input
-    return
+    return (model_input,)
 
 
 @app.cell
-def _():
+def _(model_input):
     def _():
         duration = 6
         thread_counts = [1, 2, 4, 8]
@@ -64,7 +64,7 @@ def _():
         with mo.status.spinner(title="Running benchmark...", remove_on_exit=True) as spinner:
             spinner.update(subtitle=f"0s / {format_duration(estimated_total)}")
             for threads in thread_counts:
-                for _, start_time, end_time in run_benchmark(make_cmd(threads), duration, warmup):
+                for start_time, end_time, _ in run_benchmark(make_cmd(threads), duration, warmup):
                     elapsed = time.time() - start_time_estimate
                     spinner.update(subtitle=f"{format_duration(elapsed)} / {format_duration(estimated_total)}")
                     rows.append({
@@ -76,11 +76,11 @@ def _():
         return pd.DataFrame(rows)
 
     df = _()
-    return
+    return (df,)
 
 
 @app.cell
-def _():
+def _(df):
     def _():
         rows = []
         for threads, g in df.groupby("inter_threads"):
@@ -96,11 +96,11 @@ def _():
         return pd.DataFrame(rows)
 
     stats_df = _()
-    return
+    return (stats_df,)
 
 
 @app.cell
-def _():
+def _(model_input, stats_df):
     def _():
         fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -131,7 +131,7 @@ def _():
 
 
 @app.cell
-def _():
+def _(stats_df):
     mo.ui.table(stats_df, page_size=16, show_column_summaries=False)
     return
 

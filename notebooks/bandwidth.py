@@ -72,12 +72,12 @@ def _(model_input):
             spinner.update(subtitle=f"0s / {format_duration(estimated_total)}")
             perf = start_perf()
             for cores in core_configs:
-                for core_id, start_time, end_time in run_benchmark(make_cmd(cores), duration, warmup):
+                for start_time, end_time, tags in run_benchmark(make_cmd(cores), duration, warmup):
                     elapsed = time.time() - start_time_estimate
                     spinner.update(subtitle=f"{format_duration(elapsed)} / {format_duration(estimated_total)}")
                     rows.append({
                         "cores": cores,
-                        "core_id": core_id,
+                        "core_id": int(tags["core_id"]),
                         "start_time": start_time,
                         "end_time": end_time,
                     })

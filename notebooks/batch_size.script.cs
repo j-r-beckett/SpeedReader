@@ -3,14 +3,16 @@
 #:project ../src/Ocr
 #:project ../src/Resources
 #:project ../src/Native
+#:project BenchmarkUtils
 
 using System.Diagnostics;
+using BenchmarkUtils;
 using Microsoft.Extensions.DependencyInjection;
-using SpeedReader.Native.Threading;
 using SpeedReader.Ocr.InferenceEngine;
 using SpeedReader.Ocr.InferenceEngine.Engines;
 using SpeedReader.Resources.CharDict;
 using SpeedReader.Resources.Weights;
+
 
 // Parse CLI args: -m <model> -d <duration> -w <warmup> -b <batch_size>
 var model = Model.DbNet;
@@ -72,22 +74,15 @@ for (var j = 0; j < inputData.Length; j++)
     inputData[j] = rng.NextSingle();
 
 var totalDuration = warmup + duration;
-var baseTime = DateTimeOffset.UtcNow;
 var globalSw = Stopwatch.StartNew();
 
 // Run inferences sequentially on a single core
 while (globalSw.Elapsed.TotalSeconds < totalDuration)
 {
-    var sw = Stopwatch.StartNew();
+    var token = IntegratedTimer.Start();
     kernel.Execute(inputData, batchedInputShape);
-    sw.Stop();
-
-    var end = baseTime.Add(globalSw.Elapsed);
-    var start = end - sw.Elapsed;
-
-    var elapsed = globalSw.Elapsed;
-    if (elapsed.TotalSeconds >= warmup && elapsed.TotalSeconds < totalDuration)
-        Console.WriteLine($"{batchSize},{start:yyyy-MM-ddTHH:mm:ss.ffffffZ},{end:yyyy-MM-ddTHH:mm:ss.ffffffZ}");
+    if (globalSw.Elapsed.TotalSeconds >= warmup)
+        IntegratedTimer.Stop(token);
 }
 
 // Cleanup

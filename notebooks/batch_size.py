@@ -70,7 +70,7 @@ def _(model_input):
         with mo.status.spinner(title="Running benchmark...", remove_on_exit=True) as spinner:
             spinner.update(subtitle=f"0s / {format_duration(estimated_total)}")
             for batch_size in batch_sizes:
-                for _, start_time, end_time in run_benchmark(make_cmd(batch_size), duration, warmup):
+                for start_time, end_time, _ in run_benchmark(make_cmd(batch_size), duration, warmup):
                     elapsed = time.time() - start_time_estimate
                     spinner.update(subtitle=f"{format_duration(elapsed)} / {format_duration(estimated_total)}")
                     rows.append({

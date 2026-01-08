@@ -3,8 +3,10 @@
 #:project ../src/Ocr
 #:project ../src/Resources
 #:project ../src/Native
+#:project BenchmarkUtils
 
 using System.Diagnostics;
+using BenchmarkUtils;
 using Microsoft.Extensions.DependencyInjection;
 using SpeedReader.Native.Threading;
 using SpeedReader.Ocr.InferenceEngine;
@@ -88,11 +90,10 @@ for (var j = 0; j < inputData.Length; j++)
     inputData[j] = rng.NextSingle();
 
 var totalDuration = warmup + duration;
-var baseTime = DateTimeOffset.UtcNow;
 var globalSw = Stopwatch.StartNew();
 
 // Submit work continuously; threadPool handles parallelism
-var pending = new List<Task<(int, DateTimeOffset, DateTimeOffset)>>();
+var pending = new List<Task>();
 while (globalSw.Elapsed.TotalSeconds < totalDuration)
 {
     // Keep the pool saturated
@@ -101,23 +102,18 @@ while (globalSw.Elapsed.TotalSeconds < totalDuration)
         pending.Add(threadPool.Run(() =>
         {
             var coreId = Affinitizer.GetCurrentCpu();
-            var sw = Stopwatch.StartNew();
+            var token = IntegratedTimer.Start();
+            token.Tags["core_id"] = coreId.ToString();
             kernel.Execute(inputData, batchedInputShape);
-            sw.Stop();
-            var end = baseTime.Add(globalSw.Elapsed);
-            var start = end - sw.Elapsed;
-            return (coreId, start, end);
+            if (globalSw.Elapsed.TotalSeconds >= warmup)
+                IntegratedTimer.Stop(token);
         }));
     }
 
     // Wait for any to complete
     var completed = await Task.WhenAny(pending);
     pending.Remove(completed);
-
-    var (coreId, inferenceStart, inferenceEnd) = await completed;
-    var elapsed = globalSw.Elapsed;
-    if (elapsed.TotalSeconds >= warmup && elapsed.TotalSeconds < totalDuration)
-        Console.WriteLine($"{coreId},{inferenceStart:yyyy-MM-ddTHH:mm:ss.ffffffZ},{inferenceEnd:yyyy-MM-ddTHH:mm:ss.ffffffZ}");
+    await completed;
 }
 
 // Cleanup

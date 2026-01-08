@@ -1,3 +1,4 @@
+import json
 import os
 import select
 import subprocess
@@ -12,8 +13,8 @@ def run_benchmark(
     """
     Run a benchmark command and yield results as they stream in.
 
-    The command must output lines in format: core_id,start_timestamp,end_timestamp
-    where timestamps are ISO format (e.g., 2024-01-01T12:00:00.000000Z).
+    The command must output NDJSON lines with format:
+        {"start": "ISO timestamp", "end": "ISO timestamp", "tags": {...}}
 
     Args:
         cmd: Command to run (e.g., ["dotnet", "run", "script.cs", "--", "-m", "dbnet"])
@@ -21,7 +22,7 @@ def run_benchmark(
         warmup: Warmup duration in seconds (passed as -w)
 
     Yields:
-        (core_id, start_time, end_time) tuples as they arrive.
+        (start_time, end_time, tags) tuples as they arrive.
     """
     full_cmd = [*cmd, "-d", str(duration), "-w", str(warmup)]
 
@@ -39,11 +40,13 @@ def run_benchmark(
     buffer = ""
 
     def parse_line(line: str):
-        core_id, start_ts, end_ts = line.split(",")
+        if not line.startswith("{"):
+            return None  # Skip non-JSON lines (build output, etc.)
+        obj = json.loads(line)
         return (
-            int(core_id),
-            datetime.fromisoformat(start_ts.replace("Z", "+00:00")),
-            datetime.fromisoformat(end_ts.replace("Z", "+00:00")),
+            datetime.fromisoformat(obj["start"].replace("Z", "+00:00")),
+            datetime.fromisoformat(obj["end"].replace("Z", "+00:00")),
+            obj.get("tags", {}),
         )
 
     while proc.poll() is None:
@@ -57,7 +60,9 @@ def run_benchmark(
                     line, buffer = buffer.split("\n", 1)
                     line = line.strip()
                     if line:
-                        yield parse_line(line)
+                        result = parse_line(line)
+                        if result:
+                            yield result
 
     # Read any remaining output
     leftover = proc.stdout.read()
@@ -66,9 +71,13 @@ def run_benchmark(
     for line in buffer.strip().split("\n"):
         line = line.strip()
         if line:
-            yield parse_line(line)
+            result = parse_line(line)
+            if result:
+                yield result
 
     stderr_output = proc.stderr.read()
 
     if proc.returncode != 0:
-        raise RuntimeError(f"Benchmark failed:\n{stderr_output}")
+        # Collect any remaining stdout (may contain build errors)
+        all_output = buffer + (proc.stdout.read() or "")
+        raise RuntimeError(f"Benchmark failed (exit code {proc.returncode}):\n{stderr_output}\n{all_output}")

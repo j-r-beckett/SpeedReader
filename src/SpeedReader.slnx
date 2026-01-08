@@ -15,4 +15,5 @@
     <Project Path="Native.Test/Native.Test.csproj" />
     <Project Path="MicroBenchmarks/MicroBenchmarks.csproj" />
   </Folder>
+  <Project Path="../notebooks/BenchmarkUtils/BenchmarkUtils.csproj" />
 </Solution>

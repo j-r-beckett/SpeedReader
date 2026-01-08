@@ -9,7 +9,7 @@ namespace SpeedReader.Ocr.InferenceEngine.Engines;
 public class CpuEngine : IInferenceEngine
 {
     private readonly IInferenceKernel _inferenceKernel;
-    private readonly AffinitizedThreadPool _threadPool;
+    private readonly OcrThreadPool _threadPool;
     private readonly Model _model;
 
     public static CpuEngine Factory(IServiceProvider serviceProvider, object? key)
@@ -25,7 +25,7 @@ public class CpuEngine : IInferenceEngine
         int[] pCores = [0, 2, 4, 6, 8, 10, 12, 14];
         int[] eCores = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
         _inferenceKernel = inferenceKernel;
-        _threadPool = new AffinitizedThreadPool(pCores, [], eCores);
+        _threadPool = new OcrThreadPool(pCores, [], eCores);
         _model = model;
     }
 
