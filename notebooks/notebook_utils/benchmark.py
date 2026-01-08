@@ -24,7 +24,7 @@ def run_benchmark(
     Yields:
         (start_time, end_time, tags) tuples as they arrive.
     """
-    full_cmd = [*cmd, "-d", str(duration), "-w", str(warmup)]
+    full_cmd = [*cmd, "--duration", str(duration), "--warmup", str(warmup)]
 
     proc = subprocess.Popen(
         full_cmd,

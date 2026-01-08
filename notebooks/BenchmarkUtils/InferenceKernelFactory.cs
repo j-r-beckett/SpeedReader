@@ -1,4 +1,5 @@
-using System.Buffers;
+using System;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using SpeedReader.Ocr.InferenceEngine;
 using SpeedReader.Resources.CharDict;
@@ -8,28 +9,31 @@ namespace BenchmarkUtils;
 
 public sealed class KernelContext : IDisposable
 {
-    private readonly ArrayPool<float> _pool = ArrayPool<float>.Create();
-    private int _baseInputSize;
+    private float[]? _inputData;
+    private int[]? _batchedShape;
 
     public required NativeOnnxInferenceKernel Kernel { get; init; }
     public required int[] InputShape { get; init; }
     public required ServiceProvider ServiceProvider { get; init; }
 
-    private int BaseInputSize => _baseInputSize != 0 ? _baseInputSize : (_baseInputSize = InputShape.Aggregate(1, (a, b) => a * b));
+    private void EnsureInitialized(int batchSize)
+    {
+        if (_inputData != null && _batchedShape != null && _batchedShape[0] == batchSize)
+            return;
+
+        var inputSize = batchSize * InputShape.Aggregate(1, (a, b) => a * b);
+        _inputData = new float[inputSize];
+        var rng = new Random(0);
+        for (var i = 0; i < inputSize; i++)
+            _inputData[i] = rng.NextSingle();
+
+        _batchedShape = new[] { batchSize }.Concat(InputShape).ToArray();
+    }
 
     public void Infer(int batchSize = 1)
     {
-        var inputSize = batchSize * BaseInputSize;
-        var inputData = _pool.Rent(inputSize);
-        try
-        {
-            var batchedShape = new[] { batchSize }.Concat(InputShape).ToArray();
-            Kernel.Execute(new Memory<float>(inputData, 0, inputSize), batchedShape);
-        }
-        finally
-        {
-            _pool.Return(inputData);
-        }
+        EnsureInitialized(batchSize);
+        Kernel.Execute(_inputData!, _batchedShape!);
     }
 
     public void Dispose()

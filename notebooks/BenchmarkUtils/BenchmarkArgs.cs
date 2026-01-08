@@ -27,7 +27,7 @@ public class BenchmarkArgs
             var values = new List<string>();
 
             // Collect values until next flag or end
-            while (i + 1 < args.Length && !args[i + 1].StartsWith("--"))
+            while (i + 1 < args.Length && !args[i + 1].StartsWith("-"))
             {
                 i++;
                 values.Add(args[i]);

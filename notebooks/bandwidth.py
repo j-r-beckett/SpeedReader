@@ -46,10 +46,10 @@ def _(model_input):
     def _():
         if model_input.value == "dbnet":
             duration = 8
-            max_cores = 2
+            max_cores = 8
         elif model_input.value == "svtr":
             duration = 8
-            max_cores = 28
+            max_cores = 8
         else:
             raise ValueError(f"unknown model {model_input.value}")
 
@@ -60,8 +60,8 @@ def _(model_input):
         def make_cmd(cores: list[int]) -> list[str]:
             return [
                 "dotnet", "run", str(script), "--",
-                "-m", model_input.value,
-                "-c", *[str(c) for c in cores],
+                "--model", model_input.value,
+                "--cores", *[str(c) for c in cores],
             ]
 
         estimated_total = len(core_configs) * (warmup + duration + 1)
