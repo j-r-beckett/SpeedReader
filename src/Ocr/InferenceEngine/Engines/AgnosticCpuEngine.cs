@@ -6,21 +6,21 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace SpeedReader.Ocr.InferenceEngine.Engines;
 
-public class CpuEngine : IInferenceEngine
+public class AgnosticCpuEngine
 {
     private readonly IInferenceKernel _inferenceKernel;
     private readonly AffinitizedThreadPool _threadPool;
     private readonly Model _model;
 
-    public static CpuEngine Factory(IServiceProvider serviceProvider, object? key)
+    public static AgnosticCpuEngine Factory(IServiceProvider serviceProvider, object? key)
     {
         var config = serviceProvider.GetRequiredKeyedService<CpuEngineConfig>(key);
         var kernel = serviceProvider.GetRequiredKeyedService<IInferenceKernel>(key);
         var meterFactory = serviceProvider.GetService<IMeterFactory>();
-        return new CpuEngine(kernel, (Model)key!, meterFactory);
+        return new AgnosticCpuEngine(kernel, (Model)key!, meterFactory);
     }
 
-    private CpuEngine(IInferenceKernel inferenceKernel, Model model, IMeterFactory? meterFactory)
+    private AgnosticCpuEngine(IInferenceKernel inferenceKernel, Model model, IMeterFactory? meterFactory)
     {
         int[] pCores = [0, 2, 4, 6, 8, 10, 12, 14];
         int[] eCores = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
