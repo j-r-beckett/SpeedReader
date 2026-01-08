@@ -115,10 +115,10 @@ public class AffinitizedThreadPool : IDisposable
         public ManagedThread(Action<ManagedThread> requeueThread, int core)
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(core, 0, nameof(core));
-            _thread = new Thread(ThreadProc) { IsBackground = true };
-            _thread.Start();
             _requeueThread = requeueThread;
             _core = core;
+            _thread = new Thread(ThreadProc) { IsBackground = true };
+            _thread.Start();
         }
 
         public void Run(Action action)
