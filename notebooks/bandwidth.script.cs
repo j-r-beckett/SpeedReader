@@ -32,7 +32,7 @@ var pending = new List<Task>();
 while (globalSw.Elapsed.TotalSeconds < totalDuration)
 {
     // Keep the pool saturated
-    while (pending.Count < cores.Length)
+    while (pending.Count < cores.Length * 1.5)
     {
         pending.Add(threadPool.Run(() =>
         {
