@@ -1,56 +1,77 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Threading.Channels;
 using SpeedReader.Native.Threading;
 
 namespace SpeedReader.Ocr.InferenceEngine.Engines;
 
 public class AffinitizedThreadPool : IDisposable
 {
-    private readonly BlockingCollection<Action> _queuedActions = new();
-    private readonly BlockingCollection<ManagedThread> _availableThreads = new();
+    private readonly Channel<Action> _queuedActions = Channel.CreateUnbounded<Action>();
+    private readonly VIPQueue<PinnedThread> _availableThreads = new();
 
-    private readonly Thread _orchestratorThread;
+    private readonly Task _orchestratorTask;
     private readonly CancellationTokenSource _orchestratorCts = new();
 
-    private readonly List<ManagedThread> _allThreads = [];
+    private readonly Lock _threadsLock = new();
+    private readonly HashSet<PinnedThread> _allThreads = [];
 
     public AffinitizedThreadPool(IEnumerable<int> cores)
     {
         foreach (var core in cores)
         {
-            var thread = new ManagedThread(thread => _availableThreads.Add(thread), core);
-            _availableThreads.Add(thread);
+            var thread = new PinnedThread(thread => _availableThreads.Enqueue(thread), core);
+            _availableThreads.Enqueue(thread);
             _allThreads.Add(thread);
         }
         if (_allThreads.Count == 0)
             throw new ArgumentException("No cores specified", nameof(cores));
 
-        _orchestratorThread = new Thread(OrchestratorThreadProc) { IsBackground = true };
-        _orchestratorThread.Start();
+        _orchestratorTask = Task.Run(OrchestratorTask);
     }
 
-    private void OrchestratorThreadProc()
+    private async Task OrchestratorTask()
     {
         try
         {
             while (true)
             {
-                var action = _queuedActions.Take(_orchestratorCts.Token);
-                var thread = _availableThreads.Take(_orchestratorCts.Token);
+                var action = await _queuedActions.Reader.ReadAsync(_orchestratorCts.Token);
+                var thread = await _availableThreads.DequeueAsync(vip: false, _orchestratorCts.Token);
                 thread.Run(action);
             }
         }
         catch (OperationCanceledException) { }
     }
 
+    private void PushThread(PinnedThread thread)
+    {
+        lock (_threadsLock)
+            _allThreads.Add(thread);
+        _availableThreads.Enqueue(thread);
+    }
+
+    private async Task<PinnedThread> PopThread()
+    {
+        var thread = await _availableThreads.DequeueAsync(vip: true);
+        lock (_threadsLock)
+            _allThreads.Remove(thread);
+        return thread;
+    }
+
+    public static async Task TransferThread(AffinitizedThreadPool from, AffinitizedThreadPool to)
+        => to.PushThread(await from.PopThread());
+
     public Task<T> Run<T>(Func<T> func)
     {
-        ObjectDisposedException.ThrowIf(_queuedActions.IsAddingCompleted, this);
         var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _queuedActions.Add(() =>
+        return !_queuedActions.Writer.TryWrite(ExecuteFunc)
+            ? throw new ObjectDisposedException(GetType().FullName)
+            : tcs.Task;
+
+        void ExecuteFunc()
         {
             try
             {
@@ -61,15 +82,17 @@ public class AffinitizedThreadPool : IDisposable
             {
                 tcs.SetException(ex);
             }
-        });
-        return tcs.Task;
+        }
     }
 
     public Task Run(Action action)
     {
-        ObjectDisposedException.ThrowIf(_queuedActions.IsAddingCompleted, this);
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _queuedActions.Add(() =>
+        return !_queuedActions.Writer.TryWrite(ExecuteAction)
+            ? throw new ObjectDisposedException(GetType().FullName)
+            : tcs.Task;
+
+        void ExecuteAction()
         {
             try
             {
@@ -80,39 +103,35 @@ public class AffinitizedThreadPool : IDisposable
             {
                 tcs.SetException(ex);
             }
-        });
-        return tcs.Task;
+        }
     }
 
-    public int Size => _allThreads.Count;
+    public int PoolSize { get { lock (_threadsLock) return _allThreads.Count; } }
 
     public void Dispose()
     {
-        _queuedActions.CompleteAdding();
+        _queuedActions.Writer.Complete();
         _orchestratorCts.Cancel();
-        _orchestratorThread.Join();
+        _orchestratorTask.Wait();
         _orchestratorCts.Dispose();
-        _queuedActions.Dispose();
         foreach (var thread in _allThreads)
             thread.Dispose();
-        _availableThreads.CompleteAdding();
-        _availableThreads.Dispose();
         GC.SuppressFinalize(this);
     }
 
-    private class ManagedThread : IDisposable
+    private class PinnedThread : IDisposable
     {
         private Action? _action;
         private readonly ManualResetEventSlim _activationEvent = new(false);
 
-        private readonly Action<ManagedThread> _requeueThread;
+        private readonly Action<PinnedThread> _requeueThread;
         private readonly int _core;
 
         private readonly Thread _thread;
         private readonly CancellationTokenSource _cts = new();
         private bool _disposed;
 
-        public ManagedThread(Action<ManagedThread> requeueThread, int core)
+        public PinnedThread(Action<PinnedThread> requeueThread, int core)
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(core, 0, nameof(core));
             _requeueThread = requeueThread;
