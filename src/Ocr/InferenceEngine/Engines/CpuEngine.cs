@@ -22,14 +22,17 @@ public class CpuEngine : IInferenceEngine
 
     private CpuEngine(IInferenceKernel inferenceKernel, Model model, IMeterFactory? meterFactory)
     {
-        int[] pCores = [0, 2, 4, 6, 8, 10, 12, 14];
-        int[] eCores = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
+        var topology = new Topology
+        {
+            PCores = [0, 2, 4, 6, 8, 10, 12, 14],
+            ECores = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+        };
         _inferenceKernel = inferenceKernel;
-        _threadPool = new OcrThreadPool(pCores, [], eCores);
+        _threadPool = new OcrThreadPool(topology, topology.PCores.Length);
         _model = model;
     }
 
-    public int CurrentMaxCapacity() => _threadPool.Size;
+    public int CurrentMaxCapacity() => 8;
 
     public Task<(float[] OutputData, int[] OutputShape)> Run(float[] inputData, int[] inputShape) =>
         _threadPool.Run(() =>

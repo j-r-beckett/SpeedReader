@@ -9,7 +9,6 @@ using System.Diagnostics;
 using BenchmarkUtils;
 using SpeedReader.Native.Threading;
 using SpeedReader.Ocr.InferenceEngine;
-using SpeedReader.Ocr.InferenceEngine.Engines;
 
 var opts = BenchmarkArgs.Parse(args);
 var model = opts.GetFlag("model", Model.DbNet);

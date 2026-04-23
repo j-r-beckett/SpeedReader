@@ -9,7 +9,6 @@ using System.Diagnostics;
 using BenchmarkUtils;
 using SpeedReader.Native.Threading;
 using SpeedReader.Ocr.InferenceEngine;
-using SpeedReader.Ocr.InferenceEngine.Engines;
 
 var opts = BenchmarkArgs.Parse(args);
 var duration = opts.GetFlag("duration", 10.0);

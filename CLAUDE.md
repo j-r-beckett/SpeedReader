@@ -6,6 +6,8 @@ SpeedReader is a high-performance OCR engine implemented in C# and compiled to n
 
 # Codebase Map
 
+This is a high-level map of the codebase. Only significant files and directories are shown.
+
 .
 |-- .editorconfig  // Generic formatting rules (indent, newlines)
 |-- .external  // External repos cloned on demand by build scripts (gitignored)
@@ -214,7 +216,7 @@ SpeedReader uses open-source pre-trained models.
 
 `models/analyze_onnx.py` can get info about a model (parameter count, input/output tensors, operators, etc) or visualize it for the user using netron.
 
-We currently use models with dynamic dimensions, but in code we use fixed dimensions of 640x640 for detection and 160x48 for recognition. 
+We currently use models with dynamic dimensions, but in code we use fixed dimensions of 640x640 for detection and 160x48 for recognition.
 
 When running SpeedReader with the CPU inference provider performance is overwhelmingly dominated by DbNet inference, which in turn is bottlenecked by memory bandwidth. SVTRv2 inference by contrast is extremely fast. The difference is to differences in the sizes of the inputs causing cache <-> RAM thrashing--large inputs increase the amount of memory needed by each stage of the model, and once stages get large enough to not fit into cache you get thrashing, which kills performance. DbNet input tensors are (batch_size == 1) is 640x640x3 = 1228800 values, while SVTRv2 input tensors are 160x48x3 = 23040, so DbNet inference thrashes like crazy while SVTRv2 inferences fits comfortably in cache.
 
@@ -233,7 +235,7 @@ Author: https://github.com/open-mmlab/mmocr/blob/main/configs/textdet/dbnet/READ
 
 Model: SVTRv2
 Quantizations: fp32
-Input Tensor: 
+Input Tensor:
     - float32 [batch, 3, 48, width]
     - A batch of images of individual words in CHW format
     - If you run analyze_onnx.py, you'll see 'int_height' in the width position. This is just poor naming, int_height represents width

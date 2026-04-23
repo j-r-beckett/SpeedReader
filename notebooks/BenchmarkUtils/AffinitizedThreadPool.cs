@@ -5,25 +5,24 @@ using System.Diagnostics;
 using System.Threading.Channels;
 using SpeedReader.Native.Threading;
 
-namespace SpeedReader.Ocr.InferenceEngine.Engines;
+namespace BenchmarkUtils;
 
 public class AffinitizedThreadPool : IDisposable
 {
     private readonly Channel<Action> _queuedActions = Channel.CreateUnbounded<Action>();
-    private readonly VIPQueue<PinnedThread> _availableThreads = new();
+    private readonly Channel<PinnedThread> _availableThreads = Channel.CreateUnbounded<PinnedThread>();
 
     private readonly Task _orchestratorTask;
     private readonly CancellationTokenSource _orchestratorCts = new();
 
-    private readonly Lock _threadsLock = new();
-    private readonly HashSet<PinnedThread> _allThreads = [];
+    private readonly List<PinnedThread> _allThreads = [];
 
     public AffinitizedThreadPool(IEnumerable<int> cores)
     {
         foreach (var core in cores)
         {
-            var thread = new PinnedThread(thread => _availableThreads.Enqueue(thread), core);
-            _availableThreads.Enqueue(thread);
+            var thread = new PinnedThread(thread => _availableThreads.Writer.TryWrite(thread), core);
+            _availableThreads.Writer.TryWrite(thread);
             _allThreads.Add(thread);
         }
         if (_allThreads.Count == 0)
@@ -39,30 +38,12 @@ public class AffinitizedThreadPool : IDisposable
             while (true)
             {
                 var action = await _queuedActions.Reader.ReadAsync(_orchestratorCts.Token);
-                var thread = await _availableThreads.DequeueAsync(vip: false, _orchestratorCts.Token);
+                var thread = await _availableThreads.Reader.ReadAsync(_orchestratorCts.Token);
                 thread.Run(action);
             }
         }
         catch (OperationCanceledException) { }
     }
-
-    private void PushThread(PinnedThread thread)
-    {
-        lock (_threadsLock)
-            _allThreads.Add(thread);
-        _availableThreads.Enqueue(thread);
-    }
-
-    private async Task<PinnedThread> PopThread()
-    {
-        var thread = await _availableThreads.DequeueAsync(vip: true);
-        lock (_threadsLock)
-            _allThreads.Remove(thread);
-        return thread;
-    }
-
-    public static async Task TransferThread(AffinitizedThreadPool from, AffinitizedThreadPool to)
-        => to.PushThread(await from.PopThread());
 
     public Task<T> Run<T>(Func<T> func)
     {
@@ -106,7 +87,7 @@ public class AffinitizedThreadPool : IDisposable
         }
     }
 
-    public int PoolSize { get { lock (_threadsLock) return _allThreads.Count; } }
+    public int PoolSize => _allThreads.Count;
 
     public void Dispose()
     {
