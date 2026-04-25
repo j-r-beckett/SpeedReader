@@ -5,28 +5,16 @@ using System.Text.Json.Serialization;
 using SpeedReader.Ocr;
 using SpeedReader.Ocr.Geometry;
 
-namespace SpeedReader.Frontend;
+namespace SpeedReader.Library;
 
 [JsonSerializable(typeof(OcrJsonResult))]
-[JsonSerializable(typeof(List<OcrJsonResult>))]
-[JsonSerializable(typeof(ErrorResponse))]
 [JsonSerializable(typeof(BoundingBox))]
 [JsonSerializable(typeof(Polygon))]
 [JsonSerializable(typeof(RotatedRectangle))]
 [JsonSerializable(typeof(AxisAlignedRectangle))]
 [JsonSourceGenerationOptions(
-    WriteIndented = true,
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-internal partial class JsonContext : JsonSerializerContext
-{
-}
-
-[JsonSerializable(typeof(OcrJsonResult))]
-[JsonSourceGenerationOptions(
     WriteIndented = false,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-internal partial class JsonLinesContext : JsonSerializerContext
+internal partial class LibraryJsonContext : JsonSerializerContext
 {
 }
-
-public record ErrorResponse(string Error);

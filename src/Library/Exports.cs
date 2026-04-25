@@ -4,8 +4,10 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SpeedReader.Ocr;
 
 namespace SpeedReader.Library;
 
@@ -21,6 +23,7 @@ public static unsafe class Exports
     private static readonly ConcurrentDictionary<long, Instance> Instances = new();
 
     private static long _nextHandleId = -1;
+    private static readonly ConcurrentDictionary<long, Task<OcrPipelineResult>> Handles = new();
 
     [UnmanagedCallersOnly(EntryPoint = "speedreader_create")]
     public static int Create(long* instance, byte* error)
@@ -65,7 +68,7 @@ public static unsafe class Exports
             var resultTask = inst.Pipeline.ReadOne(image).GetAwaiter().GetResult();
 
             var id = Interlocked.Increment(ref _nextHandleId);
-            // TODO: store resultTask in handle table for await
+            Handles[id] = resultTask;
             *handle = id;
             return Ok;
         }
@@ -81,10 +84,45 @@ public static unsafe class Exports
     {
         try
         {
-            return Ok;
+            if (!Handles.TryGetValue(handle, out var task))
+                throw new ArgumentException($"Invalid handle: {handle}");
+
+            var completed = task.Wait(timeoutMs < 0 ? System.Threading.Timeout.Infinite : timeoutMs);
+            if (!completed)
+                return Timeout;
+
+            Handles.TryRemove(handle, out _);
+
+            var pipelineResult = task.GetAwaiter().GetResult();
+            try
+            {
+                var jsonResult = new OcrJsonResult(
+                    Filename: null,
+                    Results: pipelineResult.Results.Select(r => new OcrTextResult(
+                        BoundingBox: r.BBox,
+                        Text: r.Text,
+                        Confidence: r.Confidence
+                    )).ToList()
+                );
+
+                var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(jsonResult, LibraryJsonContext.Default.OcrJsonResult);
+
+                var buf = (byte*)NativeMemory.Alloc((nuint)(jsonBytes.Length + 1));
+                jsonBytes.AsSpan().CopyTo(new Span<byte>(buf, jsonBytes.Length));
+                buf[jsonBytes.Length] = 0;
+
+                *resultJson = buf;
+                *resultLen = (nuint)jsonBytes.Length;
+                return Ok;
+            }
+            finally
+            {
+                pipelineResult.Image.Dispose();
+            }
         }
         catch (Exception ex)
         {
+            Handles.TryRemove(handle, out _);
             WriteError(error, ex.Message);
             return Error;
         }
@@ -95,6 +133,7 @@ public static unsafe class Exports
     {
         try
         {
+            Handles.TryRemove(handle, out _);
             return Ok;
         }
         catch
@@ -113,7 +152,7 @@ public static unsafe class Exports
         }
         catch
         {
-            // Best-effort.
+            // Best-effort
         }
     }
 
