@@ -167,7 +167,9 @@ public static unsafe class Exports
             return;
 
         var maxBytes = ErrorBufSize - 1;
-        var written = Encoding.UTF8.GetBytes(message.AsSpan(), new Span<byte>(error, maxBytes));
-        error[written] = 0;
+        var encoder = Encoding.UTF8.GetEncoder();
+        encoder.Convert(message.AsSpan(), new Span<byte>(error, maxBytes), flush: true,
+            out _, out var bytesUsed, out _);
+        error[bytesUsed] = 0;
     }
 }

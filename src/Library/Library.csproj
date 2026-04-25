@@ -14,4 +14,7 @@
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
+  <!-- Native libraries: AOT linker configuration -->
+  <Import Project="..\Native\Native.Aot.targets" />
+
 </Project>
