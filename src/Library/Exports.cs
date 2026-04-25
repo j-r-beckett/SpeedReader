@@ -1,6 +1,7 @@
 // Copyright (c) 2025 j-r-beckett
 // Licensed under the Apache License, Version 2.0
 
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -14,14 +15,18 @@ public static unsafe class Exports
 
     private const int ErrorBufSize = 256;
 
+    private static long _nextInstanceId = -1;
+    private static readonly ConcurrentDictionary<long, Instance> Instances = new();
+
     [UnmanagedCallersOnly(EntryPoint = "speedreader_create")]
-    public static int Create(nint* instance, byte* error)
+    public static int Create(long* instance, byte* error)
     {
         try
         {
+            var id = Interlocked.Increment(ref _nextInstanceId);
             var inst = new Instance();
-            var gcHandle = GCHandle.Alloc(inst);
-            *instance = GCHandle.ToIntPtr(gcHandle);
+            Instances[id] = inst;
+            *instance = id;
             return Ok;
         }
         catch (Exception ex)
@@ -32,12 +37,11 @@ public static unsafe class Exports
     }
 
     [UnmanagedCallersOnly(EntryPoint = "speedreader_destroy")]
-    public static void Destroy(nint instance)
+    public static void Destroy(long instance)
     {
         try
         {
-            var gcHandle = GCHandle.FromIntPtr(instance);
-            gcHandle.Free();
+            Instances.TryRemove(instance, out _);
         }
         catch
         {
@@ -46,7 +50,7 @@ public static unsafe class Exports
     }
 
     [UnmanagedCallersOnly(EntryPoint = "speedreader_submit")]
-    public static int Submit(nint instance, byte* imageData, nuint imageLen, long* handle, byte* error)
+    public static int Submit(long instance, byte* imageData, nuint imageLen, long* handle, byte* error)
     {
         try
         {
@@ -60,7 +64,7 @@ public static unsafe class Exports
     }
 
     [UnmanagedCallersOnly(EntryPoint = "speedreader_await")]
-    public static int Await(nint instance, long handle, int timeoutMs, byte** resultJson, nuint* resultLen, byte* error)
+    public static int Await(long instance, long handle, int timeoutMs, byte** resultJson, nuint* resultLen, byte* error)
     {
         try
         {
@@ -74,7 +78,7 @@ public static unsafe class Exports
     }
 
     [UnmanagedCallersOnly(EntryPoint = "speedreader_cancel")]
-    public static int Cancel(nint instance, long handle)
+    public static int Cancel(long instance, long handle)
     {
         try
         {
@@ -100,7 +104,10 @@ public static unsafe class Exports
         }
     }
 
-    private static Instance GetInstance(nint instance) => (Instance)GCHandle.FromIntPtr(instance).Target!;
+    private static Instance GetInstance(long instance) =>
+        Instances.TryGetValue(instance, out var inst)
+            ? inst
+            : throw new ArgumentException($"Invalid instance handle: {instance}");
 
     private static void WriteError(byte* error, string message)
     {

@@ -21,7 +21,7 @@ extern "C" {
 // Opaque handle types
 // ************
 
-typedef struct SpeedReaderInstance SpeedReaderInstance;
+typedef int64_t SpeedReaderInstance;
 
 // Handle returned by speedreader_submit, used to retrieve the result.
 // - Each handle must be passed to exactly one call of speedreader_await or speedreader_cancel.
@@ -49,17 +49,17 @@ typedef enum {
 // Instance lifecycle.
 // Not thread-safe.
 SpeedReaderStatus speedreader_create(
-    SpeedReaderInstance** instance,
+    SpeedReaderInstance* instance,
     char* error
 );
-void speedreader_destroy(SpeedReaderInstance* instance);
+void speedreader_destroy(SpeedReaderInstance instance);
 
 // Submit an encoded image (PNG, JPEG, etc.) for OCR.
 // Returns a handle for retrieving the result.
 // May block under load until the pipeline has capacity (backpressure).
 // Thread-safe.
 SpeedReaderStatus speedreader_submit(
-    SpeedReaderInstance* instance,
+    SpeedReaderInstance instance,
     const uint8_t* image_data,
     size_t image_len,
     SpeedReaderHandle* handle,
@@ -77,7 +77,7 @@ SpeedReaderStatus speedreader_submit(
 // Consumes the handle regardless of outcome (except timeout).
 // Thread-safe.
 SpeedReaderStatus speedreader_await(
-    SpeedReaderInstance* instance,
+    SpeedReaderInstance instance,
     SpeedReaderHandle handle,
     int32_t timeout_ms,
     const uint8_t** result_json,
@@ -89,7 +89,7 @@ SpeedReaderStatus speedreader_await(
 // Best-effort: inference already in progress may complete.
 // Thread-safe.
 SpeedReaderStatus speedreader_cancel(
-    SpeedReaderInstance* instance,
+    SpeedReaderInstance instance,
     SpeedReaderHandle handle
 );
 
