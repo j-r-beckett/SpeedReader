@@ -4,6 +4,8 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace SpeedReader.Library;
 
@@ -17,6 +19,8 @@ public static unsafe class Exports
 
     private static long _nextInstanceId = -1;
     private static readonly ConcurrentDictionary<long, Instance> Instances = new();
+
+    private static long _nextHandleId = -1;
 
     [UnmanagedCallersOnly(EntryPoint = "speedreader_create")]
     public static int Create(long* instance, byte* error)
@@ -41,7 +45,8 @@ public static unsafe class Exports
     {
         try
         {
-            Instances.TryRemove(instance, out _);
+            if (Instances.TryRemove(instance, out var inst))
+                inst.Dispose();
         }
         catch
         {
@@ -54,6 +59,14 @@ public static unsafe class Exports
     {
         try
         {
+            var inst = GetInstance(instance);
+            var imageSpan = new ReadOnlySpan<byte>(imageData, (int)imageLen);
+            var image = Image.Load<Rgb24>(imageSpan);
+            var resultTask = inst.Pipeline.ReadOne(image).GetAwaiter().GetResult();
+
+            var id = Interlocked.Increment(ref _nextHandleId);
+            // TODO: store resultTask in handle table for await
+            *handle = id;
             return Ok;
         }
         catch (Exception ex)
