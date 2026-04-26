@@ -50,6 +50,12 @@ This is a high-level map of the codebase. Only significant files and directories
 |   |   |   |-- compose.yml  // Speedreader, monitoring infrastructure, Caddy
 |   |   |   `-- run.sh  // Builds speedreader, builds docker image, runs `docker compose down`, runs `docker compose up`
 |   |   `-- Program.cs  // Application entrypoint
+|   |-- Library  // Shared library (.so) exposing SpeedReader over a C ABI
+|   |   |-- speedreader.h  // C header defining the public API contract
+|   |   |-- Exports.cs  // [UnmanagedCallersOnly] exports matching speedreader.h
+|   |   |-- Instance.cs  // Managed instance wrapping OcrPipeline and DI container
+|   |   |-- LibraryJsonContext.cs  // Source-gen JSON context for AOT-compatible serialization
+|   |   `-- smoke_test.py  // Python ctypes smoke test (uv run)
 |   |-- Frontend.Test  // Frontend integration tests
 |   |   |-- ApiE2ETests.cs
 |   |   `-- WebSocketTests.cs
@@ -72,6 +78,7 @@ This is a high-level map of the codebase. Only significant files and directories
 |   |   |-- SmartMetrics  // High-resolution OTEL gauges to track averages, throughputs
 |   |   |-- Visualization  // Visualize OCR results as interactive SVGs
 |   |   |-- OcrPipeline.cs  // Orchestrates TextDetector, TextRecognizer
+|   |   |-- OcrJsonResult.cs  // Shared JSON result types (OcrJsonResult, OcrTextResult) used by Frontend and Library
 |   |   |-- ServiceCollectionExtensions.cs  // DI for OcrPipeline
 |   |   |-- TextDetector.cs  // Preprocess -> inference engine (DbNet) -> postprocess
 |   |   `-- TextRecognizer.cs  // Preprocess -> inference engine (SVTRv2) -> postprocess
@@ -181,6 +188,14 @@ SpeedReader can be built as either a managed (CLR) or unmanaged (Native AOT) exe
 - The dynamic flavor is for users who want to use an onnx runtime build with hwaccel support
 - The static flavor also statically links system libs. To achieve this, it must be built on a musl system. `uv run ci/act.py static` will do this
 
+SpeedReader can also be built as a **shared library** (.so) for consumption from other languages via the C ABI:
+
+```bash
+dotnet publish src/Library -p:NativeLib=Shared -p:OnnxLinkMode=Dynamic --use-current-runtime
+```
+
+This produces `Library.so` + `libonnxruntime.so` in the publish directory. The API is defined in `src/Library/speedreader.h` and uses a handle/future pattern: `speedreader_submit` returns a handle, `speedreader_await` blocks on it. Results are returned as JSON. Smoke test: `uv run src/Library/smoke_test.py`.
+
 
 The build is orchestrated by msbuild. All integrations with native libraries are handled by the Native project. Native, and by extension any project that references Native, exposes these options:
 
@@ -190,7 +205,7 @@ The build is orchestrated by msbuild. All integrations with native libraries are
 | BuildSROrt | '1' | Triggers a new speedreader_ort if '1' |
 | DeepClean  | '1' | Clean all native build artifacts      |
 
-The Frontend project (SpeedReader executable, the Native AOT target) exposes these options when publishing:
+The Frontend and Library projects (Native AOT targets) expose these options when publishing:
 
 | Options      | Values              | Description                           |
 | ------------ | ------------------- | ------------------------------------- |
@@ -200,7 +215,8 @@ The Frontend project (SpeedReader executable, the Native AOT target) exposes the
 Examples:
 
 ```bash
-dotnet publish src/Frontend -r linux-x64  -p:OnnxLinkMode=Dynamic  # build unamanaged dynamically linked executable using cached onnx runtime and speedreader_ort artifacts
+dotnet publish src/Frontend -r linux-x64  -p:OnnxLinkMode=Dynamic  # build unmanaged dynamically linked executable using cached onnx runtime and speedreader_ort artifacts
+dotnet publish src/Library -p:NativeLib=Shared -p:OnnxLinkMode=Dynamic --use-current-runtime  # build shared library (.so)
 dotnet build src -p:BuildSROrt=1  # managed build with a fresh build of speedreader_ort and cached onnx runtime artifacts
 ```
 
