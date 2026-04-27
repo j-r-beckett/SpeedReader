@@ -56,6 +56,8 @@ This is a high-level map of the codebase. Only significant files and directories
 |   |   |-- Instance.cs  // Managed instance wrapping OcrPipeline and DI container
 |   |   |-- LibraryJsonContext.cs  // Source-gen JSON context for AOT-compatible serialization
 |   |   `-- smoke_test.py  // Python ctypes smoke test (uv run)
+|   |-- BenchLib  // Shared library (.so) exposing raw inference for benchmarking
+|   |   `-- Exports.cs  // benchlib_init, benchlib_rundbnet(core_id), benchlib_destroy
 |   |-- Frontend.Test  // Frontend integration tests
 |   |   |-- ApiE2ETests.cs
 |   |   `-- WebSocketTests.cs
@@ -102,7 +104,14 @@ This is a high-level map of the codebase. Only significant files and directories
 |-- build_utils  // Shared utilities package for build scripts
 |   |-- __init__.py  // Public API exports
 |   `-- utils.py  // bash(), info(), error(), ensure_repo(), etc.
-|-- notebooks  // Marimo notebooks for data analysis and visualization
+|-- analysis  // Next-gen analysis notebooks and shared bench package
+|   |-- pyproject.toml  // Application package; declares marimo, pandas, seaborn, bench
+|   |-- bench  // Python package: orchestrator/control plane for BenchLib.so
+|   |   |-- pyproject.toml  // Library package
+|   |   |-- __init__.py  // Public API: build, run_dbnet
+|   |   `-- dbnet.py  // build(), run_dbnet(); owns ctypes, threading, spinner, trimming
+|   `-- dbnet_parallel.py  // DbNet throughput & latency vs parallelism
+|-- notebooks  // Legacy analysis notebooks (subprocess-based)
 |   |-- notebook_utils  // Shared utilities package for notebooks
 |   |   |-- __init__.py  // Re-exports public API
 |   |   |-- helpers.py  // format_duration, prioritized_cores
@@ -195,6 +204,14 @@ dotnet publish src/Library -p:NativeLib=Shared -p:OnnxLinkMode=Dynamic --use-cur
 ```
 
 This produces `Library.so` + `libonnxruntime.so` in the publish directory. The API is defined in `src/Library/speedreader.h` and uses a handle/future pattern: `speedreader_submit` returns a handle, `speedreader_await` blocks on it. Results are returned as JSON. Smoke test: `uv run src/Library/smoke_test.py`.
+
+**BenchLib** is a minimal shared library for benchmarking raw inference. Same build pattern as Library:
+
+```bash
+dotnet publish src/BenchLib -p:NativeLib=Shared -p:OnnxLinkMode=Dynamic --use-current-runtime
+```
+
+Exposes three functions: `benchlib_init()`, `benchlib_rundbnet(core_id)` (pins thread + runs DbNet inference), `benchlib_destroy()`. Consumed by the `analysis/bench` Python package via ctypes.
 
 
 The build is orchestrated by msbuild. All integrations with native libraries are handled by the Native project. Native, and by extension any project that references Native, exposes these options:
