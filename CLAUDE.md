@@ -57,7 +57,7 @@ This is a high-level map of the codebase. Only significant files and directories
 |   |   |-- LibraryJsonContext.cs  // Source-gen JSON context for AOT-compatible serialization
 |   |   `-- smoke_test.py  // Python ctypes smoke test (uv run)
 |   |-- BenchLib  // Shared library (.so) exposing raw inference for benchmarking
-|   |   `-- Exports.cs  // benchlib_init, benchlib_rundbnet(core_id), benchlib_destroy
+|   |   `-- Exports.cs  // benchlib_init, benchlib_run(model_id, core_id), benchlib_destroy
 |   |-- Frontend.Test  // Frontend integration tests
 |   |   |-- ApiE2ETests.cs
 |   |   `-- WebSocketTests.cs
@@ -108,9 +108,10 @@ This is a high-level map of the codebase. Only significant files and directories
 |   |-- pyproject.toml  // Application package; declares marimo, pandas, seaborn, bench
 |   |-- bench  // Python package: orchestrator/control plane for BenchLib.so
 |   |   |-- pyproject.toml  // Library package
-|   |   |-- __init__.py  // Public API: build, run_dbnet
-|   |   `-- dbnet.py  // build(), run_dbnet(); owns ctypes, threading, spinner, trimming
-|   `-- dbnet_parallel.py  // DbNet throughput & latency vs parallelism
+|   |   |-- __init__.py  // Public API: build, run_inference
+|   |   `-- inference.py  // build(), run_inference(); owns ctypes, threading, spinner, trimming
+|   |-- dbnet_parallel.py  // DbNet throughput & latency vs parallelism
+|   `-- combined.py  // Detection/recognition throughput vs core divider (DbNet + SVTR concurrent)
 |-- notebooks  // Legacy analysis notebooks (subprocess-based)
 |   |-- notebook_utils  // Shared utilities package for notebooks
 |   |   |-- __init__.py  // Re-exports public API
@@ -211,7 +212,7 @@ This produces `Library.so` + `libonnxruntime.so` in the publish directory. The A
 dotnet publish src/BenchLib -p:NativeLib=Shared -p:OnnxLinkMode=Dynamic --use-current-runtime
 ```
 
-Exposes three functions: `benchlib_init()`, `benchlib_rundbnet(core_id)` (pins thread + runs DbNet inference), `benchlib_destroy()`. Consumed by the `analysis/bench` Python package via ctypes.
+Exposes three functions: `benchlib_init()` (loads DbNet + SVTR kernels), `benchlib_run(model_id, core_id)` (pins thread + runs the chosen model: 0=DbNet, 1=SVTR), `benchlib_destroy()`. Consumed by the `analysis/bench` Python package via ctypes.
 
 
 The build is orchestrated by msbuild. All integrations with native libraries are handled by the Native project. Native, and by extension any project that references Native, exposes these options:

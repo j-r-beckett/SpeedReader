@@ -10,7 +10,7 @@ with app.setup:
     import pandas as pd
     import seaborn as sns
     import matplotlib.pyplot as plt
-    from bench import build, run_dbnet
+    from bench import build, run_inference
 
     sns.set_theme()
 
@@ -23,8 +23,10 @@ def _():
 
 @app.cell
 def _():
-    df = run_dbnet(
-        configs=[[j * 2 for j in range(i)] for i in range(1, 13)],
+    df = run_inference(
+        configs=[
+            [("dbnet", j * 2) for j in range(i)] for i in range(1, 13)
+        ],
         duration=8,
         trim=1.0,
     )

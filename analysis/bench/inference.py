@@ -14,6 +14,9 @@ _BENCHLIB_DIR = _REPO_ROOT / "src" / "BenchLib"
 _PUBLISH_DIR = _BENCHLIB_DIR / "bin" / "Release" / "net10.0" / "linux-x64" / "publish"
 _LIB_PATH = _PUBLISH_DIR / "BenchLib.so"
 
+# Must match the model id constants in src/BenchLib/Exports.cs
+MODEL_IDS = {"dbnet": 0, "svtr": 1}
+
 
 def _format_duration(seconds: float) -> str:
     if seconds < 60:
@@ -40,16 +43,22 @@ def build() -> None:
             raise RuntimeError(f"Build failed:\n{result.stderr}")
 
 
-def run_dbnet(
-    configs: list[list[int]],
+def run_inference(
+    configs: list[list[tuple[str, int]]],
     duration: float,
     trim: float,
 ) -> pd.DataFrame:
+    """Run a sweep of inference workloads.
+
+    Each config is a list of (model, core_id) pairs. All pairs in a config
+    run simultaneously: one thread per pair, pinned to its core, looping
+    inference of its assigned model until duration elapses.
+    """
     lib = ctypes.CDLL(str(_LIB_PATH))
     lib.benchlib_init.argtypes = []
     lib.benchlib_init.restype = None
-    lib.benchlib_rundbnet.argtypes = [ctypes.c_int]
-    lib.benchlib_rundbnet.restype = None
+    lib.benchlib_run.argtypes = [ctypes.c_int, ctypes.c_int]
+    lib.benchlib_run.restype = None
     lib.benchlib_destroy.argtypes = []
     lib.benchlib_destroy.restype = None
 
@@ -68,7 +77,7 @@ def run_dbnet(
 
 def _run_with_spinner(
     lib: ctypes.CDLL,
-    configs: list[list[int]],
+    configs: list[list[tuple[str, int]]],
     duration: float,
     perf: PerfCounters,
 ) -> list[dict]:
@@ -79,24 +88,27 @@ def _run_with_spinner(
     with mo.status.spinner(title="Running benchmark...", remove_on_exit=True) as spinner:
         spinner.update(subtitle=f"0s / {_format_duration(total_time)}")
 
-        for cores in configs:
-            parallelism = len(cores)
-            thread_results: list[list] = [[] for _ in cores]
+        for config_idx, config in enumerate(configs):
+            parallelism = len(config)
+            thread_results: list[list] = [[] for _ in config]
 
-            def worker(results: list, core_id: int):
+            def worker(results: list, model: str, core_id: int):
+                model_id = MODEL_IDS[model]
                 deadline = time.monotonic() + duration
                 snap = perf.read_cpu(core_id)
                 while time.monotonic() < deadline:
                     start = time.monotonic()
-                    lib.benchlib_rundbnet(core_id)
+                    lib.benchlib_run(model_id, core_id)
                     end = time.monotonic()
                     new_snap = perf.read_cpu(core_id)
-                    results.append((core_id, start, end, snap, new_snap))
+                    results.append((model, core_id, start, end, snap, new_snap))
                     snap = new_snap
 
             threads = []
-            for i, core_id in enumerate(cores):
-                t = threading.Thread(target=worker, args=(thread_results[i], core_id))
+            for i, (model, core_id) in enumerate(config):
+                t = threading.Thread(
+                    target=worker, args=(thread_results[i], model, core_id)
+                )
                 threads.append(t)
 
             bw_before = perf.read_uncore()
@@ -124,8 +136,10 @@ def _run_with_spinner(
             )
 
             for thread_res in thread_results:
-                for core_id, start, end, snap_before, snap_after in thread_res:
+                for model, core_id, start, end, snap_before, snap_after in thread_res:
                     row: dict = {
+                        "config_idx": config_idx,
+                        "model": model,
                         "core_id": core_id,
                         "parallelism": parallelism,
                         "start_mono": start,
@@ -144,7 +158,7 @@ def _run_with_spinner(
 
 def _trim(df: pd.DataFrame, trim: float) -> pd.DataFrame:
     trimmed = []
-    for _, g in df.groupby("parallelism"):
+    for _, g in df.groupby("config_idx"):
         run_start = g["start_mono"].min()
         run_end = g["end_mono"].max()
         midpoints = g["start_mono"] + (g["end_mono"] - g["start_mono"]) / 2

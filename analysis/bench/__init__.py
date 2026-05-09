@@ -1,3 +1,3 @@
-from bench.dbnet import build, run_dbnet
+from bench.inference import build, run_inference
 
-__all__ = ["build", "run_dbnet"]
+__all__ = ["build", "run_inference"]
